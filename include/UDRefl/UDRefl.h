@@ -52,9 +52,31 @@ namespace Ubpa::UDRefl {
 				};
 			}
 		};
-		using StaticVar = std::any;
-		using Funcs = std::vector<std::any>;
-		using Value = std::variant<NonStaticVar, StaticVar, Funcs>;
+		struct StaticVar {
+			std::any data;
+			template<typename T>
+			static StaticVar Init(T data) {
+				return { std::any{data} };
+			}
+		};
+		struct Func {
+			std::any data;
+			template<typename T>
+			static Func Init(T func) {
+				return { std::function{func} };
+			}
+			template<typename T>
+			bool TypeIs() {
+				return data.type() == typeid(std::function<T>);
+			}
+			template<typename Ret, typename... Args>
+			Ret Call(Args... args) {
+				static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret>);
+				assert(TypeIs<Ret(Args...)>());
+				return std::any_cast<std::function<Ret(Args...)>>(data)(std::forward<Args>(args)...);
+			}
+		};
+		using Value = std::variant<NonStaticVar, StaticVar, Func>;
 
 		static constexpr const char default_constructor[] = "_default_constructor";
 		static constexpr const char copy_constructor[] = "_copy_constructor";
@@ -63,9 +85,16 @@ namespace Ubpa::UDRefl {
 
 		Value value;
 		AttrList attrs;
+
+		bool operator<(const Field& rhs) const {
+			if (value.index() != 2 || rhs.value.index() != 2)
+				return false;
+			return std::get<Func>(value).data.type().hash_code()
+				< std::get<Func>(rhs.value).data.type().hash_code();
+		}
 	};
 	
-	using FieldList = std::map<std::string, Field, std::less<>>;
+	using FieldList = std::multimap<std::string, Field, std::less<>>;
 
 	struct Base {
 		TypeInfo* info;
@@ -90,12 +119,15 @@ namespace Ubpa::UDRefl {
 		Ret Call(std::string_view name, Args... args) {
 			static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret>);
 
-			using Func = std::function<Ret(Args...)>;
-			auto& funcs = std::get<Field::Funcs>(fields.find(name)->second.value);
-			for (auto& func : funcs) {
-				if (func.type() == typeid(Func))
-					return std::any_cast<Func>(func)(std::forward<Args>(args)...);
+			auto low = fields.lower_bound(name);
+			auto up = fields.upper_bound(name);
+			for (auto iter = low; iter != up; ++iter) {
+				if (auto pFunc = std::get_if<Field::Func>(&low->second.value)) {
+					if (pFunc->TypeIs<Ret(Args...)>())
+						return pFunc->Call<Ret, Args...>(std::forward<Args>(args)...);
+				}
 			}
+
 			assert("arguments' types are matching failure with functions" && false);
 			if constexpr(!std::is_void_v<Ret>)
 				return {};
