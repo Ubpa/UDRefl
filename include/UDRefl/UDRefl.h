@@ -87,8 +87,12 @@ namespace Ubpa::UDRefl {
 		}
 	};
 	
-	//using FieldList = std::multimap<std::string, Field, std::less<>>;
 	struct FieldList {
+		static constexpr const char default_constructor[] = "_default_constructor";
+		static constexpr const char copy_constructor[] = "_copy_constructor";
+		static constexpr const char move_constructor[] = "_move_constructor";
+		static constexpr const char destructor[] = "_destructor";
+
 		std::multimap<std::string, Field, std::less<>> data;
 
 		template<typename T>
@@ -122,6 +126,22 @@ namespace Ubpa::UDRefl {
 			if constexpr (!std::is_void_v<Ret>)
 				return {};
 		}
+
+		Object DefaultConstruct() {
+			return Call<Object>(default_constructor);
+		}
+
+		Object CopyConstruct(Object src) {
+			return Call<Object, Object>(copy_constructor, src);
+		}
+
+		Object MoveConstruct(Object src) {
+			return Call<Object, Object>(move_constructor, src);
+		}
+
+		void Destruct(Object p) {
+			return Call<void, Object>(destructor, p);
+		}
 	};
 
 	struct Base {
@@ -133,13 +153,6 @@ namespace Ubpa::UDRefl {
 	using BaseList = std::map<std::string, Base, std::less<>>;
 
 	struct TypeInfo {
-		struct InternalField {
-			static constexpr const char default_constructor[] = "_default_constructor";
-			static constexpr const char copy_constructor[] = "_copy_constructor";
-			static constexpr const char move_constructor[] = "_move_constructor";
-			static constexpr const char destructor[] = "_destructor";
-		};
-
 		std::string name;
 
 		size_t size{ 0 };
@@ -149,22 +162,6 @@ namespace Ubpa::UDRefl {
 
 		AttrList attrs;
 		FieldList fields;
-
-		Object DefaultConstruct() {
-			return fields.Call<Object>(InternalField::default_constructor);
-		}
-
-		Object CopyConstruct(Object src) {
-			return fields.Call<Object, Object>(InternalField::copy_constructor, src);
-		}
-
-		Object MoveConstruct(Object src) {
-			return fields.Call<Object, Object>(InternalField::move_constructor, src);
-		}
-
-		void Destruct(Object p) {
-			return fields.Call<void, Object>(InternalField::destructor, p);
-		}
 	};
 
 	class TypeInfoMngr {
