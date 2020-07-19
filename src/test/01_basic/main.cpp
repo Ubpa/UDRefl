@@ -10,6 +10,7 @@ static constexpr size_t PointID = 0;
 //	float x;
 //	[[range(std::pair<float, float>{0.f, 10.f})]]
 //	float y;
+//  static size_t num{0};
 //};
 //
 
@@ -24,6 +25,7 @@ int main() {
 
 		Field& field_x = type.fields["x"];
 		Field& field_y = type.fields["y"];
+		Field& field_num = type.fields["num"];
 		Field& field_default_constructor = type.fields[Field::default_constructor];
 		Field& field_destructor = type.fields[Field::destructor];
 
@@ -32,6 +34,8 @@ int main() {
 
 		field_y.value = Field::NonStaticVar::Init<float>(sizeof(float));
 		field_y.attrs["range"].value = std::pair<float, float>{ 0.f, 10.f };
+
+		field_num.value = Field::StaticVar{ static_cast<size_t>(0) };
 
 		field_default_constructor.value = Field::Funcs{
 			std::function{[]()->Object{
@@ -87,7 +91,15 @@ int main() {
 			else
 				cout << "[NOT SUPPORT]";
 		}
+		else if (auto pV = get_if<Field::StaticVar>(&field.value)) {
+			cout << ": ";
+			if (pV->type() == typeid(size_t))
+				cout << any_cast<size_t>(*pV);
+			else
+				cout << "[NOT SUPPORT]";
+		}
 		cout << endl;
+
 		for (const auto& [name, attr] : field.attrs) {
 			cout << name;
 			if (attr.value.has_value()) {
