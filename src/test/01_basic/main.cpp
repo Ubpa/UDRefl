@@ -3,6 +3,7 @@
 #include <array>
 #include <iostream>
 
+static constexpr size_t PointID = 0;
 //
 //struct [[info("hello world")]] Point {
 //	[[not_serialize]]
@@ -17,14 +18,14 @@ using namespace std;
 
 int main() {
 	{ // register
-		TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(0);
+		TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(PointID);
 		type.name = "struct Point";
 		type.attrs["info"].value = std::string("hello world");
 
 		Field& field_x = type.fields["x"];
 		Field& field_y = type.fields["y"];
-		Field& field_Point = type.fields["Point"];
-		Field& field_d_Point = type.fields["~Point"];
+		Field& field_default_constructor = type.fields[Field::default_constructor];
+		Field& field_destructor = type.fields[Field::destructor];
 
 		field_x.value = Field::NonStaticVar::Init<float>(0);
 		field_x.attrs["not_serialize"];
@@ -32,16 +33,17 @@ int main() {
 		field_y.value = Field::NonStaticVar::Init<float>(sizeof(float));
 		field_y.attrs["range"].value = std::pair<float, float>{ 0.f, 10.f };
 
-		field_Point.value = Field::Funcs{
-			std::function{[]()->void*{
-				cout << "construct Point" << endl;
-				return malloc(2 * sizeof(float));
+		field_default_constructor.value = Field::Funcs{
+			std::function{[]()->Object{
+				auto ptr = malloc(2 * sizeof(float));
+				cout << "construct Point @" << ptr << endl;
+				return { PointID, ptr };
 			}}
 		};
-		field_d_Point.value = Field::Funcs{
-			std::function{[](void* p) {
-				cout << "destruct Point" << endl;
-				free(p);
+		field_destructor.value = Field::Funcs{
+			std::function{[](Object obj) {
+				cout << "destruct Point @" << obj.Pointer() << endl;
+				free(obj.Pointer());
 			}}
 		};
 	}
@@ -50,11 +52,11 @@ int main() {
 
 	/*const*/ TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(0);
 
-	auto point = any_cast<std::function<void*()>>(get<Field::Funcs>(type.fields["Point"].value).front())();
+	auto point = type.DefaultConstruct();
 
 	// set
-	get<Field::NonStaticVar>(type.fields["x"].value).setter(point, 1.f);
-	get<Field::NonStaticVar>(type.fields["y"].value).setter(point, 2.f);
+	get<Field::NonStaticVar>(type.fields["x"].value).set(point, 1.f);
+	get<Field::NonStaticVar>(type.fields["y"].value).set(point, 2.f);
 
 	// dump
 	cout << type.name << endl;
@@ -79,7 +81,7 @@ int main() {
 		cout << name;
 		if (auto pV = get_if<Field::NonStaticVar>(&field.value)) {
 			cout << ": ";
-			auto v = pV->getter(point);
+			auto v = pV->get(point);
 			if (v.type() == typeid(float))
 				cout << any_cast<float>(v);
 			else
@@ -103,5 +105,5 @@ int main() {
 		}
 	}
 
-	any_cast<std::function<void(void*)>>(get<Field::Funcs>(type.fields["~Point"].value).front())(point);
+	type.Destruct(point);
 }
