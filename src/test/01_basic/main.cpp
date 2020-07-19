@@ -4,10 +4,10 @@
 #include <iostream>
 
 //
-//struct [[size(8)]] Point {
+//struct [[info("hello world")]] Point {
 //	[[not_serialize]]
 //	float x;
-//	[[info("hello")]]
+//	[[range(std::pair<float, float>{0.f, 10.f})]]
 //	float y;
 //};
 //
@@ -19,77 +19,89 @@ int main() {
 	{ // register
 		TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(0);
 		type.name = "struct Point";
-		type.attrs.elems["size"].value = 8;
+		type.attrs["info"].value = std::string("hello world");
 
-		Field& field_x = type.fields.elems["x"];
-		Field& field_y = type.fields.elems["y"];
+		Field& field_x = type.fields["x"];
+		Field& field_y = type.fields["y"];
+		Field& field_Point = type.fields["Point"];
+		Field& field_d_Point = type.fields["~Point"];
 
-		field_x.value = Field::NonStaticVar{
-			function{[](void* p)->any {
-				return Field::GetVar<float>(p, 0);
-			}},
-			function{[](void* p, any value) {
-				Field::GetVar<float>(p, 0) = any_cast<float>(value);
+		field_x.value = Field::NonStaticVar::Init<float>(0);
+		field_x.attrs["not_serialize"];
+
+		field_y.value = Field::NonStaticVar::Init<float>(sizeof(float));
+		field_y.attrs["range"].value = std::pair<float, float>{ 0.f, 10.f };
+
+		field_Point.value = Field::Funcs{
+			std::function{[]()->void*{
+				cout << "construct Point" << endl;
+				return malloc(2 * sizeof(float));
 			}}
 		};
-
-		field_x.attrs.elems["not_serialize"];
-
-		field_y.value = Field::NonStaticVar{
-			function{[](void* p)->any {
-				return Field::GetVar<float>(p, sizeof(float));
-			}},
-			function{[](void* p, any value) {
-				Field::GetVar<float>(p, sizeof(float)) = any_cast<float>(value);
+		field_d_Point.value = Field::Funcs{
+			std::function{[](void* p) {
+				cout << "destruct Point" << endl;
+				free(p);
 			}}
 		};
-		field_y.attrs.elems["info"].value = string{ "hello" };
 	}
 
 	// ======================
 
-	array<uint8_t, sizeof(float) * 2> point;
-
 	/*const*/ TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(0);
 
+	auto point = any_cast<std::function<void*()>>(get<Field::Funcs>(type.fields["Point"].value).front())();
+
 	// set
-	get<Field::NonStaticVar>(type.fields.elems["x"].value).setter(point.data(), 1.f);
-	get<Field::NonStaticVar>(type.fields.elems["y"].value).setter(point.data(), 2.f);
+	get<Field::NonStaticVar>(type.fields["x"].value).setter(point, 1.f);
+	get<Field::NonStaticVar>(type.fields["y"].value).setter(point, 2.f);
 
 	// dump
 	cout << type.name << endl;
 
-	for (const auto& [name, attr] : type.attrs.elems) {
+	for (const auto& [name, attr] : type.attrs) {
 		cout << name;
 		if (attr.value.has_value()) {
+			cout << ": ";
 			if (attr.value.type() == typeid(string))
-				cout << ": " << any_cast<string>(attr.value);
-			else if (attr.value.type() == typeid(int))
-				cout << ": " << any_cast<int>(attr.value);
+				cout << any_cast<string>(attr.value);
+			else if (attr.value.type() == typeid(std::pair<float, float>)) {
+				auto r = any_cast<std::pair<float, float>>(attr.value);
+				cout << r.first << " - " << r.second;
+			}
+			else
+				cout << "[NOT SUPPORT]";
 		}
 		cout << endl;
 	}
 
-	for (const auto& [name, field] : type.fields.elems) {
+	for (const auto& [name, field] : type.fields) {
 		cout << name;
 		if (auto pV = get_if<Field::NonStaticVar>(&field.value)) {
 			cout << ": ";
-			auto v = pV->getter(point.data());
+			auto v = pV->getter(point);
 			if (v.type() == typeid(float))
 				cout << any_cast<float>(v);
 			else
 				cout << "[NOT SUPPORT]";
 		}
 		cout << endl;
-		for (const auto& [name, attr] : field.attrs.elems) {
+		for (const auto& [name, attr] : field.attrs) {
 			cout << name;
 			if (attr.value.has_value()) {
+				cout << ": ";
 				if (attr.value.type() == typeid(string))
-					cout << ": " << any_cast<string>(attr.value);
-				else if (attr.value.type() == typeid(int))
-					cout << ": " << any_cast<int>(attr.value);
+					cout << any_cast<string>(attr.value);
+				else if (attr.value.type() == typeid(std::pair<float, float>)) {
+					auto r = any_cast<std::pair<float, float>>(attr.value);
+					cout << r.first << " - " << r.second;
+				}
+				else
+					cout << "[NOT SUPPORT]";
 			}
 			cout << endl;
 		}
 	}
+
+	any_cast<std::function<void(void*)>>(get<Field::Funcs>(type.fields["~Point"].value).front())(point);
 }

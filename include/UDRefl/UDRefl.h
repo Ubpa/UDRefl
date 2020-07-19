@@ -6,23 +6,35 @@
 #include <any>
 #include <variant>
 #include <functional>
+#include <vector>
 
 namespace Ubpa::UDRefl {
 	struct TypeInfo;
-	
-	template<typename Elem>
-	struct ElemList {
-		std::unordered_map<std::string, Elem> elems;
-	};
+
+	template<typename T>
+	static T& Get(void* p, size_t offset) {
+		return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(p) + offset);
+	}
 
 	struct Attr {
 		std::any value;
 	};
-
-	struct AttrList : ElemList<Attr> {};
+	using AttrList = std::unordered_map<std::string, Attr>;
 
 	struct Field {
 		struct NonStaticVar {
+			template<typename T>
+			static NonStaticVar Init(size_t offset) {
+				return {
+					std::function{[=](void* p)->std::any {
+						return Get<T>(p, offset);
+					}},
+					std::function{[=](void* p, std::any value) {
+						Get<T>(p, offset) = std::any_cast<T>(value);
+					}}
+				};
+			}
+
 			std::function<std::any(void*)> getter;
 			std::function<void(void*, std::any)> setter;
 		};
@@ -30,23 +42,13 @@ namespace Ubpa::UDRefl {
 			std::function<std::any()> getter;
 			std::function<void(std::any)> setter;
 		};
-		struct NonStaticFunc {
-			std::any func;
-		};
-		struct StaticFunc {
-			std::any func;
-		};
-		using Value = std::variant<NonStaticVar, StaticVar, NonStaticFunc, StaticFunc>;
+		using Funcs = std::vector<std::any>;
+		using Value = std::variant<NonStaticVar, StaticVar, Funcs>;
 		Value value;
 		AttrList attrs;
-
-		template<typename T>
-		static T& GetVar(void* p, size_t offset) {
-			return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(p) + offset);
-		}
 	};
-
-	struct FieldList : ElemList<Field> {};
+	
+	using FieldList = std::unordered_map<std::string, Field>;
 
 	struct Base {
 		TypeInfo* info;
@@ -54,13 +56,18 @@ namespace Ubpa::UDRefl {
 		bool isVirtual{ false };
 	};
 
-	struct BaseList : ElemList<Base> {};
+	using BaseList = std::unordered_map<std::string, Attr>;
 
 	struct TypeInfo {
 		std::string name;
-		FieldList fields;
-		AttrList attrs;
+
+		size_t size;
+		size_t alignment;
+
 		BaseList bases;
+
+		AttrList attrs;
+		FieldList fields;
 	};
 
 	class TypeInfoMngr {
