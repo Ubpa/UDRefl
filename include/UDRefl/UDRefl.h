@@ -19,7 +19,6 @@ namespace Ubpa::UDRefl {
 		void* Pointer() { return ptr; }
 		size_t ID() { return id; }
 
-
 		// non-static
 		template<typename T>
 		T& Var(size_t offset) {
@@ -32,38 +31,92 @@ namespace Ubpa::UDRefl {
 	};
 
 	struct AnyWrapper {
-		std::any value;
+		template<typename T>
+		AnyWrapper(T data) : data{ data } {}
+		AnyWrapper() = default;
+
+		std::any data;
 
 		bool HasValue() const {
-			return value.has_value();
+			return data.has_value();
+		}
+
+		const std::type_info& Type() const noexcept {
+			return data.type();
 		}
 
 		template<typename T>
-		bool TypeIs() const {
-			return value.type() == typeid(T);
+		bool TypeIs() const noexcept {
+			return Type() == typeid(T);
 		}
 
 		template<typename T>
 		bool operator==(const T& t) const {
-			return HasValue() && TypeIs<T>() && CastTo<T>() == t;
+			return HasValue() && TypeIs<T>() && Cast<T>() == t;
 		}
 
 		template<typename T>
-		T& CastTo() {
+		T& Cast() {
 			assert(HasValue() && TypeIs<T>());
-			return std::any_cast<T&>(value);
+			return std::any_cast<T&>(data);
 		}
 
 		template<typename T>
-		const T& CastTo() const {
-			return const_cast<AnyWrapper*>(this)->CastTo<T>();
+		const T& Cast() const {
+			return const_cast<AnyWrapper*>(this)->Cast<T>();
+		}
+
+		template<typename T>
+		T* CastIf() {
+			return std::any_cast<T>(&data);
+		}
+
+		template<typename T>
+		const T* CastIf() const {
+			return const_cast<AnyWrapper*>(this)->CastIf<T>();
+		}
+	};
+
+	template<typename... Ts>
+	struct VariantWrapper {
+		std::variant<Ts...> data;
+
+		bool HasValue() const noexcept {
+			return data.valueless_by_exception();
+		}
+
+		size_t Index() const noexcept {
+			return data.index();
+		}
+
+		template<typename T>
+		bool TypeIs() const {
+			return std::holds_alternative<T>(data);
+		}
+
+		template<typename T>
+		T& Cast() {
+			return std::get<T>(data);
+		}
+
+		template<typename T>
+		const T& Cast() const {
+			return const_cast<VariantWrapper*>(this)->Cast<T>();
+		}
+
+		template<typename T>
+		T* CastIf() {
+			return std::get_if<T>(&data);
+		}
+
+		template<typename T>
+		const T* CastIf() const {
+			return const_cast<VariantWrapper*>(this)->CastIf<T>();
 		}
 	};
 
 	struct Attr : AnyWrapper {
-		template<typename T>
-		Attr(T value) : AnyWrapper{ value } {}
-		Attr() = default;
+		using AnyWrapper::AnyWrapper;
 	};
 
 	using AttrList = std::map<std::string, Attr, std::less<>>;
@@ -82,7 +135,7 @@ namespace Ubpa::UDRefl {
 			}
 
 			template<typename T>
-			bool TypeIs() const {
+			bool TypeIs() const noexcept {
 				return getter.type() == typeid(std::function<T& (Object)>);
 			}
 
@@ -97,34 +150,31 @@ namespace Ubpa::UDRefl {
 				Get<Arg>(obj) = std::forward<Arg>(arg);
 			}
 		};
-		struct StaticVar : AnyWrapper {};
-		struct Func {
-			std::any data;
+		struct StaticVar : AnyWrapper {
+			using AnyWrapper::AnyWrapper;
+		};
+		struct Func : AnyWrapper {
 			template<typename T>
-			static Func Init(T func) {
-				return { std::function{func} };
-			}
+			Func(T func) : AnyWrapper{ std::function{func} } {}
 			template<typename T>
-			bool TypeIs() const {
-				return data.type() == typeid(std::function<T>);
+			bool FuncTypeIs() const {
+				return TypeIs<std::function<T>>();
 			}
 			template<typename Ret, typename... Args>
 			Ret Call(Args... args) const {
-				static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret>);
-				assert(TypeIs<Ret(Args...)>());
-				return std::any_cast<std::function<Ret(Args...)>>(data)(std::forward<Args>(args)...);
+				return Cast<std::function<Ret(Args...)>>()(std::forward<Args>(args)...);
 			}
 		};
-		using Value = std::variant<Var, StaticVar, Func>;
+		using Value = VariantWrapper<Var, StaticVar, Func>;
 
 		Value value;
 		AttrList attrs;
 
 		bool operator<(const Field& rhs) const noexcept {
-			if (value.index() != 2 || rhs.value.index() != 2)
+			if (!value.TypeIs<Func>() || !rhs.value.TypeIs<Func>())
 				return false;
-			return std::get<Func>(value).data.type().hash_code()
-				< std::get<Func>(rhs.value).data.type().hash_code();
+			return value.Cast<Func>().data.type().hash_code()
+				< rhs.value.Cast<Func>().data.type().hash_code();
 		}
 	};
 
@@ -141,8 +191,8 @@ namespace Ubpa::UDRefl {
 		T& Get(std::string_view name) {
 			static_assert(!std::is_reference_v<T>);
 			assert(data.count(name) == 1);
-			Field::StaticVar& v = std::get<Field::StaticVar>(data.find(name)->second.value);
-			return v.CastTo<T>();
+			Field::StaticVar& v = data.find(name)->second.value.Cast<Field::StaticVar>();
+			return v.Cast<T>();
 		}
 
 		// static
@@ -154,7 +204,7 @@ namespace Ubpa::UDRefl {
 		template<typename T>
 		T& Get(std::string_view name, Object obj) const {
 			assert(data.count(name) == 1);
-			auto& v = std::get<Field::Var>(data.find(name)->second.value);
+			auto& v = data.find(name)->second.value.Cast<Field::Var>();
 			return v.Get<T>(obj);
 		}
 
@@ -170,8 +220,8 @@ namespace Ubpa::UDRefl {
 			auto low = data.lower_bound(name);
 			auto up = data.upper_bound(name);
 			for (auto iter = low; iter != up; ++iter) {
-				if (auto pFunc = std::get_if<Field::Func>(&low->second.value)) {
-					if (pFunc->TypeIs<Ret(Args...)>())
+				if (auto pFunc = low->second.value.CastIf<Field::Func>()) {
+					if (pFunc->FuncTypeIs<Ret(Args...)>())
 						return pFunc->Call<Ret, Args...>(std::forward<Args>(args)...);
 				}
 			}

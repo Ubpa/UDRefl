@@ -52,44 +52,44 @@ int main() {
 			},
 			{ FieldList::default_constructor,
 				{
-					Field::Func::Init([](Object obj) {
+					Field::Func{[](Object obj) {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						type.fields.Set("x", obj, 0.f);
 						type.fields.Set("y", obj, 0.f);
 						cout << "[ " << FieldList::default_constructor << " ] construct " << type.name
 							<< " @" << obj.Pointer() << endl;
-					})
+					}}
 					// no attrs
 				}
 			},
 			{ "constructor",
 				{
-					Field::Func::Init([](Object obj, float x, float y) {
+					Field::Func{[](Object obj, float x, float y) {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						type.fields.Set("x", obj, x);
 						type.fields.Set("y", obj, y);
 						type.fields.Get<size_t>("num") += 1;
 						cout << "[ constructor ] construct " << type.name
 							<< " @" << obj.Pointer() << endl;
-					})
+					}}
 					// no attrs
 				}
 			},
 			{ FieldList::destructor,
 				{
-					Field::Func::Init([](Object obj) {
+					Field::Func{[](Object obj) {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						cout << "[ " << FieldList::destructor << " ] destruct " << type.name
 							<< " @" << obj.Pointer() << endl;
-					})
+					}}
 					// no attrs
 				}
 			},
 			{ "Sum",
 				{
-					Field::Func::Init([](Object obj)->float {
+					Field::Func{[](Object obj)->float {
 						return obj.Var<float>(0) + obj.Var<float>(sizeof(float));
-					})
+					}}
 					// no attrs
 				}
 			}
@@ -113,9 +113,9 @@ int main() {
 		if (attr.HasValue()) {
 			cout << ": ";
 			if (attr.TypeIs<string>())
-				cout << attr.CastTo<string>();
+				cout << attr.Cast<string>();
 			else if (attr.TypeIs<std::pair<float, float>>()) {
-				auto r = attr.CastTo<std::pair<float, float>>();
+				auto r = attr.Cast<std::pair<float, float>>();
 				cout << r.first << " - " << r.second;
 			}
 			else
@@ -126,17 +126,17 @@ int main() {
 
 	for (const auto& [name, field] : type.fields.data) {
 		cout << name;
-		if (auto pV = get_if<Field::Var>(&field.value)) {
+		if (auto pV = field.value.CastIf<Field::Var>()) {
 			cout << ": ";
 			if (pV->TypeIs<float>())
 				cout << pV->Get<float>(point);
 			else
 				cout << "[NOT SUPPORT]";
 		}
-		else if (auto pV = get_if<Field::StaticVar>(&field.value)) {
+		else if (auto pV = field.value.CastIf<Field::StaticVar>()) {
 			cout << ": ";
 			if (pV->TypeIs<size_t>())
-				cout << pV->CastTo<size_t>();
+				cout << pV->Cast<size_t>();
 			else
 				cout << "[NOT SUPPORT]";
 		}
@@ -146,11 +146,10 @@ int main() {
 			cout << name;
 			if (attr.HasValue()) {
 				cout << ": ";
-				if (attr.TypeIs<string>())
-					cout << attr.CastTo<string>();
-				else if (attr.TypeIs<std::pair<float, float>>()) {
-					auto r = attr.CastTo<std::pair<float, float>>();
-					cout << r.first << " - " << r.second;
+				if (auto p = attr.CastIf<string>())
+					cout << *p;
+				else if (auto p = attr.CastIf<std::pair<float, float>>()) {
+					cout << p->first << " - " << p->second;
 				}
 				else
 					cout << "[NOT SUPPORT]";
