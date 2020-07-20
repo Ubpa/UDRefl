@@ -31,7 +31,39 @@ namespace Ubpa::UDRefl {
 		void* ptr;
 	};
 
-	using Attr = std::any;
+	struct Attr {
+		template<typename T>
+		Attr(T value) : value{ value } {}
+		Attr() = default;
+
+		std::any value;
+
+		bool HasValue() const {
+			return value.has_value();
+		}
+
+		template<typename T>
+		bool TypeIs() const {
+			return value.type() == typeid(T);
+		}
+
+		template<typename T>
+		bool operator==(const T& t) const {
+			return HasValue() && TypeIs<T>() && CastTo<T>() == t;
+		}
+
+		template<typename T>
+		T& CastTo() {
+			assert(HasValue() && TypeIs<T>());
+			return std::any_cast<T&>(value);
+		}
+
+		template<typename T>
+		const T& CastTo() const {
+			return const_cast<Attr*>(this)->CastTo<T>();
+		}
+	};
+
 	using AttrList = std::map<std::string, Attr, std::less<>>;
 
 	struct Field {

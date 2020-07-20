@@ -108,14 +108,14 @@ int main() {
 	// dump
 	cout << type.name << endl;
 
-	for (const auto& [name, value] : type.attrs) {
+	for (const auto& [name, attr] : type.attrs) {
 		cout << name;
-		if (value.has_value()) {
+		if (attr.HasValue()) {
 			cout << ": ";
-			if (value.type() == typeid(string))
-				cout << any_cast<string>(value);
-			else if (value.type() == typeid(std::pair<float, float>)) {
-				auto r = any_cast<std::pair<float, float>>(value);
+			if (attr.TypeIs<string>())
+				cout << attr.CastTo<string>();
+			else if (attr.TypeIs<std::pair<float, float>>()) {
+				auto r = attr.CastTo<std::pair<float, float>>();
 				cout << r.first << " - " << r.second;
 			}
 			else
@@ -142,14 +142,14 @@ int main() {
 		}
 		cout << endl;
 
-		for (const auto& [name, value] : field.attrs) {
+		for (const auto& [name, attr] : field.attrs) {
 			cout << name;
-			if (value.has_value()) {
+			if (attr.HasValue()) {
 				cout << ": ";
-				if (value.type() == typeid(string))
-					cout << any_cast<string>(value);
-				else if (value.type() == typeid(std::pair<float, float>)) {
-					auto r = any_cast<std::pair<float, float>>(value);
+				if (attr.TypeIs<string>())
+					cout << attr.CastTo<string>();
+				else if (attr.TypeIs<std::pair<float, float>>()) {
+					auto r = attr.CastTo<std::pair<float, float>>();
 					cout << r.first << " - " << r.second;
 				}
 				else
