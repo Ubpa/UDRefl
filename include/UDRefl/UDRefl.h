@@ -191,8 +191,11 @@ namespace Ubpa::UDRefl {
 		static constexpr const char copy_constructor[] = "_copy_constructor";
 		static constexpr const char move_constructor[] = "_move_constructor";
 		static constexpr const char destructor[] = "_destructor";
+		static constexpr const char enum_value[] = "_enum_value";
 
 		std::multimap<std::string, Field, std::less<>> data;
+		using Iterator = std::multimap<std::string, Field, std::less<>>::iterator;
+		using ConstIterator = std::multimap<std::string, Field, std::less<>>::const_iterator;
 
 		// static
 		template<typename T>
@@ -219,6 +222,18 @@ namespace Ubpa::UDRefl {
 		template<typename Arg>
 		void Set(std::string_view name, Object obj, Arg arg) const {
 			Get<Arg>(name, obj) = std::forward<Arg>(arg);
+		}
+
+		// static
+		template<typename T>
+		std::pair<std::string_view, Field*> FindStaticField(const T& value) {
+			for (auto iter = data.begin(); iter != data.end(); ++iter) {
+				if (auto pV = iter->second.value.CastIf<StaticVar>()) {
+					if ((*pV) == value)
+						return { iter->first, &iter->second };
+				}
+			}
+			return { "", nullptr };
 		}
 
 		template<typename Ret, typename... Args>

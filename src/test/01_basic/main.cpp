@@ -3,7 +3,6 @@
 #include <array>
 #include <iostream>
 
-static constexpr size_t PointID = 0;
 //
 //struct [[info("hello world")]] Point {
 //  Point() : x{0.f}, y{0.f} {}
@@ -25,7 +24,7 @@ using namespace std;
 
 int main() {
 	{ // register
-		TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(PointID);
+		TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(0);
 		type.size = 2 * sizeof(float);
 		type.name = "struct Point";
 		type.attrs = {
