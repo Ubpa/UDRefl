@@ -126,26 +126,53 @@ int main() {
 
 	for (const auto& [name, field] : type.fields.data) {
 		cout << name;
+		/*
 		if (auto pV = field.value.CastIf<Var>()) {
-			cout << ": ";
+			cout << " : ";
 			if (pV->TypeIs<float>())
 				cout << pV->Get<float>(point);
 			else
 				cout << "[NOT SUPPORT]";
 		}
 		else if (auto pV = field.value.CastIf<StaticVar>()) {
-			cout << ": ";
+			cout << " : ";
 			if (pV->TypeIs<size_t>())
 				cout << pV->Cast<size_t>();
 			else
 				cout << "[NOT SUPPORT]";
 		}
+		else if (auto pF = field.value.CastIf<Func>()) {
+			cout << " [Func]";
+		}
+		*/
+		visit([=](auto&& v) {
+			using T = std::decay_t<decltype(v)>;
+			if constexpr (std::is_same_v<T, Var>) {
+				cout << " : ";
+				if (v.TypeIs<float>())
+					cout << v.Get<float>(point);
+				else
+					cout << "[NOT SUPPORT]";
+			}
+			else if constexpr (std::is_same_v<T, StaticVar>) {
+				cout << " : ";
+				if (v.TypeIs<size_t>())
+					cout << v.Cast<size_t>();
+				else
+					cout << "[NOT SUPPORT]";
+			}
+			else if constexpr (std::is_same_v<T, Func>) {
+				cout << " [Func]";
+			}
+			else
+				static_assert(false, "non-exhaustive visitor!");
+		}, field.value.data);
 		cout << endl;
 
 		for (const auto& [name, attr] : field.attrs) {
 			cout << name;
 			if (attr.HasValue()) {
-				cout << ": ";
+				cout << " : ";
 				if (auto p = attr.CastIf<string>())
 					cout << *p;
 				else if (auto p = attr.CastIf<std::pair<float, float>>()) {
