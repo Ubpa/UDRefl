@@ -19,6 +19,7 @@ namespace Ubpa::UDRefl {
 		void* Pointer() { return ptr; }
 		size_t ID() { return id; }
 
+
 		// non-static
 		template<typename T>
 		T& Var(size_t offset) {
@@ -35,28 +36,34 @@ namespace Ubpa::UDRefl {
 
 	struct Field {
 		struct NonStaticVar {
-			std::function<std::any(Object)> get;
-			std::function<void(Object, std::any)> set;
+			std::any getter;
 
 			template<typename T>
 			static NonStaticVar Init(size_t offset) {
 				return {
-					std::function{[=](Object obj)->std::any {
+					std::function{[=](Object obj)->T& {
 						return obj.Var<T>(offset);
-					}},
-					std::function{[=](Object obj, std::any value) {
-						obj.Var<T>(offset) = std::any_cast<T>(value);
 					}}
 				};
 			}
-		};
-		struct StaticVar {
-			std::any data;
+
 			template<typename T>
-			static StaticVar Init(T data) {
-				return { std::any{data} };
+			bool TypeIs() const {
+				return getter.type() == typeid(std::function<T& (Object)>);
+			}
+
+			template<typename T>
+			T& Get(Object obj) const {
+				assert(TypeIs<T>());
+				return std::any_cast<std::function<T& (Object)>>(getter)(obj);
+			}
+
+			template<typename Arg>
+			void Set(Object obj, Arg arg) const {
+				Get<Arg>(obj) = std::forward<Arg>(arg);
 			}
 		};
+		using StaticVar = std::any;
 		struct Func {
 			std::any data;
 			template<typename T>
@@ -79,7 +86,7 @@ namespace Ubpa::UDRefl {
 		Value value;
 		AttrList attrs;
 
-		bool operator<(const Field& rhs) const {
+		bool operator<(const Field& rhs) const noexcept {
 			if (value.index() != 2 || rhs.value.index() != 2)
 				return false;
 			return std::get<Func>(value).data.type().hash_code()
@@ -95,18 +102,31 @@ namespace Ubpa::UDRefl {
 
 		std::multimap<std::string, Field, std::less<>> data;
 
+		// static
 		template<typename T>
-		const T Get(std::string_view name, Object obj) const {
+		T& Get(std::string_view name) {
+			static_assert(!std::is_reference_v<T>);
 			assert(data.count(name) == 1);
-			auto& v = std::get<Field::NonStaticVar>(data.find(name)->second.value);
-			return std::any_cast<T>(v.get(obj));
+			auto& v = std::get<Field::StaticVar>(data.find(name)->second.value);
+			return std::any_cast<T&>(v);
+		}
+
+		// static
+		template<typename T>
+		const T& Get(std::string_view name) const {
+			return const_cast<FieldList*>(this)->Get<T>(name);
 		}
 
 		template<typename T>
-		void Set(std::string_view name, Object obj, T value) const {
+		T& Get(std::string_view name, Object obj) const {
 			assert(data.count(name) == 1);
 			auto& v = std::get<Field::NonStaticVar>(data.find(name)->second.value);
-			v.set(obj, value);
+			return v.Get<T>(obj);
+		}
+
+		template<typename Arg>
+		void Set(std::string_view name, Object obj, Arg arg) const {
+			Get<Arg>(name, obj) = std::forward<Arg>(arg);
 		}
 
 		template<typename Ret, typename... Args>

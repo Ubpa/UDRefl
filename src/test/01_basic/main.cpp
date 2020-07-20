@@ -46,7 +46,7 @@ int main() {
 			},
 			{ "num",
 				{
-					Field::StaticVar::Init<size_t>(0)
+					Field::StaticVar{static_cast<size_t>(0)}
 					// no attrs
 				}
 			},
@@ -68,6 +68,7 @@ int main() {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						type.fields.Set("x", obj, x);
 						type.fields.Set("y", obj, y);
+						type.fields.Get<size_t>("num") += 1;
 						cout << "[ constructor ] construct " << type.name
 							<< " @" << obj.Pointer() << endl;
 					})
@@ -127,16 +128,15 @@ int main() {
 		cout << name;
 		if (auto pV = get_if<Field::NonStaticVar>(&field.value)) {
 			cout << ": ";
-			auto v = pV->get(point);
-			if (v.type() == typeid(float))
-				cout << any_cast<float>(v);
+			if (pV->TypeIs<float>())
+				cout << pV->Get<float>(point);
 			else
 				cout << "[NOT SUPPORT]";
 		}
 		else if (auto pV = get_if<Field::StaticVar>(&field.value)) {
 			cout << ": ";
-			if (pV->data.type() == typeid(size_t))
-				cout << any_cast<size_t>(pV->data);
+			if (pV->type() == typeid(size_t))
+				cout << any_cast<size_t>(*pV);
 			else
 				cout << "[NOT SUPPORT]";
 		}
