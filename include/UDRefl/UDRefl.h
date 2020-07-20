@@ -9,8 +9,6 @@
 #include <cassert>
 
 namespace Ubpa::UDRefl {
-	struct TypeInfo;
-
 	class Object {
 	public:
 		Object(size_t id, void* ptr) noexcept : id{ id }, ptr{ ptr }{}
@@ -124,7 +122,19 @@ namespace Ubpa::UDRefl {
 		using AnyWrapper::AnyWrapper;
 	};
 
-	using AttrList = std::map<std::string, Attr, std::less<>>;
+	struct AttrList {
+		std::map<std::string, Attr, std::less<>> data;
+
+		bool Contains(std::string_view name) const {
+			return data.find(name) != data.end();
+		}
+
+		template<typename T>
+		T& Get(std::string_view name) {
+			assert(Contains(name));
+			return data.find(name)->second.Cast<T>();
+		}
+	};
 
 	struct Var {
 		std::any getter;
@@ -271,14 +281,6 @@ namespace Ubpa::UDRefl {
 		}
 	};
 
-	struct Base {
-		TypeInfo* info;
-		size_t offset;
-		bool isVirtual{ false };
-	};
-
-	using BaseList = std::map<std::string, Base, std::less<>>;
-
 	struct TypeInfo {
 		TypeInfo(size_t ID) : ID{ ID } {}
 
@@ -288,8 +290,6 @@ namespace Ubpa::UDRefl {
 
 		size_t size{ 0 };
 		size_t alignment{ alignof(std::max_align_t) };
-
-		BaseList bases;
 
 		AttrList attrs;
 		FieldList fields;
