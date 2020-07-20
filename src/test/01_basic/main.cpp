@@ -34,13 +34,13 @@ int main() {
 		type.fields.data = {
 			{ "x",
 				{
-					Field::NonStaticVar::Init<float>(0),
+					Field::Var::Init<float>(0),
 					AttrList{{"not_serialize", Attr{}}}
 				}
 			},
 			{ "y",
 				{
-					Field::NonStaticVar::Init<float>(sizeof(float)),
+					Field::Var::Init<float>(sizeof(float)),
 					AttrList{{"range", std::pair<float, float>{ 0.f, 10.f }}}
 				}
 			},
@@ -126,7 +126,7 @@ int main() {
 
 	for (const auto& [name, field] : type.fields.data) {
 		cout << name;
-		if (auto pV = get_if<Field::NonStaticVar>(&field.value)) {
+		if (auto pV = get_if<Field::Var>(&field.value)) {
 			cout << ": ";
 			if (pV->TypeIs<float>())
 				cout << pV->Get<float>(point);
