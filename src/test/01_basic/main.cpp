@@ -135,8 +135,8 @@ int main() {
 		}
 		else if (auto pV = get_if<Field::StaticVar>(&field.value)) {
 			cout << ": ";
-			if (pV->type() == typeid(size_t))
-				cout << any_cast<size_t>(*pV);
+			if (pV->TypeIs<size_t>())
+				cout << pV->CastTo<size_t>();
 			else
 				cout << "[NOT SUPPORT]";
 		}
