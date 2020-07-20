@@ -34,25 +34,25 @@ int main() {
 		type.fields.data = {
 			{ "x",
 				{
-					Field::Var::Init<float>(0),
+					Var::Init<float>(0),
 					AttrList{{"not_serialize", Attr{}}}
 				}
 			},
 			{ "y",
 				{
-					Field::Var::Init<float>(sizeof(float)),
+					Var::Init<float>(sizeof(float)),
 					AttrList{{"range", std::pair<float, float>{ 0.f, 10.f }}}
 				}
 			},
 			{ "num",
 				{
-					Field::StaticVar{static_cast<size_t>(0)}
+					StaticVar{static_cast<size_t>(0)}
 					// no attrs
 				}
 			},
 			{ FieldList::default_constructor,
 				{
-					Field::Func{[](Object obj) {
+					Func{[](Object obj) {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						type.fields.Set("x", obj, 0.f);
 						type.fields.Set("y", obj, 0.f);
@@ -64,7 +64,7 @@ int main() {
 			},
 			{ "constructor",
 				{
-					Field::Func{[](Object obj, float x, float y) {
+					Func{[](Object obj, float x, float y) {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						type.fields.Set("x", obj, x);
 						type.fields.Set("y", obj, y);
@@ -77,7 +77,7 @@ int main() {
 			},
 			{ FieldList::destructor,
 				{
-					Field::Func{[](Object obj) {
+					Func{[](Object obj) {
 						TypeInfo& type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						cout << "[ " << FieldList::destructor << " ] destruct " << type.name
 							<< " @" << obj.Pointer() << endl;
@@ -87,7 +87,7 @@ int main() {
 			},
 			{ "Sum",
 				{
-					Field::Func{[](Object obj)->float {
+					Func{[](Object obj)->float {
 						return obj.Var<float>(0) + obj.Var<float>(sizeof(float));
 					}}
 					// no attrs
@@ -126,14 +126,14 @@ int main() {
 
 	for (const auto& [name, field] : type.fields.data) {
 		cout << name;
-		if (auto pV = field.value.CastIf<Field::Var>()) {
+		if (auto pV = field.value.CastIf<Var>()) {
 			cout << ": ";
 			if (pV->TypeIs<float>())
 				cout << pV->Get<float>(point);
 			else
 				cout << "[NOT SUPPORT]";
 		}
-		else if (auto pV = field.value.CastIf<Field::StaticVar>()) {
+		else if (auto pV = field.value.CastIf<StaticVar>()) {
 			cout << ": ";
 			if (pV->TypeIs<size_t>())
 				cout << pV->Cast<size_t>();
