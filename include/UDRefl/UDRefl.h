@@ -88,10 +88,6 @@ namespace Ubpa::UDRefl {
 			return data.valueless_by_exception();
 		}
 
-		size_t Index() const noexcept {
-			return data.index();
-		}
-
 		template<typename T>
 		bool TypeIs() const noexcept {
 			return std::holds_alternative<T>(data);
@@ -197,11 +193,11 @@ namespace Ubpa::UDRefl {
 	};
 
 	struct FieldList {
-		static constexpr const char default_constructor[] = "_default_constructor";
-		static constexpr const char copy_constructor[] = "_copy_constructor";
-		static constexpr const char move_constructor[] = "_move_constructor";
-		static constexpr const char destructor[] = "_destructor";
-		static constexpr const char enum_value[] = "_enum_value";
+		static constexpr const char default_constructor[] = "__default_constructor";
+		static constexpr const char copy_constructor[] = "__copy_constructor";
+		static constexpr const char move_constructor[] = "__move_constructor";
+		static constexpr const char destructor[] = "__destructor";
+		static constexpr const char enum_value[] = "__enum_value";
 
 		std::multimap<std::string, Field, std::less<>> data;
 		using Iterator = std::multimap<std::string, Field, std::less<>>::iterator;
