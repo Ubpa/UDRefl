@@ -13,18 +13,23 @@ namespace Ubpa::UDRefl {
 
 	class Object {
 	public:
-		Object(size_t id, void* ptr) : id{ id }, ptr{ ptr }{}
-		Object() : id{ static_cast<size_t>(-1) }, ptr{ nullptr }{}
+		Object(size_t id, void* ptr) noexcept : id{ id }, ptr{ ptr }{}
+		Object() noexcept : id{ static_cast<size_t>(-1) }, ptr{ nullptr }{}
 
-		void* Pointer() { return ptr; }
-		size_t ID() { return id; }
+		void* Pointer() noexcept { return ptr; }
+		const void* Pointer() const noexcept { return const_cast<Object*>(this)->Pointer(); }
+		const size_t& ID() const noexcept { return id; }
 
 		// non-static
 		template<typename T>
-		T& Var(size_t offset) {
+		T& Var(size_t offset) noexcept {
 			return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(ptr) + offset);
 		}
 
+		template<typename T>
+		const T& Var(size_t offset) const noexcept {
+			return const_cast<Object*>(this)->Var<T>(offset);
+		}
 	private:
 		size_t id;
 		void* ptr;
@@ -37,7 +42,7 @@ namespace Ubpa::UDRefl {
 
 		std::any data;
 
-		bool HasValue() const {
+		bool HasValue() const noexcept {
 			return data.has_value();
 		}
 
@@ -90,7 +95,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename T>
-		bool TypeIs() const {
+		bool TypeIs() const noexcept {
 			return std::holds_alternative<T>(data);
 		}
 
@@ -105,12 +110,12 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename T>
-		T* CastIf() {
+		T* CastIf() noexcept {
 			return std::get_if<T>(&data);
 		}
 
 		template<typename T>
-		const T* CastIf() const {
+		const T* CastIf() const noexcept {
 			return const_cast<VariantWrapper*>(this)->CastIf<T>();
 		}
 	};
@@ -159,7 +164,7 @@ namespace Ubpa::UDRefl {
 		Func(T func) : AnyWrapper{ std::function{func} } {}
 
 		template<typename T>
-		bool FuncTypeIs() const {
+		bool FuncTypeIs() const noexcept {
 			return TypeIs<std::function<T>>();
 		}
 
@@ -173,7 +178,7 @@ namespace Ubpa::UDRefl {
 		VariantWrapper<Var, StaticVar, Func> value;
 		AttrList attrs;
 
-		bool operator<(const Field& rhs) const noexcept {
+		bool operator<(const Field& rhs) const {
 			if (!value.TypeIs<Func>() || !rhs.value.TypeIs<Func>())
 				return false;
 			return value.Cast<Func>().data.type().hash_code()
