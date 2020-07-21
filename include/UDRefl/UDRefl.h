@@ -180,7 +180,7 @@ namespace Ubpa::UDRefl {
 			return Is<Args...>(std::make_index_sequence<sizeof...(Args)>{});
 		}
 
-		bool operator==(const FuncSig& rhs) const {
+		bool operator==(const FuncSig& rhs) const noexcept {
 			const size_t n = argHashcodes.size();
 			if (rhs.argHashcodes.size() != n)
 				return false;
@@ -191,7 +191,7 @@ namespace Ubpa::UDRefl {
 			return true;
 		}
 
-		bool operator<(const FuncSig& rhs) const {
+		bool operator<(const FuncSig& rhs) const noexcept {
 			const size_t n = argHashcodes.size();
 			if (rhs.argHashcodes.size() != n)
 				return n < rhs.argHashcodes.size();
@@ -287,7 +287,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename Ret, typename... Args>
-		Ret Call(Args... args) const {
+		Ret Call(Args... args) {
 			assert(SignatureIs<Args...>());
 			if constexpr (std::is_void_v<Ret>)
 				func({ std::forward<Args>(args)... });
@@ -295,7 +295,7 @@ namespace Ubpa::UDRefl {
 				return func({ std::forward<Args>(args)... }).Cast<Ret>();
 		}
 
-		AnyWrapper Call(ArgList arglist) const {
+		AnyWrapper Call(ArgList arglist) {
 			assert(signature == arglist.GetFuncSig());
 			return func(std::move(arglist));
 		}
@@ -362,7 +362,7 @@ namespace Ubpa::UDRefl {
 			return { "", nullptr };
 		}
 
-		AnyWrapper Call(std::string_view name, ArgList args) const {
+		AnyWrapper Call(std::string_view name, ArgList args) {
 			auto low = data.lower_bound(name);
 			auto up = data.upper_bound(name);
 			for (auto iter = low; iter != up; ++iter) {
@@ -377,7 +377,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename Ret, typename... Args>
-		Ret Call(std::string_view name, Args... args) const {
+		Ret Call(std::string_view name, Args... args) {
 			static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret>);
 
 			auto rst = Call(name, ArgList{ std::forward<Args>(args)... });
@@ -386,19 +386,19 @@ namespace Ubpa::UDRefl {
 				return rst.Cast<Ret>();
 		}
 
-		void DefaultConstruct(Object obj) const {
+		void DefaultConstruct(Object obj) {
 			return Call<void, Object>(default_constructor, obj);
 		}
 
-		void CopyConstruct(Object dst, Object src) const {
+		void CopyConstruct(Object dst, Object src) {
 			return Call<void, Object, Object>(copy_constructor, dst, src);
 		}
 
-		void MoveConstruct(Object dst, Object src) const {
+		void MoveConstruct(Object dst, Object src) {
 			return Call<void, Object, Object>(move_constructor, dst, src);
 		}
 
-		void Destruct(Object p) const {
+		void Destruct(Object p) {
 			return Call<void, Object>(destructor, p);
 		}
 	};
@@ -430,21 +430,21 @@ namespace Ubpa::UDRefl {
 		}
 
 		// call Allocate and fields.DefaultConstruct
-		Object New() const {
+		Object New() {
 			Object obj = Malloc();
 			fields.DefaultConstruct(obj);
 			return obj;
 		}
 
 		template<typename... Args>
-		Object New(std::string_view name, Args... args) const {
+		Object New(std::string_view name, Args... args) {
 			Object obj = Malloc();
 			fields.Call<void, Object, Args...>(name, obj, std::forward<Args>(args)...);
 			return obj;
 		}
 
 		// call Allocate and fields.DefaultConstruct
-		void Delete(Object obj) const {
+		void Delete(Object obj) {
 			if (obj.Pointer() != nullptr)
 				fields.Destruct(obj);
 			Free(obj);
