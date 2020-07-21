@@ -4,7 +4,9 @@ if(MSVC)
 endif()
 
 Ubpa_AddTarget(
-  MODE INTERFACE
+  MODE STATIC
+  SOURCE
+    "${PROJECT_SOURCE_DIR}/include/UDRefl"
   INC
     "${PROJECT_SOURCE_DIR}/include"
   C_OPTION
