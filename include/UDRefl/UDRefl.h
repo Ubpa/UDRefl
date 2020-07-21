@@ -165,18 +165,139 @@ namespace Ubpa::UDRefl {
 		using AnyWrapper::AnyWrapper;
 	};
 
-	struct Func : AnyWrapper {
-		template<typename T>
-		Func(T func) : AnyWrapper{ std::function{func} } {}
+	class FuncSig {
+	public:
+		template<typename... Hashcodes> // size_t
+		FuncSig(Hashcodes... hashcodes) : argHashcodes{ hashcodes... } {}
+
+		template<typename... Args>
+		static FuncSig Init() {
+			return { typeid(Args).hash_code()... };
+		}
+
+		template<typename... Args>
+		bool Is() const noexcept {
+			return Is<Args...>(std::make_index_sequence<sizeof...(Args)>{});
+		}
+
+		bool operator==(const FuncSig& rhs) const {
+			const size_t n = argHashcodes.size();
+			if (rhs.argHashcodes.size() != n)
+				return false;
+			for (size_t i = 0; i < n; i++) {
+				if (argHashcodes[i] != rhs.argHashcodes[i])
+					return false;
+			}
+			return true;
+		}
+
+		bool operator<(const FuncSig& rhs) const {
+			const size_t n = argHashcodes.size();
+			if (rhs.argHashcodes.size() != n)
+				return n < rhs.argHashcodes.size();
+			for (size_t i = 0; i < n; i++) {
+				if(argHashcodes[i] == rhs.argHashcodes[i])
+					continue;
+				return argHashcodes[i] < rhs.argHashcodes[i];
+			}
+			return false;
+		}
+	private:
+		friend class ArgList;
+
+		template<typename... Args, size_t... Ns>
+		bool Is(std::index_sequence<Ns...>) const noexcept {
+			if (sizeof...(Args) != argHashcodes.size())
+				return false;
+			return ((argHashcodes[Ns] == typeid(std::tuple_element_t<Ns, std::tuple<Args...>>).hash_code()) &&...);
+		}
+
+		std::vector<size_t> argHashcodes;
+	};
+
+	class ArgList {
+	public:
+		template<typename... Args>
+		ArgList(Args... args) {
+			(Append<Args>(std::forward<Args>(args)), ...);
+		}
+
+		template<typename Arg>
+		void Append(Arg arg) {
+			args.emplace_back(std::forward<Arg>(arg));
+			signature.argHashcodes.push_back(typeid(Arg).hash_code());
+		}
 
 		template<typename T>
-		bool FuncTypeIs() const noexcept {
-			return TypeIs<std::function<T>>();
+		T&& GetArg(size_t i) {
+			return std::forward<T>(args[i].Cast<std::decay_t<T>>());
+		}
+
+		const FuncSig& GetFuncSig() {
+			return signature;
+		}
+
+	private:
+		FuncSig signature;
+		std::vector<AnyWrapper> args;
+	};
+
+	template<typename T>
+	struct Encoder : Encoder<decltype(&std::decay_t<T>::operator())> {};
+	template<typename Ret, typename... Args>
+	struct Encoder<Ret(Args...)> {
+		template<typename Func>
+		static auto GetFunc(Func&& func) {
+			return GetFunc(std::forward<Func>(func), std::make_index_sequence<sizeof...(Args)>{});
+		}
+		template<typename Func, size_t... Ns>
+		static auto GetFunc(Func&& func, std::index_sequence<Ns...>) {
+			return [&](ArgList args) -> AnyWrapper {
+				using ArgTuple = std::tuple<Args...>;
+				if constexpr (std::is_void_v<Ret>) {
+					std::forward<Func>(func)(args.GetArg<std::tuple_element_t<Ns, ArgTuple>>(Ns)...);
+					return {};
+				}
+				else
+					return std::forward<Func>(func)(args.GetArg<std::tuple_element_t<Ns, ArgTuple>>(Ns)...);
+			};
+		}
+		static FuncSig GetFuncSig() {
+			return { typeid(Args).hash_code()... };
+		}
+	};
+	template<typename Ret, typename... Args>
+	struct Encoder<Ret(*)(Args...)> : Encoder<Ret(Args...)> {};
+	template<typename Ret, typename... Args>
+	struct Encoder<Ret(Args...)const> : Encoder<Ret(Args...)> {};
+	template<typename Obj, typename Func>
+	struct Encoder<Func Obj::*> : Encoder<Func> {};
+
+	struct Func {
+		std::function<AnyWrapper(ArgList)> func;
+		FuncSig signature;
+		template<typename T>
+		Func(T&& func) :
+			func{ Encoder<std::decay_t<T>>::template GetFunc(std::forward<T>(func)) },
+			signature{ Encoder<std::decay_t<T>>::GetFuncSig() } {}
+
+		template<typename... Args>
+		bool SignatureIs() const noexcept {
+			return signature.Is<Args...>();
 		}
 
 		template<typename Ret, typename... Args>
 		Ret Call(Args... args) const {
-			return Cast<std::function<Ret(Args...)>>()(std::forward<Args>(args)...);
+			assert(SignatureIs<Args...>());
+			if constexpr (std::is_void_v<Ret>)
+				func({ std::forward<Args>(args)... });
+			else
+				return func({ std::forward<Args>(args)... }).Cast<Ret>();
+		}
+
+		AnyWrapper Call(ArgList arglist) const {
+			assert(signature == arglist.GetFuncSig());
+			return func(std::move(arglist));
 		}
 	};
 
@@ -187,8 +308,7 @@ namespace Ubpa::UDRefl {
 		bool operator<(const Field& rhs) const {
 			if (!value.TypeIs<Func>() || !rhs.value.TypeIs<Func>())
 				return false;
-			return value.Cast<Func>().data.type().hash_code()
-				< rhs.value.Cast<Func>().data.type().hash_code();
+			return value.Cast<Func>().signature < rhs.value.Cast<Func>().signature;
 		}
 	};
 
@@ -242,22 +362,28 @@ namespace Ubpa::UDRefl {
 			return { "", nullptr };
 		}
 
-		template<typename Ret, typename... Args>
-		Ret Call(std::string_view name, Args... args) const {
-			static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret>);
-
+		AnyWrapper Call(std::string_view name, ArgList args) const {
 			auto low = data.lower_bound(name);
 			auto up = data.upper_bound(name);
 			for (auto iter = low; iter != up; ++iter) {
 				if (auto pFunc = low->second.value.CastIf<Func>()) {
-					if (pFunc->FuncTypeIs<Ret(Args...)>())
-						return pFunc->Call<Ret, Args...>(std::forward<Args>(args)...);
+					if (pFunc->signature == args.GetFuncSig())
+						return pFunc->Call(std::move(args));
 				}
 			}
 
 			assert("arguments' types are matching failure with functions" && false);
+			return {};
+		}
+
+		template<typename Ret, typename... Args>
+		Ret Call(std::string_view name, Args... args) const {
+			static_assert(std::is_void_v<Ret> || std::is_constructible_v<Ret>);
+
+			auto rst = Call(name, ArgList{ std::forward<Args>(args)... });
+
 			if constexpr (!std::is_void_v<Ret>)
-				return {};
+				return rst.Cast<Ret>();
 		}
 
 		void DefaultConstruct(Object obj) const {
