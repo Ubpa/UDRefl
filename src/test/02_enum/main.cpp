@@ -146,5 +146,5 @@ int main() {
 	assert(field != nullptr);
 	cout << value << " : " << name << endl;
 
-	type->Delete(color);
+	TypeInfo::Delete(color);
 }

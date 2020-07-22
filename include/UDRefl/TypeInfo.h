@@ -25,7 +25,7 @@ namespace Ubpa::UDRefl {
 			return { ID, ptr };
 		}
 
-		void Free(Object obj) const {
+		static void Free(Object obj) {
 			free(obj.Pointer());
 		}
 
@@ -44,10 +44,12 @@ namespace Ubpa::UDRefl {
 		}
 
 		// call Allocate and fields.DefaultConstruct
-		void Delete(Object obj) {
-			if (obj.Pointer() != nullptr)
-				fields.Destruct(obj);
-			Free(obj);
+		static void Delete(Object obj) {
+			if (obj.Pointer() != nullptr) {
+				auto type = obj.GetTypeInfo();
+				type->fields.Destruct(obj);
+				Free(obj);
+			}
 		}
 
 		TypeInfo(const TypeInfo&) = delete;

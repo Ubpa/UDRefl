@@ -40,9 +40,8 @@ namespace UDRefl_lua {
 		}
 
 		int Delete(lua_State* L) {
-			auto pptypeinfo = (UDRefl::TypeInfo**)luaL_checkudata(L, 1, MetaName::TypeInfo);
-			auto obj = (UDRefl::Object*)luaL_checkudata(L, 2, MetaName::Object);
-			(*pptypeinfo)->Delete(*obj);
+			auto obj = (UDRefl::Object*)luaL_checkudata(L, 1, MetaName::Object);
+			UDRefl::TypeInfo::Delete(*obj);
 			return 0;
 		}
 	}

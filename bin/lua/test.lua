@@ -11,6 +11,6 @@ print("TypeInfo metatable name: " .. meta.__name)
 
 local type = UDRefl_lua.TypeInfoMngr.GetTypeInfo(0)
 local point = UDRefl_lua.TypeInfo.New(type)
-UDRefl_lua.TypeInfo.Delete(type, point)
+UDRefl_lua.TypeInfo.Delete(point)
 
 return UDRefl_lua
