@@ -3,7 +3,7 @@
 #include "AnyWrapper.h"
 
 namespace Ubpa::UDRefl {
-	struct Attr : AnyWrapper {
+	struct UDREFL_DESC Attr : AnyWrapper {
 		using AnyWrapper::AnyWrapper;
 	};
 }

@@ -7,7 +7,7 @@
 #include <cassert>
 
 namespace Ubpa::UDRefl {
-	struct AttrList {
+	struct UDREFL_DESC AttrList {
 		std::map<std::string, Attr, std::less<>> data;
 
 		bool Contains(std::string_view name) const {

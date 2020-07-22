@@ -1,28 +1,12 @@
-#include <UDRefl/UDRefl.h>
+#include "point.h"
 
 #include <array>
 #include <iostream>
 
-//
-//struct [[info("hello world")]] Point {
-//  Point() : x{0.f}, y{0.f} {}
-//  Point(float x, float y) : x{0.f}, y{0.f} {}
-//	[[not_serialize]]
-//	float x;
-//	[[range(std::pair<float, float>{0.f, 10.f})]]
-//	float y;
-//  static size_t num{0};
-//
-//  float Sum() {
-//    return x + y;
-//  }
-//};
-//
-
 using namespace Ubpa::UDRefl;
 using namespace std;
 
-int main() {
+void Ubpa::Point_init() {
 	{ // register
 		TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(0);
 		type->size = 2 * sizeof(float);
@@ -55,52 +39,52 @@ int main() {
 						TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
 						type->fields.Set("x", obj, 0.f);
 						type->fields.Set("y", obj, 0.f);
+						type->fields.Get<size_t>("num") += 1;
 						cout << "[ " << FieldList::default_constructor << " ] construct " << type->name
 							<< " @" << obj.Pointer() << endl;
 					}}
-					// no attrs
-				}
-			},
-			{ "constructor",
-				{
-					Func{[](Object obj, float x, float y) {
-						TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
-						type->fields.Set("x", obj, x);
-						type->fields.Set("y", obj, y);
-						type->fields.Get<size_t>("num") += 1;
-						cout << "[ constructor ] construct " << type->name
-							<< " @" << obj.Pointer() << endl;
-					}}
-					// no attrs
-				}
-			},
-			{ FieldList::destructor,
-				{
-					Func{[](Object obj) {
-						TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
-						cout << "[ " << FieldList::destructor << " ] destruct " << type->name
-							<< " @" << obj.Pointer() << endl;
-					}}
-					// no attrs
-				}
-			},
-			{ "Sum",
-				{
-					Func{[](Object obj)->float {
-						return obj.Var<float>(0) + obj.Var<float>(sizeof(float));
-					}}
-					// no attrs
-				}
+			// no attrs
+		}
+	},
+	{ "constructor",
+		{
+			Func{[](Object obj, float x, float y) {
+				TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
+				type->fields.Set("x", obj, x);
+				type->fields.Set("y", obj, y);
+				type->fields.Get<size_t>("num") += 1;
+				cout << "[ constructor ] construct " << type->name
+					<< " @" << obj.Pointer() << endl;
+			}}
+						// no attrs
+					}
+				},
+				{ FieldList::destructor,
+					{
+						Func{[](Object obj) {
+							TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
+							cout << "[ " << FieldList::destructor << " ] destruct " << type->name
+								<< " @" << obj.Pointer() << endl;
+						}}
+				// no attrs
 			}
+		},
+		{ "Sum",
+			{
+				Func{[](Object obj)->float {
+					return obj.Var<float>(0) + obj.Var<float>(sizeof(float));
+				}}
+							// no attrs
+						}
+					}
 		};
 	}
+}
 
-	// ======================
-
+void Ubpa::Point_test() {
 	TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(0);
 
-	//auto point = type->New("constructor", 1.f, 2.f);
-	auto point = type->New();
+	auto point = type->New("constructor", 1.f, 2.f);
 
 	// call func
 	cout << "Sum : " << type->fields.Call<float, Object>("Sum", point) << endl;
@@ -167,7 +151,7 @@ int main() {
 			}
 			else
 				static_assert(false, "non-exhaustive visitor!");
-		}, field.value.data);
+			}, field.value.data);
 		cout << endl;
 
 		for (const auto& [name, attr] : field.attrs.data) {

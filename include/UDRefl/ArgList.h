@@ -5,7 +5,7 @@
 
 namespace Ubpa::UDRefl {
 	// TODO : compact
-	class ArgList {
+	class UDREFL_DESC ArgList {
 	public:
 		template<typename... Args>
 		ArgList(Args... args) {

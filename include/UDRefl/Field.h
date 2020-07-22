@@ -7,7 +7,7 @@
 #include "AttrList.h"
 
 namespace Ubpa::UDRefl {
-	struct Field {
+	struct UDREFL_DESC Field {
 		VariantWrapper<Var, StaticVar, Func> value;
 		AttrList attrs;
 

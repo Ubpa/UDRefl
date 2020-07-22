@@ -7,7 +7,7 @@
 #include <cassert>
 
 namespace Ubpa::UDRefl {
-	struct Var {
+	struct UDREFL_DESC Var {
 		std::any getter;
 
 		template<typename T>

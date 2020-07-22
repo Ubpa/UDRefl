@@ -3,7 +3,7 @@
 #include "FieldList.h"
 
 namespace Ubpa::UDRefl {
-	struct TypeInfo {
+	struct UDREFL_DESC TypeInfo {
 		TypeInfo(size_t ID) : ID{ ID } {}
 
 		const size_t ID;

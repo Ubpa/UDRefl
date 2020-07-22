@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Export.h"
+
 #include <any>
 #include <cassert>
 
 namespace Ubpa::UDRefl {
-	struct AnyWrapper {
+	struct UDREFL_DESC AnyWrapper {
 		template<typename T>
 		AnyWrapper(T data) : data{ data } {}
 		AnyWrapper() = default;

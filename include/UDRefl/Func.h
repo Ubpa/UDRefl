@@ -6,7 +6,7 @@
 #include <cassert>
 
 namespace Ubpa::UDRefl {
-	struct Func {
+	struct UDREFL_DESC Func {
 		std::function<AnyWrapper(ArgList)> func;
 		FuncSig signature;
 

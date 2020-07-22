@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Export.h"
+
 #include <cstdint>
 
 namespace Ubpa::UDRefl {
-	class Object {
+	class UDREFL_DESC Object {
 	public:
 		Object(size_t id, void* ptr) noexcept : id{ id }, ptr{ ptr }{}
 		Object() noexcept : id{ static_cast<size_t>(-1) }, ptr{ nullptr }{}

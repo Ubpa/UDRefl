@@ -1,6 +1,11 @@
 #include <lua.hpp>
 
+#include "point.h"
+
 int main() {
+	Ubpa::Point_init();
+	Ubpa::Point_test();
+
 	char buff[256];
 	int error;
 	lua_State* L = luaL_newstate(); /* opens Lua */

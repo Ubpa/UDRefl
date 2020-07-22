@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Export.h"
+
 #include <vector>
 #include <typeinfo>
 #include <utility>
 
 namespace Ubpa::UDRefl {
-	class FuncSig {
+	class UDREFL_DESC FuncSig {
 	public:
 		template<typename... Hashcodes> // size_t
 		FuncSig(Hashcodes... hashcodes) : argHashcodes{ hashcodes... } {}

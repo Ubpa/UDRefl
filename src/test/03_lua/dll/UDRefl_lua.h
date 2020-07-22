@@ -8,4 +8,4 @@
 #  define UDREFL_LUA_DESC __declspec(dllimport)
 #endif
 
-extern "C" UDREFL_LUA_DESC int luaopen_UDRefl_lua(lua_State * L);
+extern "C" UDREFL_LUA_DESC int luaopen_UDRefl_luad(lua_State * L);
