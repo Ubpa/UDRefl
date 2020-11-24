@@ -14,12 +14,12 @@ namespace Ubpa::UDRefl {
 			valueID{ valueID },
 			ptr{ reinterpret_cast<Void Void::*>(ptr) } {}
 
-		ObjectPtr Map(ObjectPtr obj_ptr) const noexcept {
-			assert(obj_ptr.GetID() == objID);
-			return { valueID, &(obj_ptr.As<Void>().*ptr) };
+		ObjectPtr Map(ObjectPtr objptr) const noexcept {
+			assert(objptr.GetID() == objID);
+			return { valueID, &(objptr.As<Void>().*ptr) };
 		}
 
-		ConstObjectPtr Map(ConstObjectPtr obj_ptr) const noexcept { return Map(reinterpret_cast<ObjectPtr&>(obj_ptr)); }
+		ConstObjectPtr Map(ConstObjectPtr objptr) const noexcept { return Map(reinterpret_cast<ObjectPtr&>(objptr)); }
 
 	private:
 		size_t objID;

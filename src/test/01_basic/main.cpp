@@ -26,6 +26,7 @@ int main() {
 		} };
 		FieldInfo fieldinfoY{ ptrY };
 		TypeInfo typeinfo{
+			{}, // attrs
 			{ // fields
 				{ID_x, fieldinfoX},
 				{ID_y, fieldinfoY}

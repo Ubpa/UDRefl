@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 namespace Ubpa::UDRefl {
 	class ConstObjectPtr {
 	public:
@@ -14,7 +16,7 @@ namespace Ubpa::UDRefl {
 		template<typename T>
 		T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
 		template<typename T>
-		const T& As() const noexcept { return *AsPtr<T>(); }
+		const T& As() const noexcept { assert(*this); return *AsPtr<T>(); }
 		
 		constexpr void Reset() noexcept { *this = ConstObjectPtr{}; }
 
@@ -42,7 +44,7 @@ namespace Ubpa::UDRefl {
 		template<typename T>
 		T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }
 		template<typename T>
-		T& As() const noexcept { return *AsPtr<T>(); }
+		T& As() const noexcept { assert(*this); return *AsPtr<T>(); }
 
 		constexpr void Reset() noexcept { *this = ObjectPtr{}; }
 
