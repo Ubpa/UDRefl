@@ -4,15 +4,11 @@ if(MSVC)
 endif()
 
 Ubpa_AddTarget(
-  MODE SHARED
+  MODE STATIC
   SOURCE
     "${PROJECT_SOURCE_DIR}/include/UDRefl"
   INC
     "${PROJECT_SOURCE_DIR}/include"
   C_OPTION
     ${c_options}
-  DEFINE
-    UBPA_UDREFL_BUILD_AS_SHARED
-  DEFINE_PRIVATE
-    UBPA_UDREFL_EXPORT
 )

@@ -1,46 +1,58 @@
 #pragma once
 
-#include "Export.h"
-
-#include <cstdint>
-
 namespace Ubpa::UDRefl {
-	struct TypeInfo;
-
-	class UDREFL_DESC Object {
+	class ConstObjectPtr {
 	public:
-		Object(size_t id, void* ptr) noexcept : id{ id }, ptr{ ptr }{}
-		Object() noexcept : id{ static_cast<size_t>(-1) }, ptr{ nullptr }{}
+		constexpr ConstObjectPtr() noexcept : ID{ static_cast<size_t>(-1) }, ptr{ nullptr }{}
+		constexpr ConstObjectPtr(std::nullptr_t) noexcept : ConstObjectPtr{} {}
+		template<typename T>
+		constexpr ConstObjectPtr(size_t ID, const T* ptr) noexcept : ID{ ID }, ptr { ptr } {}
 
-		void* Pointer() noexcept { return ptr; }
-		const void* Pointer() const noexcept { return const_cast<Object*>(this)->Pointer(); }
+		size_t GetID() const noexcept { return ID; }
+		const void* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		T* As() noexcept { return reinterpret_cast<T*>(ptr); }
+		T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
 		template<typename T>
-		const T* As() const noexcept { return const_cast<Object*>(this)->As<T>(); }
+		const T& As() const noexcept { return *AsPtr<T>(); }
+		
+		constexpr void Reset() noexcept { *this = ConstObjectPtr{}; }
 
-		const size_t& ID() const noexcept { return id; }
+		constexpr operator bool() const noexcept { return ptr != nullptr; }
 
-		// non-static
-		template<typename T>
-		T& Var(size_t offset) noexcept {
-			return *reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(ptr) + offset);
-		}
-
-		template<typename T>
-		const T& Var(size_t offset) const noexcept {
-			return const_cast<Object*>(this)->Var<T>(offset);
-		}
-
-		bool Valid() const noexcept {
-			return id != static_cast<size_t>(-1) && ptr != nullptr;
-		}
-
-		TypeInfo* GetTypeInfo() const;
+		ConstObjectPtr& operator=(std::nullptr_t) noexcept { Reset(); }
 
 	private:
-		size_t id;
+		size_t ID;
+		const void* ptr;
+	};
+
+	class ObjectPtr {
+	public:
+		constexpr ObjectPtr() noexcept : ID{ static_cast<size_t>(-1) }, ptr{ nullptr }{}
+		constexpr ObjectPtr(std::nullptr_t) noexcept : ObjectPtr{} {}
+		template<typename T>
+		constexpr ObjectPtr(size_t ID, T* ptr) noexcept : ID{ ID }, ptr{ ptr } {}
+
+		size_t GetID() const noexcept { return ID; }
+		void* GetPtr() const noexcept { return ptr; }
+		template<typename T>
+		T* GetPtr() const noexcept { return ptr; }
+
+		template<typename T>
+		T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }
+		template<typename T>
+		T& As() const noexcept { return *AsPtr<T>(); }
+
+		constexpr void Reset() noexcept { *this = ObjectPtr{}; }
+
+		constexpr operator bool() const noexcept { return ptr != nullptr; }
+		constexpr operator ConstObjectPtr() const noexcept { return { ID, ptr }; }
+
+		ConstObjectPtr& operator=(std::nullptr_t) noexcept { Reset(); }
+
+	private:
+		size_t ID;
 		void* ptr;
 	};
 }

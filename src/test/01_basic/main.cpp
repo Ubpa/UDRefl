@@ -1,194 +1,54 @@
 #include <UDRefl/UDRefl.h>
 
-#include <array>
 #include <iostream>
-
-//
-//struct [[info("hello world")]] Point {
-//  Point() : x{0.f}, y{0.f} {}
-//  Point(float x, float y) : x{0.f}, y{0.f} {}
-//	[[not_serialize]]
-//	float x;
-//	[[range(std::pair<float, float>{0.f, 10.f})]]
-//	float y;
-//  static size_t num{0};
-//
-//  float Sum() {
-//    return x + y;
-//  }
-//};
-//
+#include <cassert>
 
 using namespace Ubpa::UDRefl;
-using namespace std;
+
+struct Point {
+	[[UInspector::range(std::pair{0.f, 10.f})]]
+	float x;
+	float y;
+};
 
 int main() {
-	{ // register
-		TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(0);
-		type->size = 2 * sizeof(float);
-		type->name = "struct Point";
-		type->attrs.data = {
-			{"info", std::string("hello world")}
-		};
-		type->fields.data = {
-			{ "x",
-				{
-					Var::Init<float>(0),
-					AttrList{{{"not_serialize", Attr{}}}}
-				}
-			},
-			{ "y",
-				{
-					Var::Init<float>(sizeof(float)),
-					AttrList{{{"range", std::pair<float, float>{ 0.f, 10.f }}}}
-				}
-			},
-			{ "num",
-				{
-					StaticVar{static_cast<size_t>(0)}
-					// no attrs
-				}
-			},
-			{ FieldList::default_constructor,
-				{
-					Func{[](Object obj) {
-						TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
-						type->fields.Set("x", obj, 0.f);
-						type->fields.Set("y", obj, 0.f);
-						cout << "[ " << FieldList::default_constructor << " ] construct " << type->name
-							<< " @" << obj.Pointer() << endl;
-					}}
-					// no attrs
-				}
-			},
-			{ "constructor",
-				{
-					Func{[](Object obj, float x, float y) {
-						TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
-						type->fields.Set("x", obj, x);
-						type->fields.Set("y", obj, y);
-						type->fields.Get<size_t>("num") += 1;
-						cout << "[ constructor ] construct " << type->name
-							<< " @" << obj.Pointer() << endl;
-					}}
-					// no attrs
-				}
-			},
-			{ FieldList::destructor,
-				{
-					Func{[](Object obj) {
-						TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(obj.ID());
-						cout << "[ " << FieldList::destructor << " ] destruct " << type->name
-							<< " @" << obj.Pointer() << endl;
-					}}
-					// no attrs
-				}
-			},
-			{ "Sum",
-				{
-					Func{[](Object obj)->float {
-						return obj.Var<float>(0) + obj.Var<float>(sizeof(float));
-					}}
-					// no attrs
-				}
+	size_t ID_Point = NameRegistry::Instance().Register("Point");
+	size_t ID_float = NameRegistry::Instance().Register("float");
+	size_t ID_x = NameRegistry::Instance().Register("x");
+	size_t ID_y = NameRegistry::Instance().Register("y");
+	size_t ID_UInspector_range = NameRegistry::Instance().Register("UInspector_range");
+
+	{ // register Point
+		FieldPtr ptrX{ ID_Point,ID_float, &Point::x };
+		FieldPtr ptrY{ ID_Point,ID_float, &Point::y };
+		FieldInfo fieldinfoX{ ptrX, { // attrs
+			{ID_UInspector_range, std::pair{0.f, 10.f}}
+		} };
+		FieldInfo fieldinfoY{ ptrY };
+		TypeInfo typeinfo{
+			{ // fields
+				{ID_x, fieldinfoX},
+				{ID_y, fieldinfoY}
 			}
 		};
+		TypeInfoMngr::Instance().typeinfos.emplace(ID_Point, std::move(typeinfo));
 	}
+	
+	Point p;
+	ObjectPtr ptr{ ID_Point, &p };
 
-	// ======================
+	TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_x).fieldptr.Map(ptr).As<float>() = 1.f;
+	TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_y).fieldptr.Map(ptr).As<float>() = 2.f;
 
-	TypeInfo* type = TypeInfoMngr::Instance().GetTypeInfo(0);
-
-	//auto point = type->New("constructor", 1.f, 2.f);
-	auto point = type->New();
-
-	// call func
-	cout << "Sum : " << type->fields.Call<float, Object>("Sum", point) << endl;
-	cout << "Sum : " << type->fields.Call("Sum", ArgList{ point }).Cast<float>() << endl;
-
-	// dump
-	cout << type->name << endl;
-
-	for (const auto& [name, attr] : type->attrs.data) {
-		cout << name;
-		if (attr.HasValue()) {
-			cout << ": ";
-			if (attr.TypeIs<string>())
-				cout << attr.Cast<string>();
-			else if (attr.TypeIs<std::pair<float, float>>()) {
-				auto r = attr.Cast<std::pair<float, float>>();
-				cout << r.first << " - " << r.second;
+	for (const auto& [ID_field, fieldinfo] : TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos) {
+		auto field = fieldinfo.fieldptr.Map(ptr);
+		auto field_name = NameRegistry::Instance().Nameof(ID_field);
+		if (field.GetID() == ID_float) {
+			std::cout << field_name << ": " << field.As<float>() << std::endl;
+			if (fieldinfo.attrs.find(ID_UInspector_range) != fieldinfo.attrs.end()) {
+				const auto& r = std::any_cast<const std::pair<float, float>&>(fieldinfo.attrs.at(ID_UInspector_range));
+				std::cout << NameRegistry::Instance().Nameof(ID_UInspector_range) << ": " << r.first << ", " << r.second << std::endl;
 			}
-			else
-				cout << "[NOT SUPPORT]";
-		}
-		cout << endl;
-	}
-
-	for (const auto& [name, field] : type->fields.data) {
-		cout << name;
-		/*
-		if (auto pV = field.value.CastIf<Var>()) {
-			cout << " : ";
-			if (pV->TypeIs<float>())
-				cout << pV->Get<float>(point);
-			else
-				cout << "[NOT SUPPORT]";
-		}
-		else if (auto pV = field.value.CastIf<StaticVar>()) {
-			cout << " : ";
-			if (pV->TypeIs<size_t>())
-				cout << pV->Cast<size_t>();
-			else
-				cout << "[NOT SUPPORT]";
-		}
-		else if (auto pF = field.value.CastIf<Func>()) {
-			cout << " [Func]";
-		}
-		*/
-		visit([=](auto&& v) {
-			using T = std::decay_t<decltype(v)>;
-			if constexpr (std::is_same_v<T, Var>) {
-				cout << " : ";
-				if (v.TypeIs<float>())
-					cout << v.Get<float>(point);
-				else
-					cout << "[NOT SUPPORT]";
-			}
-			else if constexpr (std::is_same_v<T, StaticVar>) {
-				cout << " : ";
-				if (v.TypeIs<size_t>())
-					cout << v.Cast<size_t>();
-				else
-					cout << "[NOT SUPPORT]";
-			}
-			else if constexpr (std::is_same_v<T, Func>) {
-				cout << " [Func]";
-			}
-			else
-				static_assert(false, "non-exhaustive visitor!");
-		}, field.value.data);
-		cout << endl;
-
-		for (const auto& [name, attr] : field.attrs.data) {
-			cout << name;
-			if (attr.HasValue()) {
-				cout << " : ";
-				if (auto p = attr.CastIf<string>())
-					cout << *p;
-				else if (auto p = attr.CastIf<std::pair<float, float>>()) {
-					cout << p->first << " - " << p->second;
-				}
-				else
-					cout << "[NOT SUPPORT]";
-			}
-			cout << endl;
 		}
 	}
-
-	// query attr
-	cout << "contain info : " << type->attrs.Contains("info") << endl;
-	cout << "info : " << type->attrs.Get<string>("info") << endl;
-
-	TypeInfo::Delete(point);
 }

@@ -1,60 +1,10 @@
 #pragma once
 
-#include "FieldList.h"
+#include "FieldInfo.h"
 
 namespace Ubpa::UDRefl {
-	struct UDREFL_DESC TypeInfo {
-		TypeInfo(size_t ID) : ID{ ID } {}
-
-		const size_t ID;
-
-		std::string name;
-
-		size_t size{ 0 };
-		size_t alignment{ alignof(std::max_align_t) };
-
-		AttrList attrs;
-		FieldList fields;
-
-		// TODO: alignment
-		// no construct
-		Object Malloc() const {
-			assert(size != 0);
-			void* ptr = malloc(size);
-			assert(ptr != nullptr);
-			return { ID, ptr };
-		}
-
-		static void Free(Object obj) {
-			free(obj.Pointer());
-		}
-
-		// call Allocate and fields.DefaultConstruct
-		Object New() {
-			Object obj = Malloc();
-			fields.DefaultConstruct(obj);
-			return obj;
-		}
-
-		template<typename... Args>
-		Object New(std::string_view name, Args... args) {
-			Object obj = Malloc();
-			fields.Call<void, Object, Args...>(name, obj, std::forward<Args>(args)...);
-			return obj;
-		}
-
-		// call Allocate and fields.DefaultConstruct
-		static void Delete(Object obj) {
-			if (obj.Pointer() != nullptr) {
-				auto type = obj.GetTypeInfo();
-				type->fields.Destruct(obj);
-				Free(obj);
-			}
-		}
-
-		TypeInfo(const TypeInfo&) = delete;
-		TypeInfo(TypeInfo&&) = delete;
-		TypeInfo& operator==(const TypeInfo&) = delete;
-		TypeInfo& operator==(TypeInfo&&) = delete;
+	struct TypeInfo {
+		std::unordered_map<size_t, FieldInfo> fieldinfos;
+		std::unordered_map<size_t, std::any> attrs;
 	};
 }
