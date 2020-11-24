@@ -14,7 +14,7 @@ namespace Ubpa::UDRefl {
 		const void* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
+		const T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
 		template<typename T>
 		const T& As() const noexcept { assert(*this); return *AsPtr<T>(); }
 		

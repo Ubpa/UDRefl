@@ -6,6 +6,8 @@ namespace Ubpa::UDRefl {
 	struct TypeInfo {
 		std::unordered_map<size_t, std::any> attrs;
 		std::unordered_map<size_t, FieldInfo> fieldinfos;
-		std::unordered_map<size_t, StaticFieldInfo> staticfieldinfos;
+		std::unordered_map<size_t, ConstFieldInfo> cfieldinfos;
+		std::unordered_map<size_t, StaticFieldInfo> sfieldinfos;
+		std::unordered_map<size_t, StaticConstFieldInfo> scfieldinfos;
 	};
 }

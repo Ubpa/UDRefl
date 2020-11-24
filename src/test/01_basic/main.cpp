@@ -19,8 +19,8 @@ int main() {
 	size_t ID_UInspector_range = NameRegistry::Instance().Register("UInspector_range");
 
 	{ // register Point
-		FieldPtr ptrX{ ID_Point,ID_float, &Point::x };
-		FieldPtr ptrY{ ID_Point,ID_float, &Point::y };
+		FieldPtr ptrX{ ID_Point,ID_float, offsetof(Point, x) };
+		FieldPtr ptrY{ ID_Point,ID_float, offsetof(Point, y) };
 		FieldInfo fieldinfoX{ ptrX, { // attrs
 			{ID_UInspector_range, std::pair{0.f, 10.f}}
 		} };
@@ -37,7 +37,6 @@ int main() {
 	
 	Point p;
 	ObjectPtr ptr{ ID_Point, &p };
-
 	TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_x).fieldptr.Map(ptr).As<float>() = 1.f;
 	TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_y).fieldptr.Map(ptr).As<float>() = 2.f;
 
