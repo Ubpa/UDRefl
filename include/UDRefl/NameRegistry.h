@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <deque>
 #include <unordered_map>
 
 namespace Ubpa::UDRefl {
@@ -19,7 +19,7 @@ namespace Ubpa::UDRefl {
 		std::string_view Nameof(size_t ID) const noexcept;
 
 	private:
-		std::vector<std::string> names;
+		std::deque<std::string> names;
 		std::unordered_map<std::string_view, size_t> name2id;
 	};
 }
