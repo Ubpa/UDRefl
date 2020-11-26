@@ -13,12 +13,12 @@ struct A {
 };
 
 int main() {
-	size_t ID_A = NameRegistry::Instance().Register("A");
-	size_t ID_int = NameRegistry::Instance().Register("int");
-	size_t ID_data = NameRegistry::Instance().Register("data");
-	size_t ID_c_data = NameRegistry::Instance().Register("c_data");
-	size_t ID_s_data = NameRegistry::Instance().Register("s_data");
-	size_t ID_sc_data = NameRegistry::Instance().Register("sc_data");
+	size_t ID_A = ReflMngr::Instance().registry.Register("A");
+	size_t ID_int = ReflMngr::Instance().registry.Register("int");
+	size_t ID_data = ReflMngr::Instance().registry.Register("data");
+	size_t ID_c_data = ReflMngr::Instance().registry.Register("c_data");
+	size_t ID_s_data = ReflMngr::Instance().registry.Register("s_data");
+	size_t ID_sc_data = ReflMngr::Instance().registry.Register("sc_data");
 
 	{ // register Point
 		FieldPtr ptr_data{ ID_A, ID_int, offsetof(A, data) };
@@ -37,34 +37,34 @@ int main() {
 			{{ID_s_data, fieldinfo_s_data}}, // static fields
 			{{ID_sc_data, fieldinfo_sc_data}}, // static const fields
 		};
-		TypeInfoMngr::Instance().typeinfos.emplace(ID_A, std::move(typeinfo));
+		ReflMngr::Instance().typeinfos.emplace(ID_A, std::move(typeinfo));
 	}
 
 	A a;
 	ObjectPtr ptr{ ID_A, &a };
 
-	for (const auto& [ID_field, fieldinfo] : TypeInfoMngr::Instance().typeinfos.at(ID_A).fieldinfos) {
+	for (const auto& [ID_field, fieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).fieldinfos) {
 		auto field = fieldinfo.fieldptr.Map(ptr);
-		auto field_name = NameRegistry::Instance().Nameof(ID_field);
+		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
 		if (field.GetID() == ID_int)
 			std::cout << field_name << ": " << field.As<int>() << std::endl;
 	}
 
-	for (const auto& [ID_field, cfieldinfo] : TypeInfoMngr::Instance().typeinfos.at(ID_A).cfieldinfos) {
+	for (const auto& [ID_field, cfieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).cfieldinfos) {
 		auto field = cfieldinfo.fieldptr.Map(ptr);
-		auto field_name = NameRegistry::Instance().Nameof(ID_field);
+		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
 		if (field.GetID() == ID_int)
 			std::cout << field_name << ": " << field.As<int>() << std::endl;
 	}
 
-	for (const auto& [ID_field, sfieldinfo] : TypeInfoMngr::Instance().typeinfos.at(ID_A).sfieldinfos) {
-		auto field_name = NameRegistry::Instance().Nameof(ID_field);
+	for (const auto& [ID_field, sfieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).sfieldinfos) {
+		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
 		if (sfieldinfo.objptr.GetID() == ID_int)
 			std::cout << field_name << ": " << sfieldinfo.objptr.As<int>() << std::endl;
 	}
 
-	for (const auto& [ID_field, scfieldinfo] : TypeInfoMngr::Instance().typeinfos.at(ID_A).scfieldinfos) {
-		auto field_name = NameRegistry::Instance().Nameof(ID_field);
+	for (const auto& [ID_field, scfieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).scfieldinfos) {
+		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
 		if (scfieldinfo.objptr.GetID() == ID_int)
 			std::cout << field_name << ": " << scfieldinfo.objptr.As<int>() << std::endl;
 	}

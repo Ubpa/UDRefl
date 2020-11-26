@@ -8,6 +8,8 @@ Ubpa_InitUCMake()
 
 Ubpa_InitProject()
 
+Ubpa_AddDep(UContainer 0.0.9)
+
 Ubpa_AddSubDirsRec(include)
 Ubpa_AddSubDirsRec(src)
 

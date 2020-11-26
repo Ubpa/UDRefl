@@ -12,11 +12,11 @@ struct Point {
 };
 
 int main() {
-	size_t ID_Point = NameRegistry::Instance().Register("Point");
-	size_t ID_float = NameRegistry::Instance().Register("float");
-	size_t ID_x = NameRegistry::Instance().Register("x");
-	size_t ID_y = NameRegistry::Instance().Register("y");
-	size_t ID_UInspector_range = NameRegistry::Instance().Register("UInspector_range");
+	size_t ID_Point = ReflMngr::Instance().registry.Register("Point");
+	size_t ID_float = ReflMngr::Instance().registry.Register("float");
+	size_t ID_x = ReflMngr::Instance().registry.Register("x");
+	size_t ID_y = ReflMngr::Instance().registry.Register("y");
+	size_t ID_UInspector_range = ReflMngr::Instance().registry.Register("UInspector_range");
 
 	{ // register Point
 		FieldPtr ptrX{ ID_Point,ID_float, offsetof(Point, x) };
@@ -32,22 +32,22 @@ int main() {
 				{ID_y, fieldinfoY}
 			}
 		};
-		TypeInfoMngr::Instance().typeinfos.emplace(ID_Point, std::move(typeinfo));
+		ReflMngr::Instance().typeinfos.emplace(ID_Point, std::move(typeinfo));
 	}
 	
 	Point p;
 	ObjectPtr ptr{ ID_Point, &p };
-	TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_x).fieldptr.Map(ptr).As<float>() = 1.f;
-	TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_y).fieldptr.Map(ptr).As<float>() = 2.f;
+	ReflMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_x).fieldptr.Map(ptr).As<float>() = 1.f;
+	ReflMngr::Instance().typeinfos.at(ID_Point).fieldinfos.at(ID_y).fieldptr.Map(ptr).As<float>() = 2.f;
 
-	for (const auto& [ID_field, fieldinfo] : TypeInfoMngr::Instance().typeinfos.at(ID_Point).fieldinfos) {
+	for (const auto& [ID_field, fieldinfo] : ReflMngr::Instance().typeinfos.at(ID_Point).fieldinfos) {
 		auto field = fieldinfo.fieldptr.Map(ptr);
-		auto field_name = NameRegistry::Instance().Nameof(ID_field);
+		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
 		if (field.GetID() == ID_float) {
 			std::cout << field_name << ": " << field.As<float>() << std::endl;
 			if (fieldinfo.attrs.find(ID_UInspector_range) != fieldinfo.attrs.end()) {
 				const auto& r = std::any_cast<const std::pair<float, float>&>(fieldinfo.attrs.at(ID_UInspector_range));
-				std::cout << NameRegistry::Instance().Nameof(ID_UInspector_range) << ": " << r.first << ", " << r.second << std::endl;
+				std::cout << ReflMngr::Instance().registry.Nameof(ID_UInspector_range) << ": " << r.first << ", " << r.second << std::endl;
 			}
 		}
 	}

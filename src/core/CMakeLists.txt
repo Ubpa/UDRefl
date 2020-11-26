@@ -11,4 +11,6 @@ Ubpa_AddTarget(
     "${PROJECT_SOURCE_DIR}/include"
   C_OPTION
     ${c_options}
+  LIB
+    Ubpa::UContainer_core
 )

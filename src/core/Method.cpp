@@ -19,3 +19,15 @@ ParamList::ParamList(std::vector<Parameter> params) :
 
 	size = curOffset;
 }
+
+bool ParamList::IsConpatibleWith(Span<size_t> typeIDs) const noexcept {
+	if (params.size() != typeIDs.size())
+		return false;
+
+	for (size_t i = 0; i < params.size(); i++) {
+		if (params[i].typeID != typeIDs[i])
+			return false;
+	}
+
+	return true;
+}

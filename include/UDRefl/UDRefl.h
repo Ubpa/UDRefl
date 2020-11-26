@@ -7,4 +7,4 @@
 #include "NameRegistry.h"
 #include "Object.h"
 #include "TypeInfo.h"
-#include "TypeInfoMngr.h"
+#include "ReflMngr.h"
