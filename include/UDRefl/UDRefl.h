@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Enumerator.h"
+#include "EnumInfo.h"
 #include "FieldInfo.h"
 #include "FieldPtr.h"
 #include "Method.h"
