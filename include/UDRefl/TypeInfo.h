@@ -13,9 +13,9 @@ namespace Ubpa::UDRefl {
 		std::unordered_multimap<size_t, MethodInfo> methodinfos;
 		std::unordered_multimap<size_t, ConstMethodInfo> cmethodinfos;
 
-		bool IsInvocable(size_t methodID, ObjectPtr obj = {}, Span<size_t> typeIDs = {}) const noexcept;
-		bool IsInvocable(size_t methodID, ConstObjectPtr obj = {}, Span<size_t> typeIDs = {}) const noexcept;
-		std::any Invoke(size_t methodID, ObjectPtr obj = {}, void* buffer = nullptr, Span<size_t> typeIDs = {}) const;
-		std::any Invoke(size_t methodID, ConstObjectPtr obj = {}, void* buffer = nullptr, Span<size_t> typeIDs = {}) const;
+		bool IsInvocable(size_t methodID, ObjectPtr obj, Span<size_t> typeIDs) const noexcept;
+		bool IsInvocable(size_t methodID, ConstObjectPtr obj, Span<size_t> typeIDs) const noexcept;
+		std::any Invoke(size_t methodID, ObjectPtr obj, Span<size_t> argTypeIDs, void* buffer) const;
+		std::any Invoke(size_t methodID, ConstObjectPtr obj, Span<size_t> argTypeIDs, void* buffer) const;
 	};
 }
