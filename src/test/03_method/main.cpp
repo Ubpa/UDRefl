@@ -1,6 +1,7 @@
 #include <UDRefl/UDRefl.h>
 
 #include <iostream>
+#include <array>
 
 using namespace Ubpa::UDRefl;
 
@@ -38,23 +39,20 @@ int main() {
 	size_t ID_operator_add_assign = ReflMngr::Instance().registry.Register("operator+=");
 
 	{ // register Vec
-		FieldPtr ptr_x{ ID_Vec, ID_float, offsetof(Vec, x) };
-		FieldPtr ptr_y{ ID_Vec, ID_float, offsetof(Vec, y) };
+		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
+		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
 
-		auto Norm2 = [](ConstObjectPtr obj, ArgsView) -> std::any {
-			assert(obj.GetID() == ReflMngr::Instance().registry.GetID("Vec"));
-			return obj.As<Vec>().Norm2();
+		auto Norm2 = [](const void* obj, ArgsView) -> std::any {
+			return reinterpret_cast<const Vec*>(obj)->Norm2();
 		};
 		ConstMethod method_Norm2{ {}, Norm2 };
-		auto NormalizeSelf = [](ObjectPtr obj, ArgsView) -> std::any {
-			assert(obj.GetID() == ReflMngr::Instance().registry.GetID("Vec"));
-			obj.As<Vec>().NormalizeSelf();
+		auto NormalizeSelf = [](void* obj, ArgsView) -> std::any {
+			reinterpret_cast<Vec*>(obj)->NormalizeSelf();
 			return {};
 		};
 		Method method_NormalizeSelf{ {}, NormalizeSelf };
-		auto operator_add_assign = [](ObjectPtr obj, ArgsView args) -> std::any {
-			assert(obj.GetID() == ReflMngr::Instance().registry.GetID("Vec"));
-			return &(obj.As<Vec>() += *args.At(0).As<const Vec*>());
+		auto operator_add_assign = [](void* obj, ArgsView args) -> std::any {
+			return &(*reinterpret_cast<Vec*>(obj) += *args.At(0).As<const Vec*>());
 		};
 		Parameter param{
 			ID_const_Vec_ptr,
@@ -94,19 +92,21 @@ int main() {
 	Vec v{ 2.f,3.f };
 	ObjectPtr ptr{ ID_Vec , &v };
 
-	ReflMngr::Instance().typeinfos.at(ID_Vec).methodinfos.find(ID_NormalizeSelf)->second.method.Invoke(ptr);
+	ReflMngr::Instance().Invoke(ptr, ID_NormalizeSelf, {}, nullptr);
 	std::cout << v.x << ", " << v.y << std::endl;
 
 	{
-		auto rst = ReflMngr::Instance().typeinfos.at(ID_Vec).cmethodinfos.find(ID_Norm2)->second.method.Invoke(ptr);
+		auto [success, rst] = ReflMngr::Instance().Invoke(ptr, ID_Norm2, {}, nullptr);
+		assert(success);
 		std::cout << std::any_cast<float>(rst) << std::endl; 
 	}
 
 	{
 		Vec w{ 10.f,10.f };
-		std::uint8_t buffer[sizeof(Vec*)];
-		reinterpret_cast<Vec*&>(buffer) = &w;
-		auto rst = ReflMngr::Instance().typeinfos.at(ID_Vec).methodinfos.find(ID_operator_add_assign)->second.method.Invoke(ptr, buffer);
+		std::uint8_t buffer[sizeof(const Vec*)];
+		*reinterpret_cast<const Vec**>(buffer) = &w;
+		auto [success, rst] = ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_const_Vec_ptr }, buffer);
+		assert(success);
 		auto pw = std::any_cast<Vec*>(rst);
 		std::cout << pw->x << ", " << pw->y << std::endl;
 	}

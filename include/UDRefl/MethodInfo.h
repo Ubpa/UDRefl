@@ -12,4 +12,9 @@ namespace Ubpa::UDRefl {
 		ConstMethod method;
 		std::unordered_map<size_t, std::any> attrs;
 	};
+
+	struct StaticMethodInfo {
+		StaticMethod method;
+		std::unordered_map<size_t, std::any> attrs;
+	};
 }

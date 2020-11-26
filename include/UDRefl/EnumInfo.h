@@ -17,6 +17,9 @@ namespace Ubpa::UDRefl {
 			return static_cast<size_t>(-1);
 		}
 		template<typename E>
-		size_t GetID(E e) const { return GetID(Enumerator::ValueOf(e)); }
+		size_t GetID(E e) const {
+			assert(underlyingType == Enumerator::UnderlyingTypeOf<E>());
+			return GetID(Enumerator::ValueOf(e));
+		}
 	};
 }

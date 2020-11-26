@@ -35,13 +35,12 @@ int main() {
 	size_t ID_operator_add_assign = ReflMngr::Instance().registry.Register("operator+=");
 
 	{ // register Vec
-		FieldPtr ptr_x{ ID_Vec, ID_float, offsetof(Vec, x) };
-		FieldPtr ptr_y{ ID_Vec, ID_float, offsetof(Vec, y) };
+		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
+		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
 
-		auto operator_add_assign_1 = [](ObjectPtr obj, ArgsView args) -> std::any {
-			assert(obj.GetID() == ReflMngr::Instance().registry.GetID("Vec"));
+		auto operator_add_assign_1 = [](void* obj, ArgsView args) -> std::any {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("const Vec*"));
-			return &(obj.As<Vec>() += *args.At(0).As<const Vec*>());
+			return &(*reinterpret_cast<Vec*>(obj) += *args.At(0).As<const Vec*>());
 		};
 		Parameter param_1{
 			ID_const_Vec_ptr,
@@ -52,10 +51,9 @@ int main() {
 		ParamList paramList_1{ { param_1 } };
 		Method method_operator_add_assign_1{ paramList_1, operator_add_assign_1 };
 
-		auto operator_add_assign_2 = [](ObjectPtr obj, ArgsView args) -> std::any {
-			assert(obj.GetID() == ReflMngr::Instance().registry.GetID("Vec"));
+		auto operator_add_assign_2 = [](void* obj, ArgsView args) -> std::any {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("float"));
-			return &(obj.As<Vec>() += args.At(0).As<float>());
+			return &(*reinterpret_cast<Vec*>(obj) += args.At(0).As<float>());
 		};
 		Parameter param_2{
 			ID_float,
@@ -96,7 +94,8 @@ int main() {
 		Vec w{ 10.f,10.f };
 		std::uint8_t buffer[sizeof(const Vec*)];
 		*reinterpret_cast<const Vec**>(buffer) = &w;
-		auto rst = ReflMngr::Instance().typeinfos.at(ID_Vec).Invoke(ID_operator_add_assign, ptr, std::array{ ID_const_Vec_ptr }, buffer);
+		auto [success, rst] = ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_const_Vec_ptr }, buffer);
+		assert(success);
 		auto pw = std::any_cast<Vec*>(rst);
 		std::cout << pw->x << ", " << pw->y << std::endl;
 	}
@@ -104,7 +103,8 @@ int main() {
 	{
 		std::uint8_t buffer[sizeof(float)];
 		*reinterpret_cast<float*>(buffer) = 2.f;
-		auto rst = ReflMngr::Instance().typeinfos.at(ID_Vec).Invoke(ID_operator_add_assign, ptr, std::array{ ID_float }, buffer);
+		auto [success, rst] = ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_float }, buffer);
+		assert(success);
 		auto pw = std::any_cast<Vec*>(rst);
 		std::cout << pw->x << ", " << pw->y << std::endl;
 	}

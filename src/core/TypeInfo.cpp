@@ -1,20 +1,52 @@
 #include <UDRefl/TypeInfo.h>
 
+#include <UDRefl/ReflMngr.h>
+
 using namespace Ubpa::UDRefl;
 
-bool TypeInfo::IsInvocable(size_t methodID, ObjectPtr obj, Span<size_t> argTypeIDs) const noexcept {
-	auto target = methodinfos.find(methodID);
-	size_t num = methodinfos.count(methodID);
-	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
-			return true;
-	}
-	return IsInvocable(methodID, ConstObjectPtr{ obj }, argTypeIDs);
+ObjectPtr TypeInfo::RWField(size_t fieldID) const noexcept {
+	auto target = sfieldinfos.find(fieldID);
+	if (target == sfieldinfos.end())
+		return nullptr;
+
+	return target->second.objptr;
 }
 
-bool TypeInfo::IsInvocable(size_t methodID, ConstObjectPtr obj, Span<size_t> argTypeIDs) const noexcept {
-	auto target = cmethodinfos.find(methodID);
-	size_t num = cmethodinfos.count(methodID);
+ConstObjectPtr TypeInfo::RField(size_t fieldID) const noexcept {
+	auto rwptr = RWField(fieldID);
+	if (rwptr)
+		return rwptr;
+
+	auto target = scfieldinfos.find(fieldID);
+	if (target == scfieldinfos.end())
+		return nullptr;
+
+	return target->second.objptr;
+}
+
+ObjectPtr TypeInfo::RWField(void* obj, size_t fieldID) const noexcept {
+	auto target = fieldinfos.find(fieldID);
+	if (target == fieldinfos.end())
+		return RWField(fieldID);
+
+	return target->second.fieldptr.Map(obj);
+}
+
+ConstObjectPtr TypeInfo::RField(const void* obj, size_t fieldID) const noexcept {
+	auto rwptr = RWField(const_cast<void*>(obj), fieldID);
+	if (rwptr)
+		return rwptr;
+
+	auto target = cfieldinfos.find(fieldID);
+	if (target == cfieldinfos.end())
+		return RField(fieldID);
+
+	return target->second.fieldptr.Map(obj);
+}
+
+bool TypeInfo::IsStaticInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
+	auto target = smethodinfos.find(methodID);
+	size_t num = smethodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
 		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
 			return true;
@@ -22,23 +54,52 @@ bool TypeInfo::IsInvocable(size_t methodID, ConstObjectPtr obj, Span<size_t> arg
 	return false;
 }
 
-std::any TypeInfo::Invoke(size_t methodID, ObjectPtr obj, Span<size_t> argTypeIDs, void* buffer) const {
-	auto target = methodinfos.find(methodID);
-	size_t num = methodinfos.count(methodID);
-	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
-			return target->second.method.Invoke(obj, buffer);
-	}
-	return Invoke(methodID, ConstObjectPtr{ obj }, argTypeIDs, buffer);
-}
-
-std::any TypeInfo::Invoke(size_t methodID, ConstObjectPtr obj, Span<size_t> argTypeIDs, void* buffer) const {
+bool TypeInfo::IsConstInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
 	auto target = cmethodinfos.find(methodID);
 	size_t num = cmethodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
 		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
-			return target->second.method.Invoke(obj, buffer);
+			return true;
 	}
-	assert(false);
-	return {};
+	return IsStaticInvocable(methodID, argTypeIDs);
+}
+
+bool TypeInfo::IsInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
+	auto target = methodinfos.find(methodID);
+	size_t num = methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++target) {
+		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+			return true;
+	}
+	return IsConstInvocable(methodID, argTypeIDs);
+}
+
+InvokeResult TypeInfo::Invoke(size_t methodID, Span<size_t> argTypeIDs, void* buffer) const noexcept {
+	auto target = smethodinfos.find(methodID);
+	size_t num = smethodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++target) {
+		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+			return { true, target->second.method.Invoke(buffer) };
+	}
+	return { false, {} };
+}
+
+InvokeResult TypeInfo::Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const noexcept {
+	auto target = cmethodinfos.find(methodID);
+	size_t num = cmethodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++target) {
+		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+			return { true, target->second.method.Invoke(obj, buffer) };
+	}
+	return Invoke(methodID, argTypeIDs, buffer);
+}
+
+InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const noexcept {
+	auto target = methodinfos.find(methodID);
+	size_t num = methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++target) {
+		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+			return { true, target->second.method.Invoke(obj, buffer) };
+	}
+	return Invoke(static_cast<const void*>(obj), methodID, argTypeIDs, buffer);
 }

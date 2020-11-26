@@ -1,45 +1,36 @@
 #pragma once
 
 #include "Object.h"
-
-#include <cassert>
-#include <cstdint>
+#include "Util.h"
 
 namespace Ubpa::UDRefl {
 	class FieldPtr {
 	public:
-		FieldPtr(size_t objID, size_t valueID, size_t offset) :
-			objID{ objID },
+		constexpr FieldPtr(size_t valueID, size_t offset) :
 			valueID{ valueID },
 			offset{ offset } {}
 
-		ObjectPtr Map(ObjectPtr objptr) const noexcept {
-			assert(objptr.GetID() == objID);
-			return { valueID, reinterpret_cast<std::uint8_t*>(objptr.GetPtr()) + offset };
-		}
+		constexpr size_t GetValueID() const noexcept { return valueID; }
 
-		ConstObjectPtr Map(ConstObjectPtr objptr) const noexcept { return Map(reinterpret_cast<ObjectPtr&>(objptr)); }
+		constexpr ObjectPtr Map(void* obj) const noexcept { return { valueID, forward_offset(obj, offset) }; }
+		constexpr ConstObjectPtr Map(const void* objptr) const noexcept { return Map(const_cast<void*>(objptr)); }
 
 	private:
-		size_t objID;
 		size_t valueID;
 		size_t offset;
 	};
 
 	class ConstFieldPtr {
 	public:
-		ConstFieldPtr(size_t objID, size_t valueID, size_t offset) :
-			objID{ objID },
+		constexpr ConstFieldPtr(size_t valueID, size_t offset) :
 			valueID{ valueID },
 			offset{ offset } {}
 
-		ConstObjectPtr Map(ConstObjectPtr objptr) const noexcept {
-			assert(objptr.GetID() == objID);
-			return { valueID, reinterpret_cast<const std::uint8_t*>(objptr.GetPtr()) + offset };
-		}
+		constexpr size_t GetValueID() const noexcept { return valueID; }
+
+		constexpr ConstObjectPtr Map(const void* objptr) const noexcept { return { valueID, forward_offset(objptr, offset) }; }
 
 	private:
-		size_t objID;
 		size_t valueID;
 		size_t offset;
 	};

@@ -21,8 +21,8 @@ int main() {
 	size_t ID_sc_data = ReflMngr::Instance().registry.Register("sc_data");
 
 	{ // register Point
-		FieldPtr ptr_data{ ID_A, ID_int, offsetof(A, data) };
-		ConstFieldPtr ptr_c_data{ ID_A, ID_int, offsetof(A, c_data) };
+		FieldPtr ptr_data{ ID_int, offsetof(A, data) };
+		ConstFieldPtr ptr_c_data{ ID_int, offsetof(A, c_data) };
 		ObjectPtr ptr_s_data{ ID_int, &A::s_data };
 		ConstObjectPtr ptr_sc_data{ ID_int, &A::sc_data };
 

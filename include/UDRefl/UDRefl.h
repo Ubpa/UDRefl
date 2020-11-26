@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BaseInfo.h"
 #include "Enumerator.h"
 #include "EnumInfo.h"
 #include "FieldInfo.h"
@@ -10,3 +11,4 @@
 #include "Object.h"
 #include "TypeInfo.h"
 #include "ReflMngr.h"
+#include "Util.h"
