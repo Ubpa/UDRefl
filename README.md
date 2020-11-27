@@ -36,7 +36,7 @@
 
 ## TODO
 
-- [ ] virtual
+- [x] virtual
 - [ ] life cycle (ctor, dtor, copy, etc.)
 - [ ] global
 

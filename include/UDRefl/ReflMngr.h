@@ -12,20 +12,47 @@ namespace Ubpa::UDRefl {
 			return instance;
 		}
 
+		//
+		// Data
+		/////////
+
 		NameRegistry registry;
 		std::unordered_map<size_t, TypeInfo> typeinfos;
 		std::unordered_map<size_t, EnumInfo> enuminfos;
 
-		bool IsCastable(size_t fromID, size_t toID) const noexcept;
-		// if failed, return nullptr
-		ObjectPtr Cast(ObjectPtr obj, size_t typeID) const noexcept;
-		// if failed, return nullptr
-		ConstObjectPtr Cast(ConstObjectPtr obj, size_t typeID) const noexcept { return Cast(reinterpret_cast<ObjectPtr&>(obj), typeID); }
+		//
+		// Cast
+		/////////
+
+		ObjectPtr StaticCast_DerivedToBase (ObjectPtr obj, size_t typeID) const noexcept;
+		ObjectPtr StaticCast_BaseToDerived (ObjectPtr obj, size_t typeID) const noexcept;
+		ObjectPtr DynamicCast_BaseToDerived(ObjectPtr obj, size_t typeID) const noexcept;
+		ObjectPtr StaticCast               (ObjectPtr obj, size_t typeID) const noexcept;
+		ObjectPtr DynamicCast              (ObjectPtr obj, size_t typeID) const noexcept;
+		
+		ConstObjectPtr StaticCast_DerivedToBase (ConstObjectPtr obj, size_t typeID) const noexcept
+		{ return StaticCast_DerivedToBase (reinterpret_cast<ObjectPtr&>(obj), typeID); }
+		ConstObjectPtr StaticCast_BaseToDerived (ConstObjectPtr obj, size_t typeID) const noexcept
+		{ return StaticCast_BaseToDerived (reinterpret_cast<ObjectPtr&>(obj), typeID); }
+		ConstObjectPtr DynamicCast_BaseToDerived(ConstObjectPtr obj, size_t typeID) const noexcept
+		{ return DynamicCast_BaseToDerived(reinterpret_cast<ObjectPtr&>(obj), typeID); }
+		ConstObjectPtr StaticCast               (ConstObjectPtr obj, size_t typeID) const noexcept
+		{ return StaticCast               (reinterpret_cast<ObjectPtr&>(obj), typeID); }
+		ConstObjectPtr DynamicCast              (ConstObjectPtr obj, size_t typeID) const noexcept
+		{ return DynamicCast              (reinterpret_cast<ObjectPtr&>(obj), typeID); }
+
+		//
+		// Field
+		//////////
 
 		// read/write field, non-const
 		ObjectPtr RWField(ObjectPtr obj, size_t fieldID) const noexcept;
 		// read field, non-const + const
 		ConstObjectPtr RField(ConstObjectPtr obj, size_t fieldID) const noexcept;
+
+		//
+		// Invoke
+		///////////
 
 		bool IsStaticInvocable(size_t typeID, size_t methodID, Span<size_t> argTypeIDs) const noexcept;
 		bool IsConstInvocable(size_t typeID, size_t methodID, Span<size_t> argTypeIDs) const noexcept;

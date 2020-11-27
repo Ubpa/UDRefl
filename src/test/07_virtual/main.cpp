@@ -31,34 +31,32 @@ int main() {
 		TypeInfo typeinfo_B{
 			{}, // attrs
 			{
-				{ ID_b, {{ID_float, field_offset_functor<&B::b>() }}}
+				{ ID_b, {{ID_float, field_offset_function<&B::b>() }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // baseinfos
 			{
-				{ID_A, {base_offset_functor<B, A>()}}
-			}//vbaseinfos
+				{ID_A, BaseInfo::Make<B,A>()}
+			}, // baseinfos
 		};
 		TypeInfo typeinfo_C{
 			{}, // attrs
 			{
-				{ ID_c, {{ID_float, field_offset_functor<&C::c>() }}}
+				{ ID_c, {{ID_float, field_offset_function<&C::c>() }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // baseinfos
 			{
-				{ID_A, {base_offset_functor<C, A>()}}
-			}//vbaseinfos
+				{ID_A, BaseInfo::Make<C,A>()}
+			}, // baseinfos
 		};
 		TypeInfo typeinfo_D{
 			{}, // attrs
 			{
-				{ ID_d, {{ID_float, field_offset_functor<&D::d>() }}}
+				{ ID_d, {{ID_float, field_offset_function<&D::d>() }}}
 			}, // fieldinfos
 			{}, // methodinfos
 			{
-				{ID_B, {base_offset<D, B>()}},
-				{ID_C, {base_offset<D, C>()}},
+				{ID_B, BaseInfo::Make<D,B>()},
+				{ID_C, BaseInfo::Make<D,C>()},
 			}, //baseinfos
 		};
 
@@ -69,7 +67,7 @@ int main() {
 	}
 
 	D d;
-	//d.a = 1.f;
+	d.a = 1.f;
 	d.b = 2.f;
 	d.c = 3.f;
 	d.d = 4.f;

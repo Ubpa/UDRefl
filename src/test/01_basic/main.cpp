@@ -11,6 +11,11 @@ struct Point {
 	float y;
 };
 
+struct A { virtual ~A() {}; };
+struct B : virtual A {};
+struct C : virtual A {};
+struct D : B, C {};
+
 int main() {
 	size_t ID_Point = ReflMngr::Instance().registry.Register("Point");
 	size_t ID_float = ReflMngr::Instance().registry.Register("float");

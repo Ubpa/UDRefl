@@ -4,6 +4,8 @@
 #include <type_traits>
 
 namespace Ubpa::UDRefl {
+	using OffsetFunction = const void* (const void*) noexcept;
+
 	struct has_virtual_base_void {};
 	template<typename Void, typename Obj>
 	struct has_virtual_base_helper : std::true_type {};
@@ -17,6 +19,18 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	constexpr bool has_virtual_base_v = has_virtual_base<T>::value;
 
+	template<typename Void, typename Base, typename Derived>
+	struct is_virtual_base_of_helper : std::is_base_of<Base, Derived> {};
+	template<typename Base, typename Derived>
+	struct is_virtual_base_of_helper<
+		std::void_t<decltype(static_cast<Derived*>(std::declval<Base*>()))>,
+		Base, Derived> : std::false_type {};
+
+	template<typename Base, typename Derived>
+	struct is_virtual_base_of : is_virtual_base_of_helper<void, Base, Derived> {};
+	template<typename Base, typename Derived>
+	constexpr bool is_virtual_base_of_v = is_virtual_base_of<Base, Derived>::value;
+
 	template<typename Obj, typename T>
 	std::size_t field_offset(T Obj::* field_ptr) noexcept {
 		static_assert(!std::is_function_v<T>);
@@ -27,12 +41,12 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename FieldPtr, FieldPtr fieldptr>
-	struct field_offset_functor_impl;
+	struct field_offset_function_impl;
 
 	template<typename Obj, typename T, T Obj::* fieldptr>
-	struct field_offset_functor_impl<T Obj::*, fieldptr> {
+	struct field_offset_function_impl<T Obj::*, fieldptr> {
 		static_assert(!std::is_function_v<T>);
-		static constexpr auto get() noexcept {
+		static constexpr OffsetFunction* get() noexcept {
 			return [](const void* ptr) noexcept -> const void* {
 				return &(reinterpret_cast<const Obj*>(ptr)->*fieldptr);
 			};
@@ -40,26 +54,71 @@ namespace Ubpa::UDRefl {
 	};
 
 	template<auto fieldptr>
-	constexpr auto field_offset_functor() noexcept {
-		return field_offset_functor_impl<decltype(fieldptr), fieldptr>::get();
+	constexpr OffsetFunction* field_offset_function() noexcept {
+		return field_offset_function_impl<decltype(fieldptr), fieldptr>::get();
 	}
 
-	// for non-virtual base
-	template<typename Derived, typename Base>
-	std::size_t base_offset() noexcept {
-		static_assert(std::is_base_of_v<Base, Derived>);
-		return reinterpret_cast<std::size_t>(
-			static_cast<Base*>(reinterpret_cast<Derived*>(1))
-		) - 1;
-	}
+	struct InheritCastFunctions {
+		OffsetFunction* static_derived_to_base{ nullptr };
+		OffsetFunction* static_base_to_derived{ nullptr };
+		OffsetFunction* dynamic_base_to_derived{ nullptr };
+	};
 
-	// for virtual base
-	template<typename Derived, typename Base>
-	constexpr auto base_offset_functor() noexcept {
-		static_assert(std::is_base_of_v<Base, Derived>);
+	template<typename From, typename To>
+	constexpr OffsetFunction* static_cast_functor() noexcept {
+		static_assert(!is_virtual_base_of_v<From, To>);
 		return [](const void* obj) noexcept -> const void* {
-			return static_cast<const Base*>(reinterpret_cast<const Derived*>(obj));
+			return static_cast<const To*>(reinterpret_cast<const From*>(obj));
 		};
+	}
+
+	template<typename Base, typename Derived>
+	constexpr OffsetFunction* dynamic_cast_function() noexcept {
+		static_assert(std::is_base_of_v<Base, Derived>);
+		if constexpr (std::is_polymorphic_v<Base>) {
+			return [](const void* obj) noexcept -> const void* {
+				return dynamic_cast<const Derived*>(reinterpret_cast<const Base*>(obj));
+			}
+		}
+		else
+			return static_cast_functor<Base, Derived>();
+	}
+
+	template<typename Derived, typename Base>
+	constexpr InheritCastFunctions inherit_cast_functions() noexcept {
+		static_assert(std::is_base_of_v<Base, Derived>);
+		if constexpr (std::is_polymorphic_v<Derived>) {
+			if constexpr (is_virtual_base_of_v<Base, Derived>) {
+				return {
+					static_cast_functor<Derived, Base>(),
+					nullptr,
+					dynamic_cast_function<Base, Derived>()
+				};
+			}
+			else {
+				return {
+					static_cast_functor<Derived, Base>(),
+					static_cast_functor<Base, Derived>(),
+					dynamic_cast_function<Base, Derived>()
+				};
+			}
+		}
+		else{
+			if constexpr (is_virtual_base_of_v<Base, Derived>) {
+				return {
+					static_cast_functor<Derived, Base>(),
+					nullptr,
+					nullptr
+				};
+			}
+			else {
+				return {
+					static_cast_functor<Derived, Base>(),
+					static_cast_functor<Base, Derived>(),
+					nullptr
+				};
+			}
+		}
 	}
 
 	constexpr void* forward_offset(void* ptr, std::size_t offset) noexcept {

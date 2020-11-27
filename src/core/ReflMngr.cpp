@@ -2,70 +2,98 @@
 
 using namespace Ubpa::UDRefl;
 
-bool ReflMngr::IsCastable(size_t fromID, size_t toID) const noexcept {
-	if (fromID == toID)
-		return true;
+ObjectPtr ReflMngr::StaticCast_DerivedToBase(ObjectPtr obj, size_t typeID) const noexcept {
+	assert(typeID != static_cast<size_t>(-1));
 
-	if (toID == static_cast<size_t>(-1))
-		return true;
-
-	{ // <from> as base
-		auto typetarget = typeinfos.find(toID);
-		if (typetarget != typeinfos.end()) {
-			auto basetarget = typetarget->second.baseinfos.find(fromID);
-			if (basetarget != typetarget->second.baseinfos.end())
-				return true;
-		}
-	}
-
-	{ // <from> as derived
-		auto typetarget = typeinfos.find(fromID);
-		if (typetarget != typeinfos.end()) {
-			auto basetarget = typetarget->second.baseinfos.find(toID);
-			if (basetarget != typetarget->second.baseinfos.end()) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-ObjectPtr ReflMngr::Cast(ObjectPtr obj, size_t typeID) const noexcept {
 	if (obj.GetID() == typeID)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
-		return obj;
+		return { typeID, nullptr };
 
-	if (typeID == static_cast<size_t>(-1))
+	auto target = typeinfos.find(obj.GetID());
+	if (target == typeinfos.end())
 		return nullptr;
 
-	{ // as base
-		auto typetarget = typeinfos.find(typeID);
-		if (typetarget != typeinfos.end()) {
-			auto basetarget = typetarget->second.baseinfos.find(obj.GetID());
-			if (basetarget != typetarget->second.baseinfos.end()) {
-				return {
-					typeID,
-					backward_offset(obj, basetarget->second.offset)
-				};
-			}
-		}
+	const auto& typeinfo = target->second;
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto ptr = StaticCast_DerivedToBase(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, typeID);
+		if (ptr.GetID() != static_cast<size_t>(-1))
+			return ptr;
 	}
 
-	{ // as derived
-		auto typetarget = typeinfos.find(obj.GetID());
-		if (typetarget != typeinfos.end()) {
-			auto basetarget = typetarget->second.baseinfos.find(typeID);
-			if (basetarget != typetarget->second.baseinfos.end()) {
-				return {
-					typeID,
-					forward_offset(obj, basetarget->second.offset)
-				};
-			}
-		}
+	return nullptr;
+}
+
+ObjectPtr ReflMngr::StaticCast_BaseToDerived(ObjectPtr obj, size_t typeID) const noexcept {
+	assert(typeID != static_cast<size_t>(-1));
+
+	if (obj.GetID() == typeID)
+		return obj;
+
+	if (obj.GetPtr() == nullptr)
+		return { typeID, nullptr };
+
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return nullptr;
+
+	const auto& typeinfo = target->second;
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto ptr = StaticCast_BaseToDerived(obj, baseID);
+		if (ptr.GetID() != static_cast<size_t>(-1))
+			return { baseID, baseinfo.IsVirtual() ? nullptr : baseinfo.StaticCast_BaseToDerived(obj) };
 	}
+	
+	return nullptr;
+}
+
+ObjectPtr ReflMngr::DynamicCast_BaseToDerived(ObjectPtr obj, size_t typeID) const noexcept {
+	assert(typeID != static_cast<size_t>(-1));
+
+	if (obj.GetID() == typeID)
+		return obj;
+
+	if (obj.GetPtr() == nullptr)
+		return { typeID, nullptr };
+
+	auto target = typeinfos.find(obj.GetID());
+	if (target == typeinfos.end())
+		return nullptr;
+
+	const auto& typeinfo = target->second;
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto ptr = DynamicCast_BaseToDerived(ObjectPtr{ baseID, baseinfo.DynamicCast_BaseToDerived(obj) }, typeID);
+		if (ptr.GetID() != static_cast<size_t>(-1))
+			return { baseID, baseinfo.IsPolymorphic() ? baseinfo.DynamicCast_BaseToDerived(obj) : nullptr };
+	}
+
+	return nullptr;
+}
+
+ObjectPtr ReflMngr::StaticCast(ObjectPtr obj, size_t typeID) const noexcept {
+	auto ptr_d2b = StaticCast_DerivedToBase(obj, typeID);
+	if (ptr_d2b.GetID() != static_cast<size_t>(-1))
+		return ptr_d2b;
+
+	auto ptr_b2d = StaticCast_BaseToDerived(obj, typeID);
+	if (ptr_b2d.GetID() != static_cast<size_t>(-1))
+		return ptr_b2d;
+
+	return nullptr;
+}
+
+ObjectPtr ReflMngr::DynamicCast(ObjectPtr obj, size_t typeID) const noexcept {
+	auto ptr_b2d = DynamicCast_BaseToDerived(obj, typeID);
+	if (ptr_b2d.GetID() != static_cast<size_t>(-1))
+		return ptr_b2d;
+
+	auto ptr_d2b = StaticCast_DerivedToBase(obj, typeID);
+	if (ptr_d2b.GetID() != static_cast<size_t>(-1))
+		return ptr_d2b;
 
 	return nullptr;
 }
@@ -82,7 +110,7 @@ ObjectPtr ReflMngr::RWField(ObjectPtr obj, size_t fieldID) const noexcept {
 		return ptr;
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RWField(ObjectPtr{ baseID, forward_offset(obj, baseinfo.offset) }, fieldID);
+		auto bptr = RWField(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
 		if (bptr)
 			return bptr;
 	}
@@ -102,7 +130,7 @@ ConstObjectPtr ReflMngr::RField(ConstObjectPtr obj, size_t fieldID) const noexce
 		return ptr;
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RField(ConstObjectPtr{ baseID, forward_offset(obj, baseinfo.offset) }, fieldID);
+		auto bptr = RField(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
 		if (bptr)
 			return bptr;
 	}
@@ -203,7 +231,7 @@ InvokeResult ReflMngr::Invoke(ConstObjectPtr obj, size_t methodID, Span<size_t> 
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(
-			ConstObjectPtr{ baseID, forward_offset(obj, baseinfo.offset) },
+			ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
 			methodID, argTypeIDs, buffer
 		);
 		if (rst.success)
@@ -228,7 +256,7 @@ InvokeResult ReflMngr::Invoke(ObjectPtr obj, size_t methodID, Span<size_t> argTy
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(
-			ObjectPtr{ baseID, forward_offset(obj, baseinfo.offset) },
+			ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
 			methodID, argTypeIDs, buffer
 		);
 		if (rst.success)
