@@ -11,20 +11,23 @@ namespace Ubpa::UDRefl {
 		constexpr ConstObjectPtr(size_t ID, const T* ptr) noexcept : ID{ ID }, ptr { ptr } {}
 		constexpr ConstObjectPtr(size_t ID, std::nullptr_t) noexcept : ID{ ID }, ptr{ nullptr } {}
 
-		size_t GetID() const noexcept { return ID; }
-		const void* GetPtr() const noexcept { return ptr; }
+		constexpr size_t GetID() const noexcept { return ID; }
+		constexpr const void* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		const T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
+		constexpr const T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
 		template<typename T>
-		const T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
-		
+		constexpr const T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
+
 		constexpr void Reset() noexcept { *this = ConstObjectPtr{}; }
 
 		constexpr operator bool() const noexcept { return ptr != nullptr; }
 		constexpr operator const void*() const noexcept { return ptr; }
 
-		ConstObjectPtr& operator=(std::nullptr_t) noexcept { Reset(); }
+		ConstObjectPtr& operator=(std::nullptr_t) noexcept {
+			ID = static_cast<size_t>(-1);
+			ptr = nullptr;
+		}
 
 	private:
 		size_t ID;
@@ -39,15 +42,15 @@ namespace Ubpa::UDRefl {
 		constexpr ObjectPtr(size_t ID, T* ptr) noexcept : ID{ ID }, ptr{ ptr } {}
 		constexpr ObjectPtr(size_t ID, std::nullptr_t) noexcept : ID{ ID }, ptr{ nullptr } {}
 
-		size_t GetID() const noexcept { return ID; }
-		void* GetPtr() const noexcept { return ptr; }
+		constexpr size_t GetID() const noexcept { return ID; }
+		constexpr void* GetPtr() const noexcept { return ptr; }
 		template<typename T>
-		T* GetPtr() const noexcept { return ptr; }
+		constexpr T* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }
+		constexpr T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }
 		template<typename T>
-		T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
+		constexpr T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
 
 		constexpr void Reset() noexcept { *this = ObjectPtr{}; }
 

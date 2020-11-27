@@ -70,7 +70,6 @@ ObjectPtr ReflMngr::Cast(ObjectPtr obj, size_t typeID) const noexcept {
 	return nullptr;
 }
 
-// non-const
 ObjectPtr ReflMngr::RWField(ObjectPtr obj, size_t fieldID) const noexcept {
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())
@@ -91,7 +90,6 @@ ObjectPtr ReflMngr::RWField(ObjectPtr obj, size_t fieldID) const noexcept {
 	return nullptr;
 }
 
-// non-const + const
 ConstObjectPtr ReflMngr::RField(ConstObjectPtr obj, size_t fieldID) const noexcept {
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())

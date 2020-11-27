@@ -5,12 +5,32 @@
 
 using namespace Ubpa::UDRefl;
 
-struct A { float a; };
-struct B : A { float b; };
-struct C : A { float c; };
-struct D : B, C { float d; };
+struct O { float o{ 0.f }; };
+struct A { float a{ 0.f }; };
+struct B : O, virtual A { inline static int x; float b{ 0.f }; };
+struct C : virtual A { float c{ 0.f }; };
+struct D : B, C { float d{ 0.f }; };
 
 int main() {
+	has_virtual_base_v<A>;
+	has_virtual_base_v<B>;
+
+	size_t offset = 1;
+	bool a;
+	std::cin >> a;
+	const void* (*offset_functor)(const void*);
+	if (a)
+		offset_functor = [](const void* ptr) {
+			return forward_offset(ptr, 1);
+		};
+	else
+		offset_functor = [](const void* ptr) {
+			return forward_offset(ptr, 2);
+		};
+	const void* t = nullptr;
+	std::cout << forward_offset(t, 1) << std::endl;
+	std::cout << offset_functor(t) << std::endl;
+
 	size_t ID_A = ReflMngr::Instance().registry.Register("A");
 	size_t ID_B = ReflMngr::Instance().registry.Register("B");
 	size_t ID_C = ReflMngr::Instance().registry.Register("C");
@@ -20,7 +40,8 @@ int main() {
 	size_t ID_c = ReflMngr::Instance().registry.Register("c");
 	size_t ID_d = ReflMngr::Instance().registry.Register("d");
 	size_t ID_float = ReflMngr::Instance().registry.Register("float");
-
+	//reinterpret_cast<const void*>(&B::b);
+	field_offset_functor<&B::b>();
 	{ // register
 		TypeInfo typeinfo_A{
 			{}, // attrs
@@ -36,9 +57,10 @@ int main() {
 			{}, // methodinfos
 			{}, // cmethodinfos
 			{}, // smethodinfos
+			{}, // baseinfos
 			{
-				{ID_A, {base_offset<B, A>()}}
-			}//baseinfos
+				{ID_A, {base_offset_functor<B, A>()}}
+			}//vbaseinfos
 		};
 		TypeInfo typeinfo_C{
 			{}, // attrs
@@ -48,9 +70,10 @@ int main() {
 			{}, // methodinfos
 			{}, // cmethodinfos
 			{}, // smethodinfos
+			{}, // baseinfos
 			{
-				{ID_A, {base_offset<C, A>()}}
-			}//baseinfos
+				{ID_A, {base_offset_functor<C, A>()}}
+			}//vbaseinfos
 		};
 		TypeInfo typeinfo_D{
 			{}, // attrs
@@ -63,7 +86,7 @@ int main() {
 			{
 				{ID_B, {base_offset<D, B>()}},
 				{ID_C, {base_offset<D, C>()}},
-			}//baseinfos
+			}, //baseinfos
 		};
 
 		ReflMngr::Instance().typeinfos.emplace(ID_A, std::move(typeinfo_A));
@@ -73,18 +96,15 @@ int main() {
 	}
 
 	D d;
-	d.C::a = 1.f;
-	d.B::a = 2.f;
-	d.b = 3.f;
-	d.c = 4.f;
-	d.d = 5.f;
+	//d.a = 1.f;
+	d.b = 2.f;
+	d.c = 3.f;
+	d.d = 4.f;
 
 	ObjectPtr ptr{ ID_D, &d };
 	
-	ReflMngr::Instance().RWField(ReflMngr::Instance().Cast(ptr, ID_C), ID_a).As<float>() = 10.f;
-
-	std::cout << ReflMngr::Instance().RField(ReflMngr::Instance().Cast(ptr, ID_B), ID_a).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ReflMngr::Instance().Cast(ptr, ID_C), ID_a).As<float>() << std::endl;
+	ReflMngr::Instance().RWField(ptr, ID_a).As<float>() = 10.f;
+	std::cout << ReflMngr::Instance().RField(ptr, ID_a).As<float>() << std::endl;
 	std::cout << ReflMngr::Instance().RField(ptr, ID_b).As<float>() << std::endl;
 	std::cout << ReflMngr::Instance().RField(ptr, ID_c).As<float>() << std::endl;
 	std::cout << ReflMngr::Instance().RField(ptr, ID_d).As<float>() << std::endl;

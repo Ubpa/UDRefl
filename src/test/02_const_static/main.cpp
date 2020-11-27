@@ -22,20 +22,22 @@ int main() {
 
 	{ // register Point
 		FieldPtr ptr_data{ ID_int, offsetof(A, data) };
-		ConstFieldPtr ptr_c_data{ ID_int, offsetof(A, c_data) };
-		ObjectPtr ptr_s_data{ ID_int, &A::s_data };
-		ConstObjectPtr ptr_sc_data{ ID_int, &A::sc_data };
+		FieldPtr ptr_c_data{ ID_int, offsetof(A, c_data), true };
+		FieldPtr ptr_s_data{ ID_int, &A::s_data };
+		FieldPtr ptr_sc_data{ ID_int, &A::sc_data };
 
 		FieldInfo fieldinfo_data{ ptr_data };
-		ConstFieldInfo fieldinfo_c_data{ ptr_c_data };
-		StaticFieldInfo fieldinfo_s_data{ ptr_s_data };
-		StaticConstFieldInfo fieldinfo_sc_data{ ptr_sc_data };
+		FieldInfo fieldinfo_c_data{ ptr_c_data };
+		FieldInfo fieldinfo_s_data{ ptr_s_data };
+		FieldInfo fieldinfo_sc_data{ ptr_sc_data };
 		TypeInfo typeinfo{
 			{}, // attrs
-			{{ID_data, fieldinfo_data}}, // fields
-			{{ID_c_data, fieldinfo_c_data}}, // const fields
-			{{ID_s_data, fieldinfo_s_data}}, // static fields
-			{{ID_sc_data, fieldinfo_sc_data}}, // static const fields
+			{
+				{ID_data, fieldinfo_data},
+				{ID_c_data, fieldinfo_c_data},
+				{ID_s_data, fieldinfo_s_data},
+				{ID_sc_data, fieldinfo_sc_data}
+			}, // fields
 		};
 		ReflMngr::Instance().typeinfos.emplace(ID_A, std::move(typeinfo));
 	}
@@ -44,30 +46,17 @@ int main() {
 	ObjectPtr ptr{ ID_A, &a };
 
 	for (const auto& [ID_field, fieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).fieldinfos) {
-		auto field = fieldinfo.fieldptr.Map(ptr);
 		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
-		if (field.GetID() == ID_int)
-			std::cout << field_name << ": " << field.As<int>() << std::endl;
+		std::cout << field_name << std::endl;
 	}
 
-	for (const auto& [ID_field, cfieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).cfieldinfos) {
-		auto field = cfieldinfo.fieldptr.Map(ptr);
-		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
-		if (field.GetID() == ID_int)
-			std::cout << field_name << ": " << field.As<int>() << std::endl;
-	}
+	ReflMngr::Instance().RWField(ptr, ID_data).As<int>() = 10;
+	ReflMngr::Instance().RWField(ptr, ID_s_data).As<int>() = 20;
 
-	for (const auto& [ID_field, sfieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).sfieldinfos) {
-		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
-		if (sfieldinfo.objptr.GetID() == ID_int)
-			std::cout << field_name << ": " << sfieldinfo.objptr.As<int>() << std::endl;
-	}
-
-	for (const auto& [ID_field, scfieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).scfieldinfos) {
-		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
-		if (scfieldinfo.objptr.GetID() == ID_int)
-			std::cout << field_name << ": " << scfieldinfo.objptr.As<int>() << std::endl;
-	}
+	std::cout << ReflMngr::Instance().RField(ptr, ID_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RField(ptr, ID_c_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RField(ptr, ID_s_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RField(ptr, ID_sc_data).As<int>() << std::endl;
 
 	return 0;
 }

@@ -50,26 +50,27 @@ namespace Ubpa::UDRefl {
 
 	struct Method {
 		ParamList paramList;
-		std::function<std::any(void*, ArgsView)> func;
+		std::any(*func)(void*, ArgsView);
 		std::any Invoke(void* obj, void* buffer) const {
-			assert(obj != nullptr);
+			assert(func);
 			return func(obj, { buffer, paramList });
 		};
 	};
 
 	struct ConstMethod {
 		ParamList paramList;
-		std::function<std::any(const void*, ArgsView)> func;
+		std::any(*func)(const void*, ArgsView);
 		std::any Invoke(const void* obj, void* buffer) const {
-			assert(obj != nullptr);
+			assert(func);
 			return func(obj, { buffer, paramList });
 		};
 	};
 
 	struct StaticMethod {
 		ParamList paramList;
-		std::function<std::any(ArgsView)> func;
+		std::any(*func)(ArgsView);
 		std::any Invoke(void* buffer) const {
+			assert(func);
 			return func({ buffer, paramList });
 		};
 	};
