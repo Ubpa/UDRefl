@@ -4,7 +4,6 @@
 #include "Util.h"
 
 namespace Ubpa::UDRefl {
-	// non-static
 	class FieldPtr {
 	public:
 		using OffsetFunctor = const void*(const void*);
@@ -89,7 +88,7 @@ namespace Ubpa::UDRefl {
 			return { valueID, offset_functor(obj) };
 		}
 
-		// static
+		// static { variable | const }
 		constexpr ConstObjectPtr Map() const noexcept {
 			switch (type)
 			{
@@ -125,7 +124,7 @@ namespace Ubpa::UDRefl {
 			}
 		}
 
-		// variable
+		// {normal | static | virutal } variable
 		constexpr ObjectPtr Map(void* obj) const noexcept {
 			switch (type)
 			{

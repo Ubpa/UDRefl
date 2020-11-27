@@ -7,6 +7,7 @@
 #include <vector>
 #include <functional>
 #include <any>
+#include <variant>
 
 namespace Ubpa::UDRefl {
 	struct Parameter {
@@ -48,31 +49,100 @@ namespace Ubpa::UDRefl {
 		const ParamList& paramList;
 	};
 
-	struct Method {
-		ParamList paramList;
-		std::any(*func)(void*, ArgsView);
+	class Method {
+	public:
+		enum class Type {
+			OBJECT_VARIABLE,
+			OBJECT_CONST,
+			STATIC,
+		};
+
+		using ObjectVariableFunction = std::any(void*, ArgsView);
+		using ObjectConstFunction = std::any(const void*, ArgsView);
+		using StaticFunction = std::any(ArgsView);
+
+		Method(ObjectVariableFunction* func, ParamList paramList = {}) noexcept :
+			type{ Type::OBJECT_VARIABLE },
+			func_object_variable{ func },
+			paramList{ std::move(paramList) }
+		{
+			assert(func);
+		}
+
+		Method(ObjectConstFunction* func, ParamList paramList = {}) noexcept :
+			type{ Type::OBJECT_CONST },
+			func_object_const{ func },
+			paramList{ std::move(paramList) }
+		{
+			assert(func);
+		}
+
+		Method(StaticFunction* func, ParamList paramList = {}) noexcept :
+			type{ Type::STATIC },
+			func_static{ func },
+			paramList{ std::move(paramList) }
+		{
+			assert(func);
+		}
+
+		const ParamList& GetParamList() const noexcept { return paramList; }
+		Type GetType() const noexcept { return type; }
+
 		std::any Invoke(void* obj, void* buffer) const {
-			assert(func);
-			return func(obj, { buffer, paramList });
+			ArgsView args = { buffer,paramList };
+			switch (type)
+			{
+			case Type::OBJECT_VARIABLE:
+				return func_object_variable(obj, args);
+			case Type::OBJECT_CONST:
+				return func_object_const(obj, args);
+			case Type::STATIC:
+				return func_static(args);
+			default:
+				assert(false);
+				return {};
+			}
 		};
-	};
 
-	struct ConstMethod {
-		ParamList paramList;
-		std::any(*func)(const void*, ArgsView);
 		std::any Invoke(const void* obj, void* buffer) const {
-			assert(func);
-			return func(obj, { buffer, paramList });
+			ArgsView args = { buffer,paramList };
+			switch (type)
+			{
+			case Type::OBJECT_CONST:
+				return func_object_const(obj, args);
+			case Type::STATIC:
+				return func_static(args);
+			default:
+				assert(false);
+				return {};
+			}
 		};
-	};
 
-	struct StaticMethod {
-		ParamList paramList;
-		std::any(*func)(ArgsView);
 		std::any Invoke(void* buffer) const {
-			assert(func);
-			return func({ buffer, paramList });
+			ArgsView args = { buffer,paramList };
+			switch (type)
+			{
+			case Type::STATIC:
+				return func_static(args);
+			default:
+				assert(false);
+				return {};
+			}
 		};
+
+		std::any Invoke_Static(void* buffer) const {
+			assert(type == Type::STATIC);
+			return func_static({ buffer,paramList });
+		};
+
+	private:
+		Type type;
+		union {
+			std::any(*func_object_variable)(void*, ArgsView);
+			std::any(*func_object_const)(const void*, ArgsView);
+			std::any(*func_static)(ArgsView);
+		};
+		ParamList paramList;
 	};
 
 	struct InvokeResult {

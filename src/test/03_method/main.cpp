@@ -45,29 +45,31 @@ int main() {
 		auto Norm2 = [](const void* obj, ArgsView) -> std::any {
 			return reinterpret_cast<const Vec*>(obj)->Norm2();
 		};
-		ConstMethod method_Norm2{ {}, Norm2 };
+		Method method_Norm2{ Norm2 };
+
 		auto NormalizeSelf = [](void* obj, ArgsView) -> std::any {
 			reinterpret_cast<Vec*>(obj)->NormalizeSelf();
 			return {};
 		};
-		Method method_NormalizeSelf{ {}, NormalizeSelf };
+		Method method_NormalizeSelf{ NormalizeSelf };
+
 		auto operator_add_assign = [](void* obj, ArgsView args) -> std::any {
 			return &(*reinterpret_cast<Vec*>(obj) += *args.At(0).As<const Vec*>());
 		};
-		Parameter param{
-			ID_const_Vec_ptr,
-			sizeof(const Vec*),
-			alignof(const Vec*),
-			ID_p
-		};
-		ParamList paramList{ { param } };
-		Method method_operator_add_assign{ paramList, operator_add_assign };
+		Method method_operator_add_assign{ operator_add_assign, {{
+			{
+				ID_const_Vec_ptr,
+				sizeof(const Vec*),
+				alignof(const Vec*),
+				ID_p
+			}
+		}} };
 		
 		FieldInfo fieldinfo_x{ ptr_x };
 		FieldInfo fieldinfo_y{ ptr_y };
 		MethodInfo methodinfo_NormalizeSelf{ method_NormalizeSelf };
 		MethodInfo methodinfo_operator_add_assign{ method_operator_add_assign };
-		ConstMethodInfo cmethodinfo_Norm2{ method_Norm2 };
+		MethodInfo methodinfo_Norm2{ method_Norm2 };
 
 		TypeInfo typeinfo{
 			{}, // attrs
@@ -77,10 +79,8 @@ int main() {
 			},
 			{ // methods
 				{ID_NormalizeSelf, methodinfo_NormalizeSelf},
-				{ID_operator_add_assign, methodinfo_operator_add_assign}
-			},
-			{ // cmethods
-				{ID_Norm2, cmethodinfo_Norm2}
+				{ID_operator_add_assign, methodinfo_operator_add_assign},
+				{ID_Norm2, methodinfo_Norm2}
 			},
 		};
 		ReflMngr::Instance().typeinfos.emplace(ID_Vec, std::move(typeinfo));

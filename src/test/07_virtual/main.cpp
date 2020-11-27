@@ -5,32 +5,12 @@
 
 using namespace Ubpa::UDRefl;
 
-struct O { float o{ 0.f }; };
 struct A { float a{ 0.f }; };
-struct B : O, virtual A { inline static int x; float b{ 0.f }; };
+struct B : virtual A { float b{ 0.f }; };
 struct C : virtual A { float c{ 0.f }; };
 struct D : B, C { float d{ 0.f }; };
 
 int main() {
-	has_virtual_base_v<A>;
-	has_virtual_base_v<B>;
-
-	size_t offset = 1;
-	bool a;
-	std::cin >> a;
-	const void* (*offset_functor)(const void*);
-	if (a)
-		offset_functor = [](const void* ptr) {
-			return forward_offset(ptr, 1);
-		};
-	else
-		offset_functor = [](const void* ptr) {
-			return forward_offset(ptr, 2);
-		};
-	const void* t = nullptr;
-	std::cout << forward_offset(t, 1) << std::endl;
-	std::cout << offset_functor(t) << std::endl;
-
 	size_t ID_A = ReflMngr::Instance().registry.Register("A");
 	size_t ID_B = ReflMngr::Instance().registry.Register("B");
 	size_t ID_C = ReflMngr::Instance().registry.Register("C");
@@ -40,8 +20,7 @@ int main() {
 	size_t ID_c = ReflMngr::Instance().registry.Register("c");
 	size_t ID_d = ReflMngr::Instance().registry.Register("d");
 	size_t ID_float = ReflMngr::Instance().registry.Register("float");
-	//reinterpret_cast<const void*>(&B::b);
-	field_offset_functor<&B::b>();
+
 	{ // register
 		TypeInfo typeinfo_A{
 			{}, // attrs
@@ -52,11 +31,9 @@ int main() {
 		TypeInfo typeinfo_B{
 			{}, // attrs
 			{
-				{ ID_b, {{ID_float, offsetof(B,b) }}}
+				{ ID_b, {{ID_float, field_offset_functor<&B::b>() }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // cmethodinfos
-			{}, // smethodinfos
 			{}, // baseinfos
 			{
 				{ID_A, {base_offset_functor<B, A>()}}
@@ -65,11 +42,9 @@ int main() {
 		TypeInfo typeinfo_C{
 			{}, // attrs
 			{
-				{ ID_c, {{ID_float, offsetof(C,c) }}}
+				{ ID_c, {{ID_float, field_offset_functor<&C::c>() }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // cmethodinfos
-			{}, // smethodinfos
 			{}, // baseinfos
 			{
 				{ID_A, {base_offset_functor<C, A>()}}
@@ -78,11 +53,9 @@ int main() {
 		TypeInfo typeinfo_D{
 			{}, // attrs
 			{
-				{ ID_d, {{ID_float, offsetof(D,d) }}}
+				{ ID_d, {{ID_float, field_offset_functor<&D::d>() }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // cmethodinfos
-			{}, // smethodinfos
 			{
 				{ID_B, {base_offset<D, B>()}},
 				{ID_C, {base_offset<D, C>()}},

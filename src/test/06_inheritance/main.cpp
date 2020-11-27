@@ -34,8 +34,6 @@ int main() {
 				{ ID_b, {{ID_float, offsetof(B,b) }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // cmethodinfos
-			{}, // smethodinfos
 			{
 				{ID_A, {base_offset<B, A>()}}
 			}//baseinfos
@@ -46,8 +44,6 @@ int main() {
 				{ ID_c, {{ID_float, offsetof(C,c) }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // cmethodinfos
-			{}, // smethodinfos
 			{
 				{ID_A, {base_offset<C, A>()}}
 			}//baseinfos
@@ -58,8 +54,6 @@ int main() {
 				{ ID_d, {{ID_float, offsetof(D,d) }}}
 			}, // fieldinfos
 			{}, // methodinfos
-			{}, // cmethodinfos
-			{}, // smethodinfos
 			{
 				{ID_B, {base_offset<D, B>()}},
 				{ID_C, {base_offset<D, C>()}},

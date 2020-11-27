@@ -46,61 +46,80 @@ ConstObjectPtr TypeInfo::RField(const void* obj, size_t fieldID) const noexcept 
 }
 
 bool TypeInfo::IsStaticInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
-	auto target = smethodinfos.find(methodID);
-	size_t num = smethodinfos.count(methodID);
+	auto target = methodinfos.find(methodID);
+	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+		if (target->second.method.GetType() == Method::Type::STATIC
+			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
 	return false;
 }
 
 bool TypeInfo::IsConstInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
-	auto target = cmethodinfos.find(methodID);
-	size_t num = cmethodinfos.count(methodID);
+	auto target = methodinfos.find(methodID);
+	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+		if (target->second.method.GetType() != Method::Type::OBJECT_VARIABLE
+			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
-	return IsStaticInvocable(methodID, argTypeIDs);
+	return false;
 }
 
 bool TypeInfo::IsInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+		if (target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
-	return IsConstInvocable(methodID, argTypeIDs);
+	return false;
 }
 
 InvokeResult TypeInfo::Invoke(size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
-	auto target = smethodinfos.find(methodID);
-	size_t num = smethodinfos.count(methodID);
+	auto target = methodinfos.find(methodID);
+	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
-			return { true, target->second.method.Invoke(buffer) };
+		if (target->second.method.GetType() == Method::Type::STATIC
+			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
+			return { true, target->second.method.Invoke_Static(buffer) };
 	}
 	return { false, {} };
 }
 
 InvokeResult TypeInfo::Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
-	auto target = cmethodinfos.find(methodID);
-	size_t num = cmethodinfos.count(methodID);
+	auto target = methodinfos.find(methodID);
+	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
+		if (target->second.method.GetType() != Method::Type::OBJECT_VARIABLE
+			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			return { true, target->second.method.Invoke(obj, buffer) };
 	}
-	return Invoke(methodID, argTypeIDs, buffer);
+	return { false, {} };
 }
 
 InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
-	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.paramList.IsConpatibleWith(argTypeIDs))
-			return { true, target->second.method.Invoke(obj, buffer) };
+
+	{ // first: object variable and static
+		auto iter = target;
+		for (size_t i = 0; i < num; ++i, ++iter) {
+			if (iter->second.method.GetType() != Method::Type::OBJECT_CONST
+				&& iter->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
+				return { true, iter->second.method.Invoke(obj, buffer) };
+		}
 	}
-	return Invoke(static_cast<const void*>(obj), methodID, argTypeIDs, buffer);
+
+	{ // second: object const
+		auto iter = target;
+		for (size_t i = 0; i < num; ++i, ++iter) {
+			if (target->second.method.GetType() == Method::Type::OBJECT_CONST
+				&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
+				return { true, target->second.method.Invoke(obj, buffer) };
+		}
+	}
+
+	return { false, {} };
 }

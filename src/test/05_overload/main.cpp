@@ -42,27 +42,27 @@ int main() {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("const Vec*"));
 			return &(*reinterpret_cast<Vec*>(obj) += *args.At(0).As<const Vec*>());
 		};
-		Parameter param_1{
-			ID_const_Vec_ptr,
-			sizeof(const Vec*),
-			alignof(const Vec*),
-			ID_p
-		};
-		ParamList paramList_1{ { param_1 } };
-		Method method_operator_add_assign_1{ paramList_1, operator_add_assign_1 };
+		Method method_operator_add_assign_1{ operator_add_assign_1, {{
+			{
+				ID_const_Vec_ptr,
+				sizeof(const Vec*),
+				alignof(const Vec*),
+				ID_p
+			}
+		}} };
 
 		auto operator_add_assign_2 = [](void* obj, ArgsView args) -> std::any {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("float"));
 			return &(*reinterpret_cast<Vec*>(obj) += args.At(0).As<float>());
 		};
-		Parameter param_2{
-			ID_float,
-			sizeof(float),
-			alignof(float),
-			ID_d
-		};
-		ParamList paramList_2{ { param_2 } };
-		Method method_operator_add_assign_2{ paramList_2, operator_add_assign_2 };
+		Method method_operator_add_assign_2{ operator_add_assign_2, {{
+			{
+				ID_float,
+				sizeof(float),
+				alignof(float),
+				ID_d
+			}
+		}} };
 
 		FieldInfo fieldinfo_x{ ptr_x };
 		FieldInfo fieldinfo_y{ ptr_y };
@@ -78,8 +78,7 @@ int main() {
 			{ // methods
 				{ID_operator_add_assign, methodinfo_operator_add_assign_1},
 				{ID_operator_add_assign, methodinfo_operator_add_assign_2}
-			},
-			{} // cmethods
+			}
 		};
 		ReflMngr::Instance().typeinfos.emplace(ID_Vec, std::move(typeinfo));
 	}

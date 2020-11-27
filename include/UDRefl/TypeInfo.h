@@ -8,9 +8,7 @@ namespace Ubpa::UDRefl {
 	struct TypeInfo {
 		std::unordered_map<size_t, std::any> attrs;
 		std::unordered_map<size_t, FieldInfo> fieldinfos;
-		std::unordered_multimap<size_t, MethodInfo> methodinfos; // non-const
-		std::unordered_multimap<size_t, ConstMethodInfo> cmethodinfos; // const
-		std::unordered_multimap<size_t, StaticMethodInfo> smethodinfos; // static
+		std::unordered_multimap<size_t, MethodInfo> methodinfos;
 		std::unordered_multimap<size_t, BaseInfo> baseinfos;
 		std::unordered_multimap<size_t, VirtualBaseInfo> vbaseinfos;
 
@@ -34,7 +32,7 @@ namespace Ubpa::UDRefl {
 		InvokeResult Invoke(size_t methodID, Span<size_t> argTypeIDs, void* buffer) const;
 		// without bases, const + static
 		InvokeResult Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const;
-		// without bases, non-const + const + static
+		// without bases, non-const + const + static, non-const && static > const
 		InvokeResult Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const;
 	};
 }
