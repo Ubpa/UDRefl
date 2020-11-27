@@ -1,7 +1,6 @@
 #include <UDRefl/UDRefl.h>
 
 #include <iostream>
-#include <cassert>
 
 using namespace Ubpa::UDRefl;
 
@@ -10,11 +9,6 @@ struct Point {
 	float x;
 	float y;
 };
-
-struct A { virtual ~A() {}; };
-struct B : virtual A {};
-struct C : virtual A {};
-struct D : B, C {};
 
 int main() {
 	size_t ID_Point = ReflMngr::Instance().registry.Register("Point");
@@ -41,14 +35,22 @@ int main() {
 	ReflMngr::Instance().RWField(ptr, ID_x).As<float>() = 1.f;
 	ReflMngr::Instance().RWField(ptr, ID_y).As<float>() = 2.f;
 
-	for (const auto& [ID_field, fieldinfo] : ReflMngr::Instance().typeinfos.at(ID_Point).fieldinfos) {
-		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
-		if (fieldinfo.fieldptr.GetValueID() == ID_float) {
-			std::cout << field_name << std::endl;
-			if (fieldinfo.attrs.find(ID_UInspector_range) != fieldinfo.attrs.end()) {
-				const auto& r = std::any_cast<const std::pair<float, float>&>(fieldinfo.attrs.at(ID_UInspector_range));
-				std::cout << ReflMngr::Instance().registry.Nameof(ID_UInspector_range) << ": " << r.first << ", " << r.second << std::endl;
+	ReflMngr::Instance().ForEachRField(
+		ptr,
+		[](size_t typeID, const TypeInfo& typeinfo, size_t fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
+			for (const auto& [attrID, attr] : fieldinfo.attrs) {
+				if (attrID == ReflMngr::Instance().registry.GetID("UInspector_range")) {
+					auto range = std::any_cast<std::pair<float, float>>(attr);
+					std::cout
+						<< "[UInspector_range]" << " "
+						<< range.first << ", " << range.second
+						<< std::endl;
+				}
 			}
+			std::cout
+				<< ReflMngr::Instance().registry.Nameof(fieldID)
+				<< ": " << field.As<float>()
+				<< std::endl;
 		}
-	}
+	);
 }

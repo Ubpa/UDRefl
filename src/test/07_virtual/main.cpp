@@ -75,10 +75,16 @@ int main() {
 	ObjectPtr ptr{ ID_D, &d };
 	
 	ReflMngr::Instance().RWField(ptr, ID_a).As<float>() = 10.f;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_a).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_b).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_c).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_d).As<float>() << std::endl;
+
+	ReflMngr::Instance().ForEachRField(
+		ptr,
+		[](size_t typeID, const TypeInfo& typeinfo, size_t fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
+			std::cout
+				<< ReflMngr::Instance().registry.Nameof(fieldID)
+				<< ": " << field.As<float>()
+				<< std::endl;
+		}
+	);
 
 	return 0;
 }

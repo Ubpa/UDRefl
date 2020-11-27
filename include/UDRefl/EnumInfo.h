@@ -4,9 +4,9 @@
 
 namespace Ubpa::UDRefl {
 	struct EnumInfo {
+		std::unordered_map<size_t, std::any> attrs;
 		Enumerator::UnderlyingType underlyingType;
 		std::unordered_map<size_t, EnumeratorInfo> enumeratorinfos;
-		std::unordered_map<size_t, std::any> attrs;
 
 		Enumerator GetEnumerator(size_t ID) const { return { underlyingType, enumeratorinfos.at(ID).value }; }
 		size_t GetID(Enumerator::Value value) const {

@@ -77,11 +77,15 @@ int main() {
 	
 	ReflMngr::Instance().RWField(ReflMngr::Instance().StaticCast_DerivedToBase(ptr, ID_C), ID_a).As<float>() = 10.f;
 
-	std::cout << ReflMngr::Instance().RField(ReflMngr::Instance().StaticCast_DerivedToBase(ptr, ID_B), ID_a).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ReflMngr::Instance().StaticCast_DerivedToBase(ptr, ID_C), ID_a).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_b).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_c).As<float>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_d).As<float>() << std::endl;
+	ReflMngr::Instance().ForEachRField(
+		ptr,
+		[](size_t typeID, const TypeInfo& typeinfo, size_t fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
+			std::cout
+				<< ReflMngr::Instance().registry.Nameof(fieldID)
+				<< ": " << field.As<float>()
+				<< std::endl;
+		}
+	);
 
 	return 0;
 }

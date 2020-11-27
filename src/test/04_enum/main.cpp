@@ -22,6 +22,7 @@ int main() {
 		EnumeratorInfo einfo_GREEN{ Color::GREEN };
 		EnumeratorInfo einfo_BLUE{ Color::BLUE };
 		EnumInfo enuminfo{
+			{}, // attrs
 			Enumerator::UnderlyingTypeOf<Color>(),
 			{
 				{ID_RED, einfo_RED},
