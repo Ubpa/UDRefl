@@ -77,29 +77,41 @@ bool TypeInfo::IsInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexc
 	return false;
 }
 
-InvokeResult TypeInfo::Invoke(size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
+InvokeResult TypeInfo::Invoke(size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
 		if (target->second.method.GetType() == Method::Type::STATIC
 			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
-			return { true, target->second.method.Invoke_Static(buffer) };
+		{
+			return {
+				true,
+				target->second.method.GetResultDesc().typeID,
+				target->second.method.Invoke_Static(args_buffer, result_buffer)
+			};
+		}
 	}
-	return { false, {} };
+	return {};
 }
 
-InvokeResult TypeInfo::Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
+InvokeResult TypeInfo::Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
 		if (target->second.method.GetType() != Method::Type::OBJECT_VARIABLE
 			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
-			return { true, target->second.method.Invoke(obj, buffer) };
+		{
+			return {
+				true,
+				target->second.method.GetResultDesc().typeID,
+				target->second.method.Invoke(obj, args_buffer, result_buffer)
+			};
+		}
 	}
-	return { false, {} };
+	return {};
 }
 
-InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
+InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 
@@ -108,18 +120,30 @@ InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeID
 		for (size_t i = 0; i < num; ++i, ++iter) {
 			if (iter->second.method.GetType() != Method::Type::OBJECT_CONST
 				&& iter->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
-				return { true, iter->second.method.Invoke(obj, buffer) };
+			{
+				return {
+					true,
+					iter->second.method.GetResultDesc().typeID,
+					iter->second.method.Invoke(obj, args_buffer, result_buffer)
+				};
+			}
 		}
 	}
 
 	{ // second: object const
 		auto iter = target;
 		for (size_t i = 0; i < num; ++i, ++iter) {
-			if (target->second.method.GetType() == Method::Type::OBJECT_CONST
-				&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
-				return { true, target->second.method.Invoke(obj, buffer) };
+			if (iter->second.method.GetType() == Method::Type::OBJECT_CONST
+				&& iter->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
+			{
+				return {
+					true,
+					iter->second.method.GetResultDesc().typeID,
+					iter->second.method.Invoke(obj, args_buffer, result_buffer)
+				};
+			}
 		}
 	}
 
-	return { false, {} };
+	return {};
 }

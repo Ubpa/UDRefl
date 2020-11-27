@@ -14,7 +14,7 @@ namespace Ubpa::UDRefl {
 
 		std::unordered_map<size_t, FieldInfo> fieldinfos;
 		std::unordered_multimap<size_t, MethodInfo> methodinfos;
-		std::unordered_multimap<size_t, BaseInfo> baseinfos;
+		std::unordered_map<size_t, BaseInfo> baseinfos;
 
 		//
 		// Field
@@ -41,10 +41,10 @@ namespace Ubpa::UDRefl {
 		bool IsInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept;
 
 		// without bases, static
-		InvokeResult Invoke(size_t methodID, Span<size_t> argTypeIDs, void* buffer) const;
+		InvokeResult Invoke(size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const;
 		// without bases, const + static
-		InvokeResult Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const;
+		InvokeResult Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const;
 		// without bases, non-const + const + static, non-const && static > const
-		InvokeResult Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const;
+		InvokeResult Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const;
 	};
 }

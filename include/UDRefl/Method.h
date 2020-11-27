@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object.h"
+#include "Util.h"
 
 #include <UContainer/Span.h>
 
@@ -15,6 +16,12 @@ namespace Ubpa::UDRefl {
 		size_t size;
 		size_t alignment;
 		size_t nameID{ static_cast<size_t>(-1) };
+	};
+
+	struct ResultDesc {
+		size_t typeID{ static_cast<size_t>(-1) };
+		size_t size{ 0 };
+		size_t alignment{ 1 };
 	};
 
 	class ParamList {
@@ -57,96 +64,102 @@ namespace Ubpa::UDRefl {
 			STATIC,
 		};
 
-		using ObjectVariableFunction = std::any(void*, ArgsView);
-		using ObjectConstFunction = std::any(const void*, ArgsView);
-		using StaticFunction = std::any(ArgsView);
+		using ObjectVariableFunction = std::add_pointer_t<Destructor>(void*, ArgsView, void*);
+		using ObjectConstFunction    = std::add_pointer_t<Destructor>(const void*, ArgsView, void*);
+		using StaticFunction         = std::add_pointer_t<Destructor>(ArgsView, void*);
 
-		Method(ObjectVariableFunction* func, ParamList paramList = {}) noexcept :
+		Method(ObjectVariableFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
 			type{ Type::OBJECT_VARIABLE },
 			func_object_variable{ func },
+			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) }
 		{
 			assert(func);
 		}
 
-		Method(ObjectConstFunction* func, ParamList paramList = {}) noexcept :
+		Method(ObjectConstFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
 			type{ Type::OBJECT_CONST },
 			func_object_const{ func },
+			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) }
 		{
 			assert(func);
 		}
 
-		Method(StaticFunction* func, ParamList paramList = {}) noexcept :
+		Method(StaticFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
 			type{ Type::STATIC },
 			func_static{ func },
+			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) }
 		{
 			assert(func);
 		}
 
-		const ParamList& GetParamList() const noexcept { return paramList; }
 		Type GetType() const noexcept { return type; }
+		const ParamList& GetParamList() const noexcept { return paramList; }
+		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
 
-		std::any Invoke(void* obj, void* buffer) const {
-			ArgsView args = { buffer,paramList };
+		Destructor* Invoke(void* obj, void* args_buffer, void* result_buffer) const {
+			ArgsView args = { args_buffer,paramList };
 			switch (type)
 			{
 			case Type::OBJECT_VARIABLE:
-				return func_object_variable(obj, args);
+				return func_object_variable(obj, args, result_buffer);
 			case Type::OBJECT_CONST:
-				return func_object_const(obj, args);
+				return func_object_const(obj, args, result_buffer);
 			case Type::STATIC:
-				return func_static(args);
+				return func_static(args, result_buffer);
 			default:
 				assert(false);
 				return {};
 			}
 		};
 
-		std::any Invoke(const void* obj, void* buffer) const {
-			ArgsView args = { buffer,paramList };
+		Destructor* Invoke(const void* obj, void* args_buffer, void* result_buffer) const {
+			ArgsView args = { args_buffer,paramList };
 			switch (type)
 			{
 			case Type::OBJECT_CONST:
-				return func_object_const(obj, args);
+				return func_object_const(obj, args, result_buffer);
 			case Type::STATIC:
-				return func_static(args);
+				return func_static(args, result_buffer);
 			default:
 				assert(false);
-				return {};
+				return nullptr;
 			}
 		};
 
-		std::any Invoke(void* buffer) const {
-			ArgsView args = { buffer,paramList };
+		Destructor* Invoke(void* args_buffer, void* result_buffer) const {
+			ArgsView args = { args_buffer,paramList };
 			switch (type)
 			{
 			case Type::STATIC:
-				return func_static(args);
+				return func_static(args, result_buffer);
 			default:
 				assert(false);
-				return {};
+				return nullptr;
 			}
 		};
 
-		std::any Invoke_Static(void* buffer) const {
+		Destructor* Invoke_Static(void* args_buffer, void* result_buffer) const {
 			assert(type == Type::STATIC);
-			return func_static({ buffer,paramList });
+			return func_static({ args_buffer,paramList }, result_buffer);
 		};
 
 	private:
 		Type type;
 		union {
-			std::any(*func_object_variable)(void*, ArgsView);
-			std::any(*func_object_const)(const void*, ArgsView);
-			std::any(*func_static)(ArgsView);
+			ObjectVariableFunction* func_object_variable;
+			ObjectConstFunction* func_object_const;
+			StaticFunction* func_static;
 		};
+		ResultDesc resultDesc;
 		ParamList paramList;
 	};
 
 	struct InvokeResult {
 		bool success{ false };
-		std::any value;
+		size_t typeID{ static_cast<size_t>(-1) };
+		Destructor* destructor{ nullptr };
 	};
 }

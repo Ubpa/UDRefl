@@ -37,6 +37,8 @@
 ## TODO
 
 - [x] virtual
+- [x] return
+- [ ] foreach
 - [ ] life cycle (ctor, dtor, copy, etc.)
 - [ ] global
 

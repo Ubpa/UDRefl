@@ -27,6 +27,7 @@ struct Vec {
 int main() {
 	size_t ID_Vec = ReflMngr::Instance().registry.Register("Vec");
 	size_t ID_const_Vec_ptr = ReflMngr::Instance().registry.Register("const Vec*");
+	size_t ID_Vec_ptr = ReflMngr::Instance().registry.Register("Vec*");
 	size_t ID_p = ReflMngr::Instance().registry.Register("p");
 	size_t ID_d = ReflMngr::Instance().registry.Register("d");
 	size_t ID_float = ReflMngr::Instance().registry.Register("float");
@@ -38,9 +39,11 @@ int main() {
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
 		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
 
-		auto operator_add_assign_1 = [](void* obj, ArgsView args) -> std::any {
-			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("const Vec*"));
-			return &(*reinterpret_cast<Vec*>(obj) += *args.At(0).As<const Vec*>());
+		auto operator_add_assign_1 = [](void* obj, ArgsView args, void* result_buffer) {
+			auto v = reinterpret_cast<Vec*>(obj);
+			*reinterpret_cast<Vec**>(result_buffer) =
+				&(*v += *args.At(0).As<const Vec*>());
+			return destructor<Vec*>();
 		};
 		Method method_operator_add_assign_1{ operator_add_assign_1, {{
 			{
@@ -49,11 +52,13 @@ int main() {
 				alignof(const Vec*),
 				ID_p
 			}
-		}} };
+		}}, {ID_Vec_ptr, sizeof(Vec*), alignof(Vec*)} };
 
-		auto operator_add_assign_2 = [](void* obj, ArgsView args) -> std::any {
+		auto operator_add_assign_2 = [](void* obj, ArgsView args, void* result_buffer) {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("float"));
-			return &(*reinterpret_cast<Vec*>(obj) += args.At(0).As<float>());
+			*reinterpret_cast<Vec**>(result_buffer) =
+				&(*reinterpret_cast<Vec*>(obj) += args.At(0).As<float>());
+			return destructor<Vec*>();
 		};
 		Method method_operator_add_assign_2{ operator_add_assign_2, {{
 			{
@@ -62,7 +67,7 @@ int main() {
 				alignof(float),
 				ID_d
 			}
-		}} };
+		}}, {ID_Vec_ptr, sizeof(Vec*), alignof(Vec*)} };
 
 		FieldInfo fieldinfo_x{ ptr_x };
 		FieldInfo fieldinfo_y{ ptr_y };
@@ -88,20 +93,28 @@ int main() {
 
 	{
 		Vec w{ 10.f,10.f };
-		std::uint8_t buffer[sizeof(const Vec*)];
-		*reinterpret_cast<const Vec**>(buffer) = &w;
-		auto [success, rst] = ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_const_Vec_ptr }, buffer);
+		std::uint8_t args_buffer[sizeof(const Vec*)];
+		std::uint8_t result_buffer[sizeof(Vec*)];
+		*reinterpret_cast<const Vec**>(args_buffer) = &w;
+		auto [success, typeID, destructor]
+			= ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_const_Vec_ptr }, args_buffer, result_buffer);
 		assert(success);
-		auto pw = std::any_cast<Vec*>(rst);
+		assert(typeID == ID_Vec_ptr);
+		assert(!destructor);
+		auto pw = *reinterpret_cast<Vec**>(result_buffer);
 		std::cout << pw->x << ", " << pw->y << std::endl;
 	}
 
 	{
-		std::uint8_t buffer[sizeof(float)];
-		*reinterpret_cast<float*>(buffer) = 2.f;
-		auto [success, rst] = ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_float }, buffer);
+		std::uint8_t args_buffer[sizeof(float)];
+		std::uint8_t result_buffer[sizeof(Vec*)];
+		*reinterpret_cast<float*>(args_buffer) = 2.f;
+		auto [success, typeID, destructor]
+			= ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_float }, args_buffer, result_buffer);
 		assert(success);
-		auto pw = std::any_cast<Vec*>(rst);
+		assert(typeID == ID_Vec_ptr);
+		assert(!destructor);
+		auto pw = *reinterpret_cast<Vec**>(result_buffer);
 		std::cout << pw->x << ", " << pw->y << std::endl;
 	}
 	

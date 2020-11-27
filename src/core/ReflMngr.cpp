@@ -194,7 +194,7 @@ bool ReflMngr::IsInvocable(size_t typeID, size_t methodID, Span<size_t> argTypeI
 	return false;
 }
 
-InvokeResult ReflMngr::Invoke(size_t typeID, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
+InvokeResult ReflMngr::Invoke(size_t typeID, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto typetarget = typeinfos.find(typeID);
 
 	if (typetarget == typeinfos.end())
@@ -202,13 +202,13 @@ InvokeResult ReflMngr::Invoke(size_t typeID, size_t methodID, Span<size_t> argTy
 
 	const auto& typeinfo = typetarget->second;
 
-	auto rst = typeinfo.Invoke(methodID, argTypeIDs, buffer);
+	auto rst = typeinfo.Invoke(methodID, argTypeIDs, args_buffer, result_buffer);
 
 	if (rst.success)
 		return rst;
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto rst = Invoke(baseID, methodID, argTypeIDs, buffer);
+		auto rst = Invoke(baseID, methodID, argTypeIDs, args_buffer, result_buffer);
 		if (rst.success)
 			return rst;
 	}
@@ -216,7 +216,7 @@ InvokeResult ReflMngr::Invoke(size_t typeID, size_t methodID, Span<size_t> argTy
 	return {};
 }
 
-InvokeResult ReflMngr::Invoke(ConstObjectPtr obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
+InvokeResult ReflMngr::Invoke(ConstObjectPtr obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto typetarget = typeinfos.find(obj.GetID());
 
 	if (typetarget == typeinfos.end())
@@ -224,7 +224,7 @@ InvokeResult ReflMngr::Invoke(ConstObjectPtr obj, size_t methodID, Span<size_t> 
 
 	const auto& typeinfo = typetarget->second;
 
-	auto rst = typeinfo.Invoke(obj, methodID, argTypeIDs, buffer);
+	auto rst = typeinfo.Invoke(obj, methodID, argTypeIDs, args_buffer, result_buffer);
 
 	if (rst.success)
 		return rst;
@@ -232,7 +232,7 @@ InvokeResult ReflMngr::Invoke(ConstObjectPtr obj, size_t methodID, Span<size_t> 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(
 			ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
-			methodID, argTypeIDs, buffer
+			methodID, argTypeIDs, args_buffer, result_buffer
 		);
 		if (rst.success)
 			return rst;
@@ -241,7 +241,7 @@ InvokeResult ReflMngr::Invoke(ConstObjectPtr obj, size_t methodID, Span<size_t> 
 	return {};
 }
 
-InvokeResult ReflMngr::Invoke(ObjectPtr obj, size_t methodID, Span<size_t> argTypeIDs, void* buffer) const {
+InvokeResult ReflMngr::Invoke(ObjectPtr obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto typetarget = typeinfos.find(obj.GetID());
 
 	if (typetarget == typeinfos.end())
@@ -249,7 +249,7 @@ InvokeResult ReflMngr::Invoke(ObjectPtr obj, size_t methodID, Span<size_t> argTy
 
 	const auto& typeinfo = typetarget->second;
 
-	auto rst = typeinfo.Invoke(obj, methodID, argTypeIDs, buffer);
+	auto rst = typeinfo.Invoke(obj, methodID, argTypeIDs, args_buffer, result_buffer);
 
 	if (rst.success)
 		return rst;
@@ -257,7 +257,7 @@ InvokeResult ReflMngr::Invoke(ObjectPtr obj, size_t methodID, Span<size_t> argTy
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(
 			ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
-			methodID, argTypeIDs, buffer
+			methodID, argTypeIDs, args_buffer, result_buffer
 		);
 		if (rst.success)
 			return rst;

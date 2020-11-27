@@ -5,6 +5,7 @@
 
 namespace Ubpa::UDRefl {
 	using OffsetFunction = const void* (const void*) noexcept;
+	using Destructor = void(void*);
 
 	struct has_virtual_base_void {};
 	template<typename Void, typename Obj>
@@ -118,6 +119,22 @@ namespace Ubpa::UDRefl {
 					nullptr
 				};
 			}
+		}
+	}
+
+	template<typename T>
+	constexpr Destructor* destructor() noexcept {
+		if constexpr (std::is_fundamental_v<T> || std::is_compound_v<T>)
+			return nullptr;
+		else {
+			static_assert(std::is_destructible_v<T>);
+			if constexpr (!std::is_trivially_destructible_v<T>) {
+				return [](void* ptr) {
+					reinterpret_cast<T*>(ptr)->~T();
+				};
+			}
+			else
+				return nullptr;
 		}
 	}
 
