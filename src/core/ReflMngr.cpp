@@ -361,17 +361,17 @@ void ReflMngr::ForEachTypeInfo(TypeID typeID, const std::function<void(TypeID, c
 
 void ReflMngr::ForEachFieldInfo(
 	TypeID typeID,
-	const std::function<void(TypeID, const TypeInfo&, NameID, const FieldInfo&)>& func) const
+	const std::function<void(TypeFieldInfo)>& func) const
 {
 	ForEachTypeInfo(typeID, [&func](TypeID typeID, const TypeInfo& typeinfo) {
 		for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos)
-			func(typeID, typeinfo, fieldID, fieldInfo);
+			func({ typeID, typeinfo, fieldID, fieldInfo });
 	});
 }
 
 static void ReflMngr_ForEachRWField(
 	ObjectPtr obj,
-	const std::function<void(TypeID, const TypeInfo&, NameID, const FieldInfo&, ObjectPtr)>& func,
+	const std::function<void(TypeFieldInfo, ObjectPtr)>& func,
 	std::set<TypeID>& visitedVBs )
 {
 	if (!obj)
@@ -386,7 +386,7 @@ static void ReflMngr_ForEachRWField(
 
 	for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
 		if (!fieldInfo.fieldptr.IsConst())
-			func(obj.GetID(), typeinfo, fieldID, fieldInfo, fieldInfo.fieldptr.Map(obj));
+			func({ obj.GetID(), typeinfo, fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
 	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
@@ -402,7 +402,7 @@ static void ReflMngr_ForEachRWField(
 
 void ReflMngr::ForEachRWField(
 	ObjectPtr obj,
-	const std::function<void(TypeID, const TypeInfo&, NameID, const FieldInfo&, ObjectPtr)>& func) const
+	const std::function<void(TypeFieldInfo, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
 	ReflMngr_ForEachRWField(obj, func, visitedVBs);
@@ -410,7 +410,7 @@ void ReflMngr::ForEachRWField(
 
 static void ReflMngr_ForEachRField(
 	ConstObjectPtr obj,
-	const std::function<void(TypeID, const TypeInfo&, NameID, const FieldInfo&, ConstObjectPtr)>& func,
+	const std::function<void(TypeFieldInfo, ConstObjectPtr)>& func,
 	std::set<TypeID>& visitedVBs)
 {
 	if (!obj)
@@ -424,7 +424,7 @@ static void ReflMngr_ForEachRField(
 	const auto& typeinfo = target->second;
 
 	for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos)
-		func(obj.GetID(), typeinfo, fieldID, fieldInfo, fieldInfo.fieldptr.Map(obj));
+		func({ obj.GetID(), typeinfo, fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		if (baseinfo.IsVirtual()) {
@@ -439,7 +439,7 @@ static void ReflMngr_ForEachRField(
 
 void ReflMngr::ForEachRField(
 	ConstObjectPtr obj,
-	const std::function<void(TypeID, const TypeInfo&, NameID, const FieldInfo&, ConstObjectPtr)>& func) const
+	const std::function<void(TypeFieldInfo, ConstObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
 	ReflMngr_ForEachRField(obj, func, visitedVBs);

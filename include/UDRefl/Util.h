@@ -79,7 +79,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (std::is_polymorphic_v<Base>) {
 			return [](const void* obj) noexcept -> const void* {
 				return dynamic_cast<const Derived*>(reinterpret_cast<const Base*>(obj));
-			}
+			};
 		}
 		else
 			return static_cast_functor<Base, Derived>();

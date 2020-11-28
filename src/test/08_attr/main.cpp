@@ -67,14 +67,14 @@ int main() {
 
 	ReflMngr::Instance().ForEachRField(
 		ptr,
-		[](TypeID typeID, const TypeInfo& typeinfo, NameID fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
-			for (const auto& [attrID, attr] : fieldinfo.attrs) {
+		[](TypeFieldInfo info, ConstObjectPtr field) {
+			for (const auto& [attrID, attr] : info.fieldinfo.attrs) {
 				std::cout << "[" << ReflMngr::Instance().tregistry.Nameof(attrID) << "]" << std::endl;
 				ReflMngr::Instance().ForEachRField(
 					attr.as_object(attrID),
-					[](TypeID typeID, const TypeInfo& typeinfo, NameID fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
+					[](TypeFieldInfo info, ConstObjectPtr field) {
 						std::cout
-							<< ReflMngr::Instance().nregistry.Nameof(fieldID)
+							<< ReflMngr::Instance().nregistry.Nameof(info.fieldID)
 							<< ": " << field.As<float>()
 							<< std::endl;
 					}
@@ -82,7 +82,7 @@ int main() {
 				std::cout << "------" << std::endl;
 			}
 			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(fieldID)
+				<< ReflMngr::Instance().nregistry.Nameof(info.fieldID)
 				<< ": " << field.As<float>()
 				<< std::endl;
 		}
