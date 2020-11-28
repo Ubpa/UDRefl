@@ -10,11 +10,10 @@ namespace Ubpa::UDRefl {
 		// Data
 		/////////
 
-		std::unordered_map<size_t, std::any> attrs;
-
 		std::unordered_map<size_t, FieldInfo> fieldinfos;
 		std::unordered_multimap<size_t, MethodInfo> methodinfos;
 		std::unordered_map<size_t, BaseInfo> baseinfos;
+		std::unordered_map<size_t, std::any> attrs;
 
 		//
 		// Field

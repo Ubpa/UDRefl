@@ -23,41 +23,37 @@ int main() {
 
 	{ // register
 		TypeInfo typeinfo_A{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_a, {{ID_float, offsetof(A,a) }}}
-			} // fieldinfos
+			}
 		};
 		TypeInfo typeinfo_B{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_b, {{ID_float, offsetof(B,b) }}}
-			}, // fieldinfos
+			},
 			{}, // methodinfos
-			{
+			{ //baseinfos
 				{ID_A, {inherit_cast_functions<B, A>()}}
-			}//baseinfos
+			}
 		};
 		TypeInfo typeinfo_C{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_c, {{ID_float, offsetof(C,c) }}}
-			}, // fieldinfos
+			},
 			{}, // methodinfos
-			{
+			{ //baseinfos
 				{ID_A, {inherit_cast_functions<C, A>()}}
-			}//baseinfos
+			}
 		};
 		TypeInfo typeinfo_D{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_d, {{ID_float, offsetof(D,d) }}}
-			}, // fieldinfos
+			},
 			{}, // methodinfos
-			{
+			{ //baseinfos
 				{ID_B, {inherit_cast_functions<D, B>()}},
 				{ID_C, {inherit_cast_functions<D, C>()}},
-			}//baseinfos
+			}
 		};
 
 		ReflMngr::Instance().typeinfos.emplace(ID_A, std::move(typeinfo_A));

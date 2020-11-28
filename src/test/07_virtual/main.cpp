@@ -23,41 +23,37 @@ int main() {
 
 	{ // register
 		TypeInfo typeinfo_A{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_a, {{ID_float, offsetof(A,a) }}}
-			} // fieldinfos
+			}
 		};
 		TypeInfo typeinfo_B{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_b, {{ID_float, field_offset_function<&B::b>() }}}
-			}, // fieldinfos
+			},
 			{}, // methodinfos
-			{
+			{ // baseinfos
 				{ID_A, BaseInfo::Make<B,A>()}
-			}, // baseinfos
+			},
 		};
 		TypeInfo typeinfo_C{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_c, {{ID_float, field_offset_function<&C::c>() }}}
-			}, // fieldinfos
+			},
 			{}, // methodinfos
-			{
+			{ // baseinfos
 				{ID_A, BaseInfo::Make<C,A>()}
-			}, // baseinfos
+			},
 		};
 		TypeInfo typeinfo_D{
-			{}, // attrs
-			{
+			{ // fieldinfos
 				{ ID_d, {{ID_float, field_offset_function<&D::d>() }}}
-			}, // fieldinfos
+			},
 			{}, // methodinfos
-			{
+			{ //baseinfos
 				{ID_B, BaseInfo::Make<D,B>()},
 				{ID_C, BaseInfo::Make<D,C>()},
-			}, //baseinfos
+			},
 		};
 
 		ReflMngr::Instance().typeinfos.emplace(ID_A, std::move(typeinfo_A));

@@ -31,7 +31,6 @@
 using namespace Ubpa::UDRefl;
 
 struct Point {
-  [[UInspector::range(std::pair{0.f, 10.f})]]
   float x;
   float y;
 };
@@ -44,15 +43,10 @@ int main() {
   size_t ID_UInspector_range = ReflMngr::Instance().registry.Register("UInspector_range");
   
   { // register Point
-    TypeInfo typeinfo{
-      {}, // attrs
-      { // fields
-        { ID_x, { { ID_float, offsetof(Point, x) }, { // attrs
-          {ID_UInspector_range, std::pair{0.f, 10.f}}
-        }}},
+    TypeInfo typeinfo{{
+        { ID_x, { { ID_float, offsetof(Point, x) } }},
         { ID_y, { { ID_float, offsetof(Point, y) } }}
-      }
-    };
+    }};
     ReflMngr::Instance().typeinfos.emplace(ID_Point, std::move(typeinfo));
   }
   
@@ -64,15 +58,6 @@ int main() {
   ReflMngr::Instance().ForEachRField(
     ptr,
     [](size_t typeID, const TypeInfo& typeinfo, size_t fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
-      for (const auto& [attrID, attr] : fieldinfo.attrs) {
-        if (attrID == ReflMngr::Instance().registry.GetID("UInspector_range")) {
-          auto range = std::any_cast<std::pair<float, float>>(attr);
-          std::cout
-            << "[UInspector_range]" << " "
-            << range.first << ", " << range.second
-            << std::endl;
-        }
-      }
       std::cout
         << ReflMngr::Instance().registry.Nameof(fieldID)
         << ": " << field.As<float>()
@@ -85,7 +70,6 @@ int main() {
 result is
 
 ```
-[UInspector_range] 0, 10
 x: 1
 y: 2
 ```
@@ -103,6 +87,7 @@ y: 2
 - [x] virtual
 - [x] return
 - [x] foreach
+- [ ] attr
 - [ ] life cycle (ctor, dtor, copy, etc.)
 - [ ] global
 

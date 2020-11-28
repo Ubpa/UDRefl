@@ -75,7 +75,6 @@ int main() {
 		MethodInfo methodinfo_operator_add_assign_2{ method_operator_add_assign_2 };
 
 		TypeInfo typeinfo{
-			{}, // attrs
 			{ // fields
 				{ID_x, fieldinfo_x},
 				{ID_y, fieldinfo_y}
