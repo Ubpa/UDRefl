@@ -90,6 +90,7 @@ y: 2
 - [x] attr
 - [ ] life cycle (ctor, dtor, copy, etc.)
 - [ ] global
+- [ ] USRefl
 
 
 ## Compiler compatibility

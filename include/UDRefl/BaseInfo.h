@@ -12,15 +12,6 @@ namespace Ubpa::UDRefl {
 			funcs{ Fill(funcs, is_polymorphic, is_virtual) }
 		{}
 
-		template<typename Derived, typename Base>
-		static constexpr BaseInfo Make() noexcept {
-			return {
-				inherit_cast_functions<Derived, Base>(),
-				std::is_polymorphic_v<Base>,
-				is_virtual_base_of_v<Base, Derived>
-			};
-		}
-
 		bool IsVirtual() const noexcept { return is_virtual; }
 		bool IsPolymorphic() const noexcept { return is_virtual; }
 
@@ -88,4 +79,13 @@ namespace Ubpa::UDRefl {
 		bool is_virtual;
 		InheritCastFunctions funcs;
 	};
+
+	template<typename Derived, typename Base>
+	static constexpr BaseInfo MakeBaseInfo() noexcept {
+		return {
+			inherit_cast_functions<Derived, Base>(),
+			std::is_polymorphic_v<Base>,
+			is_virtual_base_of_v<Base, Derived>
+		};
+	}
 }

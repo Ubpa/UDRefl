@@ -152,5 +152,3 @@ namespace Ubpa::UDRefl {
 		};
 	};
 }
-
-#include "details/FieldPtr.inl"
