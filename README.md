@@ -87,7 +87,8 @@ y: 2
 - [x] virtual
 - [x] return
 - [x] foreach
-- [ ] attr
+- [x] attr
+- [ ] ID
 - [ ] life cycle (ctor, dtor, copy, etc.)
 - [ ] global
 
