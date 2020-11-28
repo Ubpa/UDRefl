@@ -12,14 +12,14 @@
 
 namespace Ubpa::UDRefl {
 	struct Parameter {
-		size_t typeID;
+		TypeID typeID;
 		size_t size;
 		size_t alignment;
-		size_t nameID{ static_cast<size_t>(-1) };
+		NameID nameID;
 	};
 
 	struct ResultDesc {
-		size_t typeID{ static_cast<size_t>(-1) };
+		TypeID typeID;
 		size_t size{ 0 };
 		size_t alignment{ 1 };
 	};
@@ -31,7 +31,7 @@ namespace Ubpa::UDRefl {
 		size_t GetBufferAlignment() const noexcept { return alignment; }
 		const std::vector<size_t>& GetOffsets() const noexcept { return offsets; }
 		const std::vector<Parameter>& GetParameters() const noexcept { return params; }
-		bool IsConpatibleWith(Span<size_t> typeIDs) const noexcept;
+		bool IsConpatibleWith(Span<TypeID> typeIDs) const noexcept;
 	private:
 		size_t size{ 0 };
 		size_t alignment{ 1 };
@@ -48,7 +48,7 @@ namespace Ubpa::UDRefl {
 			assert(idx < paramList.GetParameters().size());
 			return {
 				paramList.GetParameters()[idx].typeID,
-				reinterpret_cast<std::uint8_t*>(buffer) + paramList.GetOffsets()[idx]
+				forward_offset(buffer, paramList.GetOffsets()[idx])
 			};
 		}
 	private:
@@ -58,7 +58,7 @@ namespace Ubpa::UDRefl {
 
 	class Method {
 	public:
-		enum class Type {
+		enum class Mode {
 			OBJECT_VARIABLE,
 			OBJECT_CONST,
 			STATIC,
@@ -69,7 +69,7 @@ namespace Ubpa::UDRefl {
 		using StaticFunction         = std::add_pointer_t<Destructor>(ArgsView, void*);
 
 		Method(ObjectVariableFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
-			type{ Type::OBJECT_VARIABLE },
+			mode{ Mode::OBJECT_VARIABLE },
 			func_object_variable{ func },
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) }
@@ -78,7 +78,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		Method(ObjectConstFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
-			type{ Type::OBJECT_CONST },
+			mode{ Mode::OBJECT_CONST },
 			func_object_const{ func },
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) }
@@ -87,7 +87,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		Method(StaticFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
-			type{ Type::STATIC },
+			mode{ Mode::STATIC },
 			func_static{ func },
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) }
@@ -95,19 +95,19 @@ namespace Ubpa::UDRefl {
 			assert(func);
 		}
 
-		Type GetType() const noexcept { return type; }
+		Mode GetMode() const noexcept { return mode; }
 		const ParamList& GetParamList() const noexcept { return paramList; }
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
 
 		Destructor* Invoke(void* obj, void* args_buffer, void* result_buffer) const {
 			ArgsView args = { args_buffer,paramList };
-			switch (type)
+			switch (mode)
 			{
-			case Type::OBJECT_VARIABLE:
+			case Mode::OBJECT_VARIABLE:
 				return func_object_variable(obj, args, result_buffer);
-			case Type::OBJECT_CONST:
+			case Mode::OBJECT_CONST:
 				return func_object_const(obj, args, result_buffer);
-			case Type::STATIC:
+			case Mode::STATIC:
 				return func_static(args, result_buffer);
 			default:
 				assert(false);
@@ -117,11 +117,11 @@ namespace Ubpa::UDRefl {
 
 		Destructor* Invoke(const void* obj, void* args_buffer, void* result_buffer) const {
 			ArgsView args = { args_buffer,paramList };
-			switch (type)
+			switch (mode)
 			{
-			case Type::OBJECT_CONST:
+			case Mode::OBJECT_CONST:
 				return func_object_const(obj, args, result_buffer);
-			case Type::STATIC:
+			case Mode::STATIC:
 				return func_static(args, result_buffer);
 			default:
 				assert(false);
@@ -131,9 +131,9 @@ namespace Ubpa::UDRefl {
 
 		Destructor* Invoke(void* args_buffer, void* result_buffer) const {
 			ArgsView args = { args_buffer,paramList };
-			switch (type)
+			switch (mode)
 			{
-			case Type::STATIC:
+			case Mode::STATIC:
 				return func_static(args, result_buffer);
 			default:
 				assert(false);
@@ -142,12 +142,12 @@ namespace Ubpa::UDRefl {
 		};
 
 		Destructor* Invoke_Static(void* args_buffer, void* result_buffer) const {
-			assert(type == Type::STATIC);
+			assert(mode == Mode::STATIC);
 			return func_static({ args_buffer,paramList }, result_buffer);
 		};
 
 	private:
-		Type type;
+		Mode mode;
 		union {
 			ObjectVariableFunction* func_object_variable;
 			ObjectConstFunction* func_object_const;
@@ -159,7 +159,7 @@ namespace Ubpa::UDRefl {
 
 	struct InvokeResult {
 		bool success{ false };
-		size_t typeID{ static_cast<size_t>(-1) };
+		TypeID resultID;
 		Destructor* destructor{ nullptr };
 	};
 }

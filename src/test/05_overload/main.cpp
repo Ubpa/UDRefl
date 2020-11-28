@@ -25,15 +25,16 @@ struct Vec {
 };
 
 int main() {
-	size_t ID_Vec = ReflMngr::Instance().registry.Register("Vec");
-	size_t ID_const_Vec_ptr = ReflMngr::Instance().registry.Register("const Vec*");
-	size_t ID_Vec_ptr = ReflMngr::Instance().registry.Register("Vec*");
-	size_t ID_p = ReflMngr::Instance().registry.Register("p");
-	size_t ID_d = ReflMngr::Instance().registry.Register("d");
-	size_t ID_float = ReflMngr::Instance().registry.Register("float");
-	size_t ID_x = ReflMngr::Instance().registry.Register("x");
-	size_t ID_y = ReflMngr::Instance().registry.Register("y");
-	size_t ID_operator_add_assign = ReflMngr::Instance().registry.Register("operator+=");
+	auto ID_Vec = ReflMngr::Instance().tregistry.Register("Vec");
+	auto ID_const_Vec_ptr = ReflMngr::Instance().tregistry.Register("const Vec*");
+	auto ID_Vec_ptr = ReflMngr::Instance().tregistry.Register("Vec*");
+	auto ID_float = ReflMngr::Instance().tregistry.Register("float");
+
+	auto ID_p = ReflMngr::Instance().nregistry.Register("p");
+	auto ID_d = ReflMngr::Instance().nregistry.Register("d");
+	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
+	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
+	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.Register("operator+=");
 
 	{ // register Vec
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
@@ -55,7 +56,7 @@ int main() {
 		}}, {ID_Vec_ptr, sizeof(Vec*), alignof(Vec*)} };
 
 		auto operator_add_assign_2 = [](void* obj, ArgsView args, void* result_buffer) {
-			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().registry.GetID("float"));
+			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID("float"));
 			*reinterpret_cast<Vec**>(result_buffer) =
 				&(*reinterpret_cast<Vec*>(obj) += args.At(0).As<float>());
 			return destructor<Vec*>();

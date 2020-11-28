@@ -11,15 +11,16 @@ struct C : virtual A { float c{ 0.f }; };
 struct D : B, C { float d{ 0.f }; };
 
 int main() {
-	size_t ID_A = ReflMngr::Instance().registry.Register("A");
-	size_t ID_B = ReflMngr::Instance().registry.Register("B");
-	size_t ID_C = ReflMngr::Instance().registry.Register("C");
-	size_t ID_D = ReflMngr::Instance().registry.Register("D");
-	size_t ID_a = ReflMngr::Instance().registry.Register("a");
-	size_t ID_b = ReflMngr::Instance().registry.Register("b");
-	size_t ID_c = ReflMngr::Instance().registry.Register("c");
-	size_t ID_d = ReflMngr::Instance().registry.Register("d");
-	size_t ID_float = ReflMngr::Instance().registry.Register("float");
+	auto ID_A = ReflMngr::Instance().tregistry.Register("A");
+	auto ID_B = ReflMngr::Instance().tregistry.Register("B");
+	auto ID_C = ReflMngr::Instance().tregistry.Register("C");
+	auto ID_D = ReflMngr::Instance().tregistry.Register("D");
+	auto ID_float = ReflMngr::Instance().tregistry.Register("float");
+
+	auto ID_a = ReflMngr::Instance().nregistry.Register("a");
+	auto ID_b = ReflMngr::Instance().nregistry.Register("b");
+	auto ID_c = ReflMngr::Instance().nregistry.Register("c");
+	auto ID_d = ReflMngr::Instance().nregistry.Register("d");
 
 	{ // register
 		TypeInfo typeinfo_A{
@@ -74,9 +75,9 @@ int main() {
 
 	ReflMngr::Instance().ForEachRField(
 		ptr,
-		[](size_t typeID, const TypeInfo& typeinfo, size_t fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
+		[](TypeID typeID, const TypeInfo& typeinfo, NameID fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
 			std::cout
-				<< ReflMngr::Instance().registry.Nameof(fieldID)
+				<< ReflMngr::Instance().nregistry.Nameof(fieldID)
 				<< ": " << field.As<float>()
 				<< std::endl;
 		}

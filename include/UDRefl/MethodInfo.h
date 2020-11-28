@@ -5,6 +5,6 @@
 namespace Ubpa::UDRefl {
 	struct MethodInfo {
 		Method method;
-		std::unordered_map<size_t, std::any> attrs;
+		std::unordered_map<NameID, std::any> attrs;
 	};
 }

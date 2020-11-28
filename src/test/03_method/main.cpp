@@ -28,16 +28,17 @@ struct Vec {
 };
 
 int main() {
-	size_t ID_Vec = ReflMngr::Instance().registry.Register("Vec");
-	size_t ID_const_Vec_ptr = ReflMngr::Instance().registry.Register("const Vec*");
-	size_t ID_Vec_ptr = ReflMngr::Instance().registry.Register("Vec*");
-	size_t ID_p = ReflMngr::Instance().registry.Register("p");
-	size_t ID_float = ReflMngr::Instance().registry.Register("float");
-	size_t ID_x = ReflMngr::Instance().registry.Register("x");
-	size_t ID_y = ReflMngr::Instance().registry.Register("y");
-	size_t ID_Norm2 = ReflMngr::Instance().registry.Register("Norm2");
-	size_t ID_NormalizeSelf = ReflMngr::Instance().registry.Register("NormalizeSelf");
-	size_t ID_operator_add_assign = ReflMngr::Instance().registry.Register("operator+=");
+	auto ID_Vec = ReflMngr::Instance().tregistry.Register("Vec");
+	auto ID_const_Vec_ptr = ReflMngr::Instance().tregistry.Register("const Vec*");
+	auto ID_Vec_ptr = ReflMngr::Instance().tregistry.Register("Vec*");
+	auto ID_float = ReflMngr::Instance().tregistry.Register("float");
+
+	auto ID_p = ReflMngr::Instance().nregistry.Register("p");
+	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
+	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
+	auto ID_Norm2 = ReflMngr::Instance().nregistry.Register("Norm2");
+	auto ID_NormalizeSelf = ReflMngr::Instance().nregistry.Register("NormalizeSelf");
+	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.Register("operator+=");
 
 	{ // register Vec
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };

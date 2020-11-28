@@ -4,18 +4,18 @@
 
 using namespace Ubpa::UDRefl;
 
-ObjectPtr TypeInfo::RWField(size_t fieldID) const noexcept {
+ObjectPtr TypeInfo::RWField(NameID fieldID) const noexcept {
 	auto target = fieldinfos.find(fieldID);
 	if (target == fieldinfos.end())
 		return nullptr;
 
-	if (target->second.fieldptr.GetType() != FieldPtr::Type::STATIC_VARIABLE)
+	if (target->second.fieldptr.GetMode() != FieldPtr::Mode::STATIC_VARIABLE)
 		return nullptr;
 
 	return target->second.fieldptr.Map_StaticVariable();
 }
 
-ConstObjectPtr TypeInfo::RField(size_t fieldID) const noexcept {
+ConstObjectPtr TypeInfo::RField(NameID fieldID) const noexcept {
 	auto target = fieldinfos.find(fieldID);
 	if (target == fieldinfos.end())
 		return nullptr;
@@ -26,7 +26,7 @@ ConstObjectPtr TypeInfo::RField(size_t fieldID) const noexcept {
 	return target->second.fieldptr.Map();
 }
 
-ObjectPtr TypeInfo::RWField(void* obj, size_t fieldID) const noexcept {
+ObjectPtr TypeInfo::RWField(void* obj, NameID fieldID) const noexcept {
 	auto target = fieldinfos.find(fieldID);
 	if (target == fieldinfos.end())
 		return nullptr;
@@ -37,7 +37,7 @@ ObjectPtr TypeInfo::RWField(void* obj, size_t fieldID) const noexcept {
 	return target->second.fieldptr.Map(obj);
 }
 
-ConstObjectPtr TypeInfo::RField(const void* obj, size_t fieldID) const noexcept {
+ConstObjectPtr TypeInfo::RField(const void* obj, NameID fieldID) const noexcept {
 	auto target = fieldinfos.find(fieldID);
 	if (target == fieldinfos.end())
 		return nullptr;
@@ -45,29 +45,29 @@ ConstObjectPtr TypeInfo::RField(const void* obj, size_t fieldID) const noexcept 
 	return target->second.fieldptr.Map(obj);
 }
 
-bool TypeInfo::IsStaticInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
+bool TypeInfo::IsStaticInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.GetType() == Method::Type::STATIC
+		if (target->second.method.GetMode() == Method::Mode::STATIC
 			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
 	return false;
 }
 
-bool TypeInfo::IsConstInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
+bool TypeInfo::IsConstInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.GetType() != Method::Type::OBJECT_VARIABLE
+		if (target->second.method.GetMode() != Method::Mode::OBJECT_VARIABLE
 			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
 	return false;
 }
 
-bool TypeInfo::IsInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexcept {
+bool TypeInfo::IsInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
@@ -77,11 +77,11 @@ bool TypeInfo::IsInvocable(size_t methodID, Span<size_t> argTypeIDs) const noexc
 	return false;
 }
 
-InvokeResult TypeInfo::Invoke(size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
+InvokeResult TypeInfo::Invoke(NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.GetType() == Method::Type::STATIC
+		if (target->second.method.GetMode() == Method::Mode::STATIC
 			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 		{
 			return {
@@ -94,11 +94,11 @@ InvokeResult TypeInfo::Invoke(size_t methodID, Span<size_t> argTypeIDs, void* ar
 	return {};
 }
 
-InvokeResult TypeInfo::Invoke(const void* obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
+InvokeResult TypeInfo::Invoke(const void* obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.method.GetType() != Method::Type::OBJECT_VARIABLE
+		if (target->second.method.GetMode() != Method::Mode::OBJECT_VARIABLE
 			&& target->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 		{
 			return {
@@ -111,14 +111,14 @@ InvokeResult TypeInfo::Invoke(const void* obj, size_t methodID, Span<size_t> arg
 	return {};
 }
 
-InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeIDs, void* args_buffer, void* result_buffer) const {
+InvokeResult TypeInfo::Invoke(void* obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 
 	{ // first: object variable and static
 		auto iter = target;
 		for (size_t i = 0; i < num; ++i, ++iter) {
-			if (iter->second.method.GetType() != Method::Type::OBJECT_CONST
+			if (iter->second.method.GetMode() != Method::Mode::OBJECT_CONST
 				&& iter->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			{
 				return {
@@ -133,7 +133,7 @@ InvokeResult TypeInfo::Invoke(void* obj, size_t methodID, Span<size_t> argTypeID
 	{ // second: object const
 		auto iter = target;
 		for (size_t i = 0; i < num; ++i, ++iter) {
-			if (iter->second.method.GetType() == Method::Type::OBJECT_CONST
+			if (iter->second.method.GetMode() == Method::Mode::OBJECT_CONST
 				&& iter->second.method.GetParamList().IsConpatibleWith(argTypeIDs))
 			{
 				return {

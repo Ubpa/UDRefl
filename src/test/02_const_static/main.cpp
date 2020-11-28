@@ -13,12 +13,12 @@ struct A {
 };
 
 int main() {
-	size_t ID_A = ReflMngr::Instance().registry.Register("A");
-	size_t ID_int = ReflMngr::Instance().registry.Register("int");
-	size_t ID_data = ReflMngr::Instance().registry.Register("data");
-	size_t ID_c_data = ReflMngr::Instance().registry.Register("c_data");
-	size_t ID_s_data = ReflMngr::Instance().registry.Register("s_data");
-	size_t ID_sc_data = ReflMngr::Instance().registry.Register("sc_data");
+	auto ID_A = ReflMngr::Instance().tregistry.Register("A");
+	auto ID_int = ReflMngr::Instance().tregistry.Register("int");
+	auto ID_data = ReflMngr::Instance().nregistry.Register("data");
+	auto ID_c_data = ReflMngr::Instance().nregistry.Register("c_data");
+	auto ID_s_data = ReflMngr::Instance().nregistry.Register("s_data");
+	auto ID_sc_data = ReflMngr::Instance().nregistry.Register("sc_data");
 
 	{ // register Point
 		FieldPtr ptr_data{ ID_int, offsetof(A, data) };
@@ -43,7 +43,7 @@ int main() {
 	ObjectPtr ptr{ ID_A, &a };
 
 	for (const auto& [ID_field, fieldinfo] : ReflMngr::Instance().typeinfos.at(ID_A).fieldinfos) {
-		auto field_name = ReflMngr::Instance().registry.Nameof(ID_field);
+		auto field_name = ReflMngr::Instance().nregistry.Nameof(ID_field);
 		std::cout << field_name << std::endl;
 	}
 

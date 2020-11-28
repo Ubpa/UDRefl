@@ -10,10 +10,11 @@ struct Point {
 };
 
 int main() {
-	size_t ID_Point = ReflMngr::Instance().registry.Register("Point");
-	size_t ID_float = ReflMngr::Instance().registry.Register("float");
-	size_t ID_x = ReflMngr::Instance().registry.Register("x");
-	size_t ID_y = ReflMngr::Instance().registry.Register("y");
+	auto ID_Point = ReflMngr::Instance().tregistry.Register("Point");
+	auto ID_float = ReflMngr::Instance().tregistry.Register("float");
+
+	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
+	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
 
 	{ // register Point
 		TypeInfo typeinfo{{
@@ -30,9 +31,9 @@ int main() {
 
 	ReflMngr::Instance().ForEachRField(
 		ptr,
-		[](size_t typeID, const TypeInfo& typeinfo, size_t fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
+		[](TypeID typeID, const TypeInfo& typeinfo, NameID fieldID, const FieldInfo& fieldinfo, ConstObjectPtr field) {
 			std::cout
-				<< ReflMngr::Instance().registry.Nameof(fieldID)
+				<< ReflMngr::Instance().nregistry.Nameof(fieldID)
 				<< ": " << field.As<float>()
 				<< std::endl;
 		}
