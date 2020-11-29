@@ -56,7 +56,7 @@ namespace Ubpa::UDRefl {
 		const ParamList& paramList;
 	};
 
-	class Method {
+	class MethodPtr {
 	public:
 		enum class Mode {
 			OBJECT_VARIABLE,
@@ -65,7 +65,7 @@ namespace Ubpa::UDRefl {
 		};
 
 		template<typename T>
-		static Method GenerateDefaultConstructor() {
+		static MethodPtr GenerateDefaultConstructor() {
 			return { static_cast<ObjectVariableFunction*>(
 				[](void* obj, ArgsView, void*) -> Destructor* {
 					new(obj)T;
@@ -75,7 +75,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename T>
-		static Method GenerateDestructor() {
+		static MethodPtr GenerateDestructor() {
 			return { static_cast<ObjectConstFunction*>(
 				[](const void* obj, ArgsView, void*) -> Destructor* {
 					reinterpret_cast<const T*>(obj)->~T();
@@ -88,7 +88,7 @@ namespace Ubpa::UDRefl {
 		using ObjectConstFunction    = std::add_pointer_t<Destructor>(const void*, ArgsView, void*);
 		using StaticFunction         = std::add_pointer_t<Destructor>(ArgsView, void*);
 
-		Method(ObjectVariableFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
+		MethodPtr(ObjectVariableFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
 			mode{ Mode::OBJECT_VARIABLE },
 			func_object_variable{ func },
 			resultDesc{ std::move(resultDesc) },
@@ -97,7 +97,7 @@ namespace Ubpa::UDRefl {
 			assert(func);
 		}
 
-		Method(ObjectConstFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
+		MethodPtr(ObjectConstFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
 			mode{ Mode::OBJECT_CONST },
 			func_object_const{ func },
 			resultDesc{ std::move(resultDesc) },
@@ -106,7 +106,7 @@ namespace Ubpa::UDRefl {
 			assert(func);
 		}
 
-		Method(StaticFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
+		MethodPtr(StaticFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
 			mode{ Mode::STATIC },
 			func_static{ func },
 			resultDesc{ std::move(resultDesc) },

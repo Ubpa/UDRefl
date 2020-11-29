@@ -307,19 +307,19 @@ ObjectPtr ReflMngr::DynamicCast(ObjectPtr obj, TypeID typeID) const noexcept {
 	return nullptr;
 }
 
-ObjectPtr ReflMngr::RWField(ObjectPtr obj, NameID fieldID) const noexcept {
+ObjectPtr ReflMngr::RWVar(ObjectPtr obj, NameID fieldID) const noexcept {
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())
 		return nullptr;
 
 	const auto& typeinfo = target->second;
 
-	auto ptr = typeinfo.RWField(obj, fieldID);
+	auto ptr = typeinfo.RWVar(obj, fieldID);
 	if (ptr)
 		return ptr;
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RWField(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
+		auto bptr = RWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
 		if (bptr)
 			return bptr;
 	}
@@ -327,19 +327,19 @@ ObjectPtr ReflMngr::RWField(ObjectPtr obj, NameID fieldID) const noexcept {
 	return nullptr;
 }
 
-ConstObjectPtr ReflMngr::RField(ConstObjectPtr obj, NameID fieldID) const noexcept {
+ConstObjectPtr ReflMngr::RVar(ConstObjectPtr obj, NameID fieldID) const noexcept {
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())
 		return nullptr;
 
 	const auto& typeinfo = target->second;
 
-	auto ptr = typeinfo.RField(obj, fieldID);
+	auto ptr = typeinfo.RVar(obj, fieldID);
 	if (ptr)
 		return ptr;
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RField(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
+		auto bptr = RVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
 		if (bptr)
 			return bptr;
 	}
@@ -573,7 +573,7 @@ void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<void(TypeID)>& f
 
 static void ReflMngr_ForEachTypeInfo(
 	TypeID typeID,
-	const std::function<void(TypeID, const TypeInfo&)>& func,
+	const std::function<void(Type)>& func,
 	std::set<TypeID>& visitedVBs)
 {
 
@@ -584,7 +584,7 @@ static void ReflMngr_ForEachTypeInfo(
 
 	const auto& typeinfo = target->second;
 
-	func(typeID, typeinfo);
+	func({ typeID, typeinfo });
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		if (baseinfo.IsVirtual()) {
@@ -597,24 +597,34 @@ static void ReflMngr_ForEachTypeInfo(
 	}
 }
 
-void ReflMngr::ForEachTypeInfo(TypeID typeID, const std::function<void(TypeID, const TypeInfo&)>& func) const {
+void ReflMngr::ForEachType(TypeID typeID, const std::function<void(Type)>& func) const {
 	std::set<TypeID> visitedVBs;
 	ReflMngr_ForEachTypeInfo(typeID, func, visitedVBs);
 }
 
-void ReflMngr::ForEachFieldInfo(
+void ReflMngr::ForEachField(
 	TypeID typeID,
-	const std::function<void(TypeFieldInfo)>& func) const
+	const std::function<void(Type, Field)>& func) const
 {
-	ForEachTypeInfo(typeID, [&func](TypeID typeID, const TypeInfo& typeinfo) {
-		for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos)
-			func({ typeID, typeinfo, fieldID, fieldInfo });
+	ForEachType(typeID, [&func](Type type) {
+		for (const auto& [fieldID, fieldInfo] : type.info.fieldinfos)
+			func(type, { fieldID, fieldInfo });
 	});
 }
 
-static void ReflMngr_ForEachRWField(
+void ReflMngr::ForEachMethod(
+	TypeID typeID,
+	const std::function<void(Type, Method)>& func) const
+{
+	ForEachType(typeID, [&func](Type type) {
+		for (const auto& [methodID, methodInfo] : type.info.methodinfos)
+			func(type, { methodID, methodInfo });
+	});
+}
+
+static void ReflMngr_ForEachRWVar(
 	ObjectPtr obj,
-	const std::function<void(TypeFieldInfo, ObjectPtr)>& func,
+	const std::function<void(Type, Field, ObjectPtr)>& func,
 	std::set<TypeID>& visitedVBs )
 {
 	if (!obj)
@@ -629,7 +639,7 @@ static void ReflMngr_ForEachRWField(
 
 	for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
 		if (!fieldInfo.fieldptr.IsConst())
-			func({ obj.GetID(), typeinfo, fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
+			func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
 	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
@@ -639,21 +649,21 @@ static void ReflMngr_ForEachRWField(
 			visitedVBs.insert(baseID);
 		}
 
-		ReflMngr_ForEachRWField(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs);
+		ReflMngr_ForEachRWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs);
 	}
 }
 
-void ReflMngr::ForEachRWField(
+void ReflMngr::ForEachRWVar(
 	ObjectPtr obj,
-	const std::function<void(TypeFieldInfo, ObjectPtr)>& func) const
+	const std::function<void(Type, Field, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	ReflMngr_ForEachRWField(obj, func, visitedVBs);
+	ReflMngr_ForEachRWVar(obj, func, visitedVBs);
 }
 
-static void ReflMngr_ForEachRField(
+static void ReflMngr_ForEachRVar(
 	ConstObjectPtr obj,
-	const std::function<void(TypeFieldInfo, ConstObjectPtr)>& func,
+	const std::function<void(Type, Field, ConstObjectPtr)>& func,
 	std::set<TypeID>& visitedVBs)
 {
 	if (!obj)
@@ -667,7 +677,7 @@ static void ReflMngr_ForEachRField(
 	const auto& typeinfo = target->second;
 
 	for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos)
-		func({ obj.GetID(), typeinfo, fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
+		func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		if (baseinfo.IsVirtual()) {
@@ -676,14 +686,14 @@ static void ReflMngr_ForEachRField(
 			visitedVBs.insert(baseID);
 		}
 
-		ReflMngr_ForEachRField(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs);
+		ReflMngr_ForEachRVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs);
 	}
 }
 
-void ReflMngr::ForEachRField(
+void ReflMngr::ForEachRVar(
 	ConstObjectPtr obj,
-	const std::function<void(TypeFieldInfo, ConstObjectPtr)>& func) const
+	const std::function<void(Type, Field, ConstObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	ReflMngr_ForEachRField(obj, func, visitedVBs);
+	ReflMngr_ForEachRVar(obj, func, visitedVBs);
 }

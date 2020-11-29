@@ -22,13 +22,13 @@ namespace Ubpa::UDRefl {
 		//////////
 
 		// without bases, read/write field, static non-const
-		ObjectPtr RWField(NameID fieldID) const noexcept;
+		ObjectPtr RWVar(NameID fieldID) const noexcept;
 		// without bases, read/write field, static non-const + static const
-		ConstObjectPtr RField(NameID fieldID) const noexcept;
+		ConstObjectPtr RVar(NameID fieldID) const noexcept;
 		// without bases, read/write field, non-const + static non-const
-		ObjectPtr RWField(void* obj, NameID fieldID) const noexcept;
+		ObjectPtr RWVar(void* obj, NameID fieldID) const noexcept;
 		// without bases, read field, non-const + static non-const + static non-const + static const
-		ConstObjectPtr RField(const void* obj, NameID fieldID) const noexcept;
+		ConstObjectPtr RVar(const void* obj, NameID fieldID) const noexcept;
 
 		//
 		// Invoke
@@ -47,5 +47,10 @@ namespace Ubpa::UDRefl {
 		InvokeResult Invoke(const void* obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
 		// without bases, non-const + const + static, non-const && static > const
 		InvokeResult Invoke(void* obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+	};
+
+	struct Type {
+		TypeID ID;
+		const TypeInfo& info;
 	};
 }

@@ -46,7 +46,7 @@ int main() {
 				&(*v += *args.At(0).As<const Vec*>());
 			return destructor<Vec*>();
 		};
-		Method method_operator_add_assign_1{ operator_add_assign_1, {{
+		MethodPtr method_operator_add_assign_1{ operator_add_assign_1, {{
 			{
 				ID_const_Vec_ptr,
 				sizeof(const Vec*),
@@ -61,7 +61,7 @@ int main() {
 				&(*reinterpret_cast<Vec*>(obj) += args.At(0).As<float>());
 			return destructor<Vec*>();
 		};
-		Method method_operator_add_assign_2{ operator_add_assign_2, {{
+		MethodPtr method_operator_add_assign_2{ operator_add_assign_2, {{
 			{
 				ID_float,
 				sizeof(float),

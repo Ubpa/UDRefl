@@ -10,4 +10,9 @@ namespace Ubpa::UDRefl {
 		FieldPtr fieldptr;
 		std::unordered_map<TypeID, Attr> attrs;
 	};
+
+	struct Field {
+		NameID ID;
+		const FieldInfo& info;
+	};
 }

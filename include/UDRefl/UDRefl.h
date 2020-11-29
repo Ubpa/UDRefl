@@ -5,7 +5,7 @@
 #include "EnumInfo.h"
 #include "FieldInfo.h"
 #include "FieldPtr.h"
-#include "Method.h"
+#include "MethodPtr.h"
 #include "MethodInfo.h"
 #include "Object.h"
 #include "TypeInfo.h"

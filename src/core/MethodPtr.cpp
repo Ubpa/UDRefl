@@ -1,4 +1,4 @@
-#include <UDRefl/Method.h>
+#include <UDRefl/MethodPtr.h>
 
 using namespace Ubpa::UDRefl;
 

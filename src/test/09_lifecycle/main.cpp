@@ -28,23 +28,23 @@ int main() {
 				{ ID_y, { { ID_float, offsetof(Point, y) } }}
 			},
 			{ // methods
-				{ID_ctor, {Method::GenerateDefaultConstructor<Point>()}},
-				{ID_dtor, {Method::GenerateDestructor<Point>()}}
+				{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Point>()}},
+				{ID_dtor, {MethodPtr::GenerateDestructor<Point>()}}
 			}
 		};
 		ReflMngr::Instance().typeinfos.emplace(ID_Point, std::move(typeinfo));
 	}
 	
 	ObjectPtr p = ReflMngr::Instance().New(ID_Point);
-	ReflMngr::Instance().RWField(p, ID_x).As<float>() = 1.f;
-	ReflMngr::Instance().RWField(p, ID_y).As<float>() = 2.f;
+	ReflMngr::Instance().RWVar(p, ID_x).As<float>() = 1.f;
+	ReflMngr::Instance().RWVar(p, ID_y).As<float>() = 2.f;
 
-	ReflMngr::Instance().ForEachRField(
+	ReflMngr::Instance().ForEachRVar(
 		p,
-		[](TypeFieldInfo info, ConstObjectPtr field) {
+		[](Type type, Field field, ConstObjectPtr var) {
 			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(info.fieldID)
-				<< ": " << field.As<float>()
+				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< ": " << var.As<float>()
 				<< std::endl;
 		}
 	);

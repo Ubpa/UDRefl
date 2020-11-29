@@ -31,15 +31,15 @@ int main() {
 	
 	Point p;
 	ObjectPtr ptr{ ID_Point, &p };
-	ReflMngr::Instance().RWField(ptr, ID_x).As<float>() = 1.f;
-	ReflMngr::Instance().RWField(ptr, ID_y).As<float>() = 2.f;
+	ReflMngr::Instance().RWVar(ptr, ID_x).As<float>() = 1.f;
+	ReflMngr::Instance().RWVar(ptr, ID_y).As<float>() = 2.f;
 
-	ReflMngr::Instance().ForEachRField(
+	ReflMngr::Instance().ForEachRVar(
 		ptr,
-		[](TypeFieldInfo info, ConstObjectPtr field) {
+		[](Type type, Field field, ConstObjectPtr var) {
 			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(info.fieldID)
-				<< ": " << field.As<float>()
+				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< ": " << var.As<float>()
 				<< std::endl;
 		}
 	);

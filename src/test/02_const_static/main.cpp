@@ -50,13 +50,13 @@ int main() {
 		std::cout << field_name << std::endl;
 	}
 
-	ReflMngr::Instance().RWField(ptr, ID_data).As<int>() = 10;
-	ReflMngr::Instance().RWField(ptr, ID_s_data).As<int>() = 20;
+	ReflMngr::Instance().RWVar(ptr, ID_data).As<int>() = 10;
+	ReflMngr::Instance().RWVar(ptr, ID_s_data).As<int>() = 20;
 
-	std::cout << ReflMngr::Instance().RField(ptr, ID_data).As<int>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_c_data).As<int>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_s_data).As<int>() << std::endl;
-	std::cout << ReflMngr::Instance().RField(ptr, ID_sc_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RVar(ptr, ID_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RVar(ptr, ID_c_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RVar(ptr, ID_s_data).As<int>() << std::endl;
+	std::cout << ReflMngr::Instance().RVar(ptr, ID_sc_data).As<int>() << std::endl;
 
 	return 0;
 }
