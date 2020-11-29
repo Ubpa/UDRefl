@@ -39,16 +39,24 @@ struct Vec {
 ### Manual registration
 
 ```c++
+//
+// string -> ID (size_t)
+//////////////////////////
+
 TypeID ID_Vec   = ReflMngr::Instance().tregistry.Register("Vec");
 TypeID ID_float = ReflMngr::Instance().tregistry.Register("float");
 
-NameID ID_x    = ReflMngr::Instance().nregistry.Register("x");
-NameID ID_y    = ReflMngr::Instance().nregistry.Register("y");
+NameID ID_x = ReflMngr::Instance().nregistry.Register("x");
+NameID ID_y = ReflMngr::Instance().nregistry.Register("y");
 
 NameID ID_norm = ReflMngr::Instance().nregistry.Register("norm");
 
 NameID ID_ctor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::ctor); // meta function
 NameID ID_dtor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::dtor); // meta function
+
+//
+// register
+/////////////
 
 ReflMngr::Instance().typeinfos[ID_Vec] = { // TypeInfo
   sizeof(Vec),  // size
