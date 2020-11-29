@@ -43,7 +43,6 @@ int main() {
 	{ // register Vec
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
 		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
-
 		auto Norm2 = [](const void* obj, ArgsView, void* result_buffer) {
 			*reinterpret_cast<float*>(result_buffer) = reinterpret_cast<const Vec*>(obj)->Norm2();
 			return destructor<float>();
@@ -78,11 +77,13 @@ int main() {
 		MethodInfo methodinfo_Norm2{ method_Norm2 };
 
 		TypeInfo typeinfo{
-			{ // fields
+			sizeof(Vec),
+			alignof(Vec),
+			{ // fieldinfos
 				{ID_x, fieldinfo_x},
 				{ID_y, fieldinfo_y}
 			},
-			{ // methods
+			{ // methodinfos
 				{ID_NormalizeSelf, methodinfo_NormalizeSelf},
 				{ID_operator_add_assign, methodinfo_operator_add_assign},
 				{ID_Norm2, methodinfo_Norm2}

@@ -48,21 +48,16 @@ namespace Ubpa::UDRefl {
 	};
 }
 
-namespace std {
-	template<typename T>
-	struct hash;
+template<>
+struct std::hash<Ubpa::UDRefl::NameID> {
+	size_t operator()(const Ubpa::UDRefl::NameID& ID) const noexcept {
+		return std::hash<size_t>{}(ID.GetValue());
+	}
+};
 
-	template<>
-	struct hash<Ubpa::UDRefl::NameID> {
-		size_t operator()(const Ubpa::UDRefl::NameID& ID) const noexcept {
-			return std::hash<size_t>{}(ID.GetValue());
-		}
-	};
-
-	template<>
-	struct hash<Ubpa::UDRefl::TypeID> {
-		size_t operator()(const Ubpa::UDRefl::TypeID& ID) const noexcept {
-			return std::hash<size_t>{}(ID.GetValue());
-		}
-	};
-}
+template<>
+struct std::hash<Ubpa::UDRefl::TypeID> {
+	size_t operator()(const Ubpa::UDRefl::TypeID& ID) const noexcept {
+		return std::hash<size_t>{}(ID.GetValue());
+	}
+};

@@ -1,7 +1,6 @@
 #include <UDRefl/UDRefl.h>
 
 #include <iostream>
-#include <cassert>
 
 using namespace Ubpa::UDRefl;
 

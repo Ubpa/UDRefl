@@ -5,7 +5,7 @@
 using namespace Ubpa::UDRefl;
 
 namespace UInspector {
-	struct range {
+	struct Range {
 		float min_value;
 		float max_value;
 	};
@@ -27,7 +27,7 @@ struct Point {
 int main() {
 	auto ID_Point = ReflMngr::Instance().tregistry.Register("Point");
 	auto ID_float = ReflMngr::Instance().tregistry.Register("float");
-	auto ID_UInspector_range = ReflMngr::Instance().tregistry.Register("UInspector::range");
+	auto ID_UInspector_Range = ReflMngr::Instance().tregistry.Register("UInspector::Range");
 	auto ID_UInspector_A = ReflMngr::Instance().tregistry.Register("UInspector::A");
 
 	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
@@ -38,22 +38,26 @@ int main() {
 
 	{ // register range
 		TypeInfo typeinfo{
+			sizeof(UInspector::Range),
+			alignof(UInspector::Range),
 			{ // fields
-				{ ID_min_value, { { ID_float, offsetof(UInspector::range, min_value) } } },
-				{ ID_max_value, { { ID_float, offsetof(UInspector::range, max_value) } } },
+				{ ID_min_value, { { ID_float, offsetof(UInspector::Range, min_value) } } },
+				{ ID_max_value, { { ID_float, offsetof(UInspector::Range, max_value) } } },
 			}
 		};
-		ReflMngr::Instance().typeinfos.emplace(ID_UInspector_range, std::move(typeinfo));
+		ReflMngr::Instance().typeinfos.emplace(ID_UInspector_Range, std::move(typeinfo));
 	}
 
 	{ // register Point
 		TypeInfo typeinfo{
+			sizeof(Point),
+			alignof(Point),
 			{ // fields
 				{ ID_x, FieldInfo{ { ID_float, offsetof(Point, x) }, { // attrs
-					{ID_UInspector_range, MakeAttr<UInspector::range>(1.f,2.f) }
+					{ID_UInspector_Range, MakeAttr<UInspector::Range>(1.f,2.f) }
 				}}},
 				{ ID_y, { { ID_float, offsetof(Point, y) } , { // attrs
-					{ID_UInspector_A, MakeAttr<UInspector::range>(1.f,2.f) }
+					{ID_UInspector_A, MakeAttr<UInspector::Range>(1.f,2.f) }
 				}}}
 			}
 		};

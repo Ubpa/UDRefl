@@ -24,11 +24,15 @@ int main() {
 
 	{ // register
 		TypeInfo typeinfo_A{
+			sizeof(A),
+			alignof(A),
 			{ // fieldinfos
 				{ ID_a, {{ID_float, offsetof(A,a) }}}
 			}
 		};
 		TypeInfo typeinfo_B{
+			sizeof(B),
+			alignof(B),
 			{ // fieldinfos
 				{ ID_b, {{ID_float, offsetof(B,b) }}}
 			},
@@ -38,6 +42,8 @@ int main() {
 			}
 		};
 		TypeInfo typeinfo_C{
+			sizeof(C),
+			alignof(C),
 			{ // fieldinfos
 				{ ID_c, {{ID_float, offsetof(C,c) }}}
 			},
@@ -47,6 +53,8 @@ int main() {
 			}
 		};
 		TypeInfo typeinfo_D{
+			sizeof(D),
+			alignof(D),
 			{ // fieldinfos
 				{ ID_d, {{ID_float, offsetof(D,d) }}}
 			},

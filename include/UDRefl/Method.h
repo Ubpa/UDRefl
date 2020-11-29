@@ -64,6 +64,26 @@ namespace Ubpa::UDRefl {
 			STATIC,
 		};
 
+		template<typename T>
+		static Method GenerateDefaultConstructor() {
+			return { static_cast<ObjectVariableFunction*>(
+				[](void* obj, ArgsView, void*) -> Destructor* {
+					new(obj)T;
+					return nullptr;
+				}
+			) };
+		}
+
+		template<typename T>
+		static Method GenerateDestructor() {
+			return { static_cast<ObjectConstFunction*>(
+				[](const void* obj, ArgsView, void*) -> Destructor* {
+					reinterpret_cast<const T*>(obj)->~T();
+					return nullptr;
+				}
+			) };
+		}
+
 		using ObjectVariableFunction = std::add_pointer_t<Destructor>(void*, ArgsView, void*);
 		using ObjectConstFunction    = std::add_pointer_t<Destructor>(const void*, ArgsView, void*);
 		using StaticFunction         = std::add_pointer_t<Destructor>(ArgsView, void*);

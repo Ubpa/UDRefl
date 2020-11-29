@@ -68,13 +68,38 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		bool IsStaticInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
-		bool IsConstInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
-		bool IsInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
+		bool IsStaticInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsConstInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
 
-		InvokeResult Invoke(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
-		InvokeResult Invoke(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
-		InvokeResult Invoke(ObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const;
+		InvokeResult Invoke(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const;
+		InvokeResult Invoke(ObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const;
+
+		//
+		// Meta
+		/////////
+
+		bool IsInvocable(NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept
+		{ return IsInvocable(tregistry.GetID(TypeRegistry::Meta::global), methodID, argTypeIDs); }
+
+		InvokeResult Invoke(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const
+		{ return Invoke(tregistry.GetID(TypeRegistry::Meta::global), methodID, argTypeIDs, args_buffer, result_buffer); }
+
+		bool IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsDestructible(TypeID typeID) const noexcept;
+
+		bool Construct(ObjectPtr obj, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		bool Destruct(ConstObjectPtr obj) const;
+
+		void* Malloc(uint64_t size) const;
+		bool  Free(void* ptr) const;
+
+		void* AlignedMalloc(uint64_t size, uint64_t alignment) const;
+		bool  AlignedFree(void* ptr) const;
+
+		ObjectPtr New(TypeID typeID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		bool      Delete(ConstObjectPtr obj) const;
 
 		//
 		// Algorithm
@@ -111,6 +136,6 @@ namespace Ubpa::UDRefl {
 			const std::function<void(TypeFieldInfo, ConstObjectPtr)>& func) const;
 
 	private:
-		ReflMngr() = default;
+		ReflMngr();
 	};
 }
