@@ -13,37 +13,35 @@ struct Vec {
 };
 
 int main() {
-	TypeID ID_Vec   = ReflMngr::Instance().tregistry.Register("Vec");
-	TypeID ID_float = ReflMngr::Instance().tregistry.Register("float");
+	TypeID ID_Vec   = ReflMngr::Instance().tregistry.GetID("Vec");
+	TypeID ID_float = ReflMngr::Instance().tregistry.GetID("float");
 
-	NameID ID_x = ReflMngr::Instance().nregistry.Register("x");
-	NameID ID_y = ReflMngr::Instance().nregistry.Register("y");
+	NameID ID_x = ReflMngr::Instance().nregistry.GetID("x");
+	NameID ID_y = ReflMngr::Instance().nregistry.GetID("y");
 
-	NameID ID_norm = ReflMngr::Instance().nregistry.Register("norm");
+	NameID ID_norm = ReflMngr::Instance().nregistry.GetID("norm");
 
 	NameID ID_ctor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::ctor); // meta function
 	NameID ID_dtor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::dtor); // meta function
 
-	{ // register Vec
-		ReflMngr::Instance().typeinfos[ID_Vec] = {
-			sizeof(Vec),  // size
-			alignof(Vec), // alignment
-			{ // field infos
-				{ ID_x, { { ID_float, offsetof(Vec, x) } }}, // x
-				{ ID_y, { { ID_float, offsetof(Vec, y) } }}  // y
-			},
-			{ // method infos
-				{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}}, // default ctor
-				{ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},         // dtor
-				{ID_norm, {{                                               // norm
-					[](const void* obj, ArgsView, void* result_buffer) -> Destructor* {
-						buffer_get<float>(result_buffer, 0) = buffer_as<Vec>(obj).norm();
-						return nullptr;
-					}
-				}}}
-			}
-		};
-	}
+	ReflMngr::Instance().typeinfos[ID_Vec] = {
+		sizeof(Vec),  // size
+		alignof(Vec), // alignment
+		{ // field infos
+			{ ID_x, { { ID_float, offsetof(Vec, x) } }}, // x
+			{ ID_y, { { ID_float, offsetof(Vec, y) } }}  // y
+		},
+		{ // method infos
+			{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}}, // default ctor
+			{ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},         // dtor
+			{ID_norm, {{                                               // norm
+				[](const void* obj, ArgsView, void* result_buffer) -> Destructor* {
+					buffer_get<float>(result_buffer, 0) = buffer_as<Vec>(obj).norm();
+					return nullptr;
+				}
+			}}}
+		}
+	};
 
 	ObjectPtr v = ReflMngr::Instance().New(ID_Vec);
 

@@ -4,29 +4,24 @@
 
 using namespace Ubpa::UDRefl;
 
-size_t Registry::Register(std::string_view name) {
-	assert(!name.empty());
+void Registry::Register(size_t ID, std::string_view name) {
+	auto target = id2name.find(ID);
+	if (target == id2name.end())
+		id2name.emplace_hint(target, std::pair{ ID, std::string{name} });
+	else
+		assert(target->second == name);
+}
 
-	auto target = name2id.find(name);
-	if (target != name2id.end())
+size_t Registry::GetID(std::string_view name) {
+	const size_t ID = string_hash(name);
+	Register(ID, name);
+	return ID;
+}
+
+std::string_view Registry::Nameof(size_t ID) const noexcept {
+	auto target = id2name.find(ID);
+	if (target != id2name.end())
 		return target->second;
-
-	size_t idx = names.size();
-	names.push_back(std::string{ name });
-	name2id.emplace_hint(target, std::pair{ std::string_view{names[idx]}, idx });
-
-	return idx;
-}
-
-size_t Registry::GetID(std::string_view name) const noexcept {
-	auto target = name2id.find(name);
-	return target == name2id.end() ? static_cast<size_t>(-1) : target->second;
-}
-
-std::string_view Registry::Nameof(size_t ID) const noexcept
-{
-	if (IsRegistered(ID))
-		return names[ID];
 	else
 		return {};
 }
@@ -36,95 +31,71 @@ NameRegistry::NameRegistry() {
 	// Global
 	///////////
 
-	Register(Meta::malloc);
-	Register(Meta::free);
-
-	//
-	// Common
-	///////////
-
-	Register(Meta::size);
-	Register(Meta::alignment);
-	Register(Meta::ptr);
+	registry.Register(string_hash(Meta::malloc), Meta::malloc);
+	registry.Register(string_hash(Meta::free), Meta::free);
 
 	//
 	// Member
 	///////////
 
-	Register(Meta::ctor);
-	Register(Meta::dtor);
+	registry.Register(string_hash(Meta::ctor), Meta::ctor);
+	registry.Register(string_hash(Meta::dtor), Meta::dtor);
 
-	Register(Meta::operator_add);
-	Register(Meta::operator_minus);
-	Register(Meta::operator_mul);
-	Register(Meta::operator_div);
-	Register(Meta::operator_mod);
+	registry.Register(string_hash(Meta::operator_add), Meta::operator_add);
+	registry.Register(string_hash(Meta::operator_minus), Meta::operator_minus);
+	registry.Register(string_hash(Meta::operator_mul), Meta::operator_mul);
+	registry.Register(string_hash(Meta::operator_div), Meta::operator_div);
+	registry.Register(string_hash(Meta::operator_mod), Meta::operator_mod);
 
-	Register(Meta::operator_eq);
-	Register(Meta::operator_ne);
-	Register(Meta::operator_lt);
-	Register(Meta::operator_le);
-	Register(Meta::operator_gt);
-	Register(Meta::operator_ge);
+	registry.Register(string_hash(Meta::operator_eq), Meta::operator_eq);
+	registry.Register(string_hash(Meta::operator_ne), Meta::operator_ne);
+	registry.Register(string_hash(Meta::operator_lt), Meta::operator_lt);
+	registry.Register(string_hash(Meta::operator_le), Meta::operator_le);
+	registry.Register(string_hash(Meta::operator_gt), Meta::operator_gt);
+	registry.Register(string_hash(Meta::operator_ge), Meta::operator_ge);
 
-	Register(Meta::operator_and);
-	Register(Meta::operator_or);
-	Register(Meta::operator_not);
+	registry.Register(string_hash(Meta::operator_and), Meta::operator_and);
+	registry.Register(string_hash(Meta::operator_or), Meta::operator_or);
+	registry.Register(string_hash(Meta::operator_not), Meta::operator_not);
 
-	Register(Meta::operator_pos);
-	Register(Meta::operator_neg);
-	Register(Meta::operator_deref);
-	Register(Meta::operator_ref);
+	registry.Register(string_hash(Meta::operator_pos), Meta::operator_pos);
+	registry.Register(string_hash(Meta::operator_neg), Meta::operator_neg);
+	registry.Register(string_hash(Meta::operator_deref), Meta::operator_deref);
+	registry.Register(string_hash(Meta::operator_ref), Meta::operator_ref);
 
-	Register(Meta::operator_inc);
-	Register(Meta::operator_dec);
+	registry.Register(string_hash(Meta::operator_inc), Meta::operator_inc);
+	registry.Register(string_hash(Meta::operator_dec), Meta::operator_dec);
 
-	Register(Meta::operator_band);
-	Register(Meta::operator_bor);
-	Register(Meta::operator_bnot);
-	Register(Meta::operator_bxor);
-	Register(Meta::operator_lshift);
-	Register(Meta::operator_rshift);
+	registry.Register(string_hash(Meta::operator_band), Meta::operator_band);
+	registry.Register(string_hash(Meta::operator_bor), Meta::operator_bor);
+	registry.Register(string_hash(Meta::operator_bnot), Meta::operator_bnot);
+	registry.Register(string_hash(Meta::operator_bxor), Meta::operator_bxor);
+	registry.Register(string_hash(Meta::operator_lshift), Meta::operator_lshift);
+	registry.Register(string_hash(Meta::operator_rshift), Meta::operator_rshift);
 
-	Register(Meta::operator_assign);
-	Register(Meta::operator_assign_add);
-	Register(Meta::operator_assign_minus);
-	Register(Meta::operator_assign_mul);
-	Register(Meta::operator_assign_div);
-	Register(Meta::operator_assign_mod);
-	Register(Meta::operator_assign_band);
-	Register(Meta::operator_assign_bor);
-	Register(Meta::operator_assign_bxor);
-	Register(Meta::operator_assign_lshift);
-	Register(Meta::operator_assign_rshift);
+	registry.Register(string_hash(Meta::operator_assign), Meta::operator_assign);
+	registry.Register(string_hash(Meta::operator_assign_add), Meta::operator_assign_add);
+	registry.Register(string_hash(Meta::operator_assign_minus), Meta::operator_assign_minus);
+	registry.Register(string_hash(Meta::operator_assign_mul), Meta::operator_assign_mul);
+	registry.Register(string_hash(Meta::operator_assign_div), Meta::operator_assign_div);
+	registry.Register(string_hash(Meta::operator_assign_mod), Meta::operator_assign_mod);
+	registry.Register(string_hash(Meta::operator_assign_band), Meta::operator_assign_band);
+	registry.Register(string_hash(Meta::operator_assign_bor), Meta::operator_assign_bor);
+	registry.Register(string_hash(Meta::operator_assign_bxor), Meta::operator_assign_bxor);
+	registry.Register(string_hash(Meta::operator_assign_lshift), Meta::operator_assign_lshift);
+	registry.Register(string_hash(Meta::operator_assign_rshift), Meta::operator_assign_rshift);
 
-	Register(Meta::operator_new);
-	Register(Meta::operator_new_array);
-	Register(Meta::operator_delete);
-	Register(Meta::operator_delete_array);
+	registry.Register(string_hash(Meta::operator_new), Meta::operator_new);
+	registry.Register(string_hash(Meta::operator_new_array), Meta::operator_new_array);
+	registry.Register(string_hash(Meta::operator_delete), Meta::operator_delete);
+	registry.Register(string_hash(Meta::operator_delete_array), Meta::operator_delete_array);
 
-	Register(Meta::operator_member);
-	Register(Meta::operator_call);
-	Register(Meta::operator_comma);
-	Register(Meta::operator_subscript);
+	registry.Register(string_hash(Meta::operator_member), Meta::operator_member);
+	registry.Register(string_hash(Meta::operator_call), Meta::operator_call);
+	registry.Register(string_hash(Meta::operator_comma), Meta::operator_comma);
+	registry.Register(string_hash(Meta::operator_subscript), Meta::operator_subscript);
 }
 
 TypeRegistry::TypeRegistry() {
-	Register(Meta::global);
-
-	Register(Meta::t_float);
-	Register(Meta::t_double);
-
-	Register(Meta::t_int8_t);
-	Register(Meta::t_int16_t);
-	Register(Meta::t_int32_t);
-	Register(Meta::t_int64_t);
-
-	Register(Meta::t_uint8_t);
-	Register(Meta::t_uint16_t);
-	Register(Meta::t_uint32_t);
-	Register(Meta::t_uint64_t);
-
-	Register(Meta::t_void_ptr);
-	Register(Meta::t_const_void_ptr);
+	registry.Register(string_hash(Meta::global), Meta::global);
 }

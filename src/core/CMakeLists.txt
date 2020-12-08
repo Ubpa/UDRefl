@@ -13,4 +13,5 @@ Ubpa_AddTarget(
     ${c_options}
   LIB
     Ubpa::UContainer_core
+    Ubpa::UTemplate_core
 )

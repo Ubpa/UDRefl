@@ -11,10 +11,10 @@ enum class Color {
 };
 
 int main() {
-	auto ID_Color = ReflMngr::Instance().tregistry.Register("Color");
-	auto ID_RED = ReflMngr::Instance().nregistry.Register("RED");
-	auto ID_GREEN = ReflMngr::Instance().nregistry.Register("GREEN");
-	auto ID_BLUE = ReflMngr::Instance().nregistry.Register("BLUE");
+	auto ID_Color = ReflMngr::Instance().tregistry.GetID("Color");
+	auto ID_RED = ReflMngr::Instance().nregistry.GetID("RED");
+	auto ID_GREEN = ReflMngr::Instance().nregistry.GetID("GREEN");
+	auto ID_BLUE = ReflMngr::Instance().nregistry.GetID("BLUE");
 
 	{ // register Color
 		EnumeratorInfo einfo_RED{ Color::RED };

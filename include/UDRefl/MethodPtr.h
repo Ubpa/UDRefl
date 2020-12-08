@@ -2,6 +2,7 @@
 
 #include "Object.h"
 #include "Util.h"
+#include "UTemplate/Func.h"
 
 #include <UContainer/Span.h>
 
@@ -114,6 +115,11 @@ namespace Ubpa::UDRefl {
 		{
 			assert(func);
 		}
+
+		template<typename Lambda,
+			std::enable_if_t<!std::is_member_pointer_v<Lambda> && !std::is_pointer_v<Lambda>, int> = 0>
+		MethodPtr(Lambda func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept
+			: MethodPtr{ DecayLambda(func), std::move(paramList), std::move(resultDesc) } {}
 
 		Mode GetMode() const noexcept { return mode; }
 		const ParamList& GetParamList() const noexcept { return paramList; }

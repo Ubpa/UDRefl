@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ID.h"
+#include "UTemplate/Name.h"
 
 #include <string>
 #include <deque>
@@ -9,14 +10,12 @@
 namespace Ubpa::UDRefl {
 	class Registry {
 	public:
-		size_t Register(std::string_view name);
-		size_t GetID(std::string_view name) const noexcept;
-		bool IsRegistered(size_t ID) const noexcept { return ID < names.size(); }
+		void Register(size_t ID, std::string_view name);
+		size_t GetID(std::string_view name);
 		std::string_view Nameof(size_t ID) const noexcept;
 
 	private:
-		std::deque<std::string> names;
-		std::unordered_map<std::string_view, size_t> name2id;
+		std::unordered_map<size_t, std::string> id2name;
 	};
 
 	class NameRegistry {
@@ -30,14 +29,6 @@ namespace Ubpa::UDRefl {
 			static constexpr char free[] = "UDRefl::free";
 			static constexpr char aligned_malloc[] = "UDRefl::aligned_malloc";
 			static constexpr char aligned_free[] = "UDRefl::aligned_free";
-
-			//
-			// Common
-			///////////
-
-			static constexpr char size[] = "size";
-			static constexpr char alignment[] = "alignment";
-			static constexpr char ptr[] = "ptr";
 
 			//
 			// Member
@@ -107,57 +98,32 @@ namespace Ubpa::UDRefl {
 		// API
 		////////
 
-		NameID Register(std::string_view name) { return NameID{ registry.Register(name) }; }
-		NameID GetID(std::string_view name) const noexcept { return NameID{ registry.GetID(name) }; }
-		bool IsRegistered(NameID ID) const noexcept { return registry.IsRegistered(ID.GetValue()); }
+		NameID GetID(std::string_view name) const { return NameID{ registry.GetID(name) }; }
 		std::string_view Nameof(NameID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
 
 	private:
-		Registry registry;
+		mutable Registry registry;
 	};
 
 	class TypeRegistry {
 	public:
 		struct Meta {
 			static constexpr char global[] = "UDRefl::global";
-
-			//
-			// Float
-			//////////
-
-			static constexpr char t_float[] = "float";
-			static constexpr char t_double[] = "double";
-
-			//
-			// Fix Size
-			/////////////
-
-			static constexpr char t_int8_t[] = "int8_t";
-			static constexpr char t_int16_t[] = "int16_t";
-			static constexpr char t_int32_t[] = "int32_t";
-			static constexpr char t_int64_t[] = "int64_t";
-
-			static constexpr char t_uint8_t[] = "uint8_t";
-			static constexpr char t_uint16_t[] = "uint16_t";
-			static constexpr char t_uint32_t[] = "uint32_t";
-			static constexpr char t_uint64_t[] = "uint64_t";
-
-			//
-			// Common
-			///////////
-
-			static constexpr char t_void_ptr[] = "void*";
-			static constexpr char t_const_void_ptr[] = "const void*";
 		};
 
 		TypeRegistry();
 
-		TypeID Register(std::string_view name) { return TypeID{ registry.Register(name) }; }
-		TypeID GetID(std::string_view name) const noexcept { return TypeID{ registry.GetID(name) }; }
-		bool IsRegistered(TypeID ID) const noexcept { return registry.IsRegistered(ID.GetValue()); }
+		template<typename T>
+		TypeID GetID() const {
+			constexpr auto name = type_name<T>().name;
+			constexpr size_t ID = string_hash(name);
+			registry.Register(ID, name);
+			return TypeID{ ID };
+		}
+		TypeID GetID(std::string_view name) const { return TypeID{ registry.GetID(name) }; }
 		std::string_view Nameof(TypeID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
 
 	private:
-		Registry registry;
+		mutable Registry registry;
 	};
 }

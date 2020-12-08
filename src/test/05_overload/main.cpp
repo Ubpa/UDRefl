@@ -25,16 +25,16 @@ struct Vec {
 };
 
 int main() {
-	auto ID_Vec = ReflMngr::Instance().tregistry.Register("Vec");
-	auto ID_const_Vec_ptr = ReflMngr::Instance().tregistry.Register("const Vec*");
-	auto ID_Vec_ptr = ReflMngr::Instance().tregistry.Register("Vec*");
-	auto ID_float = ReflMngr::Instance().tregistry.Register("float");
+	auto ID_Vec = ReflMngr::Instance().tregistry.GetID("Vec");
+	auto ID_const_Vec_ptr = ReflMngr::Instance().tregistry.GetID("const Vec*");
+	auto ID_Vec_ptr = ReflMngr::Instance().tregistry.GetID("Vec*");
+	auto ID_float = ReflMngr::Instance().tregistry.GetID("float");
 
-	auto ID_p = ReflMngr::Instance().nregistry.Register("p");
-	auto ID_d = ReflMngr::Instance().nregistry.Register("d");
-	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
-	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
-	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.Register("operator+=");
+	auto ID_p = ReflMngr::Instance().nregistry.GetID("p");
+	auto ID_d = ReflMngr::Instance().nregistry.GetID("d");
+	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
+	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
+	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.GetID("operator+=");
 
 	{ // register Vec
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
@@ -95,11 +95,12 @@ int main() {
 
 	{
 		Vec w{ 10.f,10.f };
+		std::array argTypeIDs{ ID_const_Vec_ptr };
 		std::uint8_t args_buffer[sizeof(const Vec*)];
+		buffer_get<const Vec*>(args_buffer, 0) = &w;
 		std::uint8_t result_buffer[sizeof(Vec*)];
-		*reinterpret_cast<const Vec**>(args_buffer) = &w;
 		auto [success, typeID, destructor]
-			= ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_const_Vec_ptr }, args_buffer, result_buffer);
+			= ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, argTypeIDs, args_buffer, result_buffer);
 		assert(success);
 		assert(typeID == ID_Vec_ptr);
 		assert(!destructor);
@@ -108,11 +109,12 @@ int main() {
 	}
 
 	{
+		std::array argTypeIDs{ ID_float };
 		std::uint8_t args_buffer[sizeof(float)];
+		buffer_get<float>(args_buffer, 0) = 2.f;
 		std::uint8_t result_buffer[sizeof(Vec*)];
-		*reinterpret_cast<float*>(args_buffer) = 2.f;
 		auto [success, typeID, destructor]
-			= ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, std::array{ ID_float }, args_buffer, result_buffer);
+			= ReflMngr::Instance().Invoke(ptr, ID_operator_add_assign, argTypeIDs, args_buffer, result_buffer);
 		assert(success);
 		assert(typeID == ID_Vec_ptr);
 		assert(!destructor);

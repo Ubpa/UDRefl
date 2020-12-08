@@ -12,12 +12,12 @@ struct A {
 };
 
 int main() {
-	auto ID_A = ReflMngr::Instance().tregistry.Register("A");
-	auto ID_int = ReflMngr::Instance().tregistry.Register("int");
-	auto ID_data = ReflMngr::Instance().nregistry.Register("data");
-	auto ID_c_data = ReflMngr::Instance().nregistry.Register("c_data");
-	auto ID_s_data = ReflMngr::Instance().nregistry.Register("s_data");
-	auto ID_sc_data = ReflMngr::Instance().nregistry.Register("sc_data");
+	auto ID_A = ReflMngr::Instance().tregistry.GetID("A");
+	auto ID_int = ReflMngr::Instance().tregistry.GetID("int");
+	auto ID_data = ReflMngr::Instance().nregistry.GetID("data");
+	auto ID_c_data = ReflMngr::Instance().nregistry.GetID("c_data");
+	auto ID_s_data = ReflMngr::Instance().nregistry.GetID("s_data");
+	auto ID_sc_data = ReflMngr::Instance().nregistry.GetID("sc_data");
 
 	{ // register Point
 		FieldPtr ptr_data{ ID_int, offsetof(A, data) };
