@@ -20,6 +20,7 @@ namespace Ubpa::UDRefl {
 
 		NameRegistry nregistry;
 		TypeRegistry tregistry;
+
 		std::unordered_map<TypeID, TypeInfo> typeinfos;
 		std::unordered_map<TypeID, EnumInfo> enuminfos;
 
@@ -65,16 +66,60 @@ namespace Ubpa::UDRefl {
 		bool IsConstInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
 		bool IsInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
 
-		InvokeResult Invoke(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const;
-		InvokeResult Invoke(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const;
-		InvokeResult Invoke(ObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const;
+		InvokeResult Invoke(
+			TypeID typeID,
+			NameID methodID,
+			Span<TypeID> argTypeIDs = {},
+			void* args_buffer = nullptr,
+			void* result_buffer = nullptr) const;
+
+		InvokeResult Invoke(
+			ConstObjectPtr obj,
+			NameID methodID,
+			Span<TypeID> argTypeIDs = {},
+			void* args_buffer = nullptr,
+			void* result_buffer = nullptr) const;
+
+		InvokeResult Invoke(
+			ObjectPtr obj,
+			NameID methodID,
+			Span<TypeID> argTypeIDs = {},
+			void* args_buffer = nullptr,
+			void* result_buffer = nullptr) const;
+
+		// -- template --
+
+		template<typename... Args>
+		bool IsStaticInvocable(TypeID typeID, NameID methodID) const noexcept;
+		template<typename... Args>
+		bool IsConstInvocable(TypeID typeID, NameID methodID) const noexcept;
+		template<typename... Args>
+		bool IsInvocable(TypeID typeID, NameID methodID) const noexcept;
 
 		template<typename T>
-		T Invoke(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename T>
-		T Invoke(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename T>
-		T Invoke(ObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(ObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+
+		template<typename T, typename... Args>
+		T Invoke(TypeID typeID, NameID methodID, Args... args) const;
+		template<typename T, typename... Args>
+		T Invoke(ConstObjectPtr obj, NameID methodID, Args... args) const;
+		template<typename T, typename... Args>
+		T Invoke(ObjectPtr obj, NameID methodID, Args... args) const;
+
+		template<typename Obj, typename... Args>
+		bool IsStaticInvocable(NameID methodID) const noexcept;
+		template<typename Obj, typename... Args>
+		bool IsConstInvocable(NameID methodID) const noexcept;
+		template<typename Obj, typename... Args>
+		bool IsInvocable(NameID methodID) const noexcept;
+		template<typename Obj, typename T>
+		T InvokeRet(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		template<typename Obj, typename T, typename... Args>
+		T Invoke(NameID methodID, Args... args) const;
 
 		//
 		// Meta
@@ -100,6 +145,26 @@ namespace Ubpa::UDRefl {
 
 		ObjectPtr New(TypeID typeID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		bool      Delete(ConstObjectPtr obj) const;
+
+		// -- template --
+
+		template<typename... Args>
+		bool IsInvocable(NameID methodID) const noexcept;
+
+		template<typename T>
+		T InvokeRet(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+
+		template<typename T, typename... Args>
+		T Invoke(NameID methodID, Args... args) const;
+
+		template<typename... Args>
+		bool IsConstructible(TypeID typeID) const noexcept;
+
+		template<typename... Args>
+		bool Construct(ObjectPtr obj, Args... args) const;
+		
+		template<typename... Args>
+		ObjectPtr New(TypeID typeID, Args... args) const;
 
 		//
 		// Algorithm

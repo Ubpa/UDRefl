@@ -14,6 +14,11 @@ ReflMngr::ReflMngr() {
 			buffer_get<void*>(result_buffer, 0) = buffer;
 			return nullptr;
 		},
+		{ // ResultDesc
+			tregistry.GetID<void*>(),
+			sizeof(void*),
+			alignof(void*),
+		},
 		{{// ParamList
 			{ // size
 				tregistry.GetID<uint64_t>(),
@@ -21,12 +26,7 @@ ReflMngr::ReflMngr() {
 				alignof(uint64_t),
 				nregistry.GetID("size")
 			}
-		}},
-		{ // ResultDesc
-			tregistry.GetID<void*>(),
-			sizeof(void*),
-			alignof(void*),
-		}
+		}}
 	} };
 	MethodInfo methodinfo_free{ {
 		[](ArgsView args, void*)->Destructor* {
@@ -35,6 +35,7 @@ ReflMngr::ReflMngr() {
 			free(ptr);
 			return nullptr;
 		},
+		{}, // ResultDesc
 		{{// ParamList
 			{ // ptr
 				tregistry.GetID<void*>(),
@@ -60,6 +61,11 @@ ReflMngr::ReflMngr() {
 			buffer_get<void*>(result_buffer, 0) = buffer;
 			return nullptr;
 		},
+		{ // ResultDesc
+			tregistry.GetID<void*>(),
+			sizeof(void*),
+			alignof(void*),
+		},
 		{{// ParamList
 			{ // size
 				tregistry.GetID<uint64_t>(),
@@ -73,12 +79,7 @@ ReflMngr::ReflMngr() {
 				alignof(uint64_t),
 				nregistry.GetID("alignment")
 			},
-		}},
-		{ // ResultDesc
-			tregistry.GetID<void*>(),
-			sizeof(void*),
-			alignof(void*),
-		}
+		}}
 	} };
 	MethodInfo methodinfo_aligned_free{ {
 		[](ArgsView args, void*)->Destructor* {
@@ -93,6 +94,7 @@ ReflMngr::ReflMngr() {
 
 			return nullptr;
 		},
+		{}, // ResultDesc
 		{{// ParamList
 			{ // ptr
 				tregistry.GetID<void*>(),

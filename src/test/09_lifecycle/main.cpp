@@ -6,8 +6,8 @@ using namespace Ubpa::UDRefl;
 struct Point { float x, y; };
 
 int main() {
-	auto ID_Point = ReflMngr::Instance().tregistry.GetID("Point");
-	auto ID_float = ReflMngr::Instance().tregistry.GetID("float");
+	auto ID_Point = ReflMngr::Instance().tregistry.GetID<Point>();
+	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
 	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
 	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
 	auto ID_ctor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::ctor);

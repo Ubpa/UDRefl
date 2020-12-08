@@ -12,8 +12,9 @@ struct A {
 };
 
 int main() {
-	auto ID_A = ReflMngr::Instance().tregistry.GetID("A");
-	auto ID_int = ReflMngr::Instance().tregistry.GetID("int");
+	auto ID_A = ReflMngr::Instance().tregistry.GetID<A>();
+	auto ID_int = ReflMngr::Instance().tregistry.GetID<int>();
+
 	auto ID_data = ReflMngr::Instance().nregistry.GetID("data");
 	auto ID_c_data = ReflMngr::Instance().nregistry.GetID("c_data");
 	auto ID_s_data = ReflMngr::Instance().nregistry.GetID("s_data");

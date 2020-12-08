@@ -25,10 +25,10 @@ struct Point {
 };
 
 int main() {
-	auto ID_Point = ReflMngr::Instance().tregistry.GetID("Point");
-	auto ID_float = ReflMngr::Instance().tregistry.GetID("float");
-	auto ID_UInspector_Range = ReflMngr::Instance().tregistry.GetID("UInspector::Range");
-	auto ID_UInspector_A = ReflMngr::Instance().tregistry.GetID("UInspector::A");
+	auto ID_Point = ReflMngr::Instance().tregistry.GetID<Point>();
+	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
+	auto ID_UInspector_Range = ReflMngr::Instance().tregistry.GetID<UInspector::Range>();
+	auto ID_UInspector_A = ReflMngr::Instance().tregistry.GetID<UInspector::A>();
 
 	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
 	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");

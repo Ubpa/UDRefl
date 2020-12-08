@@ -10,6 +10,7 @@
 namespace Ubpa::UDRefl {
 	class Registry {
 	public:
+		static constexpr size_t DirectGetID(std::string_view name) noexcept { return string_hash(name); }
 		void Register(size_t ID, std::string_view name);
 		size_t GetID(std::string_view name);
 		std::string_view Nameof(size_t ID) const noexcept;
@@ -98,6 +99,7 @@ namespace Ubpa::UDRefl {
 		// API
 		////////
 
+		static constexpr NameID DirectGetID(std::string_view name) noexcept { return NameID{ Registry::DirectGetID(name) }; }
 		NameID GetID(std::string_view name) const { return NameID{ registry.GetID(name) }; }
 		std::string_view Nameof(NameID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
 
@@ -113,6 +115,12 @@ namespace Ubpa::UDRefl {
 
 		TypeRegistry();
 
+		static constexpr TypeID DirectGetID(std::string_view name) noexcept { return TypeID{ Registry::DirectGetID(name) }; }
+		TypeID GetID(std::string_view name) const { return TypeID{ registry.GetID(name) }; }
+		std::string_view Nameof(TypeID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
+
+		template<typename T>
+		static constexpr TypeID DirectGetID() noexcept { return TypeID{ Registry::DirectGetID(type_name<T>().name) }; }
 		template<typename T>
 		TypeID GetID() const {
 			constexpr auto name = type_name<T>().name;
@@ -120,10 +128,10 @@ namespace Ubpa::UDRefl {
 			registry.Register(ID, name);
 			return TypeID{ ID };
 		}
-		TypeID GetID(std::string_view name) const { return TypeID{ registry.GetID(name) }; }
-		std::string_view Nameof(TypeID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
 
 	private:
 		mutable Registry registry;
 	};
 }
+
+#include "details/Registry.inl"

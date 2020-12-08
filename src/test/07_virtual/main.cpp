@@ -11,11 +11,11 @@ struct C : virtual A { float c{ 0.f }; };
 struct D : B, C { float d{ 0.f }; };
 
 int main() {
-	auto ID_A = ReflMngr::Instance().tregistry.GetID("A");
-	auto ID_B = ReflMngr::Instance().tregistry.GetID("B");
-	auto ID_C = ReflMngr::Instance().tregistry.GetID("C");
-	auto ID_D = ReflMngr::Instance().tregistry.GetID("D");
-	auto ID_float = ReflMngr::Instance().tregistry.GetID("float");
+	auto ID_A = ReflMngr::Instance().tregistry.GetID<A>();
+	auto ID_B = ReflMngr::Instance().tregistry.GetID<B>();
+	auto ID_C = ReflMngr::Instance().tregistry.GetID<C>();
+	auto ID_D = ReflMngr::Instance().tregistry.GetID<D>();
+	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
 
 	auto ID_a = ReflMngr::Instance().nregistry.GetID("a");
 	auto ID_b = ReflMngr::Instance().nregistry.GetID("b");

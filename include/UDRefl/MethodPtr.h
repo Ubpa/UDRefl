@@ -89,7 +89,7 @@ namespace Ubpa::UDRefl {
 		using ObjectConstFunction    = std::add_pointer_t<Destructor>(const void*, ArgsView, void*);
 		using StaticFunction         = std::add_pointer_t<Destructor>(ArgsView, void*);
 
-		MethodPtr(ObjectVariableFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
+		MethodPtr(ObjectVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			mode{ Mode::OBJECT_VARIABLE },
 			func_object_variable{ func },
 			resultDesc{ std::move(resultDesc) },
@@ -98,7 +98,7 @@ namespace Ubpa::UDRefl {
 			assert(func);
 		}
 
-		MethodPtr(ObjectConstFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
+		MethodPtr(ObjectConstFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			mode{ Mode::OBJECT_CONST },
 			func_object_const{ func },
 			resultDesc{ std::move(resultDesc) },
@@ -107,7 +107,7 @@ namespace Ubpa::UDRefl {
 			assert(func);
 		}
 
-		MethodPtr(StaticFunction* func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept :
+		MethodPtr(StaticFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			mode{ Mode::STATIC },
 			func_static{ func },
 			resultDesc{ std::move(resultDesc) },
@@ -118,8 +118,8 @@ namespace Ubpa::UDRefl {
 
 		template<typename Lambda,
 			std::enable_if_t<!std::is_member_pointer_v<Lambda> && !std::is_pointer_v<Lambda>, int> = 0>
-		MethodPtr(Lambda func, ParamList paramList = {}, ResultDesc resultDesc = {}) noexcept
-			: MethodPtr{ DecayLambda(func), std::move(paramList), std::move(resultDesc) } {}
+		MethodPtr(Lambda func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept
+			: MethodPtr{ DecayLambda(func), std::move(resultDesc), std::move(paramList) } {}
 
 		Mode GetMode() const noexcept { return mode; }
 		const ParamList& GetParamList() const noexcept { return paramList; }
@@ -187,5 +187,29 @@ namespace Ubpa::UDRefl {
 		bool success{ false };
 		TypeID resultID;
 		Destructor* destructor{ nullptr };
+
+		template<typename T>
+		T Move(void* result_buffer) {
+			if constexpr (!std::is_lvalue_reference_v<T> && std::is_default_constructible_v<std::remove_reference_t<T>>) {
+				if (!success)
+					return std::forward<T>(T{});
+			}
+			else
+				assert(success);
+
+			// assert(resultID = TypeRegistry::DirectGetID<T>());
+
+			if constexpr (std::is_lvalue_reference_v<T>) {
+				using PtrT = std::add_pointer_t<std::remove_reference_t<T>>;
+				assert(destructor == nullptr);
+				return *buffer_as<PtrT>(result_buffer);
+			}
+			else {
+				T rst = std::move(buffer_as<T>(result_buffer));
+				if (destructor)
+					destructor(result_buffer);
+				return rst;
+			}
+		}
 	};
 }

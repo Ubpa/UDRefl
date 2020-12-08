@@ -11,7 +11,7 @@ enum class Color {
 };
 
 int main() {
-	auto ID_Color = ReflMngr::Instance().tregistry.GetID("Color");
+	auto ID_Color = ReflMngr::Instance().tregistry.GetID<Color>();
 	auto ID_RED = ReflMngr::Instance().nregistry.GetID("RED");
 	auto ID_GREEN = ReflMngr::Instance().nregistry.GetID("GREEN");
 	auto ID_BLUE = ReflMngr::Instance().nregistry.GetID("BLUE");
