@@ -25,6 +25,14 @@ namespace Ubpa::UDRefl {
 		std::unordered_map<TypeID, EnumInfo> enuminfos;
 
 		//
+		// Generate
+		/////////////
+
+		template<typename... Params>
+		ParamList GenerateParamList(Span<NameID, sizeof...(Params)> paramNameIDs = {}) const
+			noexcept(sizeof...(Params) == 0);
+
+		//
 		// Cast
 		/////////
 

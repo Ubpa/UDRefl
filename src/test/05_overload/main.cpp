@@ -41,10 +41,7 @@ int main() {
 		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
 
 		auto operator_add_assign_1 = [](void* obj, ArgsView args, void* result_buffer) {
-			auto& v = buffer_as<Vec>(obj);
-			buffer_as<Vec*>(result_buffer) =
-				&(v += *args.At(0).As<const Vec*>());
-			return destructor<Vec*>();
+			return wrap_function<Ubpa::MemFuncOf<Vec&(const Vec&)noexcept>::run(&Vec::operator+=)>()(obj, args.GetBuffer(), result_buffer);
 		};
 		MethodPtr method_operator_add_assign_1{
 			operator_add_assign_1,
@@ -61,10 +58,7 @@ int main() {
 
 		auto operator_add_assign_2 = [](void* obj, ArgsView args, void* result_buffer) {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.DirectGetID<float>());
-			auto& v = buffer_as<Vec>(obj);
-			buffer_as<Vec*>(result_buffer) =
-				&(v += args.At(0).As<float>());
-			return destructor<Vec*>();
+			return wrap_function<Ubpa::MemFuncOf<Vec& (float)noexcept>::run(&Vec::operator+=)>()(obj, args.GetBuffer(), result_buffer);
 		};
 		MethodPtr method_operator_add_assign_2{
 			operator_add_assign_2,

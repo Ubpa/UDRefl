@@ -2,6 +2,26 @@
 
 namespace Ubpa::UDRefl {
 	//
+	// Generate
+	/////////////
+
+	template<typename... Params>
+	ParamList ReflMngr::GenerateParamList(Span<NameID, sizeof...(Params)> paramNameIDs) const
+		noexcept(sizeof...(Params) == 0)
+	{
+		if constexpr (sizeof...(Params) > 0) {
+			std::vector<Parameter> params{ {tregistry.GetID<Params>(), sizeof(Params), alignof(Params)}... };
+			if (!paramNameIDs.empty()) {
+				for (size_t i = 0; i < sizeof...(Params); i++)
+					params[i].nameID = paramNameIDs[i];
+			}
+			return ParamList{ std::move(params) };
+		}
+		else
+			return {};
+	}
+
+	//
 	// Invoke
 	///////////
 
@@ -51,7 +71,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(TypeID typeID, NameID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeRegistry::DirectGetID<Args>()... };
-			auto args_buffer = to_tuple_buffer<Args...>(std::forward<Args>(args)...);
+			auto args_buffer = remove_lref_as_tuple_buffer<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(typeID, methodID, argTypeIDs, &args_buffer);
 		}
 		else
@@ -62,7 +82,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(ConstObjectPtr obj, NameID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeRegistry::DirectGetID<Args>()... };
-			auto args_buffer = to_tuple_buffer<Args...>(std::forward<Args>(args)...);
+			auto args_buffer = remove_lref_as_tuple_buffer<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(obj, methodID, argTypeIDs, &args_buffer);
 		}
 		else
@@ -73,7 +93,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(ObjectPtr obj, NameID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeRegistry::DirectGetID<Args>()... };
-			auto args_buffer = to_tuple_buffer<Args...>(std::forward<Args>(args)...);
+			auto args_buffer = remove_lref_as_tuple_buffer<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(obj, methodID, argTypeIDs, &args_buffer);
 		}
 		else
@@ -127,7 +147,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(NameID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeRegistry::DirectGetID<Args>()... };
-			auto args_buffer = to_tuple_buffer<Args...>(std::forward<Args>(args)...);
+			auto args_buffer = remove_lref_as_tuple_buffer<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(methodID, argTypeIDs, &args_buffer);
 		}
 		else
@@ -144,7 +164,7 @@ namespace Ubpa::UDRefl {
 	bool ReflMngr::Construct(ObjectPtr obj, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeRegistry::DirectGetID<Args>()... };
-			auto args_buffer = to_tuple_buffer<Args...>(std::forward<Args>(args)...);
+			auto args_buffer = remove_lref_as_tuple_buffer<Args...>(std::forward<Args>(args)...);
 			return Construct(obj, argTypeIDs, &args_buffer);
 		}
 		else
@@ -155,7 +175,7 @@ namespace Ubpa::UDRefl {
 	ObjectPtr ReflMngr::New(TypeID typeID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeRegistry::DirectGetID<Args>()... };
-			auto args_buffer = to_tuple_buffer<Args...>(std::forward<Args>(args)...);
+			auto args_buffer = remove_lref_as_tuple_buffer<Args...>(std::forward<Args>(args)...);
 			return New(typeID, argTypeIDs, &args_buffer);
 		}
 		else

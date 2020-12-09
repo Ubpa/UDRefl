@@ -44,8 +44,7 @@ int main() {
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
 		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
 		auto Norm2 = [](const void* obj, ArgsView, void* result_buffer) {
-			buffer_as<float>(result_buffer) = buffer_as<Vec>(obj).Norm2();
-			return destructor<float>();
+			return wrap_function<&Vec::Norm2>()(obj, nullptr, result_buffer);
 		};
 		MethodPtr method_Norm2{
 			Norm2,
@@ -53,16 +52,12 @@ int main() {
 		};
 
 		auto NormalizeSelf = [](void* obj, ArgsView, void*) {
-			buffer_as<Vec>(obj).NormalizeSelf();
-			return destructor<void>();
+			return wrap_function<&Vec::NormalizeSelf>()(obj, nullptr, nullptr);
 		};
 		MethodPtr method_NormalizeSelf{ NormalizeSelf };
 
 		auto operator_add_assign = [](void* obj, ArgsView args, void* result_buffer) {
-			auto& v = buffer_as<Vec>(obj);
-			buffer_as<Vec*>(result_buffer) =
-				&(v += *args.At(0).As<const Vec*>());
-			return destructor<Vec*>();
+			return wrap_function<&Vec::operator+=>()(obj, args.GetBuffer(), result_buffer);
 		};
 		MethodPtr method_operator_add_assign{
 			operator_add_assign,
