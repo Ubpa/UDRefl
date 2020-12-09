@@ -75,7 +75,7 @@ int main() {
 			for (const auto& [attrID, attr] : field.info.attrs) {
 				std::cout << "[" << ReflMngr::Instance().tregistry.Nameof(attrID) << "]" << std::endl;
 				ReflMngr::Instance().ForEachRVar(
-					attr.as_object(attrID),
+					attr.AsObjectPtr(attrID),
 					[](Type type, Field field, ConstObjectPtr var) {
 						std::cout
 							<< ReflMngr::Instance().nregistry.Nameof(field.ID)

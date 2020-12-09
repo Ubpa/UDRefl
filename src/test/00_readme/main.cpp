@@ -43,13 +43,13 @@ int main() {
 		}
 	};
 
-	ObjectPtr v = ReflMngr::Instance().New(ID_Vec);
+	SharedObject v = ReflMngr::Instance().MakeShared(ID_Vec);
 
 	ReflMngr::Instance().RWVar(v, ID_x).As<float>() = 3.f;
 	ReflMngr::Instance().RWVar(v, ID_y).As<float>() = 4.f;
 
 	std::cout << "x: " << ReflMngr::Instance().RVar(v, ID_x).As<float>() << std::endl;
-	std::cout << "norm: " << ReflMngr::Instance().Invoke<float>(v, ID_norm) << std::endl;
+	std::cout << "norm: " << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), ID_norm) << std::endl;
 	
 	ReflMngr::Instance().ForEachField(
 		ID_Vec, // TypeID

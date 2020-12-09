@@ -98,9 +98,13 @@ ReflMngr::Instance().ForEachMethod(
 ### Constructing types
 
 ```c++
-ObjectPtr v = ReflMngr::Instance().New(ID_Vec);
+// [ or ]
+// ObjectPtr v = ReflMngr::Instance().New(ID_Vec);
+// // do something
+// ReflMngr::Instance().Delete(v);
+
+SharedObject v = ReflMngr::Instance().MakeShared(ID_Vec);
 // do something
-ReflMngr::Instance().Delete(v);
 ```
 
 ### Set/get variables
@@ -114,7 +118,7 @@ std::cout << "x: " << ReflMngr::Instance().RVar(v, ID_x).As<float>() << std::end
 ### Invoke Methods
 
 ```c++
-float norm = ReflMngr::Instance().Invoke<float>(v, ID_norm);
+float norm = ReflMngr::Instance().Invoke<float>(v.as_object_ptr(), ID_norm);
 std::cout << "norm: " << norm << std::endl;
 ```
 

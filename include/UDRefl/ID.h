@@ -5,12 +5,16 @@
 namespace Ubpa::UDRefl {
 	class NameID {
 	public:
-		constexpr NameID() noexcept : value{ static_cast<size_t>(-1) } {}
+		static constexpr size_t InvalidValue() noexcept { return static_cast<size_t>(-1); }
+
+		constexpr NameID() noexcept : value{ InvalidValue() } {}
 		constexpr NameID(size_t value) noexcept : value{ value } {}
 
 		constexpr size_t GetValue() const noexcept { return value; }
 
-		constexpr bool IsValid() const noexcept { return value != NameID{}.value; }
+		constexpr bool IsValid() const noexcept { return value != InvalidValue(); }
+
+		constexpr void Reset() noexcept { value = InvalidValue(); }
 
 		explicit constexpr operator size_t() const noexcept { return value; }
 		explicit constexpr operator bool() const noexcept { return IsValid(); }
@@ -27,12 +31,16 @@ namespace Ubpa::UDRefl {
 
 	class TypeID {
 	public:
-		constexpr TypeID() noexcept : value{ static_cast<size_t>(-1) } {}
+		static constexpr size_t InvalidValue() noexcept { return static_cast<size_t>(-1); }
+
+		constexpr TypeID() noexcept : value{ InvalidValue() } {}
 		constexpr TypeID(size_t value) noexcept : value{ value } {}
 
 		constexpr size_t GetValue() const noexcept { return value; }
 
-		constexpr bool IsValid() const noexcept { return value != TypeID{}.value; }
+		constexpr bool IsValid() const noexcept { return value != InvalidValue(); }
+
+		constexpr void Reset() noexcept { value = InvalidValue(); }
 
 		explicit constexpr operator size_t() const noexcept { return value; }
 		explicit constexpr operator bool() const noexcept { return IsValid(); }

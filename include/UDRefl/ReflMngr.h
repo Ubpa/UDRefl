@@ -3,6 +3,7 @@
 #include "Registry.h"
 #include "TypeInfo.h"
 #include "EnumInfo.h"
+#include "SharedObject.h"
 
 #include <functional>
 
@@ -153,6 +154,8 @@ namespace Ubpa::UDRefl {
 
 		ObjectPtr New(TypeID typeID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		bool      Delete(ConstObjectPtr obj) const;
+
+		SharedObject MakeShared(TypeID typeID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 
 		// -- template --
 

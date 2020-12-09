@@ -26,7 +26,7 @@ int main() {
 		}
 	};
 	
-	ObjectPtr p = ReflMngr::Instance().New(ID_Point);
+	SharedObject p = ReflMngr::Instance().MakeShared(ID_Point);
 	ReflMngr::Instance().RWVar(p, ID_x).As<float>() = 1.f;
 	ReflMngr::Instance().RWVar(p, ID_y).As<float>() = 2.f;
 
@@ -38,5 +38,4 @@ int main() {
 				<< std::endl;
 		}
 	);
-	ReflMngr::Instance().Delete(p);
 }

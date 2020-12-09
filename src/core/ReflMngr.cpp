@@ -326,6 +326,14 @@ bool ReflMngr::Delete(ConstObjectPtr obj) const {
 	return free_success;
 }
 
+SharedObject ReflMngr::MakeShared(TypeID typeID, Span<TypeID> argTypeIDs, void* args_buffer) const {
+	ObjectPtr obj = New(typeID, argTypeIDs, args_buffer);
+	return { obj, [typeID](void* ptr) {
+		bool success = ReflMngr::Instance().Delete({typeID, ptr});
+		assert(success);
+	}};
+}
+
 ObjectPtr ReflMngr::StaticCast_DerivedToBase(ObjectPtr obj, TypeID typeID) const noexcept {
 	assert(typeID != static_cast<size_t>(-1));
 
@@ -652,7 +660,7 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	auto rst = typeinfo.Invoke(obj, nregistry.GetID(NameRegistry::Meta::ctor), {}, nullptr, nullptr);
+	auto rst = typeinfo.Invoke(obj, nregistry.GetID(NameRegistry::Meta::dtor), {}, nullptr, nullptr);
 	return rst.success;
 }
 
