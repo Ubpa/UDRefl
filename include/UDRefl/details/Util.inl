@@ -42,7 +42,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
-	constexpr auto wrapped_function = [](ObjPtr obj, void* args_buffer, void* result_buffer) {
+	constexpr auto wrapped_function = [](ObjPtr obj, void* args_buffer, void* result_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, args_buffer);
 			auto transformed_rst = remove_lref<Return>(std::forward<Return>(rst));
@@ -65,7 +65,7 @@ constexpr auto Ubpa::UDRefl::wrap_non_member_function() noexcept {
 	using Traits = FuncTraits<FuncPtr>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
-	constexpr auto wrapped_function = [](void* args_buffer, void* result_buffer) {
+	constexpr auto wrapped_function = [](void* args_buffer, void* result_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<func_ptr>(args_buffer);
 			auto transformed_rst = remove_lref<Return>(std::forward<Return>(rst));

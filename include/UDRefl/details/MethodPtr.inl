@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Registry.h"
+#include "../Registry.h"
 
 namespace Ubpa::UDRefl {
 	inline ObjectPtr ArgsView::At(size_t idx) const noexcept {

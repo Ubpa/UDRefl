@@ -49,7 +49,7 @@ bool TypeInfo::IsStaticInvocable(NameID methodID, Span<TypeID> argTypeIDs) const
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.methodptr.GetMode() == MethodPtr::Mode::STATIC
+		if (target->second.methodptr.IsStatic()
 			&& target->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
@@ -60,7 +60,7 @@ bool TypeInfo::IsConstInvocable(NameID methodID, Span<TypeID> argTypeIDs) const 
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.methodptr.GetMode() != MethodPtr::Mode::OBJECT_VARIABLE
+		if (!target->second.methodptr.IsObjectVariable()
 			&& target->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 			return true;
 	}
@@ -81,7 +81,7 @@ InvokeResult TypeInfo::Invoke(NameID methodID, Span<TypeID> argTypeIDs, void* ar
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.methodptr.GetMode() == MethodPtr::Mode::STATIC
+		if (target->second.methodptr.IsStatic()
 			&& target->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 		{
 			return {
@@ -98,7 +98,7 @@ InvokeResult TypeInfo::Invoke(const void* obj, NameID methodID, Span<TypeID> arg
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
-		if (target->second.methodptr.GetMode() != MethodPtr::Mode::OBJECT_VARIABLE
+		if (!target->second.methodptr.IsObjectVariable()
 			&& target->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 		{
 			return {
@@ -118,7 +118,7 @@ InvokeResult TypeInfo::Invoke(void* obj, NameID methodID, Span<TypeID> argTypeID
 	{ // first: object variable and static
 		auto iter = target;
 		for (size_t i = 0; i < num; ++i, ++iter) {
-			if (iter->second.methodptr.GetMode() != MethodPtr::Mode::OBJECT_CONST
+			if (!iter->second.methodptr.IsObjectConst()
 				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 			{
 				return {
@@ -133,7 +133,7 @@ InvokeResult TypeInfo::Invoke(void* obj, NameID methodID, Span<TypeID> argTypeID
 	{ // second: object const
 		auto iter = target;
 		for (size_t i = 0; i < num; ++i, ++iter) {
-			if (iter->second.methodptr.GetMode() == MethodPtr::Mode::OBJECT_CONST
+			if (iter->second.methodptr.IsObjectConst()
 				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 			{
 				return {

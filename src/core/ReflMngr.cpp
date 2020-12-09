@@ -120,7 +120,7 @@ namespace Ubpa::UDRefl::details {
 
 ReflMngr::ReflMngr() {
 	MethodInfo methodinfo_malloc{ {
-		[](ArgsView args, void* result_buffer)->Destructor* {
+		[](ArgsView args, void* result_buffer)-> Destructor {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<uint64_t>());
 			auto size = args.At(0).As<uint64_t>();
 			void* buffer = malloc(size);
@@ -142,7 +142,7 @@ ReflMngr::ReflMngr() {
 		}}
 	} };
 	MethodInfo methodinfo_free{ {
-		[](ArgsView args, void*)->Destructor* {
+		[](ArgsView args, void*)-> Destructor {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<void*>());
 			auto ptr = args.At(0).As<void*>();
 			free(ptr);
@@ -159,7 +159,7 @@ ReflMngr::ReflMngr() {
 		}}
 	} };
 	MethodInfo methodinfo_aligned_malloc{ {
-		[](ArgsView args, void* result_buffer)->Destructor* {
+		[](ArgsView args, void* result_buffer)-> Destructor {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<uint64_t>());
 			assert(args.GetParamList().GetParameters().at(1).typeID == ReflMngr::Instance().tregistry.GetID<uint64_t>());
 			auto size = args.At(0).As<uint64_t>();
@@ -195,7 +195,7 @@ ReflMngr::ReflMngr() {
 		}}
 	} };
 	MethodInfo methodinfo_aligned_free{ {
-		[](ArgsView args, void*)->Destructor* {
+		[](ArgsView args, void*)-> Destructor {
 			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<void*>());
 			auto ptr = args.At(0).As<void*>();
 

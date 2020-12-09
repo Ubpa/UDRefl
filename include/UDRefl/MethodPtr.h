@@ -8,7 +8,6 @@
 
 #include <vector>
 #include <functional>
-#include <any>
 #include <variant>
 
 namespace Ubpa::UDRefl {
@@ -54,112 +53,114 @@ namespace Ubpa::UDRefl {
 
 	class MethodPtr {
 	public:
-		enum class Mode {
-			OBJECT_VARIABLE,
-			OBJECT_CONST,
-			STATIC,
-		};
-
 		template<typename T>
 		static MethodPtr GenerateDefaultConstructor() noexcept;
 
 		template<typename T>
 		static MethodPtr GenerateDestructor() noexcept;
 
-		using ObjectVariableFunction = std::add_pointer_t<Destructor>(void*, ArgsView, void*);
-		using ObjectConstFunction    = std::add_pointer_t<Destructor>(const void*, ArgsView, void*);
-		using StaticFunction         = std::add_pointer_t<Destructor>(ArgsView, void*);
+		using ObjectVariableFunction = Destructor(void*, ArgsView, void*);
+		using ObjectConstFunction    = Destructor(const void*, ArgsView, void*);
+		using StaticFunction         = Destructor(ArgsView, void*);
+
+		MethodPtr(std::function<ObjectVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+			func{ (assert(func), std::move(func)) },
+			resultDesc{ std::move(resultDesc) },
+			paramList{ std::move(paramList) } {}
+
+		MethodPtr(std::function<ObjectConstFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+			func{ (assert(func), std::move(func)) },
+			resultDesc{ std::move(resultDesc) },
+			paramList{ std::move(paramList) } {}
+
+		MethodPtr(std::function<StaticFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+			func{ (assert(func), std::move(func)) },
+			resultDesc{ std::move(resultDesc) },
+			paramList{ std::move(paramList) } {}
 
 		MethodPtr(ObjectVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
-			mode{ Mode::OBJECT_VARIABLE },
-			func_object_variable{ func },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) }
-		{
-			assert(func);
-		}
+			MethodPtr{ std::function<ObjectVariableFunction>{func}, std::move(resultDesc), std::move(paramList) }
+		{ assert(func); }
 
 		MethodPtr(ObjectConstFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
-			mode{ Mode::OBJECT_CONST },
-			func_object_const{ func },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) }
-		{
-			assert(func);
-		}
+			MethodPtr{ std::function<ObjectConstFunction>{func}, std::move(resultDesc), std::move(paramList) }
+		{ assert(func); }
 
 		MethodPtr(StaticFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
-			mode{ Mode::STATIC },
-			func_static{ func },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) }
-		{
-			assert(func);
-		}
+			MethodPtr{ std::function<StaticFunction>{func}, std::move(resultDesc), std::move(paramList) }
+		{ assert(func); }
 
-		template<typename Lambda,
-			std::enable_if_t<!std::is_member_pointer_v<Lambda> && !std::is_pointer_v<Lambda>, int> = 0>
-		MethodPtr(Lambda func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept
-			: MethodPtr{ DecayLambda(func), std::move(resultDesc), std::move(paramList) } {}
+		template<typename Lambda>
+		MethodPtr(Lambda func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+			MethodPtr{ DecayLambda(func), std::move(resultDesc), std::move(paramList) }
+		{ assert(func); }
 
-		Mode GetMode() const noexcept { return mode; }
-		const ParamList& GetParamList() const noexcept { return paramList; }
+		bool IsObjectVariable() const noexcept { return func.index() == 0; }
+		bool IsObjectConst   () const noexcept { return func.index() == 1; }
+		bool IsStatic        () const noexcept { return func.index() == 2; }
+
+		const ParamList&  GetParamList() const noexcept { return paramList; }
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
 
-		Destructor* Invoke(void* obj, void* args_buffer, void* result_buffer) const {
-			ArgsView args = { args_buffer,paramList };
-			switch (mode)
-			{
-			case Mode::OBJECT_VARIABLE:
-				return func_object_variable(obj, args, result_buffer);
-			case Mode::OBJECT_CONST:
-				return func_object_const(obj, args, result_buffer);
-			case Mode::STATIC:
-				return func_static(args, result_buffer);
-			default:
-				assert(false);
-				return {};
-			}
+		Destructor Invoke(void* obj, void* args_buffer, void* result_buffer) const {
+			return std::visit([=](const auto& f) {
+				using Func = std::decay_t<decltype(f)>;
+				if constexpr (std::is_same_v<Func, std::function<ObjectVariableFunction>>)
+					return f(obj, { args_buffer,paramList }, result_buffer);
+				else if constexpr (std::is_same_v<Func, std::function<ObjectConstFunction>>)
+					return f(obj, { args_buffer,paramList }, result_buffer);
+				else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
+					return f({ args_buffer,paramList }, result_buffer);
+				else
+					static_assert(false);
+			}, func);
 		};
 
-		Destructor* Invoke(const void* obj, void* args_buffer, void* result_buffer) const {
-			ArgsView args = { args_buffer,paramList };
-			switch (mode)
-			{
-			case Mode::OBJECT_CONST:
-				return func_object_const(obj, args, result_buffer);
-			case Mode::STATIC:
-				return func_static(args, result_buffer);
-			default:
-				assert(false);
-				return nullptr;
-			}
+		Destructor Invoke(const void* obj, void* args_buffer, void* result_buffer) const {
+			return std::visit([=](const auto& f) {
+				using Func = std::decay_t<decltype(f)>;
+				if constexpr (std::is_same_v<Func, std::function<ObjectVariableFunction>>) {
+					assert(false);
+					return Destructor{};
+				}
+				else if constexpr (std::is_same_v<Func, std::function<ObjectConstFunction>>)
+					return f(obj, { args_buffer,paramList }, result_buffer);
+				else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
+					return f({ args_buffer,paramList }, result_buffer);
+				else
+					static_assert(false);
+			}, func);
 		};
 
-		Destructor* Invoke(void* args_buffer, void* result_buffer) const {
-			ArgsView args = { args_buffer,paramList };
-			switch (mode)
-			{
-			case Mode::STATIC:
-				return func_static(args, result_buffer);
-			default:
-				assert(false);
-				return nullptr;
-			}
+		Destructor Invoke(void* args_buffer, void* result_buffer) const {
+			return std::visit([=](const auto& f) {
+				using Func = std::decay_t<decltype(f)>;
+				if constexpr (std::is_same_v<Func, std::function<ObjectVariableFunction>>) {
+					assert(false);
+					return Destructor{};
+				}
+				else if constexpr (std::is_same_v<Func, std::function<ObjectConstFunction>>) {
+					assert(false);
+					return Destructor{};
+				}
+				else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
+					return f({ args_buffer,paramList }, result_buffer);
+				else
+					static_assert(false);
+			}, func);
 		};
 
-		Destructor* Invoke_Static(void* args_buffer, void* result_buffer) const {
-			assert(mode == Mode::STATIC);
-			return func_static({ args_buffer,paramList }, result_buffer);
+		Destructor Invoke_Static(void* args_buffer, void* result_buffer) const {
+			assert(IsStatic());
+			return std::get<std::function<StaticFunction>>(func)({ args_buffer, paramList }, result_buffer);
 		};
 
 	private:
-		Mode mode;
-		union {
-			ObjectVariableFunction* func_object_variable;
-			ObjectConstFunction* func_object_const;
-			StaticFunction* func_static;
-		};
+		std::variant<
+			std::function<ObjectVariableFunction>, // object variable
+			std::function<ObjectConstFunction>,    // object const
+			std::function<StaticFunction>          // static
+		> func;
 		ResultDesc resultDesc;
 		ParamList paramList;
 	};
@@ -167,7 +168,7 @@ namespace Ubpa::UDRefl {
 	struct InvokeResult {
 		bool success{ false };
 		TypeID resultID;
-		Destructor* destructor{ nullptr };
+		Destructor destructor;
 
 		template<typename T>
 		T Move(void* result_buffer);
