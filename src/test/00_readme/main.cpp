@@ -35,7 +35,7 @@ int main() {
 			{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}}, // default ctor
 			{ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},         // dtor
 			{ID_norm, {{                                               // norm
-				[](const void* obj, ArgsView, void* result_buffer) -> Destructor* {
+				[](const void* obj, ArgsView, void* result_buffer) -> Destructor {
 					return wrap_function<&Vec::norm>()(obj, nullptr, result_buffer);
 				}, // function
 				{ ID_float, sizeof(float), alignof(float) } // ResultDesc

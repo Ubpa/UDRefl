@@ -14,7 +14,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	static MethodPtr MethodPtr::GenerateDefaultConstructor() noexcept {
 		return { static_cast<ObjectVariableFunction*>(
-			[](void* obj, ArgsView, void*) -> Destructor* {
+			[](void* obj, ArgsView, void*) -> Destructor {
 				assert(obj);
 				new(obj)T;
 				return nullptr;
@@ -25,7 +25,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	static MethodPtr MethodPtr::GenerateDestructor() noexcept {
 		return { static_cast<ObjectConstFunction*>(
-			[](const void* obj, ArgsView, void*) -> Destructor* {
+			[](const void* obj, ArgsView, void*) -> Destructor {
 				assert(obj);
 				reinterpret_cast<const T*>(obj)->~T();
 				return nullptr;

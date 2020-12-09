@@ -54,10 +54,10 @@ int main() {
 			alignof(Point),
 			{ // fields
 				{ ID_x, FieldInfo{ { ID_float, offsetof(Point, x) }, { // attrs
-					{ID_UInspector_Range, MakeAttr<UInspector::Range>(1.f,2.f) }
+					{ID_UInspector_Range, MakeSharedBlock<UInspector::Range>(1.f,2.f) }
 				}}},
 				{ ID_y, { { ID_float, offsetof(Point, y) } , { // attrs
-					{ID_UInspector_A, MakeAttr<UInspector::Range>(1.f,2.f) }
+					{ID_UInspector_A, MakeSharedBlock<UInspector::Range>(1.f,2.f) }
 				}}}
 			}
 		};

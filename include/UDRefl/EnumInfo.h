@@ -6,7 +6,7 @@ namespace Ubpa::UDRefl {
 	struct EnumInfo {
 		Enumerator::UnderlyingType underlyingType;
 		std::unordered_map<NameID, EnumeratorInfo> enumeratorinfos;
-		std::unordered_map<TypeID, Attr> attrs;
+		std::unordered_map<TypeID, SharedBlock> attrs;
 
 		Enumerator GetEnumerator(size_t enumeratorID) const { return { underlyingType, enumeratorinfos.at(enumeratorID).value }; }
 		NameID GetEnumeratorNameID(Enumerator::Value value) const {

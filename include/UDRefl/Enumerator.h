@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Attr.h"
+#include "SharedBlock.h"
 
 #include <cstdint>
 #include <any>
@@ -96,10 +96,10 @@ namespace Ubpa::UDRefl {
 
 	struct EnumeratorInfo {
 		template<typename E>
-		EnumeratorInfo(E e, std::unordered_map<TypeID, Attr> attrs = {}) noexcept :
+		EnumeratorInfo(E e, std::unordered_map<TypeID, SharedBlock> attrs = {}) noexcept :
 			value{ Enumerator::ValueOf(e) }, attrs{ std::move(attrs) }{}
 
 		Enumerator::Value value;
-		std::unordered_map<TypeID, Attr> attrs;
+		std::unordered_map<TypeID, SharedBlock> attrs;
 	};
 }

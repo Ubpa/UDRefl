@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Object.h"
+#include "ObjectPtr.h"
 #include "Util.h"
 
 #include <UTemplate/Func.h>

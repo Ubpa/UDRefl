@@ -1,12 +1,12 @@
 #pragma once
 
 #include "MethodPtr.h"
-#include "Attr.h"
+#include "SharedBlock.h"
 
 namespace Ubpa::UDRefl {
 	struct MethodInfo {
 		MethodPtr methodptr;
-		std::unordered_map<TypeID, Attr> attrs;
+		std::unordered_map<TypeID, SharedBlock> attrs;
 	};
 
 	struct Method {
