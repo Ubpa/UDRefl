@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Registry.h"
-
 namespace Ubpa::UDRefl {
 	inline ObjectPtr ArgsView::At(size_t idx) const noexcept {
 		assert(idx < paramList.GetParameters().size());
@@ -13,7 +11,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	static MethodPtr MethodPtr::GenerateDefaultConstructor() noexcept {
-		return { static_cast<ObjectVariableFunction*>(
+		return { static_cast<MemberVariableFunction*>(
 			[](void* obj, ArgsView, void*) -> Destructor {
 				assert(obj);
 				new(obj)T;
@@ -24,7 +22,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	static MethodPtr MethodPtr::GenerateDestructor() noexcept {
-		return { static_cast<ObjectConstFunction*>(
+		return { static_cast<MemberConstFunction*>(
 			[](const void* obj, ArgsView, void*) -> Destructor {
 				assert(obj);
 				reinterpret_cast<const T*>(obj)->~T();

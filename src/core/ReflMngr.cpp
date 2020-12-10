@@ -119,114 +119,34 @@ namespace Ubpa::UDRefl::details {
 }
 
 ReflMngr::ReflMngr() {
-	MethodInfo methodinfo_malloc{ {
-		[](ArgsView args, void* result_buffer)-> Destructor {
-			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<uint64_t>());
-			auto size = args.At(0).As<uint64_t>();
-			void* buffer = malloc(size);
-			buffer_get<void*>(result_buffer, 0) = buffer;
-			return nullptr;
-		},
-		{ // ResultDesc
-			tregistry.GetID<void*>(),
-			sizeof(void*),
-			alignof(void*),
-		},
-		{{// ParamList
-			{ // size
-				tregistry.GetID<uint64_t>(),
-				sizeof(uint64_t),
-				alignof(uint64_t),
-				nregistry.GetID("size")
-			}
-		}}
-	} };
-	MethodInfo methodinfo_free{ {
-		[](ArgsView args, void*)-> Destructor {
-			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<void*>());
-			auto ptr = args.At(0).As<void*>();
-			free(ptr);
-			return nullptr;
-		},
-		{}, // ResultDesc
-		{{// ParamList
-			{ // ptr
-				tregistry.GetID<void*>(),
-				sizeof(void*),
-				alignof(void*),
-				nregistry.GetID("ptr")
-			}
-		}}
-	} };
-	MethodInfo methodinfo_aligned_malloc{ {
-		[](ArgsView args, void* result_buffer)-> Destructor {
-			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<uint64_t>());
-			assert(args.GetParamList().GetParameters().at(1).typeID == ReflMngr::Instance().tregistry.GetID<uint64_t>());
-			auto size = args.At(0).As<uint64_t>();
-			auto alignment = args.At(1).As<uint64_t>();
-			void* buffer =
-#if defined(WIN32) || defined(_WINDOWS)
-				_aligned_malloc(size, alignment)
-#else
-				aligned_alloc(size, alignment)
-#endif // defined(WIN32) || defined(_WINDOWS)
-				;
-			buffer_get<void*>(result_buffer, 0) = buffer;
-			return nullptr;
-		},
-		{ // ResultDesc
-			tregistry.GetID<void*>(),
-			sizeof(void*),
-			alignof(void*),
-		},
-		{{// ParamList
-			{ // size
-				tregistry.GetID<uint64_t>(),
-				sizeof(uint64_t),
-				alignof(uint64_t),
-				nregistry.GetID("size")
-			},
-			{ // alignment
-				tregistry.GetID<uint64_t>(),
-				sizeof(uint64_t),
-				alignof(uint64_t),
-				nregistry.GetID("alignment")
-			},
-		}}
-	} };
-	MethodInfo methodinfo_aligned_free{ {
-		[](ArgsView args, void*)-> Destructor {
-			assert(args.GetParamList().GetParameters().at(0).typeID == ReflMngr::Instance().tregistry.GetID<void*>());
-			auto ptr = args.At(0).As<void*>();
+	MethodInfo methodinfo_malloc{ GenerateMethodPtr<&malloc>() };
+	MethodInfo methodinfo_free{ GenerateMethodPtr<&free>() };
 
 #if defined(WIN32) || defined(_WINDOWS)
-			_aligned_free(ptr);
+	#define UBPA_UDREFL_ALIGN_MALLOC _aligned_malloc
 #else
-			free(ptr);
+	#define UBPA_UDREFL_ALIGN_MALLOC aligned_alloc
 #endif // defined(WIN32) || defined(_WINDOWS)
+	MethodInfo methodinfo_aligned_malloc{ GenerateMethodPtr<&UBPA_UDREFL_ALIGN_MALLOC>() };
+#undef UBPA_UDREFL_ALIGN_MALLOC
 
-			return nullptr;
-		},
-		{}, // ResultDesc
-		{{// ParamList
-			{ // ptr
-				tregistry.GetID<void*>(),
-				sizeof(void*),
-				alignof(void*),
-				nregistry.GetID("ptr")
-			}
-		}}
-	} };
+#if defined(WIN32) || defined(_WINDOWS)
+#define UBPA_UDREFL_ALIGN_FREE _aligned_free
+#else
+#define UBPA_UDREFL_ALIGN_FREE free
+#endif // defined(WIN32) || defined(_WINDOWS)
+	MethodInfo methodinfo_aligned_free{ GenerateMethodPtr<&UBPA_UDREFL_ALIGN_FREE>() };
+#undef UBPA_UDREFL_ALIGN_FREE
 
 	TypeInfo global{
 		0,
 		0,
 		{}, // fieldinfos
 		{ // methodinfos
-			{nregistry.GetID(NameRegistry::Meta::malloc), std::move(methodinfo_malloc)},
-			{nregistry.GetID(NameRegistry::Meta::free), std::move(methodinfo_free)},
-			{nregistry.GetID(NameRegistry::Meta::aligned_malloc), std::move(methodinfo_aligned_malloc)},
-			{nregistry.GetID(NameRegistry::Meta::aligned_free), std::move(methodinfo_aligned_free)},
+			{NameRegistry::DirectGetID(NameRegistry::Meta::malloc), std::move(methodinfo_malloc)},
+			{NameRegistry::DirectGetID(NameRegistry::Meta::free), std::move(methodinfo_free)},
+			{NameRegistry::DirectGetID(NameRegistry::Meta::aligned_malloc), std::move(methodinfo_aligned_malloc)},
+			{NameRegistry::DirectGetID(NameRegistry::Meta::aligned_free), std::move(methodinfo_aligned_free)},
 		},
 	};
 
@@ -234,14 +154,14 @@ ReflMngr::ReflMngr() {
 }
 
 void* ReflMngr::Malloc(uint64_t size) const {
-	std::array argsTypeIDs = { tregistry.GetID<uint64_t>() };
+	std::array argsTypeIDs = { TypeRegistry::DirectGetID<uint64_t>() };
 
 	std::uint8_t args_buffer[sizeof(uint64_t)];
 	buffer_get<uint64_t>(args_buffer, 0) = size;
 
 	std::uint8_t result_buffer[sizeof(void*)];
 
-	auto result = Invoke(nregistry.GetID(NameRegistry::Meta::malloc), argsTypeIDs, args_buffer, result_buffer);
+	auto result = Invoke(NameRegistry::DirectGetID(NameRegistry::Meta::malloc), argsTypeIDs, args_buffer, result_buffer);
 
 	if (result.success)
 		return buffer_get<void*>(result_buffer, 0);
@@ -250,18 +170,18 @@ void* ReflMngr::Malloc(uint64_t size) const {
 }
 
 bool ReflMngr::Free(void* ptr) const {
-	std::array argsTypeIDs = { tregistry.GetID<void*>() };
+	std::array argsTypeIDs = { TypeRegistry::DirectGetID<void*>() };
 
 	std::uint8_t args_buffer[sizeof(void*)];
 	buffer_get<void*>(args_buffer, 0) = ptr;
 
-	auto result = Invoke(nregistry.GetID(NameRegistry::Meta::free), argsTypeIDs, args_buffer);
+	auto result = Invoke(NameRegistry::DirectGetID(NameRegistry::Meta::free), argsTypeIDs, args_buffer);
 
 	return result.success;
 }
 
 void* ReflMngr::AlignedMalloc(uint64_t size, uint64_t alignment) const {
-	std::array argsTypeIDs = { tregistry.GetID<uint64_t>(),tregistry.GetID<uint64_t>() };
+	std::array argsTypeIDs = { TypeRegistry::DirectGetID<uint64_t>(),TypeRegistry::DirectGetID<uint64_t>() };
 
 	std::uint8_t args_buffer[2 * sizeof(uint64_t)];
 	buffer_get<uint64_t>(args_buffer, 0) = size;
@@ -269,7 +189,7 @@ void* ReflMngr::AlignedMalloc(uint64_t size, uint64_t alignment) const {
 
 	std::uint8_t result_buffer[sizeof(void*)];
 	
-	auto result = Invoke(nregistry.GetID(NameRegistry::Meta::aligned_malloc), argsTypeIDs, args_buffer, result_buffer);
+	auto result = Invoke(NameRegistry::DirectGetID(NameRegistry::Meta::aligned_malloc), argsTypeIDs, args_buffer, result_buffer);
 
 	if (result.success)
 		return buffer_get<void*>(result_buffer, 0);
@@ -278,12 +198,12 @@ void* ReflMngr::AlignedMalloc(uint64_t size, uint64_t alignment) const {
 }
 
 bool ReflMngr::AlignedFree(void* ptr) const {
-	std::array argsTypeIDs = { tregistry.GetID<void*>() };
+	std::array argsTypeIDs = { TypeRegistry::DirectGetID<void*>() };
 
 	std::uint8_t args_buffer[sizeof(void*)];
 	buffer_get<void*>(args_buffer, 0) = ptr;
 
-	auto result = Invoke(nregistry.GetID(NameRegistry::Meta::aligned_free), argsTypeIDs, args_buffer);
+	auto result = Invoke(NameRegistry::DirectGetID(NameRegistry::Meta::aligned_free), argsTypeIDs, args_buffer);
 
 	return result.success;
 }
@@ -633,7 +553,7 @@ bool ReflMngr::IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs) const noe
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	return typeinfo.IsInvocable(nregistry.GetID(NameRegistry::Meta::ctor), argTypeIDs);
+	return typeinfo.IsInvocable(NameRegistry::DirectGetID(NameRegistry::Meta::ctor), argTypeIDs);
 }
 
 bool ReflMngr::IsDestructible(TypeID typeID) const noexcept {
@@ -641,7 +561,7 @@ bool ReflMngr::IsDestructible(TypeID typeID) const noexcept {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	return typeinfo.IsConstInvocable(nregistry.GetID(NameRegistry::Meta::dtor), {});
+	return typeinfo.IsConstInvocable(NameRegistry::DirectGetID(NameRegistry::Meta::dtor), {});
 }
 
 bool ReflMngr::Construct(ObjectPtr obj, Span<TypeID> argTypeIDs, void* args_buffer) const {
@@ -650,7 +570,7 @@ bool ReflMngr::Construct(ObjectPtr obj, Span<TypeID> argTypeIDs, void* args_buff
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	auto rst = typeinfo.Invoke(obj, nregistry.GetID(NameRegistry::Meta::ctor), argTypeIDs, args_buffer, nullptr);
+	auto rst = typeinfo.Invoke(obj, NameRegistry::DirectGetID(NameRegistry::Meta::ctor), argTypeIDs, args_buffer, nullptr);
 	return rst.success;
 }
 
@@ -660,7 +580,7 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	auto rst = typeinfo.Invoke(obj, nregistry.GetID(NameRegistry::Meta::dtor), {}, nullptr, nullptr);
+	auto rst = typeinfo.Invoke(obj, NameRegistry::DirectGetID(NameRegistry::Meta::dtor), {}, nullptr, nullptr);
 	return rst.success;
 }
 

@@ -182,41 +182,57 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	constexpr T add_lref(std::remove_reference_t<T>* t) noexcept {
+	constexpr T type_buffer_recover(std::remove_reference_t<T>* t) noexcept {
 		return *t;
 	}
 
 	template<typename T>
-	constexpr T add_lref(T t) noexcept {
+	constexpr T type_buffer_recover(T t) noexcept {
 		return std::forward<T>(t);
 	}
 
 	template<typename T>
-	constexpr auto remove_lref(T t) noexcept {
+	constexpr auto type_buffer_decay(T t) noexcept {
 		if constexpr (std::is_lvalue_reference_v<T>)
 			return &t;
 		else
 			return std::forward<T>(t);
 	}
 
+	template<typename T>
+	using type_buffer_decay_t = decltype(type_buffer_decay<T>(std::declval<T>()));
+
 	template<typename... Ts>
-	constexpr auto remove_lref_as_tuple_buffer(Ts... ts) noexcept {
-		return std::tuple{ remove_lref<Ts>(std::forward<Ts>(ts))... };
+	constexpr auto type_buffer_decay_as_tuple(Ts... ts) noexcept {
+		return std::tuple{ type_buffer_decay<Ts>(std::forward<Ts>(ts))... };
 	}
 
 	// ({const?} void* obj, void* args_buffer, void* result_buffer) -> Destructor*
+	// size: 1
 	template<auto func_ptr>
 	constexpr auto wrap_member_function() noexcept;
 
 	// (void* args_buffer, void* result_buffer) -> Destructor*
+	// size: 1
 	template<auto func_ptr>
-	constexpr auto wrap_non_member_function() noexcept;
+	constexpr auto wrap_static_function() noexcept;
 
 	// static dispatch to
 	// - wrap_member_function
-	// - wrap_non_member_function
+	// - wrap_static_function
+	// size: 1
 	template<auto func_ptr>
 	constexpr auto wrap_function() noexcept;
+
+	// ({const?} void* obj, void* args_buffer, void* result_buffer) -> Destructor*
+	// size: sizeof(Func)
+	template<typename Func>
+	constexpr auto wrap_member_function(Func&& func) noexcept;
+
+	// (void* args_buffer, void* result_buffer) -> Destructor*
+	// size: sizeof(Func)
+	template<typename Func>
+	constexpr auto wrap_static_function(Func&& func) noexcept;
 }
 
 #include "details/Util.inl"

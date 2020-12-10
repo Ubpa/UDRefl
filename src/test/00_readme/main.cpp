@@ -32,17 +32,16 @@ int main() {
 			{ ID_y, { { ID_float, offsetof(Vec, y) } }}  // y
 		},
 		{ // method infos
-			{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}}, // default ctor
-			{ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},         // dtor
-			{ID_norm, {{                                               // norm
-				[](const void* obj, ArgsView, void* result_buffer) -> Destructor {
-					return wrap_function<&Vec::norm>()(obj, nullptr, result_buffer);
-				}, // function
-				{ ID_float, sizeof(float), alignof(float) } // ResultDesc
-			}}}
+			{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}},        // default ctor
+			{ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},                // dtor
+			{ID_norm, {ReflMngr::Instance().GenerateMethodPtr<&Vec::norm>()}} // norm
 		}
 	};
 
+	// [ or ]
+	// ObjectPtr v = ReflMngr::Instance().New(ID_Vec);
+	// // do something
+	// ReflMngr::Instance().Delete(v);
 	SharedObject v = ReflMngr::Instance().MakeShared(ID_Vec);
 
 	ReflMngr::Instance().RWVar(v, ID_x).As<float>() = 3.f;

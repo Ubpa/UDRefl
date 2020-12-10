@@ -25,14 +25,24 @@ struct Vec {
 		y += p.y;
 		return *this;
 	}
+
+	static constexpr size_t Dim() noexcept {
+		return 2;
+	}
 };
 
 int main() {
+	std::uint8_t buffer[sizeof(size_t)];
+	constexpr auto Vec_Dim = wrap_function<&Vec::Dim>();
+	Vec_Dim(nullptr, buffer);
+	std::cout << buffer_as<size_t>(buffer) << std::endl;
+
 	auto ID_Vec = ReflMngr::Instance().tregistry.GetID<Vec>();
 	auto ID_const_Vec_lref = ReflMngr::Instance().tregistry.GetID<const Vec&>();
 	auto ID_Vec_lref = ReflMngr::Instance().tregistry.GetID<Vec&>();
 	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
 
+	auto ID_p = ReflMngr::Instance().nregistry.GetID("p");
 	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
 	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
 	auto ID_Norm2 = ReflMngr::Instance().nregistry.GetID("Norm2");
@@ -45,26 +55,9 @@ int main() {
 		FieldInfo fieldinfo_x{ ptr_x };
 		FieldInfo fieldinfo_y{ ptr_y };
 
-		auto Norm2 = [](const void* obj, ArgsView, void* result_buffer) {
-			return wrap_function<&Vec::Norm2>()(obj, nullptr, result_buffer);
-		};
-		MethodPtr method_Norm2{
-			Norm2,
-			{ID_float, sizeof(float), alignof(float)}
-		};
-
-		auto NormalizeSelf = [](void* obj, ArgsView, void*) {
-			return wrap_function<&Vec::NormalizeSelf>()(obj, nullptr, nullptr);
-		};
-		MethodPtr method_NormalizeSelf{ NormalizeSelf };
-
-		auto operator_add_assign = [](void* obj, ArgsView args, void* result_buffer) {
-			return wrap_function<&Vec::operator+=>()(obj, args.GetBuffer(), result_buffer);
-		};
+		MethodPtr method_Norm2 = ReflMngr::Instance().GenerateMethodPtr<&Vec::Norm2>();
+		MethodPtr method_NormalizeSelf = ReflMngr::Instance().GenerateMethodPtr<&Vec::NormalizeSelf>();
 		MethodPtr method_operator_add_assign = ReflMngr::Instance().GenerateMethodPtr<&Vec::operator+=>();
-		MethodInfo methodinfo_NormalizeSelf{ method_NormalizeSelf };
-		MethodInfo methodinfo_operator_add_assign{ method_operator_add_assign };
-		MethodInfo methodinfo_Norm2{ method_Norm2 };
 
 		TypeInfo typeinfo{
 			sizeof(Vec),
@@ -74,9 +67,9 @@ int main() {
 				{ID_y, fieldinfo_y}
 			},
 			{ // methodinfos
-				{ID_NormalizeSelf, methodinfo_NormalizeSelf},
-				{ID_operator_assign_add, methodinfo_operator_add_assign},
-				{ID_Norm2, methodinfo_Norm2}
+				{ID_NormalizeSelf, { method_NormalizeSelf }},
+				{ID_operator_assign_add, { method_operator_add_assign }},
+				{ID_Norm2, { method_Norm2 }}
 			},
 		};
 		ReflMngr::Instance().typeinfos.emplace(ID_Vec, std::move(typeinfo));

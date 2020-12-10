@@ -65,14 +65,9 @@ ReflMngr::Instance().typeinfos[ID_Vec] = { // TypeInfo
     { ID_y, { { ID_float, offsetof(Vec, y) } }}  // y
   },
   { // method infos
-    {ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}}, // default ctor
-    {ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},         // dtor
-    {ID_norm, {{                                               // norm
-      [](const void* obj, ArgsView, void* result_buffer) -> Destructor* {
-        return wrap_function<&Vec::norm>()(obj, nullptr, result_buffer);
-      }, // function
-      { ID_float, sizeof(float), alignof(float) } // ResultDesc
-    }}}
+    {ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}},                  // default ctor
+    {ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},                          // dtor
+    {ID_norm, {ID_norm, {ReflMngr::Instance().GenerateMethodPtr<&Vec::norm>()}} // norm
   }
 };
 ```

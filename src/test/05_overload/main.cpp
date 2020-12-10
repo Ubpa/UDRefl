@@ -30,8 +30,6 @@ int main() {
 	auto ID_Vec_lref = ReflMngr::Instance().tregistry.GetID<Vec&>();
 	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
 
-	auto ID_p = ReflMngr::Instance().nregistry.GetID("p");
-	auto ID_d = ReflMngr::Instance().nregistry.GetID("d");
 	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
 	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
 	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.GetID("operator+=");
@@ -50,8 +48,7 @@ int main() {
 				{
 					ID_const_Vec_lref,
 					sizeof(const Vec*),
-					alignof(const Vec*),
-					ID_p
+					alignof(const Vec*)
 				}
 			}}
 		};
@@ -67,8 +64,7 @@ int main() {
 				{
 					ID_float,
 					sizeof(float),
-					alignof(float),
-					ID_d
+					alignof(float)
 				}
 			}}
 		};
