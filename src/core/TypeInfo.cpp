@@ -9,7 +9,7 @@ ObjectPtr TypeInfo::RWVar(NameID fieldID) const noexcept {
 	if (target == fieldinfos.end())
 		return nullptr;
 
-	if (target->second.fieldptr.GetMode() != FieldPtr::Mode::STATIC_VARIABLE)
+	if (!target->second.fieldptr.IsStaticVaraible())
 		return nullptr;
 
 	return target->second.fieldptr.Map_StaticVariable();

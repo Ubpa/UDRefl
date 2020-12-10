@@ -101,12 +101,12 @@ namespace Ubpa::UDRefl {
 	};
 }
 
-//template<>
-//struct std::hash<Ubpa::UDRefl::SharedObject> {
-//    std::size_t operator()(const Ubpa::UDRefl::SharedObject& obj) noexcept {
-//        return std::hash<const void*>()(obj.get());
-//    }
-//};
+template<>
+struct std::hash<Ubpa::UDRefl::SharedObject> {
+    std::size_t operator()(const Ubpa::UDRefl::SharedObject& obj) noexcept {
+        return obj.GetID().GetValue() ^ std::hash<const void*>()(obj.GetPtr());
+    }
+};
 
 inline bool operator==(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
     return left.GetID() == right.GetID() && left.GetPtr() == right.GetPtr();

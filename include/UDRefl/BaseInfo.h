@@ -6,11 +6,15 @@
 namespace Ubpa::UDRefl {
 	class BaseInfo {
 	public:
-		constexpr BaseInfo(InheritCastFunctions funcs, bool is_polymorphic = false, bool is_virtual = false) noexcept :
+		BaseInfo(InheritCastFunctions funcs, bool is_polymorphic = false, bool is_virtual = false) noexcept :
 			is_polymorphic{ is_polymorphic },
 			is_virtual{ is_virtual },
-			funcs{ Fill(funcs, is_polymorphic, is_virtual) }
-		{}
+			funcs{ std::move(funcs) }
+		{
+			assert(funcs.static_derived_to_base);
+			assert((is_virtual && !funcs.static_base_to_derived) || (!is_virtual && funcs.static_base_to_derived));
+			assert((is_polymorphic&& funcs.dynamic_base_to_derived) || (!is_polymorphic && !funcs.dynamic_base_to_derived)); 
+		}
 
 		bool IsVirtual() const noexcept { return is_virtual; }
 		bool IsPolymorphic() const noexcept { return is_virtual; }
@@ -46,35 +50,8 @@ namespace Ubpa::UDRefl {
 			assert(IsPolymorphic());
 			return funcs.dynamic_base_to_derived(ptr);
 		}
-
+		
 	private:
-		static constexpr InheritCastFunctions Fill(const InheritCastFunctions& funcs, bool is_polymorphic, bool is_virtual) noexcept {
-			assert(funcs.static_derived_to_base);
-			assert((is_virtual && !funcs.static_base_to_derived) || (!is_virtual && funcs.static_base_to_derived));
-			assert((is_polymorphic && funcs.dynamic_base_to_derived) || (!is_polymorphic && !funcs.dynamic_base_to_derived));
-
-			InheritCastFunctions rst;
-			rst.static_derived_to_base = funcs.static_derived_to_base;
-
-			if (!is_polymorphic) {
-				rst.dynamic_base_to_derived = [](const void*) noexcept -> const void* {
-					return nullptr;
-				};
-			}
-			else
-				rst.dynamic_base_to_derived = funcs.dynamic_base_to_derived;
-
-			if (is_virtual) {
-				rst.static_base_to_derived = [](const void*) noexcept -> const void* {
-					return nullptr;
-				};
-			}
-			else
-				rst.static_base_to_derived = funcs.static_base_to_derived;
-
-			return rst;
-		}
-
 		bool is_polymorphic;
 		bool is_virtual;
 		InheritCastFunctions funcs;

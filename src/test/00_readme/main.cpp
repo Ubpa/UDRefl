@@ -73,6 +73,4 @@ int main() {
 				<< std::endl;
 		}
 	);
-
-	ReflMngr::Instance().Delete(v);
 }

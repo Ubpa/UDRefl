@@ -3,152 +3,194 @@
 #include "ObjectPtr.h"
 #include "Util.h"
 
+#include <variant>
+
 namespace Ubpa::UDRefl {
 	class FieldPtr {
 	public:
-		enum class Mode : std::uint8_t {
-			VARIABLE         = 0b000,
-			CONST            = 0b001,
-			STATIC_VARIABLE  = 0b010,
-			STATIC_CONST     = 0b011,
-			VIRTUAL_VARIABLE = 0b100,
-			VIRTUAL_CONST    = 0b101,
-		};
-
-		constexpr FieldPtr(TypeID valueID, size_t offset, bool isConst = false) noexcept :
-			mode{ isConst? Mode::CONST : Mode::VARIABLE },
-			valueID{ valueID },
-			offset{ offset }
+		FieldPtr(TypeID valueID, size_t forward_offset_value, bool isConst) noexcept :
+			valueID{ valueID }
 		{
 			assert(valueID);
+
+			if (isConst)
+				offset.emplace<0>(forward_offset_value);
+			else
+				offset.emplace<1>(forward_offset_value);
 		}
+
+		constexpr FieldPtr(TypeID valueID, size_t forward_offset_value, std::true_type is_const) noexcept :
+			valueID{ valueID },
+			offset{ std::in_place_index_t<1>{}, forward_offset_value }
+		{ assert(valueID); }
+
+		constexpr FieldPtr(TypeID valueID, size_t forward_offset_value, std::false_type is_const) noexcept :
+			valueID{ valueID },
+			offset{ std::in_place_index_t<0>{}, forward_offset_value }
+		{ assert(valueID); }
+
+		constexpr FieldPtr(TypeID valueID, size_t forward_offset_value) noexcept
+			: FieldPtr{ valueID, forward_offset_value, std::false_type{} } {}
 
 		constexpr FieldPtr(TypeID valueID, void* ptr) noexcept :
-			mode{ Mode::STATIC_VARIABLE },
 			valueID{ valueID },
-			static_obj{ ptr }
-		{
-			assert(valueID && ptr);
-		}
+			offset{ ptr }
+		{ assert(valueID&& ptr); }
 
 		constexpr FieldPtr(TypeID valueID, const void* ptr) noexcept :
-			mode{ Mode::STATIC_CONST },
 			valueID{ valueID },
-			static_const_obj{ ptr }
+			offset{ ptr }
+		{ assert(valueID&& ptr); }
+
+		constexpr FieldPtr(ObjectPtr      static_obj) noexcept : FieldPtr{ static_obj.GetID(), static_obj.GetPtr() } {}
+		constexpr FieldPtr(ConstObjectPtr static_obj) noexcept : FieldPtr{ static_obj.GetID(), static_obj.GetPtr() } {}
+
+		FieldPtr(TypeID valueID, Offsetor offsetor, bool isConst) noexcept :
+			valueID{ valueID }
 		{
-			assert(valueID && ptr);
+			assert(valueID && offsetor);
+
+			if (isConst)
+				offset.emplace<5>(std::move(offsetor));
+			else
+				offset.emplace<4>(std::move(offsetor));
 		}
 
-		constexpr FieldPtr(ObjectPtr obj) noexcept : FieldPtr{ obj.GetID(), obj.GetPtr() } {}
-		constexpr FieldPtr(ConstObjectPtr obj) noexcept : FieldPtr{ obj.GetID(), obj.GetPtr() } {}
-
-		constexpr FieldPtr(TypeID valueID, OffsetFunction* offset_function, bool isConst = false) noexcept :
-			mode{ isConst ? Mode::VIRTUAL_CONST : Mode::VIRTUAL_VARIABLE },
+		FieldPtr(TypeID valueID, Offsetor offsetor, std::true_type is_const) noexcept :
 			valueID{ valueID },
-			offset_function{ offset_function }
+			offset{ std::in_place_index_t<5>{}, std::move(offsetor) }
 		{
-			assert(valueID && offset_function);
+			assert(valueID&& std::get<5>(offset));
 		}
+
+		FieldPtr(TypeID valueID, Offsetor offsetor, std::false_type is_const) noexcept :
+			valueID{ valueID },
+			offset{ std::in_place_index_t<4>{}, std::move(offsetor) }
+		{
+			assert(valueID&& std::get<4>(offset));
+		}
+
+		FieldPtr(TypeID valueID, Offsetor offsetor) noexcept : FieldPtr{ valueID, std::move(offsetor), std::false_type{} } {}
 
 		constexpr TypeID GetValueID() const noexcept { return valueID; }
-		constexpr Mode GetMode() const noexcept { return mode; }
 
-		constexpr bool IsConst()   const noexcept { return static_cast<std::uint8_t>(mode) & 0b001; }
-		constexpr bool IsStatic()  const noexcept { return static_cast<std::uint8_t>(mode) & 0b010; }
-		constexpr bool IsVirtual() const noexcept { return static_cast<std::uint8_t>(mode) & 0b100; }
+		constexpr bool IsBasic()    const noexcept { return offset.index() == 0 || offset.index() == 1; }
+		constexpr bool IsStatic()   const noexcept { return offset.index() == 2 || offset.index() == 3; }
+		constexpr bool IsVirtual()  const noexcept { return offset.index() == 4 || offset.index() == 5; }
+		constexpr bool IsConst()    const noexcept { return offset.index() & 1; }
+		constexpr bool IsVariable() const noexcept { return !IsConst(); }
 
-		constexpr ObjectPtr Map_Variable(void* obj) const noexcept {
-			assert(mode == Mode::VARIABLE);
-			return { valueID, forward_offset(obj, offset) };
+		constexpr bool IsBasicVaraible()   const noexcept { return offset.index() == 0; }
+		constexpr bool IsBasicConst()      const noexcept { return offset.index() == 1; }
+		constexpr bool IsStaticVaraible()  const noexcept { return offset.index() == 2; }
+		constexpr bool IsStaticConst()     const noexcept { return offset.index() == 3; }
+		constexpr bool IsVirtualVaraible() const noexcept { return offset.index() == 4; }
+		constexpr bool IsVirtualConst()    const noexcept { return offset.index() == 5; }
+
+		constexpr ObjectPtr Map_BasicVariable(void* obj) const noexcept {
+			assert(IsBasicVaraible());
+			return { valueID, forward_offset(obj, std::get<0>(offset)) };
 		}
 
-		constexpr ConstObjectPtr Map_Const(const void* obj) const noexcept {
-			assert(mode == Mode::CONST);
-			return { valueID, forward_offset(obj, offset) };
+		constexpr ConstObjectPtr Map_BasicConst(const void* obj) const noexcept {
+			assert(IsBasicConst());
+			return { valueID, forward_offset(obj, std::get<1>(offset)) };
 		}
 
 		constexpr ObjectPtr Map_StaticVariable() const noexcept {
-			assert(mode == Mode::STATIC_VARIABLE);
-			return { valueID, static_obj };
+			assert(IsStaticVaraible());
+			return { valueID, std::get<2>(offset) };
 		}
 
 		constexpr ConstObjectPtr Map_StaticConst() const noexcept {
-			assert(mode == Mode::STATIC_CONST);
-			return { valueID, static_const_obj };
+			assert(IsStaticConst());
+			return { valueID, std::get<3>(offset) };
 		}
 
 		constexpr ObjectPtr Map_VirtualVariable(void* obj) const noexcept {
-			assert(mode == Mode::VIRTUAL_VARIABLE);
-			return { valueID, const_cast<void*>(offset_function(obj)) };
+			assert(IsVirtualVaraible());
+			return { valueID, const_cast<void*>(std::get<4>(offset)(obj)) };
 		}
 
 		constexpr ConstObjectPtr Map_VirtualConst(const void* obj) const noexcept {
-			assert(mode == Mode::VIRTUAL_CONST);
-			return { valueID, offset_function(obj) };
+			assert(IsVirtualConst());
+			return { valueID, std::get<5>(offset)(obj) };
 		}
 
 		// static { variable | const }
-		constexpr ConstObjectPtr Map() const noexcept {
-			switch (mode)
-			{
-			case Mode::STATIC_VARIABLE:
-				return { valueID, static_obj };
-			case Mode::STATIC_CONST:
-				return { valueID, static_const_obj };
-			default:
-				assert(false);
-				return nullptr;
-			}
+		ConstObjectPtr Map() const noexcept {
+			return std::visit([this](const auto& offset) -> ConstObjectPtr {
+				using T = std::decay_t<decltype(offset)>;
+				if constexpr (std::is_same_v<T, size_t>) {
+					assert(false);
+					return nullptr;
+				}
+				else if constexpr (std::is_same_v<T, void*>) {
+					return { valueID, offset };
+				}
+				else if constexpr (std::is_same_v<T, const void*>) {
+					return { valueID, offset };
+				}
+				else if constexpr (std::is_same_v<T, Offsetor>) {
+					assert(false);
+					return nullptr;
+				}
+				else
+					static_assert(false);
+			}, offset);
 		}
 
 		// all
-		constexpr ConstObjectPtr Map(const void* obj) const noexcept {
-			switch (mode)
-			{
-			case Mode::VARIABLE:
-			case Mode::CONST:
-				assert(obj != nullptr);
-				return { valueID, forward_offset(obj, offset) };
-			case Mode::STATIC_VARIABLE:
-				return { valueID, static_obj };
-			case Mode::STATIC_CONST:
-				return { valueID, static_const_obj };
-			case Mode::VIRTUAL_VARIABLE:
-			case Mode::VIRTUAL_CONST:
-				assert(obj != nullptr);
-				return { valueID, offset_function(obj) };
-			default:
-				assert(false);
-				return nullptr;
-			}
+		ConstObjectPtr Map(const void* obj) const noexcept {
+			return std::visit([this, obj](const auto& offset) -> ConstObjectPtr {
+				using T = std::decay_t<decltype(offset)>;
+				if constexpr (std::is_same_v<T, size_t>) {
+					assert(obj);
+					return { valueID, forward_offset(obj, offset) };
+				}
+				else if constexpr (std::is_same_v<T, void*>) {
+					return { valueID, offset };
+				}
+				else if constexpr (std::is_same_v<T, const void*>) {
+					return { valueID, offset };
+				}
+				else if constexpr (std::is_same_v<T, Offsetor>) {
+					assert(obj);
+					return { valueID, offset(obj) };
+				}
+				else
+					static_assert(false);
+			}, offset);
 		}
 
 		// {normal | static | virutal } variable
 		constexpr ObjectPtr Map(void* obj) const noexcept {
-			switch (mode)
+			switch (offset.index())
 			{
-			case Mode::VARIABLE:
-				assert(obj != nullptr);
-				return { valueID, forward_offset(obj, offset) };
-			case Mode::STATIC_VARIABLE:
-				return { valueID, static_obj };
-			case Mode::VIRTUAL_VARIABLE:
-				assert(obj != nullptr);
-				return { valueID, const_cast<void*>(offset_function(obj)) };
+			case 0:
+				assert(obj);
+				return { valueID, forward_offset(obj, std::get<0>(offset)) };
+			case 2:
+				return { valueID, std::get<2>(offset) };
+			case 4:
+				assert(obj);
+				return { valueID, const_cast<void*>(std::get<4>(offset)(obj)) };
 			default:
-				assert(false);
+				assert("require variable" && false);
 				return nullptr;
 			}
 		}
 
 	private:
-		Mode mode;
 		TypeID valueID;
-		union {
-			size_t offset;
-			void* static_obj;
-			const void* static_const_obj;
-			OffsetFunction* offset_function;
-		};
+
+		std::variant<
+			size_t,       // forward_offset_value 0 BASIC_VARIABLE
+			size_t,       // forward_offset_value 1 BASIC_CONST
+			void*,        // static_obj           2 STATIC_VARIABLE
+			const void*,  // static_const_obj     3 STATIC_CONST
+			Offsetor,     // offsetor             4 VIRTUAL_VARIABLE
+			Offsetor      // offsetor             5 VIRTUAL_CONST
+		> offset;
 	};
 }

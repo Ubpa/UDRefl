@@ -9,7 +9,7 @@
 #include <functional>
 
 namespace Ubpa::UDRefl {
-	using OffsetFunction = const void* (const void*) noexcept;
+	using Offsetor = std::function<const void* (const void*)>;
 	using Destructor = std::function<void(const void*)>;
 
 	struct has_virtual_base_void {};
@@ -52,7 +52,7 @@ namespace Ubpa::UDRefl {
 	template<typename Obj, typename T, T Obj::* fieldptr>
 	struct field_offset_function_impl<T Obj::*, fieldptr> {
 		static_assert(!std::is_function_v<T>);
-		static constexpr OffsetFunction* get() noexcept {
+		static constexpr Offsetor get() noexcept {
 			return [](const void* ptr) noexcept -> const void* {
 				return &(reinterpret_cast<const Obj*>(ptr)->*fieldptr);
 			};
@@ -60,18 +60,18 @@ namespace Ubpa::UDRefl {
 	};
 
 	template<auto fieldptr>
-	constexpr OffsetFunction* field_offset_function() noexcept {
+	constexpr Offsetor field_offset_function() noexcept {
 		return field_offset_function_impl<decltype(fieldptr), fieldptr>::get();
 	}
 
 	struct InheritCastFunctions {
-		OffsetFunction* static_derived_to_base{ nullptr };
-		OffsetFunction* static_base_to_derived{ nullptr };
-		OffsetFunction* dynamic_base_to_derived{ nullptr };
+		Offsetor static_derived_to_base;
+		Offsetor static_base_to_derived;
+		Offsetor dynamic_base_to_derived;
 	};
 
 	template<typename From, typename To>
-	constexpr OffsetFunction* static_cast_functor() noexcept {
+	constexpr auto static_cast_functor() noexcept {
 		static_assert(!is_virtual_base_of_v<From, To>);
 		return [](const void* obj) noexcept -> const void* {
 			return static_cast<const To*>(reinterpret_cast<const From*>(obj));
@@ -79,7 +79,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename Base, typename Derived>
-	constexpr OffsetFunction* dynamic_cast_function() noexcept {
+	constexpr auto dynamic_cast_function() noexcept {
 		static_assert(std::is_base_of_v<Base, Derived>);
 		if constexpr (std::is_polymorphic_v<Base>) {
 			return [](const void* obj) noexcept -> const void* {
