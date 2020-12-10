@@ -6,6 +6,7 @@
 #include <memory>
 
 namespace Ubpa::UDRefl {
+    // SharedBlock + ID
 	class SharedObject {
 	public:
 		//

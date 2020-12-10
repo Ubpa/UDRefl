@@ -9,8 +9,7 @@ namespace Ubpa::UDRefl {
 	public:
 		constexpr ConstObjectPtr() noexcept : ptr{ nullptr }{}
 		constexpr ConstObjectPtr(std::nullptr_t) noexcept : ConstObjectPtr{} {}
-		template<typename T>
-		constexpr ConstObjectPtr(TypeID ID, const T* ptr) noexcept : ID{ ID }, ptr { ptr } {}
+		constexpr ConstObjectPtr(TypeID ID, const void* ptr) noexcept : ID{ ID }, ptr { ptr } {}
 		constexpr ConstObjectPtr(TypeID ID, std::nullptr_t) noexcept : ID{ ID }, ptr{ nullptr } {}
 		explicit constexpr ConstObjectPtr(TypeID ID) noexcept : ConstObjectPtr{ID, nullptr} {}
 
@@ -44,8 +43,7 @@ namespace Ubpa::UDRefl {
 	public:
 		constexpr ObjectPtr() noexcept : ptr{ nullptr }{}
 		constexpr ObjectPtr(std::nullptr_t) noexcept : ObjectPtr{} {}
-		template<typename T>
-		constexpr ObjectPtr(TypeID ID, T* ptr) noexcept : ID{ ID }, ptr{ ptr } {}
+		constexpr ObjectPtr(TypeID ID, void* ptr) noexcept : ID{ ID }, ptr{ ptr } {}
 		constexpr ObjectPtr(TypeID ID, std::nullptr_t) noexcept : ID{ ID }, ptr{ nullptr } {}
 		explicit constexpr ObjectPtr(TypeID ID) noexcept : ObjectPtr{ ID, nullptr } {}
 

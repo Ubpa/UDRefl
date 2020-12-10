@@ -49,14 +49,14 @@ namespace Ubpa::UDRefl {
 			valueID{ valueID },
 			data{ std::in_place_index_t<3>{}, std::move(offsetor) }
 		{
-			assert(valueID&& std::get<3>(data));
+			assert(valueID && std::get<3>(data));
 		}
 
 		FieldPtr(TypeID valueID, Offsetor offsetor, std::false_type is_const) noexcept :
 			valueID{ valueID },
 			data{ std::in_place_index_t<2>{}, std::move(offsetor) }
 		{
-			assert(valueID&& std::get<2>(data));
+			assert(valueID && std::get<2>(data));
 		}
 
 		FieldPtr(TypeID valueID, Offsetor offsetor) noexcept : FieldPtr{ valueID, std::move(offsetor), std::false_type{} } {}
@@ -64,12 +64,12 @@ namespace Ubpa::UDRefl {
 		constexpr FieldPtr(TypeID valueID, void* ptr) noexcept :
 			valueID{ valueID },
 			data{ ptr }
-		{ assert(valueID&& ptr); }
+		{ assert(valueID && ptr); }
 
 		constexpr FieldPtr(TypeID valueID, const void* ptr) noexcept :
 			valueID{ valueID },
 			data{ ptr }
-		{ assert(valueID&& ptr); }
+		{ assert(valueID && ptr); }
 
 		explicit constexpr FieldPtr(ObjectPtr      static_obj) noexcept : FieldPtr{ static_obj.GetID(), static_obj.GetPtr() } {}
 		explicit constexpr FieldPtr(ConstObjectPtr static_obj) noexcept : FieldPtr{ static_obj.GetID(), static_obj.GetPtr() } {}

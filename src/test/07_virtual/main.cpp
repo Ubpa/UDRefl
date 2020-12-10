@@ -34,7 +34,7 @@ int main() {
 			sizeof(B),
 			alignof(B),
 			{ // fieldinfos
-				{ ID_b, {{ID_float, field_offset_function<&B::b>() }}}
+				{ ID_b, {{ID_float, field_offsetor<&B::b>() }}}
 			},
 			{}, // methodinfos
 			{ // baseinfos
@@ -45,7 +45,7 @@ int main() {
 			sizeof(C),
 			alignof(C),
 			{ // fieldinfos
-				{ ID_c, {{ID_float, field_offset_function<&C::c>() }}}
+				{ ID_c, {{ID_float, field_offsetor<&C::c>() }}}
 			},
 			{}, // methodinfos
 			{ // baseinfos
@@ -56,7 +56,7 @@ int main() {
 			sizeof(D),
 			alignof(D),
 			{ // fieldinfos
-				{ ID_d, {{ID_float, field_offset_function<&D::d>() }}}
+				{ ID_d, {{ID_float, field_offsetor<&D::d>() }}}
 			},
 			{}, // methodinfos
 			{ //baseinfos

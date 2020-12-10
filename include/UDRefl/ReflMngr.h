@@ -25,23 +25,35 @@ namespace Ubpa::UDRefl {
 		std::unordered_map<TypeID, EnumInfo> enuminfos;
 
 		//
-		// Generate (template)
-		////////////////////////
+		// Factory
+		////////////
+
+		template<auto field_ptr>
+		FieldPtr GenerateFieldPtr();
+
+		// data can be:
+		// 1. member object pointer
+		// 2. pointer to **non-void** and **non-function** type
+		// 3. functor : Value*(Object*)
+		// > - <Object> can be any **non-const** type because it's useless
+		// > - result must be an pointer of **non-void** type
+		template<typename T>
+		FieldPtr GenerateFieldPtr(T&& data);
 
 		template<typename Return>
-		ResultDesc GenerateResultDesc() noexcept;
+		ResultDesc GenerateResultDesc();
 
 		template<typename... Params>
 		ParamList GenerateParamList() noexcept(sizeof...(Params) == 0);
 
 		template<auto funcptr>
-		MethodPtr GenerateMethodPtr() noexcept(IsEmpty_v<FuncTraits_ArgList<decltype(funcptr)>>);
+		MethodPtr GenerateMethodPtr();
 
 		template<typename Func>
-		MethodPtr GenerateMemberMethodPtr(Func&& func) noexcept(IsEmpty_v<typename details::WrapFuncTraits<std::decay_t<Func>>::ArgList>);
+		MethodPtr GenerateMemberMethodPtr(Func&& func);
 
 		template<typename Func>
-		MethodPtr GenerateStaticMethodPtr(Func&& func) noexcept(IsEmpty_v<FuncTraits_ArgList<Func>>);
+		MethodPtr GenerateStaticMethodPtr(Func&& func);
 
 		//
 		// Cast

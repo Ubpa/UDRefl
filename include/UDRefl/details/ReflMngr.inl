@@ -70,11 +70,112 @@ namespace Ubpa::UDRefl::details {
 
 namespace Ubpa::UDRefl {
 	//
-	// Generate
-	/////////////
+	// Factory
+	////////////
+
+	template<auto field_ptr>
+	FieldPtr ReflMngr::GenerateFieldPtr() {
+		using FieldPtr = decltype(field_ptr);
+		if constexpr (std::is_pointer_v<FieldPtr>) {
+			using Value = std::remove_pointer_t<FieldPtr>;
+			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+			const TypeID ID = tregistry.GetID<Value>();
+			return {
+				ID,
+				field_ptr,
+				ConstFlag{}
+			};
+		}
+		else if constexpr (std::is_member_object_pointer_v<FieldPtr>) {
+			using Traits = member_pointer_traits<FieldPtr>;
+			using Object = typename Traits::object;
+			using Value = typename Traits::value;
+			const TypeID ID = tregistry.GetID<Value>();
+			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+			if constexpr (has_virtual_base_v<Object>) {
+				return {
+					ID,
+					field_offsetor<field_ptr>(),
+					ConstFlag{}
+				};
+			}
+			else {
+				return {
+					ID,
+					field_forward_offset_value(field_ptr),
+					ConstFlag{}
+				};
+			}
+		}
+		else
+			static_assert(false);
+	}
+
+	template<typename T>
+	FieldPtr ReflMngr::GenerateFieldPtr(T&& data) {
+		using RawT = std::decay_t<T>;
+		static_assert(!std::is_same_v<RawT, size_t>);
+		if constexpr (std::is_member_object_pointer_v<RawT>) {
+			using Traits = member_pointer_traits<RawT>;
+			using Object = typename Traits::object;
+			using Value = typename Traits::value;
+			const TypeID ID = tregistry.GetID<Value>();
+			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+			if constexpr (has_virtual_base_v<Object>) {
+				return {
+					ID,
+					field_offsetor(data),
+					ConstFlag{}
+				};
+			}
+			else {
+				return {
+					ID,
+					field_forward_offset_value(data),
+					ConstFlag{}
+				};
+			}
+		}
+		else if (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && std::is_void_v<std::remove_pointer_t<RawT>>) {
+			using Value = std::remove_pointer_t<RawT>;
+			return {
+				tregistry.GetID<Value>(),
+				data,
+				std::bool_constant<std::is_const_v<Value>>{}
+			};
+		}
+		else {
+			using Traits = FuncTraits<RawT>;
+
+			using ArgList = typename Traits::ArgList;
+			static_assert(Length_v<ArgList> == 1);
+			using ObjPtr = Front_t<ArgList>;
+			static_assert(std::is_pointer_v<ObjPtr>);
+			using Obj = std::remove_pointer_t<ObjPtr>;
+			static_assert(!std::is_const_v<Obj>);
+
+			using ValuePtr = typename Traits::Return;
+			static_assert(std::is_pointer_v<ValuePtr>);
+			using Value = std::remove_pointer_t<ValuePtr>;
+			static_assert(!std::is_void_v<Value>);
+
+			const TypeID ID = tregistry.GetID<Value>();
+			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+
+			auto offsetor = [f=std::forward<T>(data)](const void* obj) -> const void* {
+				return f(const_cast<Obj*>(reinterpret_cast<const Obj*>(obj)));
+			};
+
+			return {
+				ID,
+				offsetor,
+				ConstFlag{}
+			};
+		}
+	}
 
 	template<typename Return>
-	ResultDesc ReflMngr::GenerateResultDesc() noexcept {
+	ResultDesc ReflMngr::GenerateResultDesc() {
 		if constexpr (!std::is_void_v<Return>) {
 			using T = type_buffer_decay_t<Return>;
 			return {
@@ -101,7 +202,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<auto funcptr>
-	MethodPtr ReflMngr::GenerateMethodPtr() noexcept(IsEmpty_v<FuncTraits_ArgList<decltype(funcptr)>>) {
+	MethodPtr ReflMngr::GenerateMethodPtr() {
 		using FuncPtr = decltype(funcptr);
 		using Traits = FuncTraits<decltype(funcptr)>;
 		using ArgList = typename Traits::ArgList;
@@ -115,9 +216,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename Func>
-	MethodPtr ReflMngr::GenerateMemberMethodPtr(Func&& func)
-		noexcept(IsEmpty_v<typename details::WrapFuncTraits<std::decay_t<Func>>::ArgList>)
-	{
+	MethodPtr ReflMngr::GenerateMemberMethodPtr(Func&& func) {
 		using Traits = details::WrapFuncTraits<std::decay_t<Func>>;
 		using ArgList = typename Traits::ArgList;
 		using Return = typename Traits::Return;
@@ -130,7 +229,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename Func>
-	MethodPtr ReflMngr::GenerateStaticMethodPtr(Func&& func) noexcept(IsEmpty_v<FuncTraits_ArgList<Func>>) {
+	MethodPtr ReflMngr::GenerateStaticMethodPtr(Func&& func) {
 		using Traits = FuncTraits<std::decay_t<Func>>;
 		using Return = typename Traits::Return;
 		using ArgList = typename Traits::ArgList;

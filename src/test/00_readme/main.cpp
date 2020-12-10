@@ -14,7 +14,6 @@ struct Vec {
 
 int main() {
 	TypeID ID_Vec   = ReflMngr::Instance().tregistry.GetID<Vec>();
-	TypeID ID_float = ReflMngr::Instance().tregistry.GetID<float>();
 
 	NameID ID_x = ReflMngr::Instance().nregistry.GetID("x");
 	NameID ID_y = ReflMngr::Instance().nregistry.GetID("y");
@@ -28,8 +27,8 @@ int main() {
 		sizeof(Vec),  // size
 		alignof(Vec), // alignment
 		{ // field infos
-			{ ID_x, { { ID_float, offsetof(Vec, x) } }}, // x
-			{ ID_y, { { ID_float, offsetof(Vec, y) } }}  // y
+			{ ID_x, { ReflMngr::Instance().GenerateFieldPtr<&Vec::x>() } }, // x
+			{ ID_y, { ReflMngr::Instance().GenerateFieldPtr<&Vec::y>() } }  // y
 		},
 		{ // method infos
 			{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}},        // default ctor
