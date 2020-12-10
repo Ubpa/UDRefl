@@ -174,6 +174,15 @@ namespace Ubpa::UDRefl {
 		}
 	}
 
+	template<typename T, typename... Args>
+	FieldPtr ReflMngr::GenerateDynamicFieldPtr(Args&&... args) {
+		const TypeID ID = tregistry.GetID<std::remove_const_t<T>>();
+		SharedBlock block = MakeSharedBlock<std::remove_const_t<T>>(std::forward<Args>(args)...);
+		using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, const SharedObject, SharedObject>;
+		MaybeConstSharedObject obj{ ID, std::move(block) };
+		return FieldPtr{ obj };
+	}
+
 	template<typename Return>
 	ResultDesc ReflMngr::GenerateResultDesc() {
 		if constexpr (!std::is_void_v<Return>) {

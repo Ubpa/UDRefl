@@ -13,7 +13,7 @@ struct Vec {
 };
 
 int main() {
-	TypeID ID_Vec   = ReflMngr::Instance().tregistry.GetID<Vec>();
+	TypeID ID_Vec = ReflMngr::Instance().tregistry.GetID<Vec>();
 
 	NameID ID_x = ReflMngr::Instance().nregistry.GetID("x");
 	NameID ID_y = ReflMngr::Instance().nregistry.GetID("y");
