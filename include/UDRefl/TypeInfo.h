@@ -21,13 +21,13 @@ namespace Ubpa::UDRefl {
 		// Field
 		//////////
 
-		// without bases, read/write field, static non-const
-		ObjectPtr RWVar(NameID fieldID) const noexcept;
-		// without bases, read/write field, static non-const + static const
+		// without bases, {static|dynamic} variable
+		ObjectPtr RWVar(NameID fieldID) noexcept;
+		// without bases, {static|dynamic} {variable|const}
 		ConstObjectPtr RVar(NameID fieldID) const noexcept;
-		// without bases, read/write field, non-const + static non-const
-		ObjectPtr RWVar(void* obj, NameID fieldID) const noexcept;
-		// without bases, read field, non-const + static non-const + static non-const + static const
+		// without bases, variable
+		ObjectPtr RWVar(void* obj, NameID fieldID) noexcept;
+		// without bases, all
 		ConstObjectPtr RVar(const void* obj, NameID fieldID) const noexcept;
 
 		//

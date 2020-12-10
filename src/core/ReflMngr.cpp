@@ -70,9 +70,9 @@ namespace Ubpa::UDRefl::details {
 		if (target == ReflMngr::Instance().typeinfos.end())
 			return;
 
-		const auto& typeinfo = target->second;
+		auto& typeinfo = target->second;
 
-		for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
+		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
 			if (!fieldInfo.fieldptr.IsConst())
 				func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
 		}
@@ -350,12 +350,52 @@ ObjectPtr ReflMngr::DynamicCast(ObjectPtr obj, TypeID typeID) const noexcept {
 	return nullptr;
 }
 
-ObjectPtr ReflMngr::RWVar(ObjectPtr obj, NameID fieldID) const noexcept {
+ObjectPtr ReflMngr::RWVar(TypeID typeID, NameID fieldID) noexcept {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return nullptr;
+
+	auto& typeinfo = target->second;
+
+	auto ptr = typeinfo.RWVar(fieldID);
+	if (ptr)
+		return ptr;
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto bptr = RWVar(baseID, fieldID);
+		if (bptr)
+			return bptr;
+	}
+
+	return nullptr;
+}
+
+ConstObjectPtr ReflMngr::RVar(TypeID typeID, NameID fieldID) const noexcept {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return nullptr;
+
+	auto& typeinfo = target->second;
+
+	auto ptr = typeinfo.RVar(fieldID);
+	if (ptr)
+		return ptr;
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto bptr = RVar(baseID, fieldID);
+		if (bptr)
+			return bptr;
+	}
+
+	return nullptr;
+}
+
+ObjectPtr ReflMngr::RWVar(ObjectPtr obj, NameID fieldID) noexcept {
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())
 		return nullptr;
 
-	const auto& typeinfo = target->second;
+	auto& typeinfo = target->second;
 
 	auto ptr = typeinfo.RWVar(obj, fieldID);
 	if (ptr)

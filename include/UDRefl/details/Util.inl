@@ -57,7 +57,6 @@ namespace Ubpa::UDRefl::details {
 		}
 	};
 
-
 	template<typename F>
 	struct WrapFuncTraits;
 

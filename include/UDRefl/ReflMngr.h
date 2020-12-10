@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Registry.h"
 #include "TypeInfo.h"
 #include "EnumInfo.h"
 #include "SharedObject.h"
@@ -73,9 +72,13 @@ namespace Ubpa::UDRefl {
 		// Field
 		//////////
 
-		// read/write field, non-const
-		ObjectPtr      RWVar(ObjectPtr      obj, NameID fieldID) const noexcept;
-		// read field, non-const + const
+		// {static|dynamic} variable
+		ObjectPtr      RWVar(TypeID      typeID, NameID fieldID) noexcept;
+		// {static|dynamic} {variable|const}
+		ConstObjectPtr RVar (TypeID      typeID, NameID fieldID) const noexcept;
+		// variable
+		ObjectPtr      RWVar(ObjectPtr      obj, NameID fieldID) noexcept;
+		// all
 		ConstObjectPtr RVar (ConstObjectPtr obj, NameID fieldID) const noexcept;
 
 		//
@@ -148,17 +151,24 @@ namespace Ubpa::UDRefl {
 		template<typename Obj, typename... Args>
 		InvokeResult InvokeArgs(NameID methodID, void* result_buffer, Args... args) const;
 		template<typename Obj, typename T, typename... Args>
-		T Invoke (NameID methodID, Args... args) const;
+		T Invoke(NameID methodID, Args... args) const;
 
 		//
 		// Meta
 		/////////
 
+		// global {static|dynamic} variable
+		ObjectPtr      RWVar(NameID fieldID) noexcept
+		{ return RWVar(TypeRegistry::DirectGetID(TypeRegistry::Meta::global), fieldID); }
+		// global {static|dynamic} {variable|const}
+		ConstObjectPtr RVar(NameID fieldID) const noexcept
+		{ return RVar (TypeRegistry::DirectGetID(TypeRegistry::Meta::global), fieldID); }
+
 		bool IsInvocable(NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept
 		{ return IsInvocable(TypeRegistry::DirectGetID(TypeRegistry::Meta::global), methodID, argTypeIDs); }
 
 		InvokeResult Invoke(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const
-		{ return Invoke(TypeRegistry::DirectGetID(TypeRegistry::Meta::global), methodID, argTypeIDs, args_buffer, result_buffer); }
+		{ return Invoke     (TypeRegistry::DirectGetID(TypeRegistry::Meta::global), methodID, argTypeIDs, args_buffer, result_buffer); }
 
 		bool IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs = {}) const noexcept;
 		bool IsDestructible (TypeID typeID) const noexcept;

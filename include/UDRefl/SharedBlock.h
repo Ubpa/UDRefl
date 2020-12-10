@@ -1,9 +1,8 @@
 #pragma once
 
-#include "ObjectPtr.h"
-
 #include <memory>
 #include <functional>
+#include <cassert>
 
 namespace Ubpa::UDRefl {
 	class SharedBlock {
@@ -128,9 +127,6 @@ namespace Ubpa::UDRefl {
         T* AsPtr() noexcept { return reinterpret_cast<T*>(Get()); }
         template<typename T>
         const T* AsPtr() const noexcept { return const_cast<SharedBlock*>(this)->AsPtr<T>(); }
-
-        ObjectPtr AsObjectPtr(TypeID id) noexcept { return { id, Get() }; }
-        ConstObjectPtr AsObjectPtr(TypeID id) const noexcept { return { id, Get() }; }
 
         template<typename T>
         T& As() noexcept { assert(Get()); return *AsPtr<T>(); }

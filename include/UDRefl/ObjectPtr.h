@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ID.h"
+#include "Registry.h"
 
 #include <cassert>
 
@@ -18,7 +18,13 @@ namespace Ubpa::UDRefl {
 		constexpr const void* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		constexpr const T* AsPtr() const noexcept { return reinterpret_cast<const T*>(ptr); }
+		constexpr bool Is() const noexcept { return ID == TypeRegistry::DirectGetID<T>(); }
+
+		template<typename T>
+		constexpr const T* AsPtr() const noexcept {
+			assert(Is<T>());
+			return reinterpret_cast<const T*>(ptr);
+		}
 		template<typename T>
 		constexpr const T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
 
@@ -45,8 +51,9 @@ namespace Ubpa::UDRefl {
 
 		constexpr TypeID GetID() const noexcept { return ID; }
 		constexpr void* GetPtr() const noexcept { return ptr; }
+
 		template<typename T>
-		constexpr T* GetPtr() const noexcept { return ptr; }
+		constexpr bool Is() const noexcept { return ID == TypeRegistry::DirectGetID<T>(); }
 
 		template<typename T>
 		constexpr T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }

@@ -4,15 +4,15 @@
 
 using namespace Ubpa::UDRefl;
 
-ObjectPtr TypeInfo::RWVar(NameID fieldID) const noexcept {
+ObjectPtr TypeInfo::RWVar(NameID fieldID) noexcept {
 	auto target = fieldinfos.find(fieldID);
 	if (target == fieldinfos.end())
 		return nullptr;
 
-	if (!target->second.fieldptr.IsStaticVaraible())
+	if (!target->second.fieldptr.IsObject())
 		return nullptr;
 
-	return target->second.fieldptr.Map_StaticVariable();
+	return target->second.fieldptr.Map();
 }
 
 ConstObjectPtr TypeInfo::RVar(NameID fieldID) const noexcept {
@@ -20,13 +20,13 @@ ConstObjectPtr TypeInfo::RVar(NameID fieldID) const noexcept {
 	if (target == fieldinfos.end())
 		return nullptr;
 
-	if (!target->second.fieldptr.IsStatic())
+	if (!target->second.fieldptr.IsObject())
 		return nullptr;
 
 	return target->second.fieldptr.Map();
 }
 
-ObjectPtr TypeInfo::RWVar(void* obj, NameID fieldID) const noexcept {
+ObjectPtr TypeInfo::RWVar(void* obj, NameID fieldID) noexcept {
 	auto target = fieldinfos.find(fieldID);
 	if (target == fieldinfos.end())
 		return nullptr;
