@@ -11,16 +11,16 @@ struct C : virtual A { float c{ 0.f }; };
 struct D : B, C { float d{ 0.f }; };
 
 int main() {
-	auto ID_A = ReflMngr::Instance().tregistry.GetID<A>();
-	auto ID_B = ReflMngr::Instance().tregistry.GetID<B>();
-	auto ID_C = ReflMngr::Instance().tregistry.GetID<C>();
-	auto ID_D = ReflMngr::Instance().tregistry.GetID<D>();
-	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
+	auto ID_A = ReflMngr::Instance().tregistry.Register<A>();
+	auto ID_B = ReflMngr::Instance().tregistry.Register<B>();
+	auto ID_C = ReflMngr::Instance().tregistry.Register<C>();
+	auto ID_D = ReflMngr::Instance().tregistry.Register<D>();
+	auto ID_float = ReflMngr::Instance().tregistry.Register<float>();
 
-	auto ID_a = ReflMngr::Instance().nregistry.GetID("a");
-	auto ID_b = ReflMngr::Instance().nregistry.GetID("b");
-	auto ID_c = ReflMngr::Instance().nregistry.GetID("c");
-	auto ID_d = ReflMngr::Instance().nregistry.GetID("d");
+	auto ID_a = ReflMngr::Instance().nregistry.Register("a");
+	auto ID_b = ReflMngr::Instance().nregistry.Register("b");
+	auto ID_c = ReflMngr::Instance().nregistry.Register("c");
+	auto ID_d = ReflMngr::Instance().nregistry.Register("d");
 
 	{ // register
 		TypeInfo typeinfo_A{

@@ -1,17 +1,17 @@
 #pragma once
 
 #include "Enumerator.h"
-#include "NameID.h"
-#include "TypeID.h"
+
+#include <UTemplate/TypeID.h>
 
 namespace Ubpa::UDRefl {
 	struct EnumInfo {
 		Enumerator::UnderlyingType underlyingType;
-		std::unordered_map<NameID, EnumeratorInfo> enumeratorinfos;
+		std::unordered_map<StrID, EnumeratorInfo> enumeratorinfos;
 		std::unordered_map<TypeID, SharedBlock> attrs;
 
-		Enumerator GetEnumerator(size_t enumeratorID) const { return { underlyingType, enumeratorinfos.at(enumeratorID).value }; }
-		NameID GetEnumeratorNameID(Enumerator::Value value) const {
+		Enumerator GetEnumerator(StrID enumeratorID) const { return { underlyingType, enumeratorinfos.at(enumeratorID).value }; }
+		StrID GetEnumeratorStrID(Enumerator::Value value) const {
 			for (const auto& [ID, info] : enumeratorinfos) {
 				if (value.data_uint64 == info.value.data_uint64)
 					return ID;
@@ -19,9 +19,9 @@ namespace Ubpa::UDRefl {
 			return {};
 		}
 		template<typename E>
-		NameID GetEnumeratorNameID(E e) const {
+		StrID GetEnumeratorStrID(E e) const {
 			assert(underlyingType == Enumerator::UnderlyingTypeOf<E>());
-			return GetEnumeratorNameID(Enumerator::ValueOf(e));
+			return GetEnumeratorStrID(Enumerator::ValueOf(e));
 		}
 	};
 }

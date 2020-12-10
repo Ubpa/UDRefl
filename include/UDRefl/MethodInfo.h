@@ -2,7 +2,6 @@
 
 #include "MethodPtr.h"
 #include "SharedBlock.h"
-#include "NameID.h"
 
 namespace Ubpa::UDRefl {
 	struct MethodInfo {
@@ -11,7 +10,7 @@ namespace Ubpa::UDRefl {
 	};
 
 	struct Method {
-		NameID ID;
+		StrID ID;
 		MethodInfo info;
 	};
 }

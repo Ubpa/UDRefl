@@ -1,8 +1,8 @@
 #include <UDRefl/UDRefl.h>
 
 #include <iostream>
-#include <array>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 struct Vec {
@@ -25,14 +25,14 @@ struct Vec {
 };
 
 int main() {
-	auto ID_Vec = ReflMngr::Instance().tregistry.GetID<Vec>();
-	auto ID_const_Vec_lref = ReflMngr::Instance().tregistry.GetID<const Vec&>();
-	auto ID_Vec_lref = ReflMngr::Instance().tregistry.GetID<Vec&>();
-	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
+	auto ID_Vec = ReflMngr::Instance().tregistry.Register<Vec>();
+	auto ID_const_Vec_lref = ReflMngr::Instance().tregistry.Register<const Vec&>();
+	auto ID_Vec_lref = ReflMngr::Instance().tregistry.Register<Vec&>();
+	auto ID_float = ReflMngr::Instance().tregistry.Register<float>();
 
-	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
-	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
-	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.GetID("operator+=");
+	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
+	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
+	auto ID_operator_add_assign = ReflMngr::Instance().nregistry.Register("operator+=");
 
 	{ // register Vec
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
@@ -54,7 +54,7 @@ int main() {
 		};
 
 		auto operator_add_assign_2 = [](void* obj, ArgsView args, void* result_buffer) {
-			assert(args.GetParamList().GetParameters().at(0).typeID == TypeID::Of<float>());
+			assert(args.GetParamList().GetParameters().at(0).typeID == TypeID::of<float>);
 			return wrap_function<Ubpa::MemFuncOf<Vec& (float)noexcept>::run(&Vec::operator+=)>()(obj, args.GetBuffer(), result_buffer);
 		};
 		MethodPtr method_operator_add_assign_2{

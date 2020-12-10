@@ -3,9 +3,6 @@
 #include "ObjectPtr.h"
 #include "Util.h"
 
-#include "IDRegistry.h"
-
-#include <UTemplate/Func.h>
 #include <UContainer/Span.h>
 
 #include <vector>
@@ -19,7 +16,7 @@ namespace Ubpa::UDRefl {
 		size_t alignment;
 
 		constexpr bool IsVoid() const noexcept {
-			return typeID == TypeID::Of<void>();
+			return typeID == TypeID::of<void>;
 		}
 	};
 

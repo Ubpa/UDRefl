@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TypeIDRegistry.h"
+#include <UTemplate/TypeID.h>
 
 #include <cassert>
 
@@ -17,7 +17,7 @@ namespace Ubpa::UDRefl {
 		constexpr const void* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		constexpr bool Is() const noexcept { return ID == TypeID::Of<T>(); }
+		constexpr bool Is() const noexcept { return ID == TypeID::of<T>; }
 
 		template<typename T>
 		constexpr const T* AsPtr() const noexcept {
@@ -51,7 +51,7 @@ namespace Ubpa::UDRefl {
 		constexpr void* GetPtr() const noexcept { return ptr; }
 
 		template<typename T>
-		constexpr bool Is() const noexcept { return ID == TypeID::Of<T>(); }
+		constexpr bool Is() const noexcept { return ID == TypeID::of<T>; }
 
 		template<typename T>
 		constexpr T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }

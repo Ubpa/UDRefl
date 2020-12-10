@@ -3,8 +3,7 @@
 #include "TypeInfo.h"
 #include "EnumInfo.h"
 #include "SharedObject.h"
-#include "NameIDRegistry.h"
-#include "TypeIDRegistry.h"
+#include "IDRegistry.h"
 
 namespace Ubpa::UDRefl {
 	class ReflMngr {
@@ -18,7 +17,7 @@ namespace Ubpa::UDRefl {
 		// Data
 		/////////
 
-		NameIDRegistry nregistry;
+		StrIDRegistry nregistry;
 		TypeIDRegistry tregistry;
 
 		std::unordered_map<TypeID, TypeInfo> typeinfos;
@@ -43,35 +42,35 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		FieldPtr GenerateDynamicFieldPtr(Args&&... args);
 
-		std::pair<NameID, FieldInfo> GenerateField(
+		std::pair<StrID, FieldInfo> GenerateField(
 			std::string_view name,
 			FieldPtr fieldptr,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
-		{ return { nregistry.GetID(name), { std::move(fieldptr), std::move(attrs) } }; }
+		{ return { nregistry.Register(name), { std::move(fieldptr), std::move(attrs) } }; }
 
 		template<auto field_ptr>
-		std::pair<NameID, FieldInfo> GenerateField(
+		std::pair<StrID, FieldInfo> GenerateField(
 			std::string_view name,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
 		{ return GenerateField(name, GenerateFieldPtr<field_ptr>(), std::move(attrs)); }
 
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldPtr>, int> = 0>
-		std::pair<NameID, FieldInfo> GenerateField(
+		std::pair<StrID, FieldInfo> GenerateField(
 			std::string_view name,
 			T&& data,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
 		{ return GenerateField(name, GenerateFieldPtr(std::forward<T>(data)), std::move(attrs)); }
 
 		template<typename T, typename... Args>
-		std::pair<NameID, FieldInfo> GenerateDynamicFieldWithAttrs(
+		std::pair<StrID, FieldInfo> GenerateDynamicFieldWithAttrs(
 			std::string_view name,
 			std::unordered_map<TypeID, SharedBlock> attrs,
 			Args&&... args)
 		{ return GenerateField(name, GenerateDynamicFieldPtr<T>(std::forward<Args>(args)...), std::move(attrs)); }
 
 		template<typename T, typename... Args>
-		std::pair<NameID, FieldInfo> GenerateDynamicField(
+		std::pair<StrID, FieldInfo> GenerateDynamicField(
 			std::string_view name,
 			Args&&... args)
 		{ return GenerateDynamicFieldWithAttrs<T>(name, {}, std::forward<Args>(args)...); }
@@ -91,45 +90,45 @@ namespace Ubpa::UDRefl {
 		template<typename Func>
 		MethodPtr GenerateStaticMethodPtr(Func&& func);
 
-		std::pair<NameID, MethodInfo> GenerateMethod(
+		std::pair<StrID, MethodInfo> GenerateMethod(
 			std::string_view name,
 			MethodPtr methodptr,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
-		{ return { nregistry.GetID(name), { std::move(methodptr), std::move(attrs) } }; }
+		{ return { nregistry.Register(name), { std::move(methodptr), std::move(attrs) } }; }
 
 		template<auto funcptr>
-		std::pair<NameID, MethodInfo> GenerateMethod(
+		std::pair<StrID, MethodInfo> GenerateMethod(
 			std::string_view name,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
 		{ return GenerateMethod(name, GenerateMethodPtr<funcptr>(), std::move(attrs)); }
 
 		template<typename Func>
-		std::pair<NameID, MethodInfo> GenerateMemberMethod(
+		std::pair<StrID, MethodInfo> GenerateMemberMethod(
 			std::string_view name,
 			Func&& func,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
 		{ return GenerateMethod(name, GenerateMemberMethod(std::forward<Func>(func)), std::move(attrs)); }
 
 		template<typename Func>
-		std::pair<NameID, MethodInfo> GenerateStaticMethod(
+		std::pair<StrID, MethodInfo> GenerateStaticMethod(
 			std::string_view name,
 			Func&& func,
 			std::unordered_map<TypeID, SharedBlock> attrs = {})
 		{ return GenerateMethod(name, GenerateStaticMethod(std::forward<Func>(func)), std::move(attrs)); }
 
 		template<typename Func>
-		std::pair<NameID, MethodInfo> GenerateConstructor(Func&& func, std::unordered_map<TypeID, SharedBlock> attrs = {})
-		{ return { NameID{NameIDRegistry::Meta::ctor}, { GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) } }; }
+		std::pair<StrID, MethodInfo> GenerateConstructor(Func&& func, std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return { StrID{StrIDRegistry::Meta::ctor}, { GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) } }; }
 
 		template<typename Func>
-		std::pair<NameID, MethodInfo> GenerateDestructor(Func&& func, std::unordered_map<TypeID, SharedBlock> attrs = {})
-		{ return { NameID{NameIDRegistry::Meta::dtor}, { GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) } }; }
+		std::pair<StrID, MethodInfo> GenerateDestructor(Func&& func, std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return { StrID{StrIDRegistry::Meta::dtor}, { GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) } }; }
 
 		template<typename T, typename... Args>
-		std::pair<NameID, MethodInfo> GenerateConstructor(std::unordered_map<TypeID, SharedBlock> attrs = {});
+		std::pair<StrID, MethodInfo> GenerateConstructor(std::unordered_map<TypeID, SharedBlock> attrs = {});
 
 		template<typename T, typename... Args>
-		std::pair<NameID, MethodInfo> GenerateDestructor(std::unordered_map<TypeID, SharedBlock> attrs = {});
+		std::pair<StrID, MethodInfo> GenerateDestructor(std::unordered_map<TypeID, SharedBlock> attrs = {});
 
 		//
 		// Cast
@@ -161,39 +160,39 @@ namespace Ubpa::UDRefl {
 		//////////
 
 		// {static|dynamic} variable
-		ObjectPtr      RWVar(TypeID      typeID, NameID fieldID) noexcept;
+		ObjectPtr      RWVar(TypeID      typeID, StrID fieldID) noexcept;
 		// {static|dynamic} {variable|const}
-		ConstObjectPtr RVar (TypeID      typeID, NameID fieldID) const noexcept;
+		ConstObjectPtr RVar (TypeID      typeID, StrID fieldID) const noexcept;
 		// variable
-		ObjectPtr      RWVar(ObjectPtr      obj, NameID fieldID) noexcept;
+		ObjectPtr      RWVar(ObjectPtr      obj, StrID fieldID) noexcept;
 		// all
-		ConstObjectPtr RVar (ConstObjectPtr obj, NameID fieldID) const noexcept;
+		ConstObjectPtr RVar (ConstObjectPtr obj, StrID fieldID) const noexcept;
 
 		//
 		// Invoke
 		///////////
 
-		bool IsStaticInvocable(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
-		bool IsConstInvocable (TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
-		bool IsInvocable      (TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsStaticInvocable(TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsConstInvocable (TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsInvocable      (TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
 
 		InvokeResult Invoke(
 			TypeID typeID,
-			NameID methodID,
+			StrID methodID,
 			Span<TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
 			void* result_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ConstObjectPtr obj,
-			NameID methodID,
+			StrID methodID,
 			Span<TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
 			void* result_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ObjectPtr obj,
-			NameID methodID,
+			StrID methodID,
 			Span<TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
 			void* result_buffer = nullptr) const;
@@ -201,61 +200,61 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename... Args>
-		bool IsStaticInvocable(TypeID typeID, NameID methodID) const noexcept;
+		bool IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept;
 		template<typename... Args>
-		bool IsConstInvocable (TypeID typeID, NameID methodID) const noexcept;
+		bool IsConstInvocable (TypeID typeID, StrID methodID) const noexcept;
 		template<typename... Args>
-		bool IsInvocable      (TypeID typeID, NameID methodID) const noexcept;
+		bool IsInvocable      (TypeID typeID, StrID methodID) const noexcept;
 
 		template<typename T>
-		T InvokeRet(TypeID      typeID, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(TypeID      typeID, StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename T>
-		T InvokeRet(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(ConstObjectPtr obj, StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename T>
-		T InvokeRet(ObjectPtr      obj, NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(ObjectPtr      obj, StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(TypeID      typeID, NameID methodID, void* result_buffer, Args... args) const;
+		InvokeResult InvokeArgs(TypeID      typeID, StrID methodID, void* result_buffer, Args... args) const;
 		template<typename... Args>
-		InvokeResult InvokeArgs(ConstObjectPtr obj, NameID methodID, void* result_buffer, Args... args) const;
+		InvokeResult InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const;
 		template<typename... Args>
-		InvokeResult InvokeArgs(ObjectPtr      obj, NameID methodID, void* result_buffer, Args... args) const;
+		InvokeResult InvokeArgs(ObjectPtr      obj, StrID methodID, void* result_buffer, Args... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(TypeID      typeID, NameID methodID, Args... args) const;
+		T Invoke(TypeID      typeID, StrID methodID, Args... args) const;
 		template<typename T, typename... Args>
-		T Invoke(ConstObjectPtr obj, NameID methodID, Args... args) const;
+		T Invoke(ConstObjectPtr obj, StrID methodID, Args... args) const;
 		template<typename T, typename... Args>
-		T Invoke(ObjectPtr      obj, NameID methodID, Args... args) const;
+		T Invoke(ObjectPtr      obj, StrID methodID, Args... args) const;
 
 		template<typename Obj, typename... Args>
-		bool IsStaticInvocable(NameID methodID) const noexcept;
+		bool IsStaticInvocable(StrID methodID) const noexcept;
 		template<typename Obj, typename... Args>
-		bool IsConstInvocable (NameID methodID) const noexcept;
+		bool IsConstInvocable (StrID methodID) const noexcept;
 		template<typename Obj, typename... Args>
-		bool IsInvocable      (NameID methodID) const noexcept;
+		bool IsInvocable      (StrID methodID) const noexcept;
 		template<typename Obj, typename T>
-		T InvokeRet(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename Obj, typename... Args>
-		InvokeResult InvokeArgs(NameID methodID, void* result_buffer, Args... args) const;
+		InvokeResult InvokeArgs(StrID methodID, void* result_buffer, Args... args) const;
 		template<typename Obj, typename T, typename... Args>
-		T Invoke(NameID methodID, Args... args) const;
+		T Invoke(StrID methodID, Args... args) const;
 
 		//
 		// Meta
 		/////////
 
 		// global {static|dynamic} variable
-		ObjectPtr      RWVar(NameID fieldID) noexcept
+		ObjectPtr      RWVar(StrID fieldID) noexcept
 		{ return RWVar(TypeID{TypeIDRegistry::Meta::global}, fieldID); }
 		// global {static|dynamic} {variable|const}
-		ConstObjectPtr RVar(NameID fieldID) const noexcept
+		ConstObjectPtr RVar(StrID fieldID) const noexcept
 		{ return RVar (TypeID{TypeIDRegistry::Meta::global}, fieldID); }
 
-		bool IsInvocable(NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept
+		bool IsInvocable(StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept
 		{ return IsInvocable(TypeID{TypeIDRegistry::Meta::global}, methodID, argTypeIDs); }
 
-		InvokeResult Invoke(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const
+		InvokeResult Invoke(StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const
 		{ return Invoke     (TypeID{TypeIDRegistry::Meta::global}, methodID, argTypeIDs, args_buffer, result_buffer); }
 
 		bool IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs = {}) const noexcept;
@@ -278,16 +277,16 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename... Args>
-		bool IsInvocable(NameID methodID) const noexcept;
+		bool IsInvocable(StrID methodID) const noexcept;
 
 		template<typename T>
-		T InvokeRet(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(NameID methodID, void* result_buffer, Args... args) const;
+		InvokeResult InvokeArgs(StrID methodID, void* result_buffer, Args... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(NameID methodID, Args... args) const;
+		T Invoke(StrID methodID, Args... args) const;
 
 		template<typename... Args>
 		bool IsConstructible(TypeID typeID) const noexcept;

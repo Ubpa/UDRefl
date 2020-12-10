@@ -12,8 +12,8 @@ namespace Ubpa::UDRefl {
 
 		size_t size;
 		size_t alignment;
-		std::unordered_map<NameID, FieldInfo> fieldinfos;
-		std::unordered_multimap<NameID, MethodInfo> methodinfos;
+		std::unordered_map<StrID, FieldInfo> fieldinfos;
+		std::unordered_multimap<StrID, MethodInfo> methodinfos;
 		std::unordered_map<TypeID, BaseInfo> baseinfos;
 		std::unordered_map<TypeID, SharedBlock> attrs;
 
@@ -22,31 +22,31 @@ namespace Ubpa::UDRefl {
 		//////////
 
 		// without bases, {static|dynamic} variable
-		ObjectPtr      RWVar(NameID fieldID) noexcept;
+		ObjectPtr      RWVar(StrID fieldID) noexcept;
 		// without bases, {static|dynamic} {variable|const}
-		ConstObjectPtr RVar (NameID fieldID) const noexcept;
+		ConstObjectPtr RVar (StrID fieldID) const noexcept;
 		// without bases, variable
-		ObjectPtr      RWVar(void*       obj, NameID fieldID) noexcept;
+		ObjectPtr      RWVar(void*       obj, StrID fieldID) noexcept;
 		// without bases, all
-		ConstObjectPtr RVar (const void* obj, NameID fieldID) const noexcept;
+		ConstObjectPtr RVar (const void* obj, StrID fieldID) const noexcept;
 
 		//
 		// Invoke
 		///////////
 
 		// without bases, static
-		bool IsStaticInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
+		bool IsStaticInvocable(StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
 		// without bases, const + static
-		bool IsConstInvocable (NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
+		bool IsConstInvocable (StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
 		// without bases, non-const + const + static
-		bool IsInvocable      (NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
+		bool IsInvocable      (StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
 
 		// without bases, static
-		InvokeResult Invoke(NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
 		// without bases, const + static
-		InvokeResult Invoke(const void* obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(const void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
 		// without bases, non-const + const + static, non-const && static > const
-		InvokeResult Invoke(void* obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
 	};
 
 	struct Type {

@@ -14,12 +14,12 @@ struct Point {
 };
 
 int main() {
-	auto ID_Point = ReflMngr::Instance().tregistry.GetID<Point>();
-	auto ID_float = ReflMngr::Instance().tregistry.GetID<float>();
-	auto ID_x = ReflMngr::Instance().nregistry.GetID("x");
-	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
-	auto ID_ctor = ReflMngr::Instance().nregistry.GetID(NameIDRegistry::Meta::ctor);
-	auto ID_dtor = ReflMngr::Instance().nregistry.GetID(NameIDRegistry::Meta::dtor);
+	auto ID_Point = ReflMngr::Instance().tregistry.Register<Point>();
+	auto ID_float = ReflMngr::Instance().tregistry.Register<float>();
+	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
+	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
+	auto ID_ctor = ReflMngr::Instance().nregistry.Register(StrIDRegistry::Meta::ctor);
+	auto ID_dtor = ReflMngr::Instance().nregistry.Register(StrIDRegistry::Meta::dtor);
 
 	ReflMngr::Instance().typeinfos[ID_Point] = {
 		sizeof(Point),

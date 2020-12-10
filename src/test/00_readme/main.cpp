@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 struct Vec {
@@ -13,7 +14,7 @@ struct Vec {
 };
 
 int main() {
-	TypeID ID_Vec = ReflMngr::Instance().tregistry.GetID<Vec>();
+	TypeID ID_Vec = ReflMngr::Instance().tregistry.Register<Vec>();
 
 	ReflMngr::Instance().typeinfos[ID_Vec] = { // TypeInfo
 		sizeof(Vec),  // size
@@ -35,11 +36,11 @@ int main() {
 	// ReflMngr::Instance().Delete(v);
 	SharedObject v = ReflMngr::Instance().MakeShared(ID_Vec);
 
-	ReflMngr::Instance().RWVar(v, NameID("x")).As<float>() = 3.f;
-	ReflMngr::Instance().RWVar(v, NameID("y")).As<float>() = 4.f;
+	ReflMngr::Instance().RWVar(v, StrID("x")).As<float>() = 3.f;
+	ReflMngr::Instance().RWVar(v, StrID("y")).As<float>() = 4.f;
 
-	std::cout << "x: " << ReflMngr::Instance().RVar(v, NameID("x")).As<float>() << std::endl;
-	std::cout << "norm: " << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), NameID{"norm"}) << std::endl;
+	std::cout << "x: " << ReflMngr::Instance().RVar(v, StrID("x")).As<float>() << std::endl;
+	std::cout << "norm: " << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), StrID{"norm"}) << std::endl;
 	
 	ReflMngr::Instance().ForEachField(
 		ID_Vec, // TypeID

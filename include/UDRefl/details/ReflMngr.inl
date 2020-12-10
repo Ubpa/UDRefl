@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 namespace Ubpa::UDRefl::details {
 	template<typename ArgList>
 	struct GenerateMethodPtr_Helper;
@@ -18,7 +20,7 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (std::is_member_function_pointer_v<FuncPtr>) {
 				using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 				constexpr auto wrapped_func = [](ObjPtr obj, ArgsView args, void* result_buffer) -> Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::Of<Args>())&&...));
+					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					constexpr auto f = wrap_function<funcptr>();
@@ -29,7 +31,7 @@ namespace Ubpa::UDRefl::details {
 			}
 			else if constexpr (is_function_pointer_v<FuncPtr>) {
 				constexpr auto wrapped_func = [](ArgsView args, void* result_buffer) -> Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::Of<Args>())&&...));
+					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					constexpr auto f = wrap_function<funcptr>();
@@ -48,7 +50,7 @@ namespace Ubpa::UDRefl::details {
 			using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 			/*constexpr*/ auto wrapped_func =
 				[f = std::forward<Func>(func)](ObjPtr obj, ArgsView args, void* result_buffer) mutable -> Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::Of<Args>())&&...));
+					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					auto wrapped_f = wrap_member_function(std::forward<Func>(f));
@@ -62,7 +64,7 @@ namespace Ubpa::UDRefl::details {
 		static /*constexpr*/ auto GenerateStaticFunction(Func&& func, std::index_sequence<Ns...>) noexcept {
 			/*constexpr*/ auto wrapped_func =
 				[f = std::forward<Func>(func)](ArgsView args, void* result_buffer) mutable ->Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::Of<Args>())&&...));
+					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					auto wrapped_f = wrap_static_function(std::forward<Func>(f));
@@ -84,7 +86,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (std::is_pointer_v<FieldPtr>) {
 			using Value = std::remove_pointer_t<FieldPtr>;
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
-			const TypeID ID = tregistry.GetID<Value>();
+			const TypeID ID = tregistry.Register<Value>();
 			return {
 				ID,
 				field_ptr,
@@ -95,7 +97,7 @@ namespace Ubpa::UDRefl {
 			using Traits = member_pointer_traits<FieldPtr>;
 			using Object = typename Traits::object;
 			using Value = typename Traits::value;
-			const TypeID ID = tregistry.GetID<Value>();
+			const TypeID ID = tregistry.Register<Value>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
@@ -124,7 +126,7 @@ namespace Ubpa::UDRefl {
 			using Traits = member_pointer_traits<RawT>;
 			using Object = typename Traits::object;
 			using Value = typename Traits::value;
-			const TypeID ID = tregistry.GetID<Value>();
+			const TypeID ID = tregistry.Register<Value>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
@@ -144,7 +146,7 @@ namespace Ubpa::UDRefl {
 		else if (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && std::is_void_v<std::remove_pointer_t<RawT>>) {
 			using Value = std::remove_pointer_t<RawT>;
 			return {
-				tregistry.GetID<Value>(),
+				tregistry.Register<Value>(),
 				data,
 				std::bool_constant<std::is_const_v<Value>>{}
 			};
@@ -164,7 +166,7 @@ namespace Ubpa::UDRefl {
 			using Value = std::remove_pointer_t<ValuePtr>;
 			static_assert(!std::is_void_v<Value>);
 
-			const TypeID ID = tregistry.GetID<Value>();
+			const TypeID ID = tregistry.Register<Value>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 
 			auto offsetor = [f=std::forward<T>(data)](const void* obj) -> const void* {
@@ -181,7 +183,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	FieldPtr ReflMngr::GenerateDynamicFieldPtr(Args&&... args) {
-		const TypeID ID = tregistry.GetID<std::remove_const_t<T>>();
+		const TypeID ID = tregistry.Register<std::remove_const_t<T>>();
 		SharedBlock block = MakeSharedBlock<std::remove_const_t<T>>(std::forward<Args>(args)...);
 		using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, const SharedObject, SharedObject>;
 		MaybeConstSharedObject obj{ ID, std::move(block) };
@@ -193,14 +195,14 @@ namespace Ubpa::UDRefl {
 		if constexpr (!std::is_void_v<Return>) {
 			using T = type_buffer_decay_t<Return>;
 			return {
-				tregistry.GetID<Return>(),
+				tregistry.Register<Return>(),
 				sizeof(T),
 				alignof(T)
 			};
 		}
 		else {
 			return {
-				tregistry.GetID<void>(),
+				tregistry.Register<void>(),
 				0,
 				0
 			};
@@ -210,7 +212,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Params>
 	ParamList ReflMngr::GenerateParamList() noexcept(sizeof...(Params) == 0) {
 		if constexpr (sizeof...(Params) > 0)
-			return ParamList{ { {tregistry.GetID<Params>(), sizeof(type_buffer_decay_t<Params>), alignof(type_buffer_decay_t<Params>)}... } };
+			return ParamList{ { {tregistry.Register<Params>(), sizeof(type_buffer_decay_t<Params>), alignof(type_buffer_decay_t<Params>)}... } };
 		else
 			return {};
 	}
@@ -256,7 +258,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	std::pair<NameID, MethodInfo> ReflMngr::GenerateConstructor(std::unordered_map<TypeID, SharedBlock> attrs) {
+	std::pair<StrID, MethodInfo> ReflMngr::GenerateConstructor(std::unordered_map<TypeID, SharedBlock> attrs) {
 		return GenerateConstructor(
 			[](T& obj, Args... args) {
 				new(&obj)T{ std::forward<Args>(args)... };
@@ -266,7 +268,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	std::pair<NameID, MethodInfo> ReflMngr::GenerateDestructor(std::unordered_map<TypeID, SharedBlock> attrs) {
+	std::pair<StrID, MethodInfo> ReflMngr::GenerateDestructor(std::unordered_map<TypeID, SharedBlock> attrs) {
 		return GenerateDestructor(
 			[](const T& obj) {
 				obj.~T();
@@ -280,51 +282,51 @@ namespace Ubpa::UDRefl {
 	///////////
 
 	template<typename... Args>
-	bool ReflMngr::IsStaticInvocable(TypeID typeID, NameID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID::Of<Args>()... };
+	bool ReflMngr::IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept {
+		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsStaticInvocable(typeID, methodID, argTypeIDs);
 	}
 
 	template<typename... Args>
-	bool ReflMngr::IsConstInvocable(TypeID typeID, NameID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID::Of<Args>()... };
+	bool ReflMngr::IsConstInvocable(TypeID typeID, StrID methodID) const noexcept {
+		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsConstInvocable(typeID, methodID, argTypeIDs);
 	}
 
 	template<typename... Args>
-	bool ReflMngr::IsInvocable(TypeID typeID, NameID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID::Of<Args>()... };
+	bool ReflMngr::IsInvocable(TypeID typeID, StrID methodID) const noexcept {
+		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsInvocable(typeID, methodID, argTypeIDs);
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(TypeID typeID, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
 		auto result = Invoke(typeID, methodID, argTypeIDs, args_buffer, result_buffer);
-		assert(result.resultID == TypeID::Of<T>());
+		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ConstObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(ConstObjectPtr obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
 		auto result = Invoke(obj, methodID, argTypeIDs, args_buffer, result_buffer);
-		assert(result.resultID == TypeID::Of<T>());
+		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ObjectPtr obj, NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(ObjectPtr obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
 		auto result = Invoke(obj, methodID, argTypeIDs, args_buffer, result_buffer);
-		assert(result.resultID == TypeID::Of<T>());
+		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(TypeID typeID, NameID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(TypeID typeID, StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return Invoke(typeID, methodID, argTypeIDs, &args_buffer, result_buffer);
 		}
@@ -333,9 +335,9 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(ConstObjectPtr obj, NameID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return Invoke(obj, methodID, argTypeIDs, &args_buffer, result_buffer);
 		}
@@ -344,9 +346,9 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, NameID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return Invoke(obj, methodID, argTypeIDs, &args_buffer, result_buffer);
 		}
@@ -355,9 +357,9 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(TypeID typeID, NameID methodID, Args... args) const {
+	T ReflMngr::Invoke(TypeID typeID, StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(typeID, methodID, argTypeIDs, &args_buffer);
 		}
@@ -366,9 +368,9 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ConstObjectPtr obj, NameID methodID, Args... args) const {
+	T ReflMngr::Invoke(ConstObjectPtr obj, StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(obj, methodID, argTypeIDs, &args_buffer);
 		}
@@ -377,9 +379,9 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ObjectPtr obj, NameID methodID, Args... args) const {
+	T ReflMngr::Invoke(ObjectPtr obj, StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return InvokeRet<T>(obj, methodID, argTypeIDs, &args_buffer);
 		}
@@ -388,29 +390,29 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename Obj, typename... Args>
-	bool ReflMngr::IsStaticInvocable(NameID methodID) const noexcept {
-		return IsStaticInvocable<Args...>(TypeID::Of<Obj>(), methodID);
+	bool ReflMngr::IsStaticInvocable(StrID methodID) const noexcept {
+		return IsStaticInvocable<Args...>(TypeID::of<Obj>, methodID);
 	}
 
 	template<typename Obj, typename... Args>
-	bool ReflMngr::IsConstInvocable(NameID methodID) const noexcept {
-		return IsConstInvocable<Args...>(TypeID::Of<Obj>(), methodID);
+	bool ReflMngr::IsConstInvocable(StrID methodID) const noexcept {
+		return IsConstInvocable<Args...>(TypeID::of<Obj>, methodID);
 	}
 
 	template<typename Obj, typename... Args>
-	bool ReflMngr::IsInvocable(NameID methodID) const noexcept {
-		return IsInvocable<Args...>(TypeID::Of<Obj>(), methodID);
+	bool ReflMngr::IsInvocable(StrID methodID) const noexcept {
+		return IsInvocable<Args...>(TypeID::of<Obj>, methodID);
 	}
 
 	template<typename Obj, typename T>
-	T ReflMngr::InvokeRet(NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
-		return InvokeRet(TypeID::Of<Obj>(), methodID, argTypeIDs, args_buffer);
+	T ReflMngr::InvokeRet(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
+		return InvokeRet(TypeID::of<Obj>, methodID, argTypeIDs, args_buffer);
 	}
 
 	template<typename Obj, typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(NameID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return Invoke(methodID, argTypeIDs, &args_buffer, result_buffer);
 		}
@@ -419,8 +421,8 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename Obj, typename T, typename... Args>
-	T ReflMngr::Invoke(NameID methodID, Args... args) const {
-		return Invoke(TypeID::Of<Obj>(), methodID, std::forward<Args>(args));
+	T ReflMngr::Invoke(StrID methodID, Args... args) const {
+		return Invoke(TypeID::of<Obj>, methodID, std::forward<Args>(args));
 	}
 
 	//
@@ -428,35 +430,35 @@ namespace Ubpa::UDRefl {
 	/////////
 
 	template<typename... Args>
-	bool ReflMngr::IsInvocable(NameID methodID) const noexcept {
+	bool ReflMngr::IsInvocable(StrID methodID) const noexcept {
 		return IsInvocable<Args...>(TypeID{TypeIDRegistry::Meta::global}, methodID);
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		return InvokeRet<T>(TypeID{TypeIDRegistry::Meta::global}, methodID, argTypeIDs, args_buffer);
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(NameID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		return InvokeArgs<Args>(TypeID{TypeIDRegistry::Meta::global}, methodID, result_buffer, std::forward<Args>(args)...);
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(NameID methodID, Args... args) const {
+	T ReflMngr::Invoke(StrID methodID, Args... args) const {
 		return Invoke(TypeID{TypeIDRegistry::Meta::global}, methodID, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	bool ReflMngr::IsConstructible(TypeID typeID) const noexcept {
-		std::array argTypeIDs = { TypeID::Of<Args>()... };
+		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsConstructible(typeID, argTypeIDs);
 	}
 
 	template<typename... Args>
 	bool ReflMngr::Construct(ObjectPtr obj, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return Construct(obj, argTypeIDs, &args_buffer);
 		}
@@ -467,7 +469,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	ObjectPtr ReflMngr::New(TypeID typeID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return New(typeID, argTypeIDs, &args_buffer);
 		}
@@ -477,13 +479,13 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	ObjectPtr ReflMngr::New(Args... args) const {
-		return New<Args...>(TypeID::Of<T>(), std::forward<Args>(args)...);
+		return New<Args...>(TypeID::of<T>, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ReflMngr::MakeShared(TypeID typeID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::Of<Args>()... };
+			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
 			return MakeShared(typeID, argTypeIDs, &args_buffer);
 		}
@@ -493,6 +495,6 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	SharedObject ReflMngr::MakeShared(Args... args) const {
-		return MakeShared<Args...>(TypeID::Of<T>(), std::forward<Args>(args)...);
+		return MakeShared<Args...>(TypeID::of<T>, std::forward<Args>(args)...);
 	}
 }

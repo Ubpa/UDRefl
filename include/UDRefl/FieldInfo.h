@@ -2,7 +2,6 @@
 
 #include "FieldPtr.h"
 #include "SharedBlock.h"
-#include "NameID.h"
 
 #include <unordered_map>
 
@@ -13,7 +12,7 @@ namespace Ubpa::UDRefl {
 	};
 
 	struct Field {
-		NameID ID;
+		StrID ID;
 		const FieldInfo& info;
 	};
 }
