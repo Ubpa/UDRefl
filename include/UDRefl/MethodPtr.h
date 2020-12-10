@@ -3,7 +3,7 @@
 #include "ObjectPtr.h"
 #include "Util.h"
 
-#include "Registry.h"
+#include "IDRegistry.h"
 
 #include <UTemplate/Func.h>
 #include <UContainer/Span.h>
@@ -19,7 +19,7 @@ namespace Ubpa::UDRefl {
 		size_t alignment;
 
 		constexpr bool IsVoid() const noexcept {
-			return typeID == TypeRegistry::DirectGetID<void>();
+			return typeID == TypeID::Of<void>();
 		}
 	};
 
@@ -58,12 +58,6 @@ namespace Ubpa::UDRefl {
 
 	class MethodPtr {
 	public:
-		template<typename T>
-		static MethodPtr GenerateDefaultConstructor() noexcept;
-
-		template<typename T>
-		static MethodPtr GenerateDestructor() noexcept;
-
 		using MemberVariableFunction = Destructor(void*, ArgsView, void*);
 		using MemberConstFunction    = Destructor(const void*, ArgsView, void*);
 		using StaticFunction         = Destructor(ArgsView, void*);
@@ -93,11 +87,6 @@ namespace Ubpa::UDRefl {
 
 		MethodPtr(StaticFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			MethodPtr{ std::function<StaticFunction>{func}, std::move(resultDesc), std::move(paramList) }
-		{ assert(func); }
-
-		template<typename Lambda>
-		MethodPtr(Lambda func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
-			MethodPtr{ DecayLambda(func), std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 
 		bool IsMemberVariable() const noexcept { return func.index() == 0; }

@@ -43,14 +43,7 @@ struct Vec {
 // string -> ID (size_t)
 //////////////////////////
 
-TypeID ID_Vec   = ReflMngr::Instance().tregistry.GetID<Vec>();
-
-NameID ID_x = ReflMngr::Instance().nregistry.GetID("x");
-NameID ID_y = ReflMngr::Instance().nregistry.GetID("y");
-
-NameID ID_norm = ReflMngr::Instance().nregistry.GetID("norm");
-NameID ID_ctor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::ctor); // meta function
-NameID ID_dtor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::dtor); // meta function
+TypeID ID_Vec = ReflMngr::Instance().tregistry.GetID<Vec>();
 
 //
 // register
@@ -60,13 +53,13 @@ ReflMngr::Instance().typeinfos[ID_Vec] = { // TypeInfo
   sizeof(Vec),  // size
   alignof(Vec), // alignment
   { // field infos
-    { ID_x, { ReflMngr::Instance().GenerateFieldPtr<&Vec::x>() } }, // x
-    { ID_x, { ReflMngr::Instance().GenerateFieldPtr<&Vec::y>() } }  // y
+    ReflMngr::Instance().GenerateField<&Vec::x>("x"), // x
+    ReflMngr::Instance().GenerateField<&Vec::y>("y")  // y
   },
   { // method infos
-    {ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}},                  // default ctor
-    {ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},                          // dtor
-    {ID_norm, {ID_norm, {ReflMngr::Instance().GenerateMethodPtr<&Vec::norm>()}} // norm
+    ReflMngr::Instance().GenerateConstructor<Vec>(),        // default ctor
+    ReflMngr::Instance().GenerateDestructor<Vec>(),         // dtor
+    ReflMngr::Instance().GenerateMethod<&Vec::norm>("norm") // norm
   }
 };
 ```

@@ -1,26 +1,9 @@
 #pragma once
 
-#include "ID.h"
-
-#include <UTemplate/Name.h>
-
-#include <string>
-#include <deque>
-#include <unordered_map>
+#include "NameID.h"
 
 namespace Ubpa::UDRefl {
-	class Registry {
-	public:
-		static constexpr size_t DirectGetID(std::string_view name) noexcept { return string_hash(name); }
-		void Register(size_t ID, std::string_view name);
-		size_t GetID(std::string_view name);
-		std::string_view Nameof(size_t ID) const noexcept;
-
-	private:
-		std::unordered_map<size_t, std::string> id2name;
-	};
-
-	class NameRegistry {
+	class NameIDRegistry {
 	public:
 		struct Meta {
 			//
@@ -94,45 +77,16 @@ namespace Ubpa::UDRefl {
 			static constexpr char operator_subscript[] = "UDRefl::operator[]";
 		};
 
-		NameRegistry();
+		NameIDRegistry();
 
 		//
 		// API
 		////////
 
-		static constexpr NameID DirectGetID(std::string_view name) noexcept { return NameID{ Registry::DirectGetID(name) }; }
 		NameID GetID(std::string_view name) { return NameID{ registry.GetID(name) }; }
 		std::string_view Nameof(NameID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
 
 	private:
-		Registry registry;
-	};
-
-	class TypeRegistry {
-	public:
-		struct Meta {
-			static constexpr char global[] = "UDRefl::global";
-		};
-
-		TypeRegistry();
-
-		static constexpr TypeID DirectGetID(std::string_view name) noexcept { return TypeID{ Registry::DirectGetID(name) }; }
-		TypeID GetID(std::string_view name) { return TypeID{ registry.GetID(name) }; }
-		std::string_view Nameof(TypeID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
-
-		template<typename T>
-		static constexpr TypeID DirectGetID() noexcept { return TypeID{ Registry::DirectGetID(type_name<T>().name) }; }
-		template<typename T>
-		TypeID GetID() {
-			constexpr auto name = type_name<T>().name;
-			constexpr size_t ID = string_hash(name);
-			registry.Register(ID, name);
-			return TypeID{ ID };
-		}
-
-	private:
-		Registry registry;
+		IDRegistry registry;
 	};
 }
-
-#include "details/Registry.inl"

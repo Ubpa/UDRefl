@@ -22,13 +22,13 @@ namespace Ubpa::UDRefl {
 		//////////
 
 		// without bases, {static|dynamic} variable
-		ObjectPtr RWVar(NameID fieldID) noexcept;
+		ObjectPtr      RWVar(NameID fieldID) noexcept;
 		// without bases, {static|dynamic} {variable|const}
-		ConstObjectPtr RVar(NameID fieldID) const noexcept;
+		ConstObjectPtr RVar (NameID fieldID) const noexcept;
 		// without bases, variable
-		ObjectPtr RWVar(void* obj, NameID fieldID) noexcept;
+		ObjectPtr      RWVar(void*       obj, NameID fieldID) noexcept;
 		// without bases, all
-		ConstObjectPtr RVar(const void* obj, NameID fieldID) const noexcept;
+		ConstObjectPtr RVar (const void* obj, NameID fieldID) const noexcept;
 
 		//
 		// Invoke
@@ -37,9 +37,9 @@ namespace Ubpa::UDRefl {
 		// without bases, static
 		bool IsStaticInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
 		// without bases, const + static
-		bool IsConstInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
+		bool IsConstInvocable (NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
 		// without bases, non-const + const + static
-		bool IsInvocable(NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
+		bool IsInvocable      (NameID methodID, Span<TypeID> argTypeIDs) const noexcept;
 
 		// without bases, static
 		InvokeResult Invoke(NameID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;

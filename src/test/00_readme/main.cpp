@@ -15,25 +15,17 @@ struct Vec {
 int main() {
 	TypeID ID_Vec = ReflMngr::Instance().tregistry.GetID<Vec>();
 
-	NameID ID_x = ReflMngr::Instance().nregistry.GetID("x");
-	NameID ID_y = ReflMngr::Instance().nregistry.GetID("y");
-
-	NameID ID_norm = ReflMngr::Instance().nregistry.GetID("norm");
-
-	NameID ID_ctor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::ctor); // meta function
-	NameID ID_dtor = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::dtor); // meta function
-
-	ReflMngr::Instance().typeinfos[ID_Vec] = {
+	ReflMngr::Instance().typeinfos[ID_Vec] = { // TypeInfo
 		sizeof(Vec),  // size
 		alignof(Vec), // alignment
 		{ // field infos
-			{ ID_x, { ReflMngr::Instance().GenerateFieldPtr<&Vec::x>() } }, // x
-			{ ID_y, { ReflMngr::Instance().GenerateFieldPtr<&Vec::y>() } }  // y
+			ReflMngr::Instance().GenerateField<&Vec::x>("x"), // x
+			ReflMngr::Instance().GenerateField<&Vec::y>("y")  // y
 		},
 		{ // method infos
-			{ID_ctor, {MethodPtr::GenerateDefaultConstructor<Vec>()}},        // default ctor
-			{ID_dtor, {MethodPtr::GenerateDestructor<Vec>()}},                // dtor
-			{ID_norm, {ReflMngr::Instance().GenerateMethodPtr<&Vec::norm>()}} // norm
+			ReflMngr::Instance().GenerateConstructor<Vec>(),        // default ctor
+			ReflMngr::Instance().GenerateDestructor<Vec>(),         // dtor
+			ReflMngr::Instance().GenerateMethod<&Vec::norm>("norm") // norm
 		}
 	};
 
@@ -43,11 +35,11 @@ int main() {
 	// ReflMngr::Instance().Delete(v);
 	SharedObject v = ReflMngr::Instance().MakeShared(ID_Vec);
 
-	ReflMngr::Instance().RWVar(v, ID_x).As<float>() = 3.f;
-	ReflMngr::Instance().RWVar(v, ID_y).As<float>() = 4.f;
+	ReflMngr::Instance().RWVar(v, NameID("x")).As<float>() = 3.f;
+	ReflMngr::Instance().RWVar(v, NameID("y")).As<float>() = 4.f;
 
-	std::cout << "x: " << ReflMngr::Instance().RVar(v, ID_x).As<float>() << std::endl;
-	std::cout << "norm: " << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), ID_norm) << std::endl;
+	std::cout << "x: " << ReflMngr::Instance().RVar(v, NameID("x")).As<float>() << std::endl;
+	std::cout << "norm: " << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), NameID{"norm"}) << std::endl;
 	
 	ReflMngr::Instance().ForEachField(
 		ID_Vec, // TypeID

@@ -10,5 +10,5 @@
 #include "ObjectPtr.h"
 #include "TypeInfo.h"
 #include "ReflMngr.h"
-#include "Registry.h"
+#include "IDRegistry.h"
 #include "Util.h"

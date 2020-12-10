@@ -3,8 +3,8 @@
 #include "TypeInfo.h"
 #include "EnumInfo.h"
 #include "SharedObject.h"
-
-#include <functional>
+#include "NameIDRegistry.h"
+#include "TypeIDRegistry.h"
 
 namespace Ubpa::UDRefl {
 	class ReflMngr {
@@ -18,8 +18,8 @@ namespace Ubpa::UDRefl {
 		// Data
 		/////////
 
-		NameRegistry nregistry;
-		TypeRegistry tregistry;
+		NameIDRegistry nregistry;
+		TypeIDRegistry tregistry;
 
 		std::unordered_map<TypeID, TypeInfo> typeinfos;
 		std::unordered_map<TypeID, EnumInfo> enuminfos;
@@ -43,6 +43,39 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		FieldPtr GenerateDynamicFieldPtr(Args&&... args);
 
+		std::pair<NameID, FieldInfo> GenerateField(
+			std::string_view name,
+			FieldPtr fieldptr,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return { nregistry.GetID(name), { std::move(fieldptr), std::move(attrs) } }; }
+
+		template<auto field_ptr>
+		std::pair<NameID, FieldInfo> GenerateField(
+			std::string_view name,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return GenerateField(name, GenerateFieldPtr<field_ptr>(), std::move(attrs)); }
+
+		template<typename T,
+			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldPtr>, int> = 0>
+		std::pair<NameID, FieldInfo> GenerateField(
+			std::string_view name,
+			T&& data,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return GenerateField(name, GenerateFieldPtr(std::forward<T>(data)), std::move(attrs)); }
+
+		template<typename T, typename... Args>
+		std::pair<NameID, FieldInfo> GenerateDynamicFieldWithAttrs(
+			std::string_view name,
+			std::unordered_map<TypeID, SharedBlock> attrs,
+			Args&&... args)
+		{ return GenerateField(name, GenerateDynamicFieldPtr<T>(std::forward<Args>(args)...), std::move(attrs)); }
+
+		template<typename T, typename... Args>
+		std::pair<NameID, FieldInfo> GenerateDynamicField(
+			std::string_view name,
+			Args&&... args)
+		{ return GenerateDynamicFieldWithAttrs<T>(name, {}, std::forward<Args>(args)...); }
+
 		template<typename Return>
 		ResultDesc GenerateResultDesc();
 
@@ -57,6 +90,46 @@ namespace Ubpa::UDRefl {
 
 		template<typename Func>
 		MethodPtr GenerateStaticMethodPtr(Func&& func);
+
+		std::pair<NameID, MethodInfo> GenerateMethod(
+			std::string_view name,
+			MethodPtr methodptr,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return { nregistry.GetID(name), { std::move(methodptr), std::move(attrs) } }; }
+
+		template<auto funcptr>
+		std::pair<NameID, MethodInfo> GenerateMethod(
+			std::string_view name,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return GenerateMethod(name, GenerateMethodPtr<funcptr>(), std::move(attrs)); }
+
+		template<typename Func>
+		std::pair<NameID, MethodInfo> GenerateMemberMethod(
+			std::string_view name,
+			Func&& func,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return GenerateMethod(name, GenerateMemberMethod(std::forward<Func>(func)), std::move(attrs)); }
+
+		template<typename Func>
+		std::pair<NameID, MethodInfo> GenerateStaticMethod(
+			std::string_view name,
+			Func&& func,
+			std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return GenerateMethod(name, GenerateStaticMethod(std::forward<Func>(func)), std::move(attrs)); }
+
+		template<typename Func>
+		std::pair<NameID, MethodInfo> GenerateConstructor(Func&& func, std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return { NameID{NameIDRegistry::Meta::ctor}, { GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) } }; }
+
+		template<typename Func>
+		std::pair<NameID, MethodInfo> GenerateDestructor(Func&& func, std::unordered_map<TypeID, SharedBlock> attrs = {})
+		{ return { NameID{NameIDRegistry::Meta::dtor}, { GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) } }; }
+
+		template<typename T, typename... Args>
+		std::pair<NameID, MethodInfo> GenerateConstructor(std::unordered_map<TypeID, SharedBlock> attrs = {});
+
+		template<typename T, typename... Args>
+		std::pair<NameID, MethodInfo> GenerateDestructor(std::unordered_map<TypeID, SharedBlock> attrs = {});
 
 		//
 		// Cast
@@ -174,16 +247,16 @@ namespace Ubpa::UDRefl {
 
 		// global {static|dynamic} variable
 		ObjectPtr      RWVar(NameID fieldID) noexcept
-		{ return RWVar(TypeRegistry::DirectGetID(TypeRegistry::Meta::global), fieldID); }
+		{ return RWVar(TypeID{TypeIDRegistry::Meta::global}, fieldID); }
 		// global {static|dynamic} {variable|const}
 		ConstObjectPtr RVar(NameID fieldID) const noexcept
-		{ return RVar (TypeRegistry::DirectGetID(TypeRegistry::Meta::global), fieldID); }
+		{ return RVar (TypeID{TypeIDRegistry::Meta::global}, fieldID); }
 
 		bool IsInvocable(NameID methodID, Span<TypeID> argTypeIDs = {}) const noexcept
-		{ return IsInvocable(TypeRegistry::DirectGetID(TypeRegistry::Meta::global), methodID, argTypeIDs); }
+		{ return IsInvocable(TypeID{TypeIDRegistry::Meta::global}, methodID, argTypeIDs); }
 
 		InvokeResult Invoke(NameID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr, void* result_buffer = nullptr) const
-		{ return Invoke     (TypeRegistry::DirectGetID(TypeRegistry::Meta::global), methodID, argTypeIDs, args_buffer, result_buffer); }
+		{ return Invoke     (TypeID{TypeIDRegistry::Meta::global}, methodID, argTypeIDs, args_buffer, result_buffer); }
 
 		bool IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs = {}) const noexcept;
 		bool IsDestructible (TypeID typeID) const noexcept;

@@ -37,7 +37,7 @@ int main() {
 	auto ID_y = ReflMngr::Instance().nregistry.GetID("y");
 	auto ID_Norm2 = ReflMngr::Instance().nregistry.GetID("Norm2");
 	auto ID_NormalizeSelf = ReflMngr::Instance().nregistry.GetID("NormalizeSelf");
-	auto ID_operator_assign_add = ReflMngr::Instance().nregistry.GetID(NameRegistry::Meta::operator_assign_add);
+	auto ID_operator_assign_add = ReflMngr::Instance().nregistry.GetID(NameIDRegistry::Meta::operator_assign_add);
 
 	{ // register Vec
 		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
@@ -49,14 +49,14 @@ int main() {
 			return wrap_function<&Vec::Norm2>()(obj, nullptr, result_buffer);
 		};
 		MethodPtr method_Norm2{
-			Norm2,
+			Ubpa::DecayLambda(Norm2),
 			{ID_float, sizeof(float), alignof(float)}
 		};
 
 		auto NormalizeSelf = [](void* obj, ArgsView, void*) {
 			return wrap_function<&Vec::NormalizeSelf>()(obj, nullptr, nullptr);
 		};
-		MethodPtr method_NormalizeSelf{ NormalizeSelf };
+		MethodPtr method_NormalizeSelf{ Ubpa::DecayLambda(NormalizeSelf) };
 
 		auto operator_add_assign = [](void* obj, ArgsView args, void* result_buffer) {
 			return wrap_function<&Vec::operator+=>()(obj, args.GetBuffer(), result_buffer);

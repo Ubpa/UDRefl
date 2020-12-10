@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Enumerator.h"
+#include "NameID.h"
+#include "TypeID.h"
 
 namespace Ubpa::UDRefl {
 	struct EnumInfo {

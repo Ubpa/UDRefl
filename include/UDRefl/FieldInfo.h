@@ -2,6 +2,7 @@
 
 #include "FieldPtr.h"
 #include "SharedBlock.h"
+#include "NameID.h"
 
 #include <unordered_map>
 

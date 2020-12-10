@@ -1,10 +1,10 @@
-#include <UDRefl/Registry.h>
+#include <UDRefl/NameIDRegistry.h>
 
 #include <cassert>
 
 using namespace Ubpa::UDRefl;
 
-NameRegistry::NameRegistry() {
+NameIDRegistry::NameIDRegistry() {
 	//
 	// Global
 	///////////
@@ -72,8 +72,4 @@ NameRegistry::NameRegistry() {
 	registry.Register(string_hash(Meta::operator_call), Meta::operator_call);
 	registry.Register(string_hash(Meta::operator_comma), Meta::operator_comma);
 	registry.Register(string_hash(Meta::operator_subscript), Meta::operator_subscript);
-}
-
-TypeRegistry::TypeRegistry() {
-	registry.Register(string_hash(Meta::global), Meta::global);
 }
