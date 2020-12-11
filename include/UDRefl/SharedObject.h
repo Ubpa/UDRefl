@@ -3,8 +3,6 @@
 #include "ObjectPtr.h"
 #include "SharedBlock.h"
 
-#include <memory>
-
 namespace Ubpa::UDRefl {
     // SharedBlock + ID
 	class SharedObject {
@@ -31,11 +29,17 @@ namespace Ubpa::UDRefl {
 		// Assign
 		///////////
 
-		SharedObject& operator=(SharedObject& rhs) noexcept {
+		/*SharedObject& operator=(SharedObject& rhs) noexcept {
             ID = rhs.ID;
             block = rhs.block;
 			return *this;
-		}
+		}*/
+
+        SharedObject& operator=(const SharedObject& rhs) noexcept {
+            /*ID = rhs.ID;
+            block = rhs.block;*/
+            return *this;
+        }
 
         SharedObject& operator=(SharedObject&& rhs) noexcept {
             ID = rhs.ID;
@@ -94,6 +98,30 @@ namespace Ubpa::UDRefl {
 
         explicit operator bool() const noexcept { return ID && static_cast<bool>(block); }
 
+        bool operator==(const Ubpa::UDRefl::SharedObject& right) const noexcept {
+            return GetID() == right.GetID() && GetPtr() == right.GetPtr();
+        }
+
+        bool operator!=(const Ubpa::UDRefl::SharedObject& right) const noexcept {
+            return GetID() != right.GetID() || GetPtr() != right.GetPtr();
+        }
+
+        bool operator<(const Ubpa::UDRefl::SharedObject& right) const noexcept {
+            return GetID() < right.GetID() || (GetID() == right.GetID() && GetPtr() < right.GetPtr());
+        }
+
+        bool operator>=(const Ubpa::UDRefl::SharedObject& right) const noexcept {
+            return GetID() > right.GetID() || (GetID() == right.GetID() && GetPtr() >= right.GetPtr());
+        }
+
+        bool operator>(const Ubpa::UDRefl::SharedObject& right) const noexcept {
+            return GetID() > right.GetID() || (GetID() == right.GetID() && GetPtr() > right.GetPtr());
+        }
+
+        bool operator<=(const Ubpa::UDRefl::SharedObject& right) const noexcept {
+            return GetID() < right.GetID() || (GetID() == right.GetID() && GetPtr() <= right.GetPtr());
+        }
+
 	private:
         TypeID ID;
 		SharedBlock block;
@@ -102,42 +130,42 @@ namespace Ubpa::UDRefl {
 
 template<>
 struct std::hash<Ubpa::UDRefl::SharedObject> {
-    std::size_t operator()(const Ubpa::UDRefl::SharedObject& obj) noexcept {
+    std::size_t operator()(const Ubpa::UDRefl::SharedObject& obj) const noexcept {
         return obj.GetID().GetValue() ^ std::hash<const void*>()(obj.GetPtr());
     }
 };
 
-inline bool operator==(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
-    return left.GetID() == right.GetID() && left.GetPtr() == right.GetPtr();
-}
+//inline bool operator==(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
+//    return left.GetID() == right.GetID() && left.GetPtr() == right.GetPtr();
+//}
+//
+//inline bool operator!=(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
+//    return left.GetID() != right.GetID() || left.GetPtr() != right.GetPtr();
+//}
+//
+//inline bool operator<(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
+//    return left.GetID() < right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() < right.GetPtr());
+//}
+//
+//inline bool operator>=(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
+//    return left.GetID() > right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() >= right.GetPtr());
+//}
+//
+//inline bool operator>(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
+//    return left.GetID() > right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() > right.GetPtr());
+//}
+//
+//inline bool operator<=(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
+//    return left.GetID() < right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() <= right.GetPtr());
+//}
 
-inline bool operator!=(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
-    return left.GetID() != right.GetID() || left.GetPtr() != right.GetPtr();
-}
-
-inline bool operator<(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
-    return left.GetID() < right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() < right.GetPtr());
-}
-
-inline bool operator>=(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
-    return left.GetID() > right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() >= right.GetPtr());
-}
-
-inline bool operator>(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
-    return left.GetID() > right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() > right.GetPtr());
-}
-
-inline bool operator<=(const Ubpa::UDRefl::SharedObject& left, const Ubpa::UDRefl::SharedObject& right) noexcept {
-    return left.GetID() < right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() <= right.GetPtr());
-}
-
-template <class Elem, typename Traits>
-std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& out, const Ubpa::UDRefl::SharedObject& obj) {
-    return out << obj.GetID().GetValue() << obj.GetPtr();
-}
-
-namespace std {
-    inline void swap(Ubpa::UDRefl::SharedObject& left, Ubpa::UDRefl::SharedObject& right) noexcept {
-        left.Swap(right);
-    }
-}
+//template <class Elem, typename Traits>
+//std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& out, const Ubpa::UDRefl::SharedObject& obj) {
+//    return out << obj.GetID().GetValue() << obj.GetPtr();
+//}
+//
+//namespace std {
+//    inline void swap(Ubpa::UDRefl::SharedObject& left, Ubpa::UDRefl::SharedObject& right) noexcept {
+//        left.Swap(right);
+//    }
+//}

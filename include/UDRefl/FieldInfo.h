@@ -1,14 +1,12 @@
 #pragma once
 
+#include "AttrSet.h"
 #include "FieldPtr.h"
-#include "SharedBlock.h"
-
-#include <unordered_map>
 
 namespace Ubpa::UDRefl {
 	struct FieldInfo {
 		FieldPtr fieldptr;
-		std::unordered_map<TypeID, SharedBlock> attrs;
+		AttrSet attrs;
 	};
 
 	struct Field {

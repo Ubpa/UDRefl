@@ -6,7 +6,6 @@
 #include <UContainer/Span.h>
 
 #include <vector>
-#include <functional>
 #include <variant>
 
 namespace Ubpa::UDRefl {

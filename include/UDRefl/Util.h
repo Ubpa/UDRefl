@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <type_traits>
-#include <cassert>
 #include <tuple>
 #include <functional>
 
@@ -170,7 +169,6 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	constexpr T& buffer_get(void* buffer, std::size_t offset) noexcept {
 		auto ptr = forward_offset(buffer, offset);
-		assert(ptr);
 		return *reinterpret_cast<T*>(ptr);
 	}
 

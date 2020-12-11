@@ -15,7 +15,7 @@ namespace Ubpa::UDRefl {
 		std::unordered_map<StrID, FieldInfo> fieldinfos;
 		std::unordered_multimap<StrID, MethodInfo> methodinfos;
 		std::unordered_map<TypeID, BaseInfo> baseinfos;
-		std::unordered_map<TypeID, SharedBlock> attrs;
+		AttrSet attrs;
 
 		//
 		// Field

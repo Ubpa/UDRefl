@@ -97,9 +97,9 @@ SharedObject v = ReflMngr::Instance().MakeShared(ID_Vec);
 ### Set/get variables
 
 ```c++
-ReflMngr::Instance().RWVar(v, ID_x).As<float>() = 3.f;
-ReflMngr::Instance().RWVar(v, ID_y).As<float>() = 4.f;
-std::cout << "x: " << ReflMngr::Instance().RVar(v, ID_x).As<float>() << std::endl;
+ReflMngr::Instance().RWVar(v, StrID("x")).As<float>() = 3.f;
+ReflMngr::Instance().RWVar(v, StrID("y")).As<float>() = 4.f;
+std::cout << "x: " << ReflMngr::Instance().RVar(v, StrID("x")).As<float>() << std::endl;
 ```
 
 ### Invoke Methods

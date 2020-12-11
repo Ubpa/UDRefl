@@ -1,8 +1,8 @@
 #include <UDRefl/ReflMngr.h>
 
 #include <set>
-#include <array>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 namespace Ubpa::UDRefl::details {
@@ -151,6 +151,72 @@ ReflMngr::ReflMngr() {
 	};
 
 	typeinfos.emplace(tregistry.Register(TypeIDRegistry::Meta::global), std::move(global));
+}
+
+void ReflMngr::Clear() {
+	// enumerator attrs
+	for (auto& [enumID, enuminfo] : enuminfos) {
+		for (auto& [enumeratorID, enumeratorinfo] : enuminfo.enumeratorinfos)
+			enumeratorinfo.attrs.clear();
+	}
+
+	// enum attrs
+	for (auto& [enumID, enuminfo] : enuminfos)
+		enuminfo.attrs.clear();
+
+	// field attrs
+	for (auto& [typeID, typeinfo] : typeinfos) {
+		for (auto& [fieldID, fieldinfo] : typeinfo.fieldinfos)
+			fieldinfo.attrs.clear();
+	}
+
+	// type attrs
+	for (auto& [ID, typeinfo] : typeinfos)
+		typeinfo.attrs.clear();
+
+	// type dynamic field
+	for (auto& [typeID, typeinfo] : typeinfos) {
+		auto iter = typeinfo.fieldinfos.begin();
+		while (iter != typeinfo.fieldinfos.end()) {
+			auto cur = iter;
+			++iter;
+
+			if (cur->second.fieldptr.IsDyanmic())
+				typeinfo.fieldinfos.erase(cur);
+		}
+	}
+
+	enuminfos.clear();
+	typeinfos.clear();
+}
+
+ReflMngr::~ReflMngr() {
+	Clear();
+}
+
+TypeID ReflMngr::RegisterType(std::string_view name, size_t size, size_t alignment) {
+	TypeID ID = tregistry.Register(name);
+	{
+		auto target = typeinfos.find(ID);
+		if (target == typeinfos.end())
+			target = typeinfos.emplace_hint(target, ID, TypeInfo{});
+		target->second.size = size;
+		target->second.alignment = alignment;
+	}
+	return ID;
+}
+
+StrID ReflMngr::AddField(TypeID typeID, std::string_view name, FieldInfo fieldinfo) {
+	auto ttarget = typeinfos.find(typeID);
+	if (ttarget == typeinfos.end())
+		return {};
+	auto& typeinfo = ttarget->second;
+	StrID fieldID = nregistry.Register(name);
+	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	if (ftarget != typeinfo.fieldinfos.end())
+		return {};
+	typeinfo.fieldinfos.emplace_hint(ftarget, fieldID, std::move(fieldinfo));
+	return fieldID;
 }
 
 void* ReflMngr::Malloc(uint64_t size) const {

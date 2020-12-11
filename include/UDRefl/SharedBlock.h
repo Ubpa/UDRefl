@@ -157,7 +157,7 @@ namespace Ubpa::UDRefl {
 
 template<>
 struct std::hash<Ubpa::UDRefl::SharedBlock> {
-    std::size_t operator()(const Ubpa::UDRefl::SharedBlock& obj) noexcept {
+    std::size_t operator()(const Ubpa::UDRefl::SharedBlock& obj) const noexcept {
         return std::hash<const void*>()(obj.Get());
     }
 };

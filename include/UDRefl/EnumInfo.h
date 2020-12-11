@@ -8,7 +8,7 @@ namespace Ubpa::UDRefl {
 	struct EnumInfo {
 		Enumerator::UnderlyingType underlyingType;
 		std::unordered_map<StrID, EnumeratorInfo> enumeratorinfos;
-		std::unordered_map<TypeID, SharedBlock> attrs;
+		AttrSet attrs;
 
 		Enumerator GetEnumerator(StrID enumeratorID) const { return { underlyingType, enumeratorinfos.at(enumeratorID).value }; }
 		StrID GetEnumeratorStrID(Enumerator::Value value) const {

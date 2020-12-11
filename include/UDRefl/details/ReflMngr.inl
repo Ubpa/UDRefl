@@ -143,7 +143,7 @@ namespace Ubpa::UDRefl {
 				};
 			}
 		}
-		else if (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && std::is_void_v<std::remove_pointer_t<RawT>>) {
+		else if constexpr (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && std::is_void_v<std::remove_pointer_t<RawT>>) {
 			using Value = std::remove_pointer_t<RawT>;
 			return {
 				tregistry.Register<Value>(),
@@ -258,7 +258,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	std::pair<StrID, MethodInfo> ReflMngr::GenerateConstructor(std::unordered_map<TypeID, SharedBlock> attrs) {
+	std::pair<StrID, MethodInfo> ReflMngr::GenerateConstructor(AttrSet attrs) {
 		return GenerateConstructor(
 			[](T& obj, Args... args) {
 				new(&obj)T{ std::forward<Args>(args)... };
@@ -268,7 +268,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	std::pair<StrID, MethodInfo> ReflMngr::GenerateDestructor(std::unordered_map<TypeID, SharedBlock> attrs) {
+	std::pair<StrID, MethodInfo> ReflMngr::GenerateDestructor(AttrSet attrs) {
 		return GenerateDestructor(
 			[](const T& obj) {
 				obj.~T();
@@ -328,7 +328,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(typeID, methodID, argTypeIDs, &args_buffer, result_buffer);
+			return Invoke(typeID, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
 		}
 		else
 			return Invoke(typeID, methodID, {}, nullptr, result_buffer);
@@ -339,7 +339,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(obj, methodID, argTypeIDs, &args_buffer, result_buffer);
+			return Invoke(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
 		}
 		else
 			return Invoke(obj, methodID, {}, nullptr, result_buffer);
@@ -350,7 +350,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(obj, methodID, argTypeIDs, &args_buffer, result_buffer);
+			return Invoke(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
 		}
 		else
 			return Invoke(obj, methodID, {}, nullptr, result_buffer);
@@ -361,7 +361,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return InvokeRet<T>(typeID, methodID, argTypeIDs, &args_buffer);
+			return InvokeRet<T>(typeID, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
 			return InvokeRet<T>(typeID, methodID);
@@ -372,7 +372,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return InvokeRet<T>(obj, methodID, argTypeIDs, &args_buffer);
+			return InvokeRet<T>(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
 			return InvokeRet<T>(obj, methodID);
@@ -383,7 +383,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return InvokeRet<T>(obj, methodID, argTypeIDs, &args_buffer);
+			return InvokeRet<T>(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
 			return InvokeRet<T>(obj, methodID);
@@ -414,7 +414,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(methodID, argTypeIDs, &args_buffer, result_buffer);
+			return Invoke(methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
 		}
 		else
 			return Invoke(methodID, {}, nullptr, result_buffer);
@@ -460,7 +460,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Construct(obj, argTypeIDs, &args_buffer);
+			return Construct(obj, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
 			return Construct(obj);
@@ -471,7 +471,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return New(typeID, argTypeIDs, &args_buffer);
+			return New(typeID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
 			return New(typeID);
@@ -487,7 +487,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return MakeShared(typeID, argTypeIDs, &args_buffer);
+			return MakeShared(typeID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
 			return MakeShared(typeID);
