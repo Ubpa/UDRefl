@@ -6,6 +6,7 @@
 
 namespace Ubpa::UDRefl {
 	using Attr = SharedObject;
+
 	struct AttrEqual {
 		using is_transparent = int;
 
@@ -19,10 +20,12 @@ namespace Ubpa::UDRefl {
 			return lhs == rhs.GetID();
 		}
 	};
+
 	struct AttrHash {
 		size_t operator()(const Attr& attr) const noexcept {
 			return attr.GetID().GetValue();
 		}
 	};
+
 	using AttrSet = std::unordered_set<Attr, AttrHash, AttrEqual>;
 }

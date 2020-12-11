@@ -54,7 +54,11 @@ namespace Ubpa::UDRefl {
 		constexpr bool Is() const noexcept { return ID == TypeID::of<T>; }
 
 		template<typename T>
-		constexpr T* AsPtr() const noexcept { return reinterpret_cast<T*>(ptr); }
+		constexpr T* AsPtr() const noexcept {
+			assert(Is<T>());
+			return reinterpret_cast<T*>(ptr);
+		}
+
 		template<typename T>
 		constexpr T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
 

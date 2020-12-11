@@ -99,53 +99,9 @@ namespace Ubpa::UDRefl {
 				paramList != rhs.paramList;
 		}
 
-		Destructor Invoke(void* obj, void* args_buffer, void* result_buffer) const {
-			return std::visit([=](const auto& f) {
-				using Func = std::decay_t<decltype(f)>;
-				if constexpr (std::is_same_v<Func, std::function<MemberVariableFunction>>)
-					return f(obj, { args_buffer,paramList }, result_buffer);
-				else if constexpr (std::is_same_v<Func, std::function<MemberConstFunction>>)
-					return f(obj, { args_buffer,paramList }, result_buffer);
-				else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
-					return f({ args_buffer,paramList }, result_buffer);
-				else
-					static_assert(false);
-			}, func);
-		};
-
-		Destructor Invoke(const void* obj, void* args_buffer, void* result_buffer) const {
-			return std::visit([=](const auto& f) {
-				using Func = std::decay_t<decltype(f)>;
-				if constexpr (std::is_same_v<Func, std::function<MemberVariableFunction>>) {
-					assert(false);
-					return Destructor{};
-				}
-				else if constexpr (std::is_same_v<Func, std::function<MemberConstFunction>>)
-					return f(obj, { args_buffer,paramList }, result_buffer);
-				else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
-					return f({ args_buffer,paramList }, result_buffer);
-				else
-					static_assert(false);
-			}, func);
-		};
-
-		Destructor Invoke(void* args_buffer, void* result_buffer) const {
-			return std::visit([=](const auto& f) {
-				using Func = std::decay_t<decltype(f)>;
-				if constexpr (std::is_same_v<Func, std::function<MemberVariableFunction>>) {
-					assert(false);
-					return Destructor{};
-				}
-				else if constexpr (std::is_same_v<Func, std::function<MemberConstFunction>>) {
-					assert(false);
-					return Destructor{};
-				}
-				else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
-					return f({ args_buffer,paramList }, result_buffer);
-				else
-					static_assert(false);
-			}, func);
-		};
+		Destructor Invoke(void* obj      , void* args_buffer, void* result_buffer) const;
+		Destructor Invoke(const void* obj, void* args_buffer, void* result_buffer) const;
+		Destructor Invoke(                 void* args_buffer, void* result_buffer) const;
 
 		Destructor Invoke_Static(void* args_buffer, void* result_buffer) const {
 			assert(IsStatic());

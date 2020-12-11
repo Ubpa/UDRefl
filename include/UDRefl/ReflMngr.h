@@ -61,11 +61,11 @@ namespace Ubpa::UDRefl {
 			AttrSet attrs = {})
 		{ return { nregistry.Register(name), { std::move(fieldptr), std::move(attrs) } }; }
 
-		template<auto field_ptr>
+		template<auto field_data>
 		std::pair<StrID, FieldInfo> GenerateField(
 			std::string_view name,
 			AttrSet attrs = {})
-		{ return GenerateField(name, GenerateFieldPtr<field_ptr>(), std::move(attrs)); }
+		{ return GenerateField(name, GenerateFieldPtr<field_data>(), std::move(attrs)); }
 
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldPtr>, int> = 0>

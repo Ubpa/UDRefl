@@ -489,7 +489,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	ObjectPtr ReflMngr::New(Args... args) {
-		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T> && !std::is_enum_v<T>);
+		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		if (!IsRegisteredType(TypeID::of<T>))
 			RegisterTypePro<T, Args...>();
 		AddMethod(TypeID::of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
@@ -509,7 +509,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	SharedObject ReflMngr::MakeShared(Args... args) {
-		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T> && !std::is_enum_v<T>);
+		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		if (!IsRegisteredType(TypeID::of<T>))
 			RegisterTypePro<T, Args...>();
 		AddMethod(TypeID::of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
