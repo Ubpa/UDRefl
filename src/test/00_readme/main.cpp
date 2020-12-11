@@ -35,6 +35,7 @@ int main() {
 		TypeID::of<Vec>,
 		[](Type type, Field field) {
 			std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << std::endl;
+			return true;
 		}
 	);
 
@@ -42,6 +43,7 @@ int main() {
 		TypeID::of<Vec>,
 		[](Type type, Method method) {
 			std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
+			return true;
 		}
 	);
 
@@ -52,6 +54,7 @@ int main() {
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 				<< ": " << var.As<float>()
 				<< std::endl;
+			return true;
 		}
 	);
 }

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "ObjectPtr.h"
-#include "SharedBlock.h"
+#include "SharedBuffer.h"
 
 namespace Ubpa::UDRefl {
-    // SharedBlock + ID
+    // SharedBuffer + ID
 	class SharedObject {
 	public:
 		//
@@ -14,8 +14,8 @@ namespace Ubpa::UDRefl {
 		constexpr SharedObject() noexcept = default;
         constexpr SharedObject(std::nullptr_t) noexcept {}
         explicit constexpr SharedObject(TypeID ID) noexcept : ID{ ID } {}
-        SharedObject(TypeID ID, SharedBlock& block) noexcept : ID{ ID }, block{ block } {}
-        SharedObject(TypeID ID, SharedBlock&& block) noexcept : ID{ ID }, block{ std::move(block) } {}
+        SharedObject(TypeID ID, SharedBuffer& block) noexcept : ID{ ID }, block{ block } {}
+        SharedObject(TypeID ID, SharedBuffer&& block) noexcept : ID{ ID }, block{ std::move(block) } {}
         SharedObject(const SharedObject& obj) : ID{ obj.ID }, block{ obj.block } {} // only exception
         SharedObject(SharedObject&& obj) noexcept : ID{ obj.ID }, block{ std::move(obj.block) } {}
         SharedObject(ObjectPtr obj, void(*deleter)(void*)) noexcept : ID{ obj.GetID() }, block{ obj.GetPtr(), deleter } {}
@@ -71,9 +71,9 @@ namespace Ubpa::UDRefl {
 
         TypeID GetID() const noexcept { return ID; }
 
-        SharedBlock        GetBlock()      &  noexcept { return block; }
-        const SharedBlock& GetBlock() const&  noexcept { return block; }
-        SharedBlock        GetBlock()      && noexcept { return std::move(block); }
+        SharedBuffer        GetBuffer()      &  noexcept { return block; }
+        const SharedBuffer& GetBuffer() const&  noexcept { return block; }
+        SharedBuffer        GetBuffer()      && noexcept { return std::move(block); }
 
         void* GetPtr() noexcept { return block.Get(); }
         const void* GetPtr() const noexcept { return block.Get(); }
@@ -124,7 +124,7 @@ namespace Ubpa::UDRefl {
 
 	private:
         TypeID ID;
-		SharedBlock block;
+		SharedBuffer block;
 	};
 }
 

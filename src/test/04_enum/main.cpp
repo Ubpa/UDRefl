@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 enum class Color {
@@ -11,31 +12,32 @@ enum class Color {
 };
 
 int main() {
-	auto ID_Color = ReflMngr::Instance().tregistry.Register<Color>();
-	auto ID_RED = ReflMngr::Instance().nregistry.Register("RED");
-	auto ID_GREEN = ReflMngr::Instance().nregistry.Register("GREEN");
-	auto ID_BLUE = ReflMngr::Instance().nregistry.Register("BLUE");
+	ReflMngr::Instance().RegisterTypePro<Color>();
+	ReflMngr::Instance().AddField<Color::RED>("RED");
+	ReflMngr::Instance().AddField<Color::GREEN>("GREEN");
+	ReflMngr::Instance().AddField<Color::BLUE>("BLUE");
 
-	{ // register Color
-		EnumeratorInfo einfo_RED{ Color::RED };
-		EnumeratorInfo einfo_GREEN{ Color::GREEN };
-		EnumeratorInfo einfo_BLUE{ Color::BLUE };
-		EnumInfo enuminfo{
-			Enumerator::UnderlyingTypeOf<Color>(),
-			{ // enumerators
-				{ID_RED  , einfo_RED},
-				{ID_GREEN, einfo_GREEN},
-				{ID_BLUE , einfo_BLUE},
+	ReflMngr::Instance().ForEachRVar(
+		TypeID::of<Color>,
+		[](Type type, Field field, ConstObjectPtr var) {
+			std::cout
+				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< ": " << static_cast<size_t>(var.As<Color>())
+				<< std::endl;
+			return true;
+		}
+	);
+
+	std::string_view name_red;
+	ReflMngr::Instance().ForEachRVar(
+		TypeID::of<Color>,
+		[&name_red](Type type, Field field, ConstObjectPtr var) mutable {
+			if (var.As<Color>() == Color::RED) {
+				name_red = ReflMngr::Instance().nregistry.Nameof(field.ID);
+				return false;
 			}
-		};
-
-		ReflMngr::Instance().enuminfos.emplace(ID_Color, std::move(enuminfo));
-	}
-	
-	// name -> value
-	static_assert(std::is_same_v<std::underlying_type_t<Color>, std::int32_t>);
-	std::cout << ReflMngr::Instance().enuminfos.at(ID_Color).enumeratorinfos.at(ReflMngr::Instance().nregistry.Register("GREEN")).value.data_int32 << std::endl;
-
-	// value -> name
-	std::cout << ReflMngr::Instance().nregistry.Nameof(ReflMngr::Instance().enuminfos.at(ID_Color).GetEnumeratorStrID(Color::GREEN)) << std::endl;
+			return true;
+		}
+	);
+	std::cout << "name of COLOR::RED : " << name_red << std::endl;
 }

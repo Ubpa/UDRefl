@@ -80,21 +80,21 @@ namespace Ubpa::UDRefl {
 	// Factory
 	////////////
 
-	template<auto field_ptr>
+	template<auto field_data>
 	FieldPtr ReflMngr::GenerateFieldPtr() {
-		using FieldPtr = decltype(field_ptr);
-		if constexpr (std::is_pointer_v<FieldPtr>) {
-			using Value = std::remove_pointer_t<FieldPtr>;
+		using FieldData = decltype(field_data);
+		if constexpr (std::is_pointer_v<FieldData>) {
+			using Value = std::remove_pointer_t<FieldData>;
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			const TypeID ID = tregistry.Register<Value>();
 			return {
 				ID,
-				field_ptr,
+				field_data,
 				ConstFlag{}
 			};
 		}
-		else if constexpr (std::is_member_object_pointer_v<FieldPtr>) {
-			using Traits = member_pointer_traits<FieldPtr>;
+		else if constexpr (std::is_member_object_pointer_v<FieldData>) {
+			using Traits = member_pointer_traits<FieldData>;
 			using Object = typename Traits::object;
 			using Value = typename Traits::value;
 			const TypeID ID = tregistry.Register<Value>();
@@ -102,17 +102,26 @@ namespace Ubpa::UDRefl {
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
 					ID,
-					field_offsetor<field_ptr>(),
+					field_offsetor<field_data>(),
 					ConstFlag{}
 				};
 			}
 			else {
 				return {
 					ID,
-					field_forward_offset_value(field_ptr),
+					field_forward_offset_value(field_data),
 					ConstFlag{}
 				};
 			}
+		}
+		else if constexpr (std::is_enum_v<FieldData>) {
+			using Value = std::remove_pointer_t<FieldData>;
+			const TypeID ID = tregistry.Register<Value>();
+			const auto buffer = FieldPtr::ConvertToBuffer(field_data);
+			return {
+				ID,
+				buffer
+			};
 		}
 		else
 			static_assert(false);
@@ -151,6 +160,14 @@ namespace Ubpa::UDRefl {
 				std::bool_constant<std::is_const_v<Value>>{}
 			};
 		}
+		else if constexpr (std::is_enum_v<RawT>) {
+			const TypeID ID = tregistry.Register<RawT>();
+			const auto buffer = FieldPtr::ConvertToBuffer(data);
+			return {
+				ID,
+				buffer
+			};
+		}
 		else {
 			using Traits = FuncTraits<RawT>;
 
@@ -183,9 +200,17 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	FieldPtr ReflMngr::GenerateDynamicFieldPtr(Args&&... args) {
-		using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, const SharedObject, SharedObject>;
-		MaybeConstSharedObject obj = MakeShared<std::remove_cv_t<T>>(std::forward<Args>(args)...);
-		return FieldPtr{ obj };
+		using RawT = std::decay_t<T>;
+		if constexpr (FieldPtr::IsBufferable<RawT>()) {
+			using MaybeConstBuffer = std::conditional_t<std::is_const_v<T>, const FieldPtr::Buffer, FieldPtr::Buffer>;
+			MaybeConstBuffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
+			return FieldPtr{ TypeID::of<RawT>, buffer };
+		}
+		else {
+			using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, const SharedObject, SharedObject>;
+			MaybeConstSharedObject obj = { TypeID::of<RawT>, MakeSharedBuffer<std::remove_cv_t<T>>(std::forward<Args>(args)...) };
+			return FieldPtr{ obj };
+		}
 	}
 
 	template<typename Return>
@@ -281,13 +306,23 @@ namespace Ubpa::UDRefl {
 			{ GenerateDestructorPtr<T>() , std::move(attrs_dtor) });
 	}
 
-	template<auto field_ptr>
+	template<auto field_data>
 	StrID ReflMngr::AddField(std::string_view name, AttrSet attrs) {
-		return AddField(
-			TypeID::of<member_pointer_traits_object<decltype(field_ptr)>>,
-			name,
-			{ GenerateFieldPtr<field_ptr>(), std::move(attrs) }
-		);
+		using FieldData = decltype(field_data);
+		if constexpr (std::is_enum_v<FieldData>) {
+			return AddField(
+				TypeID::of<FieldData>,
+				name,
+				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
+			);
+		}
+		else {
+			return AddField(
+				TypeID::of<member_pointer_traits_object<FieldData>>,
+				name,
+				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
+			);
+		}
 	}
 
 	template<auto funcptr>

@@ -6,17 +6,18 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 namespace Ubpa::UDRefl::details {
-	static void ForEachTypeID(
+	static bool ForEachTypeID(
 		TypeID typeID,
-		const std::function<void(TypeID)>& func,
+		const std::function<bool(TypeID)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
-		func(typeID);
+		if (!func(typeID))
+			return false;
 
 		auto target = ReflMngr::Instance().typeinfos.find(typeID);
 
 		if (target == ReflMngr::Instance().typeinfos.end())
-			return;
+			return true;
 
 		const auto& typeinfo = target->second;
 
@@ -27,24 +28,26 @@ namespace Ubpa::UDRefl::details {
 				visitedVBs.insert(baseID);
 			}
 
-			details::ForEachTypeID(baseID, func, visitedVBs);
+			if (!ForEachTypeID(baseID, func, visitedVBs))
+				return false;
 		}
+		return true;
 	}
 
-	static void ForEachTypeInfo(
+	static bool ForEachTypeInfo(
 		TypeID typeID,
-		const std::function<void(Type)>& func,
+		const std::function<bool(Type)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
-
 		auto target = ReflMngr::Instance().typeinfos.find(typeID);
 
 		if (target == ReflMngr::Instance().typeinfos.end())
-			return;
+			return true;
 
 		const auto& typeinfo = target->second;
 
-		func({ typeID, typeinfo });
+		if (!func({ typeID, typeinfo }))
+			return false;
 
 		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 			if (baseinfo.IsVirtual()) {
@@ -53,28 +56,33 @@ namespace Ubpa::UDRefl::details {
 				visitedVBs.insert(baseID);
 			}
 
-			details::ForEachTypeInfo(baseID, func, visitedVBs);
+			if (!ForEachTypeInfo(baseID, func, visitedVBs))
+				return false;
 		}
+
+		return true;
 	}
 
-	static void ForEachRWVar(
+	static bool ForEachRWVar(
 		ObjectPtr obj,
-		const std::function<void(Type, Field, ObjectPtr)>& func,
+		const std::function<bool(Type, Field, ObjectPtr)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
 		if (!obj)
-			return;
+			return true;
 
 		auto target = ReflMngr::Instance().typeinfos.find(obj.GetID());
 
 		if (target == ReflMngr::Instance().typeinfos.end())
-			return;
+			return true;
 
 		auto& typeinfo = target->second;
 
 		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
-			if (!fieldInfo.fieldptr.IsConst())
-				func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
+			if (!fieldInfo.fieldptr.IsConst()) {
+				if (!func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj)))
+					return false;
+			}
 		}
 
 		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
@@ -84,27 +92,32 @@ namespace Ubpa::UDRefl::details {
 				visitedVBs.insert(baseID);
 			}
 
-			details::ForEachRWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs);
+			if (!ForEachRWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs))
+				return false;
 		}
+
+		return true;
 	}
 
-	static void ForEachRVar(
+	static bool ForEachRVar(
 		ConstObjectPtr obj,
-		const std::function<void(Type, Field, ConstObjectPtr)>& func,
+		const std::function<bool(Type, Field, ConstObjectPtr)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
 		if (!obj)
-			return;
+			return true;
 
 		auto target = ReflMngr::Instance().typeinfos.find(obj.GetID());
 
 		if (target == ReflMngr::Instance().typeinfos.end())
-			return;
+			return true;
 
 		const auto& typeinfo = target->second;
 
-		for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos)
-			func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj));
+		for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
+			if (!func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map(obj)))
+				return false;
+		}
 
 		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 			if (baseinfo.IsVirtual()) {
@@ -113,8 +126,83 @@ namespace Ubpa::UDRefl::details {
 				visitedVBs.insert(baseID);
 			}
 
-			details::ForEachRVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs);
+			if (!ForEachRVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, func, visitedVBs))
+				return false;
 		}
+
+		return true;
+	}
+
+	static bool ForEachRWVar(
+		TypeID typeID,
+		const std::function<bool(Type, Field, ObjectPtr)>& func,
+		std::set<TypeID>& visitedVBs)
+	{
+		if (!typeID)
+			return true;
+
+		auto target = ReflMngr::Instance().typeinfos.find(typeID);
+
+		if (target == ReflMngr::Instance().typeinfos.end())
+			return true;
+
+		auto& typeinfo = target->second;
+
+		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
+			if (fieldInfo.fieldptr.IsObject() && !fieldInfo.fieldptr.IsConst()) {
+				if (!func({ typeID, typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map()))
+					return false;
+			}
+		}
+
+		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+			if (baseinfo.IsVirtual()) {
+				if (visitedVBs.find(baseID) != visitedVBs.end())
+					continue;
+				visitedVBs.insert(baseID);
+			}
+
+			if (!ForEachRWVar(baseID, func, visitedVBs))
+				return false;
+		}
+
+		return true;
+	}
+
+	static bool ForEachRVar(
+		TypeID typeID,
+		const std::function<bool(Type, Field, ConstObjectPtr)>& func,
+		std::set<TypeID>& visitedVBs)
+	{
+		if (!typeID)
+			return true;
+
+		auto target = ReflMngr::Instance().typeinfos.find(typeID);
+
+		if (target == ReflMngr::Instance().typeinfos.end())
+			return true;
+
+		const auto& typeinfo = target->second;
+
+		for (const auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
+			if (fieldInfo.fieldptr.IsObject()) {
+				if (!func({ typeID, typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Map()))
+					return false;
+			}
+		}
+
+		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+			if (baseinfo.IsVirtual()) {
+				if (visitedVBs.find(baseID) != visitedVBs.end())
+					continue;
+				visitedVBs.insert(baseID);
+			}
+
+			if (!ForEachRVar(baseID, func, visitedVBs))
+				return false;
+		}
+
+		return true;
 	}
 }
 
@@ -154,16 +242,6 @@ ReflMngr::ReflMngr() {
 }
 
 void ReflMngr::Clear() {
-	// enumerator attrs
-	for (auto& [enumID, enuminfo] : enuminfos) {
-		for (auto& [enumeratorID, enumeratorinfo] : enuminfo.enumeratorinfos)
-			enumeratorinfo.attrs.clear();
-	}
-
-	// enum attrs
-	for (auto& [enumID, enuminfo] : enuminfos)
-		enuminfo.attrs.clear();
-
 	// field attrs
 	for (auto& [typeID, typeinfo] : typeinfos) {
 		for (auto& [fieldID, fieldinfo] : typeinfo.fieldinfos)
@@ -181,12 +259,11 @@ void ReflMngr::Clear() {
 			auto cur = iter;
 			++iter;
 
-			if (cur->second.fieldptr.IsDyanmic())
+			if (cur->second.fieldptr.IsDyanmicShared())
 				typeinfo.fieldinfos.erase(cur);
 		}
 	}
 
-	enuminfos.clear();
 	typeinfos.clear();
 }
 
@@ -721,39 +798,45 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 	return rst.success;
 }
 
-void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<void(TypeID)>& func) const {
+void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<bool(TypeID)>& func) const {
 	std::set<TypeID> visitedVBs;
 	details::ForEachTypeID(typeID, func, visitedVBs);
 }
 
-void ReflMngr::ForEachType(TypeID typeID, const std::function<void(Type)>& func) const {
+void ReflMngr::ForEachType(TypeID typeID, const std::function<bool(Type)>& func) const {
 	std::set<TypeID> visitedVBs;
 	details::ForEachTypeInfo(typeID, func, visitedVBs);
 }
 
 void ReflMngr::ForEachField(
 	TypeID typeID,
-	const std::function<void(Type, Field)>& func) const
+	const std::function<bool(Type, Field)>& func) const
 {
 	ForEachType(typeID, [&func](Type type) {
-		for (const auto& [fieldID, fieldInfo] : type.info.fieldinfos)
-			func(type, { fieldID, fieldInfo });
+		for (const auto& [fieldID, fieldInfo] : type.info.fieldinfos) {
+			if (func(type, { fieldID, fieldInfo }))
+				return false;
+		}
+		return true;
 	});
 }
 
 void ReflMngr::ForEachMethod(
 	TypeID typeID,
-	const std::function<void(Type, Method)>& func) const
+	const std::function<bool(Type, Method)>& func) const
 {
 	ForEachType(typeID, [&func](Type type) {
-		for (const auto& [methodID, methodInfo] : type.info.methodinfos)
-			func(type, { methodID, methodInfo });
+		for (const auto& [methodID, methodInfo] : type.info.methodinfos) {
+			if (!func(type, { methodID, methodInfo }))
+				return false;
+		}
+		return true;
 	});
 }
 
 void ReflMngr::ForEachRWVar(
 	ObjectPtr obj,
-	const std::function<void(Type, Field, ObjectPtr)>& func) const
+	const std::function<bool(Type, Field, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
 	details::ForEachRWVar(obj, func, visitedVBs);
@@ -761,8 +844,24 @@ void ReflMngr::ForEachRWVar(
 
 void ReflMngr::ForEachRVar(
 	ConstObjectPtr obj,
-	const std::function<void(Type, Field, ConstObjectPtr)>& func) const
+	const std::function<bool(Type, Field, ConstObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
 	details::ForEachRVar(obj, func, visitedVBs);
+}
+
+void ReflMngr::ForEachRWVar(
+	TypeID typeID,
+	const std::function<bool(Type, Field, ObjectPtr)>& func) const
+{
+	std::set<TypeID> visitedVBs;
+	details::ForEachRWVar(typeID, func, visitedVBs);
+}
+
+void ReflMngr::ForEachRVar(
+	TypeID typeID,
+	const std::function<bool(Type, Field, ConstObjectPtr)>& func) const
+{
+	std::set<TypeID> visitedVBs;
+	details::ForEachRVar(typeID, func, visitedVBs);
 }

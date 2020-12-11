@@ -33,6 +33,7 @@ int main() {
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 				<< ": " << var.As<float>()
 				<< std::endl;
+			return true;
 		}
 	);
 }
