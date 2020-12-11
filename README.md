@@ -117,6 +117,7 @@ ReflMngr::Instance().ForEachRVar(
 - [virtual](src/test/07_virtual/main.cpp) 
 - [attr](src/test/08_attr/main.cpp) 
 - [lifecycle (malloc, free, ctor, dtor)](src/test/09_lifecycle/main.cpp) 
+- [dynamic field](src/test/10_dynamic/main.cpp) 
 
 ## Feature
 
@@ -129,7 +130,7 @@ ReflMngr::Instance().ForEachRVar(
 - working with custom types without the need of having the declaration of the type available at compile time (useful for plugins)
 - possibility to add additional **metadata / attribute** to all reflection objects
 - **no** macro usage
-- **no** rtti required: contains a faster and across shared libraries working replacement
+- **no** rtti required
 - **no** exceptions (this feature come with cost and is also regularly disabled on consoles)
 - **no** external compiler or tool needed, only standard ISO C++17
 
