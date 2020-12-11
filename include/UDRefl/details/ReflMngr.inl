@@ -183,10 +183,8 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	FieldPtr ReflMngr::GenerateDynamicFieldPtr(Args&&... args) {
-		const TypeID ID = tregistry.Register<std::remove_const_t<T>>();
-		SharedBlock block = MakeSharedBlock<std::remove_const_t<T>>(std::forward<Args>(args)...);
 		using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, const SharedObject, SharedObject>;
-		MaybeConstSharedObject obj{ ID, std::move(block) };
+		MaybeConstSharedObject obj = MakeShared<std::remove_cv_t<T>>(std::forward<Args>(args)...);
 		return FieldPtr{ obj };
 	}
 
@@ -231,6 +229,21 @@ namespace Ubpa::UDRefl {
 		};
 	}
 
+	template<typename T, typename... Args>
+	MethodPtr ReflMngr::GenerateConstructorPtr() {
+		return GenerateMemberMethodPtr([](T& obj, Args... args) {
+			new(&obj)T{ std::forward<Args>(args)... };
+		});
+	}
+
+	template<typename T>
+	MethodPtr ReflMngr::GenerateDestructorPtr() {
+		return GenerateMemberMethodPtr([](const T& obj) {
+			if constexpr (!std::is_trivial_v<T>)
+				obj.~T();
+		});
+	}
+
 	template<typename Func>
 	MethodPtr ReflMngr::GenerateMemberMethodPtr(Func&& func) {
 		using Traits = details::WrapFuncTraits<std::decay_t<Func>>;
@@ -257,23 +270,41 @@ namespace Ubpa::UDRefl {
 		};
 	}
 
+	//
+	// Modifier
+	/////////////
+
 	template<typename T, typename... Args>
-	std::pair<StrID, MethodInfo> ReflMngr::GenerateConstructor(AttrSet attrs) {
-		return GenerateConstructor(
-			[](T& obj, Args... args) {
-				new(&obj)T{ std::forward<Args>(args)... };
-			},
-			std::move(attrs)
+	TypeID ReflMngr::RegisterTypePro(AttrSet attrs_ctor, AttrSet attrs_dtor) {
+		return RegisterTypePro(type_name<T>().name, sizeof(T), alignof(T),
+			{ GenerateConstructorPtr<T, Args...>() , std::move(attrs_ctor) },
+			{ GenerateDestructorPtr<T>() , std::move(attrs_dtor) });
+	}
+
+	template<auto field_ptr>
+	StrID ReflMngr::AddField(std::string_view name, AttrSet attrs) {
+		return AddField(
+			TypeID::of<member_pointer_traits_object<decltype(field_ptr)>>,
+			name,
+			{ GenerateFieldPtr<field_ptr>(), std::move(attrs) }
 		);
 	}
 
-	template<typename T, typename... Args>
-	std::pair<StrID, MethodInfo> ReflMngr::GenerateDestructor(AttrSet attrs) {
-		return GenerateDestructor(
-			[](const T& obj) {
-				obj.~T();
-			},
-			std::move(attrs)
+	template<auto funcptr>
+	StrID ReflMngr::AddMethod(std::string_view name, AttrSet attrs) {
+		return AddMethod(
+			TypeID::of<member_pointer_traits_object<decltype(funcptr)>>,
+			name,
+			{ GenerateMethodPtr<funcptr>(), std::move(attrs) }
+		);
+	}
+
+	template<typename Func>
+	StrID ReflMngr::AddMemberMethod(std::string_view name, Func&& func, AttrSet attrs) {
+		return AddMethod(
+			TypeID::of<typename details::WrapFuncTraits<std::decay_t<Func>>::Object>,
+			name,
+			{ GenerateMemberMethodPtr(std::forward<Func>(func)), std::move(attrs) }
 		);
 	}
 
@@ -284,19 +315,19 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	bool ReflMngr::IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
-		return IsStaticInvocable(typeID, methodID, argTypeIDs);
+		return IsStaticInvocable(typeID, methodID, Span<TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
 	bool ReflMngr::IsConstInvocable(TypeID typeID, StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
-		return IsConstInvocable(typeID, methodID, argTypeIDs);
+		return IsConstInvocable(typeID, methodID, Span<TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
 	bool ReflMngr::IsInvocable(TypeID typeID, StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
-		return IsInvocable(typeID, methodID, argTypeIDs);
+		return IsInvocable(typeID, methodID, Span<TypeID>{argTypeIDs});
 	}
 
 	template<typename T>
@@ -389,70 +420,14 @@ namespace Ubpa::UDRefl {
 			return InvokeRet<T>(obj, methodID);
 	}
 
-	template<typename Obj, typename... Args>
-	bool ReflMngr::IsStaticInvocable(StrID methodID) const noexcept {
-		return IsStaticInvocable<Args...>(TypeID::of<Obj>, methodID);
-	}
-
-	template<typename Obj, typename... Args>
-	bool ReflMngr::IsConstInvocable(StrID methodID) const noexcept {
-		return IsConstInvocable<Args...>(TypeID::of<Obj>, methodID);
-	}
-
-	template<typename Obj, typename... Args>
-	bool ReflMngr::IsInvocable(StrID methodID) const noexcept {
-		return IsInvocable<Args...>(TypeID::of<Obj>, methodID);
-	}
-
-	template<typename Obj, typename T>
-	T ReflMngr::InvokeRet(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
-		return InvokeRet(TypeID::of<Obj>, methodID, argTypeIDs, args_buffer);
-	}
-
-	template<typename Obj, typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypeIDs = { TypeID::of<Args>... };
-			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
-		}
-		else
-			return Invoke(methodID, {}, nullptr, result_buffer);
-	}
-
-	template<typename Obj, typename T, typename... Args>
-	T ReflMngr::Invoke(StrID methodID, Args... args) const {
-		return Invoke(TypeID::of<Obj>, methodID, std::forward<Args>(args));
-	}
-
 	//
 	// Meta
 	/////////
 
 	template<typename... Args>
-	bool ReflMngr::IsInvocable(StrID methodID) const noexcept {
-		return IsInvocable<Args...>(TypeID{TypeIDRegistry::Meta::global}, methodID);
-	}
-
-	template<typename T>
-	T ReflMngr::InvokeRet(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
-		return InvokeRet<T>(TypeID{TypeIDRegistry::Meta::global}, methodID, argTypeIDs, args_buffer);
-	}
-
-	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
-		return InvokeArgs<Args>(TypeID{TypeIDRegistry::Meta::global}, methodID, result_buffer, std::forward<Args>(args)...);
-	}
-
-	template<typename T, typename... Args>
-	T ReflMngr::Invoke(StrID methodID, Args... args) const {
-		return Invoke(TypeID{TypeIDRegistry::Meta::global}, methodID, std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
 	bool ReflMngr::IsConstructible(TypeID typeID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
-		return IsConstructible(typeID, argTypeIDs);
+		return IsConstructible(typeID, Span<TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
@@ -478,8 +453,12 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	ObjectPtr ReflMngr::New(Args... args) const {
-		return New<Args...>(TypeID::of<T>, std::forward<Args>(args)...);
+	ObjectPtr ReflMngr::New(Args... args) {
+		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T> && !std::is_enum_v<T>);
+		if (!IsRegisteredType(TypeID::of<T>))
+			RegisterTypePro<T, Args...>();
+		AddMethod(TypeID::of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
+		return New(TypeID::of<T>, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
@@ -494,7 +473,11 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	SharedObject ReflMngr::MakeShared(Args... args) const {
-		return MakeShared<Args...>(TypeID::of<T>, std::forward<Args>(args)...);
+	SharedObject ReflMngr::MakeShared(Args... args) {
+		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T> && !std::is_enum_v<T>);
+		if (!IsRegisteredType(TypeID::of<T>))
+			RegisterTypePro<T, Args...>();
+		AddMethod(TypeID::of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
+		return MakeShared(TypeID::of<T>, std::forward<Args>(args)...);
 	}
 }

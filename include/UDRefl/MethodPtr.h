@@ -34,6 +34,8 @@ namespace Ubpa::UDRefl {
 		const std::vector<size_t>& GetOffsets() const noexcept { return offsets; }
 		const std::vector<Parameter>& GetParameters() const noexcept { return params; }
 		bool IsConpatibleWith(Span<TypeID> typeIDs) const noexcept;
+		bool operator==(const ParamList& rhs) const noexcept;
+		bool operator!=(const ParamList& rhs) const noexcept { return ! operator==(rhs); }
 	private:
 		size_t size{ 0 };
 		size_t alignment{ 1 };
@@ -91,6 +93,11 @@ namespace Ubpa::UDRefl {
 
 		const ParamList&  GetParamList() const noexcept { return paramList; }
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
+
+		bool IsDistinguishableWith(const MethodPtr& rhs) const noexcept {
+			return func.index() != rhs.func.index() ||
+				paramList != rhs.paramList;
+		}
 
 		Destructor Invoke(void* obj, void* args_buffer, void* result_buffer) const {
 			return std::visit([=](const auto& f) {

@@ -6,8 +6,11 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 int main() {
-	auto& global = ReflMngr::Instance().typeinfos.at(TypeID{TypeIDRegistry::Meta::global});
-	SharedBlock block = MakeSharedBlock<std::string>("Ubpa");
-	global.fieldinfos.emplace(ReflMngr::Instance().GenerateDynamicField<const std::string>("author", "Ubpa"));
-	std::cout << ReflMngr::Instance().RVar(StrID{ "author" }).As<std::string>() << std::endl;
+	ReflMngr::Instance().AddDynamicField<const std::string>(GlobalID, "author", "Ubpa");
+	ReflMngr::Instance().RegisterTypePro<int>();
+	ReflMngr::Instance().AddDynamicField<const size_t>(TypeID::of<int>, "bits", sizeof(int) * 8);
+
+	std::cout << ReflMngr::Instance().RVar(GlobalID, StrID{ "author" }).As<std::string>() << std::endl;
+
+	std::cout << ReflMngr::Instance().RVar(TypeID::of<int>, StrID{ "bits" }).As<size_t>() << std::endl;
 }

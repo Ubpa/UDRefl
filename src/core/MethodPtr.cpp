@@ -31,3 +31,17 @@ bool ParamList::IsConpatibleWith(Span<TypeID> typeIDs) const noexcept {
 
 	return true;
 }
+
+bool ParamList::operator==(const ParamList& rhs) const noexcept {
+	if (size != rhs.size)
+		return false;
+	if (alignment != rhs.alignment)
+		return false;
+	if (params.size() != rhs.params.size())
+		return false;
+	for (size_t i = 0; i < params.size(); i++) {
+		if (params[i].typeID != rhs.params[i].typeID)
+			return false;
+	}
+	return true;
+}

@@ -219,6 +219,37 @@ StrID ReflMngr::AddField(TypeID typeID, std::string_view name, FieldInfo fieldin
 	return fieldID;
 }
 
+StrID ReflMngr::AddMethod(TypeID typeID, std::string_view name, MethodInfo methodinfo) {
+	auto ttarget = typeinfos.find(typeID);
+	if (ttarget == typeinfos.end())
+		return {};
+	auto& typeinfo = ttarget->second;
+	StrID methodID = nregistry.Register(name);
+	size_t mcnt = typeinfo.methodinfos.count(methodID);
+	auto miter = typeinfo.methodinfos.find(methodID);
+	bool flag = true;
+	for (size_t i = 0; i < mcnt; ++i, ++miter) {
+		if (!miter->second.methodptr.IsDistinguishableWith(methodinfo.methodptr)) {
+			flag = false;
+			break;
+		}
+	}
+	if (!flag)
+		return {};
+	typeinfo.methodinfos.emplace(methodID, std::move(methodinfo));
+	return methodID;
+}
+
+TypeID ReflMngr::RegisterTypePro(
+	std::string_view name, size_t size, size_t alignment,
+	MethodInfo ctor, MethodInfo dtor)
+{
+	TypeID typeID = RegisterType(name, size, alignment);
+	AddMethod(typeID, StrIDRegistry::Meta::ctor, std::move(ctor));
+	AddMethod(typeID, StrIDRegistry::Meta::dtor, std::move(dtor));
+	return typeID;
+}
+
 void* ReflMngr::Malloc(uint64_t size) const {
 	std::array argsTypeIDs = { TypeID::of<uint64_t> };
 
@@ -227,7 +258,7 @@ void* ReflMngr::Malloc(uint64_t size) const {
 
 	std::uint8_t result_buffer[sizeof(void*)];
 
-	auto result = Invoke(StrID(StrIDRegistry::Meta::malloc), argsTypeIDs, args_buffer, result_buffer);
+	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::malloc), argsTypeIDs, args_buffer, result_buffer);
 
 	if (result.success)
 		return buffer_get<void*>(result_buffer, 0);
@@ -241,7 +272,7 @@ bool ReflMngr::Free(void* ptr) const {
 	std::uint8_t args_buffer[sizeof(void*)];
 	buffer_get<void*>(args_buffer, 0) = ptr;
 
-	auto result = Invoke(StrID(StrIDRegistry::Meta::free), argsTypeIDs, args_buffer);
+	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::free), argsTypeIDs, args_buffer);
 
 	return result.success;
 }
@@ -255,7 +286,7 @@ void* ReflMngr::AlignedMalloc(uint64_t size, uint64_t alignment) const {
 
 	std::uint8_t result_buffer[sizeof(void*)];
 	
-	auto result = Invoke(StrID(StrIDRegistry::Meta::aligned_malloc), argsTypeIDs, args_buffer, result_buffer);
+	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::aligned_malloc), argsTypeIDs, args_buffer, result_buffer);
 
 	if (result.success)
 		return buffer_get<void*>(result_buffer, 0);
@@ -269,7 +300,7 @@ bool ReflMngr::AlignedFree(void* ptr) const {
 	std::uint8_t args_buffer[sizeof(void*)];
 	buffer_get<void*>(args_buffer, 0) = ptr;
 
-	auto result = Invoke(StrID(StrIDRegistry::Meta::aligned_free), argsTypeIDs, args_buffer);
+	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::aligned_free), argsTypeIDs, args_buffer);
 
 	return result.success;
 }
