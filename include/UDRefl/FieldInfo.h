@@ -9,8 +9,8 @@ namespace Ubpa::UDRefl {
 		AttrSet attrs;
 	};
 
-	struct Field {
+	struct FieldRef {
 		StrID ID;
-		const FieldInfo& info;
+		FieldInfo& info;
 	};
 }

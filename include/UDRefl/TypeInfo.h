@@ -49,8 +49,8 @@ namespace Ubpa::UDRefl {
 		InvokeResult Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
 	};
 
-	struct Type {
+	struct TypeRef {
 		TypeID ID;
-		const TypeInfo& info;
+		TypeInfo& info;
 	};
 }

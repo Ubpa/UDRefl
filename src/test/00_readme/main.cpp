@@ -14,7 +14,7 @@ struct Vec {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterTypePro<Vec>();
+	ReflMngr::Instance().RegisterTypeAuto<Vec>();
 	ReflMngr::Instance().AddField<&Vec::x>("x");
 	ReflMngr::Instance().AddField<&Vec::y>("y");
 	ReflMngr::Instance().AddMethod<&Vec::norm>("norm");
@@ -33,7 +33,7 @@ int main() {
 	
 	ReflMngr::Instance().ForEachField(
 		TypeID::of<Vec>,
-		[](Type type, Field field) {
+		[](TypeRef type, FieldRef field) {
 			std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << std::endl;
 			return true;
 		}
@@ -41,7 +41,7 @@ int main() {
 
 	ReflMngr::Instance().ForEachMethod(
 		TypeID::of<Vec>,
-		[](Type type, Method method) {
+		[](TypeRef type, Method method) {
 			std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
 			return true;
 		}
@@ -49,7 +49,7 @@ int main() {
 
 	ReflMngr::Instance().ForEachRVar(
 		v, // ObjectPtr
-		[](Type type, Field field, ConstObjectPtr var) {
+		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 				<< ": " << var.As<float>()

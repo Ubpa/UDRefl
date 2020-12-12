@@ -26,15 +26,15 @@ namespace Ubpa::UDRefl {
 		// clear order
 		// - field attrs
 		// - type attrs
-		// - type dynamic field
+		// - type dynamic shared field
 		// - typeinfos
-		void Clear();
+		void Clear() noexcept;
 
 		//
 		// Lookup
 		///////////
 
-		bool IsRegisteredType(TypeID typeID) const noexcept { return typeinfos.find(typeID) != typeinfos.end(); }
+		bool IsRegistered(TypeID typeID) const noexcept { return typeinfos.find(typeID) != typeinfos.end(); }
 
 		//
 		// Factory
@@ -143,23 +143,28 @@ namespace Ubpa::UDRefl {
 		std::pair<StrID, MethodInfo> GenerateDestructor(AttrSet attrs = {})
 		{ return { StrID{StrIDRegistry::Meta::dtor}, { GenerateDestructorPtr<T>(), std::move(attrs) } }; }
 
+		template<typename Derived, typename Base>
+		static BaseInfo GenerateBaseInfo();
+
 		//
 		// Modifier
 		/////////////
 
 		TypeID RegisterType(std::string_view name, size_t size, size_t alignment);
-		TypeID RegisterTypePro(std::string_view name, size_t size, size_t alignment,
-			MethodInfo ctor, MethodInfo dtor);
 		StrID AddField(TypeID typeID, std::string_view name, FieldInfo fieldinfo);
 		StrID AddMethod(TypeID typeID, std::string_view name, MethodInfo methodinfo);
+		bool AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo);
 
 		// -- template --
 
 		template<typename T>
 		TypeID RegisterType() { return RegisterType(type_name<T>().name, sizeof(T), alignof(T)); }
 
+		// RegisterType<T>
+		// AddConstructor<T, Args...>
+		// AddDestructor<T>
 		template<typename T, typename... Args>
-		TypeID RegisterTypePro(AttrSet attrs_ctor = {}, AttrSet attrs_dtor = {});
+		TypeID RegisterTypeAuto(AttrSet attrs_ctor = {}, AttrSet attrs_dtor = {});
 
 		// get TypeID from field_data
 		template<auto field_data>
@@ -182,12 +187,20 @@ namespace Ubpa::UDRefl {
 		template<auto funcptr>
 		StrID AddMethod(std::string_view name, AttrSet attrs = {});
 
+		template<typename T, typename... Args>
+		bool AddConstructor(AttrSet attrs = {});
+		template<typename T>
+		bool AddDestructor(AttrSet attrs = {});
+
 		template<typename Func>
 		StrID AddMemberMethod(std::string_view name, Func&& func, AttrSet attrs = {});
 
 		template<typename Func>
 		StrID AddStaticMethod(TypeID typeID, std::string_view name, Func&& func, AttrSet attrs = {})
 		{ return AddMethod(typeID, name, { GenerateStaticMethodPtr(std::forward<Func>(func)), std::move(attrs) }); }
+
+		template<typename Derived, typename... Bases>
+		bool AddBases();
 
 		//
 		// Cast
@@ -226,6 +239,10 @@ namespace Ubpa::UDRefl {
 		ObjectPtr      RWVar(ObjectPtr      obj, StrID fieldID) noexcept;
 		// all
 		ConstObjectPtr RVar (ConstObjectPtr obj, StrID fieldID) const noexcept;
+		// variable, for diamond inheritance
+		ObjectPtr      RWVar(ObjectPtr      obj, TypeID baseID, StrID fieldID) noexcept;
+		// all, for diamond inheritance
+		ConstObjectPtr RVar (ConstObjectPtr obj, TypeID baseID, StrID fieldID) const noexcept;
 
 		//
 		// Invoke
@@ -321,12 +338,12 @@ namespace Ubpa::UDRefl {
 		template<typename... Args>
 		SharedObject MakeShared(TypeID typeID, Args... args) const;
 
-		// if T is not register, call RegisterTypePro
+		// if T is not register, call RegisterTypeAuto
 		// else add ctor
 		template<typename T, typename... Args>
 		ObjectPtr New(Args... args);
 
-		// if T is not register, call RegisterTypePro
+		// if T is not register, call RegisterTypeAuto
 		// else add ctor
 		template<typename T, typename... Args>
 		SharedObject MakeShared(Args... args);
@@ -343,37 +360,37 @@ namespace Ubpa::UDRefl {
 		// self type and all bases' type
 		void ForEachType(
 			TypeID typeID,
-			const std::function<bool(Type)>& func) const;
+			const std::function<bool(TypeRef)>& func) const;
 
 		// self fields and all bases' fields
 		void ForEachField(
 			TypeID typeID,
-			const std::function<bool(Type, Field)>& func) const;
+			const std::function<bool(TypeRef, FieldRef)>& func) const;
 
 		// self methods and all bases' methods
 		void ForEachMethod(
 			TypeID typeID,
-			const std::function<bool(Type, Method)>& func) const;
+			const std::function<bool(TypeRef, Method)>& func) const;
 
 		// self [r/w] vars and all bases' [r/w] vars
 		void ForEachRWVar(
 			ObjectPtr obj,
-			const std::function<bool(Type, Field, ObjectPtr)>& func) const;
+			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
 		// self [r] vars and all bases' [r] vars
 		void ForEachRVar(
 			ConstObjectPtr obj,
-			const std::function<bool(Type, Field, ConstObjectPtr)>& func) const;
+			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
 		// self [r/w] object vars and all bases' [r/w] object vars
 		void ForEachRWVar(
 			TypeID typeID,
-			const std::function<bool(Type, Field, ObjectPtr)>& func) const;
+			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
 		// self [r] object vars and all bases' [r] object vars
 		void ForEachRVar(
 			TypeID typeID,
-			const std::function<bool(Type, Field, ConstObjectPtr)>& func) const;
+			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
 	private:
 		ReflMngr();

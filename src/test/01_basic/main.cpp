@@ -28,7 +28,7 @@ int main() {
 
 	ReflMngr::Instance().ForEachRVar(
 		ptr,
-		[](Type type, Field field, ConstObjectPtr var) {
+		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 				<< ": " << var.As<float>()
