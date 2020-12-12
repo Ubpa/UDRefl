@@ -8,9 +8,4 @@ namespace Ubpa::UDRefl {
 		FieldPtr fieldptr;
 		AttrSet attrs;
 	};
-
-	struct FieldRef {
-		StrID ID;
-		FieldInfo& info;
-	};
 }

@@ -80,29 +80,27 @@ SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 ### Set/get variables
 
 ```c++
-ReflMngr::Instance().RWVar(v, StrID{"x"}).As<float>() = 3.f;
-ReflMngr::Instance().RWVar(v, StrID{"y"}).As<float>() = 4.f;
-std::cout << "x: " << ReflMngr::Instance().RVar(v, StrID{"x"}).As<float>() << std::endl;
+v->RWVar(StrID{ "x" }).As<float>() = 3.f;
+v->RWVar(StrID{ "x" }).As<float>() = 4.f;
+std::cout << "x: " << v->RVar(StrID{ "x" }).As<float>() << std::endl;
 ```
 
 ### Invoke Methods
 
 ```c++
-float norm = ReflMngr::Instance().Invoke<float>(v.as_object_ptr(), StrID{"norm"});
-std::cout << "norm: " << norm << std::endl;
+std::cout << "norm: " << v->Invoke<float>(StrID{ "norm" }) << std::endl;
 ```
 
 ### Iterate over variables
 
 ```c++
-ReflMngr::Instance().ForEachRVar(
-  v, // ObjectPtr
-  [](Type type, Field field, ConstObjectPtr var) {
+v->ForEachRVar(
+  [](TypeRef type, FieldRef field, ConstObjectPtr var) {
     std::cout
       << ReflMngr::Instance().nregistry.Nameof(field.ID)
       << ": " << var.As<float>()
       << std::endl;
-	return true;
+    return true;
   }
 );
 ```

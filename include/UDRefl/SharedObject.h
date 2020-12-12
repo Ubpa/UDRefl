@@ -90,6 +90,9 @@ namespace Ubpa::UDRefl {
         operator ObjectPtr     ()       noexcept { return AsObjectPtr(); }
         operator ConstObjectPtr() const noexcept { return AsObjectPtr(); }
 
+        ObjectPtr      operator->()       noexcept { return AsObjectPtr(); }
+        ConstObjectPtr operator->() const noexcept { return AsObjectPtr(); }
+
         long UseCount() const noexcept { return block.UseCount(); }
 
         explicit operator bool() const noexcept { return ID && static_cast<bool>(block); }

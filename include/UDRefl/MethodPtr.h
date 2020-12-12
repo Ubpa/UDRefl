@@ -3,8 +3,6 @@
 #include "ObjectPtr.h"
 #include "Util.h"
 
-#include <UContainer/Span.h>
-
 #include <vector>
 #include <variant>
 
@@ -116,15 +114,6 @@ namespace Ubpa::UDRefl {
 		> func;
 		ResultDesc resultDesc;
 		ParamList paramList;
-	};
-
-	struct InvokeResult {
-		bool success{ false };
-		TypeID resultID;
-		Destructor destructor;
-
-		template<typename T>
-		T Move(void* result_buffer);
 	};
 }
 

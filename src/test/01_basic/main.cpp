@@ -11,13 +11,13 @@ int main() {
 	ReflMngr::Instance().AddField<&Point::x>("x");
 	ReflMngr::Instance().AddField<&Point::x>("y");
 	
-	Point p;
-	ObjectPtr ptr{ TypeID::of<Point>, &p };
-	ReflMngr::Instance().RWVar(ptr, StrID{ "x" }).As<float>() = 1.f;
-	ReflMngr::Instance().RWVar(ptr, StrID{ "y" }).As<float>() = 2.f;
+	auto p = ReflMngr::Instance().MakeShared<Point>();
+
+	ReflMngr::Instance().RWVar(p, StrID{ "x" }).As<float>() = 1.f;
+	ReflMngr::Instance().RWVar(p, StrID{ "y" }).As<float>() = 2.f;
 
 	ReflMngr::Instance().ForEachRVar(
-		ptr,
+		p,
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)

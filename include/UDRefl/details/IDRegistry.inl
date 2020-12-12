@@ -4,8 +4,24 @@
 
 namespace Ubpa::UDRefl {
 	template<typename T>
+	IDRegistry<T>::IDRegistry() :
+		id2name{&resource}
+#ifndef NDEBUG
+		, unmanagedIDs{&resource}
+#endif // !NDEBUG
+	{}
+
+	template<typename T>
 	void IDRegistry<T>::RegisterUnmanaged(T ID, std::string_view name) {
-		id2name[ID] = name;
+		auto target = id2name.find(ID);
+		if (target != id2name.end()) {
+			assert(target->second == name);
+			return;
+		}
+		else
+			target = id2name.emplace_hint(target, ID, name);
+		target->second = name;
+
 #ifndef NDEBUG
 		unmanagedIDs.insert(ID);
 #endif // !NDEBUG
@@ -20,16 +36,16 @@ namespace Ubpa::UDRefl {
 		}
 
 		if (name.empty()) {
-			id2name[ID] = {};
+			id2name.emplace_hint(target, ID, std::string_view{});
 			return;
 		}
 
 		assert(name.data());
 
-		auto buffer = reinterpret_cast<char*>(resource.allocate(name.size(), 1));
+		auto buffer = reinterpret_cast<char*>(resource.allocate(name.size(), alignof(char)));
 		memcpy(buffer, name.data(), name.size());
 
-		id2name[ID] = std::string_view{ buffer, name.size() };
+		id2name.emplace_hint(target, ID, std::string_view{ buffer, name.size() });
 
 #ifndef NDEBUG
 		unmanagedIDs.erase(ID);
@@ -50,7 +66,9 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	void IDRegistry<T>::Clear() {
 		id2name.clear();
+#ifndef NDEBUG
 		unmanagedIDs.clear();
+#endif // !NDEBUG
 		resource.release();
 	}
 
