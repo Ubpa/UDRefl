@@ -10,9 +10,9 @@
 
 namespace Ubpa::UDRefl {
 	struct ResultDesc {
-		TypeID typeID;
-		size_t size;
-		size_t alignment;
+		TypeID typeID{ TypeID::of<void> };
+		size_t size{ 0 };
+		size_t alignment{ 0 };
 
 		constexpr bool IsVoid() const noexcept {
 			return typeID == TypeID::of<void>;
@@ -79,11 +79,11 @@ namespace Ubpa::UDRefl {
 			MethodPtr{ std::function<MemberVariableFunction>{func}, std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 
-		MethodPtr(MemberConstFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(MemberConstFunction*    func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			MethodPtr{ std::function<MemberConstFunction>{func}, std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 
-		MethodPtr(StaticFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(StaticFunction*         func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			MethodPtr{ std::function<StaticFunction>{func}, std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 

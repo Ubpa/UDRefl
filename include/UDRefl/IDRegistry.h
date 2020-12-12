@@ -4,18 +4,42 @@
 
 #include <string>
 #include <unordered_map>
+#include <memory_resource>
+#include <deque>
+
+#ifndef NDEBUG
+#include <unordered_set>
+#endif // !NDEBUG
 
 namespace Ubpa::UDRefl {
+	template<typename T>
 	class IDRegistry {
+	protected:
+		void RegisterUnmanaged(T ID, std::string_view name);
+		void Register(T ID, std::string_view name);
+
 	public:
-		void Register(size_t ID, std::string_view name);
-		std::string_view Nameof(size_t ID) const noexcept;
+		bool IsRegistered(T ID) const noexcept;
+		std::string_view Nameof(T ID) const noexcept;
+
+		void UnregisterUnmanaged(T ID) noexcept;
+		void Clear();
 
 	private:
-		std::unordered_map<size_t, std::string> id2name;
+		std::pmr::monotonic_buffer_resource resource;
+		std::unordered_map<T, std::string_view> id2name;
+
+#ifndef NDEBUG
+	public:
+		IDRegistry() : unmanagedIDs(&resource) {}
+		bool IsUnmanaged(T ID) const noexcept;
+		void ClearUnmanaged() noexcept;
+	private:
+		std::pmr::unordered_set<T> unmanagedIDs;
+#endif // NDEBUG
 	};
 
-	class StrIDRegistry {
+	class StrIDRegistry : public IDRegistry<StrID> {
 	public:
 		struct Meta {
 			//
@@ -91,26 +115,29 @@ namespace Ubpa::UDRefl {
 
 		StrIDRegistry();
 
-		StrID Register(std::string_view name) { StrID ID{ name }; registry.Register(ID.GetValue(), name); return ID; }
-		std::string_view Nameof(StrID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
-
-	private:
-		IDRegistry registry;
+		StrID RegisterUnmanaged(std::string_view name) { StrID ID{ name }; IDRegistry<StrID>::RegisterUnmanaged(ID, name); return ID; }
+		StrID Register(std::string_view name) { StrID ID{ name }; IDRegistry<StrID>::Register(ID, name); return ID; }
 	};
 
-	class TypeIDRegistry {
+	class TypeIDRegistry : public IDRegistry<TypeID> {
 	public:
 		struct Meta {
 			static constexpr char global[] = "UDRefl::global";
+
+			static constexpr char void_n[] = "void";
 		};
 
-		TypeIDRegistry() { Register(Meta::global); }
+		TypeIDRegistry() { RegisterUnmanaged(Meta::global); }
 
-		TypeID Register(std::string_view name) { TypeID ID{ name }; registry.Register(ID.GetValue(), name); return ID; }
-		std::string_view Nameof(TypeID ID) const noexcept { return registry.Nameof(ID.GetValue()); }
+		TypeID RegisterUnmanaged(std::string_view name) { TypeID ID{ name }; IDRegistry<TypeID>::RegisterUnmanaged(ID, name); return ID; }
+		TypeID Register(std::string_view name) { TypeID ID{ name }; IDRegistry<TypeID>::Register(ID, name); return ID; }
+
+		// unmanaged
+		template<typename T>
+		void Register() { RegisterUnmanaged(type_name<T>()); }
 
 		template<typename T>
-		TypeID Register() { return Register(type_name<T>().name); }
+		void IsRegistered() const noexcept { IsRegistered(type_name<T>()); }
 
 	private:
 		IDRegistry registry;

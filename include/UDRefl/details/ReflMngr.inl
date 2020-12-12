@@ -85,30 +85,31 @@ namespace Ubpa::UDRefl {
 		using FieldData = decltype(field_data);
 		if constexpr (std::is_pointer_v<FieldData>) {
 			using Value = std::remove_pointer_t<FieldData>;
+			static_assert(!std::is_void_v<Value> && !std::is_function_v<Value>);
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
-			const TypeID ID = tregistry.Register<Value>();
+			tregistry.Register<Value>();
 			return {
-				ID,
-				field_data,
-				ConstFlag{}
+				TypeID::of<Value>,
+				field_data
 			};
 		}
 		else if constexpr (std::is_member_object_pointer_v<FieldData>) {
 			using Traits = member_pointer_traits<FieldData>;
 			using Object = typename Traits::object;
 			using Value = typename Traits::value;
-			const TypeID ID = tregistry.Register<Value>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+
+			tregistry.Register<Value>();
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
-					ID,
+					TypeID::of<Value>,
 					field_offsetor<field_data>(),
 					ConstFlag{}
 				};
 			}
 			else {
 				return {
-					ID,
+					TypeID::of<Value>,
 					field_forward_offset_value(field_data),
 					ConstFlag{}
 				};
@@ -116,10 +117,10 @@ namespace Ubpa::UDRefl {
 		}
 		else if constexpr (std::is_enum_v<FieldData>) {
 			using Value = std::remove_pointer_t<FieldData>;
-			const TypeID ID = tregistry.Register<Value>();
+			tregistry.Register<Value>();
 			const auto buffer = FieldPtr::ConvertToBuffer(field_data);
 			return {
-				ID,
+				TypeID::of<Value>,
 				buffer
 			};
 		}
@@ -135,18 +136,19 @@ namespace Ubpa::UDRefl {
 			using Traits = member_pointer_traits<RawT>;
 			using Object = typename Traits::object;
 			using Value = typename Traits::value;
-			const TypeID ID = tregistry.Register<Value>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+
+			tregistry.Register<Value>();
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
-					ID,
+					TypeID::of<Value>,
 					field_offsetor(data),
 					ConstFlag{}
 				};
 			}
 			else {
 				return {
-					ID,
+					TypeID::of<Value>,
 					field_forward_offset_value(data),
 					ConstFlag{}
 				};
@@ -154,17 +156,18 @@ namespace Ubpa::UDRefl {
 		}
 		else if constexpr (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && std::is_void_v<std::remove_pointer_t<RawT>>) {
 			using Value = std::remove_pointer_t<RawT>;
+			tregistry.Register<Value>();
 			return {
-				tregistry.Register<Value>(),
+				TypeID::of<Value>,
 				data,
 				std::bool_constant<std::is_const_v<Value>>{}
 			};
 		}
 		else if constexpr (std::is_enum_v<RawT>) {
-			const TypeID ID = tregistry.Register<RawT>();
+			tregistry.Register<RawT>();
 			const auto buffer = FieldPtr::ConvertToBuffer(data);
 			return {
-				ID,
+				TypeID::of<RawT>,
 				buffer
 			};
 		}
@@ -183,7 +186,7 @@ namespace Ubpa::UDRefl {
 			using Value = std::remove_pointer_t<ValuePtr>;
 			static_assert(!std::is_void_v<Value>);
 
-			const TypeID ID = tregistry.Register<Value>();
+			tregistry.Register<Value>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 
 			auto offsetor = [f=std::forward<T>(data)](const void* obj) -> const void* {
@@ -191,7 +194,7 @@ namespace Ubpa::UDRefl {
 			};
 
 			return {
-				ID,
+				TypeID::of<Value>,
 				offsetor,
 				ConstFlag{}
 			};
@@ -217,25 +220,23 @@ namespace Ubpa::UDRefl {
 	ResultDesc ReflMngr::GenerateResultDesc() {
 		if constexpr (!std::is_void_v<Return>) {
 			using T = type_buffer_decay_t<Return>;
+			tregistry.Register<Return>();
 			return {
-				tregistry.Register<Return>(),
+				TypeID::of<Return>,
 				sizeof(T),
 				alignof(T)
 			};
 		}
-		else {
-			return {
-				tregistry.Register<void>(),
-				0,
-				0
-			};
-		}
+		else
+			return {};
 	}
 
 	template<typename... Params>
 	ParamList ReflMngr::GenerateParamList() noexcept(sizeof...(Params) == 0) {
-		if constexpr (sizeof...(Params) > 0)
-			return ParamList{ { {tregistry.Register<Params>(), sizeof(type_buffer_decay_t<Params>), alignof(type_buffer_decay_t<Params>)}... } };
+		if constexpr (sizeof...(Params) > 0) {
+			(tregistry.Register<Params>(), ...);
+			return ParamList{ { {TypeID::of<Params>, sizeof(type_buffer_decay_t<Params>), alignof(type_buffer_decay_t<Params>)}... } };
+		}
 		else
 			return {};
 	}
@@ -299,20 +300,35 @@ namespace Ubpa::UDRefl {
 	// Modifier
 	/////////////
 
+	template<typename T>
+	void ReflMngr::RegisterType()
+	{
+		tregistry.Register<T>();
+		RegisterType(type_name<T>(), sizeof(T), alignof(T));
+	}
+
 	template<typename T, typename... Args>
-	TypeID ReflMngr::RegisterTypeAuto(AttrSet attrs_ctor, AttrSet attrs_dtor) {
-		TypeID typeID = RegisterType(type_name<T>().name, sizeof(T), alignof(T));
+	void ReflMngr::RegisterTypeAuto(AttrSet attrs_ctor, AttrSet attrs_dtor) {
+		tregistry.Register<T>();
+		RegisterType(type_name<T>(), sizeof(T), alignof(T));
 		AddConstructor<T, Args...>(std::move(attrs_ctor));
 		AddDestructor<T>(std::move(attrs_dtor));
-		return typeID;
 	}
 
 	template<auto field_data>
 	StrID ReflMngr::AddField(std::string_view name, AttrSet attrs) {
 		using FieldData = decltype(field_data);
 		if constexpr (std::is_enum_v<FieldData>) {
+			tregistry.Register<FieldData>();
 			return AddField(
 				TypeID::of<FieldData>,
+				name,
+				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
+			);
+		}
+		else if constexpr (std::is_pointer_v<FieldData>) {
+			return AddField(
+				TypeID::of<std::remove_pointer_t<FieldData>>,
 				name,
 				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
 			);
@@ -326,12 +342,26 @@ namespace Ubpa::UDRefl {
 		}
 	}
 
-	template<auto funcptr>
+	template<auto member_func_ptr>
 	StrID ReflMngr::AddMethod(std::string_view name, AttrSet attrs) {
+		using MemberFuncPtr = decltype(member_func_ptr);
+		static_assert(std::is_member_function_pointer_v<MemberFuncPtr>);
+		using Obj = member_pointer_traits_object<MemberFuncPtr>;
 		return AddMethod(
-			TypeID::of<member_pointer_traits_object<decltype(funcptr)>>,
+			TypeID::of<Obj>,
 			name,
-			{ GenerateMethodPtr<funcptr>(), std::move(attrs) }
+			{ GenerateMethodPtr<member_func_ptr>(), std::move(attrs) }
+		);
+	}
+
+	template<auto func_ptr>
+	StrID ReflMngr::AddMethod(TypeID typeID, std::string_view name, AttrSet attrs) {
+		using FuncPtr = decltype(func_ptr);
+		static_assert(std::is_function_v<FuncPtr>);
+		return AddMethod(
+			typeID,
+			name,
+			{ GenerateMethodPtr<func_ptr>(), std::move(attrs) }
 		);
 	}
 

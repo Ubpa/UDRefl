@@ -3,6 +3,7 @@
 #include <iostream>
 #include <array>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 struct Vec {
@@ -28,104 +29,30 @@ struct Vec {
 };
 
 int main() {
-	auto ID_Vec = ReflMngr::Instance().tregistry.Register<Vec>();
-	auto ID_const_Vec_lref = ReflMngr::Instance().tregistry.Register<const Vec&>();
-	auto ID_Vec_lref = ReflMngr::Instance().tregistry.Register<Vec&>();
-	auto ID_float = ReflMngr::Instance().tregistry.Register<float>();
-
-	auto ID_x = ReflMngr::Instance().nregistry.Register("x");
-	auto ID_y = ReflMngr::Instance().nregistry.Register("y");
-	auto ID_Norm2 = ReflMngr::Instance().nregistry.Register("Norm2");
-	auto ID_NormalizeSelf = ReflMngr::Instance().nregistry.Register("NormalizeSelf");
-	auto ID_operator_assign_add = ReflMngr::Instance().nregistry.Register(StrIDRegistry::Meta::operator_assign_add);
-
 	{ // register Vec
-		FieldPtr ptr_x{ ID_float, offsetof(Vec, x) };
-		FieldPtr ptr_y{ ID_float, offsetof(Vec, y) };
-		FieldInfo fieldinfo_x{ ptr_x };
-		FieldInfo fieldinfo_y{ ptr_y };
-
-		auto Norm2 = [](const void* obj, ArgsView, void* result_buffer) {
-			return wrap_function<&Vec::Norm2>()(obj, nullptr, result_buffer);
-		};
-		MethodPtr method_Norm2{
-			Ubpa::DecayLambda(Norm2),
-			{ID_float, sizeof(float), alignof(float)}
-		};
-
-		auto NormalizeSelf = [](void* obj, ArgsView, void*) {
-			return wrap_function<&Vec::NormalizeSelf>()(obj, nullptr, nullptr);
-		};
-		MethodPtr method_NormalizeSelf{ Ubpa::DecayLambda(NormalizeSelf) };
-
-		auto operator_add_assign = [](void* obj, ArgsView args, void* result_buffer) {
-			return wrap_function<&Vec::operator+=>()(obj, args.GetBuffer(), result_buffer);
-		};
-		MethodPtr method_operator_add_assign = ReflMngr::Instance().GenerateMethodPtr<&Vec::operator+=>();
-		MethodInfo methodinfo_NormalizeSelf{ method_NormalizeSelf };
-		MethodInfo methodinfo_operator_add_assign{ method_operator_add_assign };
-		MethodInfo methodinfo_Norm2{ method_Norm2 };
-
-		TypeInfo typeinfo{
-			sizeof(Vec),
-			alignof(Vec),
-			{ // fieldinfos
-				{ID_x, fieldinfo_x},
-				{ID_y, fieldinfo_y}
-			},
-			{ // methodinfos
-				{ID_NormalizeSelf, methodinfo_NormalizeSelf},
-				{ID_operator_assign_add, methodinfo_operator_add_assign},
-				{ID_Norm2, methodinfo_Norm2}
-			},
-		};
-		ReflMngr::Instance().typeinfos.emplace(ID_Vec, std::move(typeinfo));
+		ReflMngr::Instance().RegisterTypeAuto<Vec>();
+		ReflMngr::Instance().AddConstructor<Vec, float, float>();
+		ReflMngr::Instance().AddField<&Vec::x>("x");
+		ReflMngr::Instance().AddField<&Vec::y>("y");
+		ReflMngr::Instance().AddMethod<&Vec::Norm2>("Norm2");
+		ReflMngr::Instance().AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
+		ReflMngr::Instance().AddMethod<&Vec::operator+= >(StrIDRegistry::Meta::operator_assign_add);
 	}
 
-	Vec v{ 2.f,3.f };
-	ObjectPtr ptr{ ID_Vec , &v };
+	auto v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>, 1.f, 2.f);
 
-	ReflMngr::Instance().Invoke(ptr, ID_NormalizeSelf, {}, nullptr, nullptr);
-	std::cout << v.x << ", " << v.y << std::endl;
+	ReflMngr::Instance().Invoke(v.AsObjectPtr(), StrID{ "NormalizeSelf" });
+	std::cout << ReflMngr::Instance().RVar(v, StrID{"x"}).As<float>() << ", "
+		<< ReflMngr::Instance().RVar(v, StrID{ "y" }).As<float>() << std::endl;
 
-	{
-		std::uint8_t result_buffer[sizeof(float)];
-		auto [success, typeID, destructor] = ReflMngr::Instance().Invoke(ptr, ID_Norm2, {}, nullptr, result_buffer);
-		assert(success);
-		assert(typeID == ID_float);
-		assert(!destructor);
-		std::cout << *reinterpret_cast<float*>(result_buffer) << std::endl;
-	}
+	std::cout << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), StrID{ "Norm2" }) << std::endl;
 
-	{
-		Vec w{ 10.f,10.f };
-		std::array argTypeIDs{ ID_const_Vec_lref };
-		std::uint8_t args_buffer[sizeof(const Vec*)];
-		buffer_get<const Vec*>(args_buffer, 0) = &w;
-		std::uint8_t result_buffer[sizeof(Vec*)];
-		auto [success, typeID, destructor]
-			= ReflMngr::Instance().Invoke(ptr, ID_operator_assign_add, argTypeIDs, args_buffer, result_buffer);
-		assert(success);
-		assert(typeID == ID_Vec_lref);
-		assert(!destructor);
-		auto pw = buffer_as<Vec*>(result_buffer);
-		std::cout << pw->x << ", " << pw->y << std::endl;
-	}
-
-	{
-		Vec w{ 10.f,10.f };
-		std::array argTypeIDs{ ID_const_Vec_lref };
-		std::uint8_t args_buffer[sizeof(const Vec*)];
-		buffer_get<const Vec*>(args_buffer, 0) = &w;
-		auto& v = ReflMngr::Instance().InvokeRet<Vec&>(ptr, ID_operator_assign_add, argTypeIDs, args_buffer);
-		std::cout << v.x << ", " << v.y << std::endl;
-	}
-
-	{
-		Vec w{ 10.f,10.f };
-		auto& v = ReflMngr::Instance().Invoke<Vec&, const Vec&>(ptr, ID_operator_assign_add, w);
-		std::cout << v.x << ", " << v.y << std::endl;
-	}
+	auto& w = ReflMngr::Instance().Invoke<Vec&, const Vec&>(
+		v.AsObjectPtr(),
+		StrID{ StrIDRegistry::Meta::operator_assign_add },
+		Vec{ 10.f,10.f }
+	);
+	std::cout << w.x << ", " << w.y << std::endl;
 	
 	return 0;
 }

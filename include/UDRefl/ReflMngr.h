@@ -40,6 +40,9 @@ namespace Ubpa::UDRefl {
 		// Factory
 		////////////
 
+		// field_data can be:
+		// - static field: pointer to **non-void** type
+		// - member object pointer: pointer to **non-void** type
 		template<auto field_data>
 		FieldPtr GenerateFieldPtr();
 
@@ -94,6 +97,9 @@ namespace Ubpa::UDRefl {
 		template<typename... Params>
 		ParamList GenerateParamList() noexcept(sizeof...(Params) == 0);
 
+		// funcptr can be
+		// 1. member method : member function pointer
+		// 2. static method : function pointer
 		template<auto funcptr>
 		MethodPtr GenerateMethodPtr();
 
@@ -158,13 +164,13 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename T>
-		TypeID RegisterType() { return RegisterType(type_name<T>().name, sizeof(T), alignof(T)); }
+		void RegisterType();
 
 		// RegisterType<T>
 		// AddConstructor<T, Args...>
 		// AddDestructor<T>
 		template<typename T, typename... Args>
-		TypeID RegisterTypeAuto(AttrSet attrs_ctor = {}, AttrSet attrs_dtor = {});
+		void RegisterTypeAuto(AttrSet attrs_ctor = {}, AttrSet attrs_dtor = {});
 
 		// get TypeID from field_data
 		template<auto field_data>
@@ -183,9 +189,14 @@ namespace Ubpa::UDRefl {
 		StrID AddDynamicField(TypeID typeID, std::string_view name, Args&&... args)
 		{ return AddDynamicFieldWithAttr<T>(typeID, name, {}, std::forward<Args>(args)...); }
 
+		// funcptr is member function pointer
 		// get TypeID from funcptr
-		template<auto funcptr>
+		template<auto member_func_ptr>
 		StrID AddMethod(std::string_view name, AttrSet attrs = {});
+
+		// funcptr is function pointer
+		template<auto func_ptr>
+		StrID AddMethod(TypeID typeID, std::string_view name, AttrSet attrs = {});
 
 		template<typename T, typename... Args>
 		bool AddConstructor(AttrSet attrs = {});
