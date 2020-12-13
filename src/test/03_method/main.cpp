@@ -49,7 +49,7 @@ int main() {
 
 	auto& w = ReflMngr::Instance().Invoke<Vec&, const Vec&>(
 		v.AsObjectPtr(),
-		StrID{ StrIDRegistry::Meta::operator_assign_add },
+		StrIDRegistry::MetaID::operator_assign_add,
 		Vec{ 10.f,10.f }
 	);
 	std::cout << w.x << ", " << w.y << std::endl;

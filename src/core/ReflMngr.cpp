@@ -268,10 +268,10 @@ ReflMngr::ReflMngr() {
 		0,
 		{}, // fieldinfos
 		{ // methodinfos
-			{StrID(StrIDRegistry::Meta::malloc), std::move(methodinfo_malloc)},
-			{StrID(StrIDRegistry::Meta::free), std::move(methodinfo_free)},
-			{StrID(StrIDRegistry::Meta::aligned_malloc), std::move(methodinfo_aligned_malloc)},
-			{StrID(StrIDRegistry::Meta::aligned_free), std::move(methodinfo_aligned_free)},
+			{StrIDRegistry::MetaID::malloc, std::move(methodinfo_malloc)},
+			{StrIDRegistry::MetaID::free, std::move(methodinfo_free)},
+			{StrIDRegistry::MetaID::aligned_malloc, std::move(methodinfo_aligned_malloc)},
+			{StrIDRegistry::MetaID::aligned_free, std::move(methodinfo_aligned_free)},
 		},
 	};
 
@@ -367,58 +367,19 @@ bool ReflMngr::AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo) {
 }
 
 void* ReflMngr::Malloc(size_t size) const {
-	std::array argsTypeIDs = { TypeID::of<size_t> };
-
-	std::uint8_t args_buffer[sizeof(size_t)];
-	buffer_get<size_t>(args_buffer, 0) = size;
-
-	std::uint8_t result_buffer[sizeof(void*)];
-
-	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::malloc), result_buffer, argsTypeIDs, args_buffer);
-
-	if (result.success)
-		return buffer_get<void*>(result_buffer, 0);
-	else
-		return nullptr;
+	return Invoke<void*>(GlobalID, StrIDRegistry::MetaID::malloc, size);
 }
 
 bool ReflMngr::Free(void* ptr) const {
-	std::array argsTypeIDs = { TypeID::of<void*> };
-
-	std::uint8_t args_buffer[sizeof(void*)];
-	buffer_get<void*>(args_buffer, 0) = ptr;
-
-	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::free), nullptr, argsTypeIDs, args_buffer);
-
-	return result.success;
+	return InvokeArgs(GlobalID, StrIDRegistry::MetaID::free, nullptr, ptr);
 }
 
 void* ReflMngr::AlignedMalloc(size_t size, size_t alignment) const {
-	std::array argsTypeIDs = { TypeID::of<size_t>,TypeID::of<size_t> };
-
-	std::uint8_t args_buffer[2 * sizeof(size_t)];
-	buffer_get<size_t>(args_buffer, 0) = size;
-	buffer_get<size_t>(args_buffer, sizeof(size_t)) = alignment;
-
-	std::uint8_t result_buffer[sizeof(void*)];
-	
-	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::aligned_malloc), result_buffer, argsTypeIDs, args_buffer);
-
-	if (result.success)
-		return buffer_get<void*>(result_buffer, 0);
-	else
-		return nullptr;
+	return Invoke<void*>(GlobalID, StrIDRegistry::MetaID::aligned_malloc, size, alignment);
 }
 
 bool ReflMngr::AlignedFree(void* ptr) const {
-	std::array argsTypeIDs = { TypeID::of<void*> };
-
-	std::uint8_t args_buffer[sizeof(void*)];
-	buffer_get<void*>(args_buffer, 0) = ptr;
-
-	auto result = Invoke(GlobalID, StrID(StrIDRegistry::Meta::aligned_free), nullptr, argsTypeIDs, args_buffer);
-
-	return result.success;
+	return InvokeArgs(GlobalID, StrIDRegistry::MetaID::aligned_free, nullptr, ptr);
 }
 
 ObjectPtr ReflMngr::New(TypeID typeID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
@@ -878,7 +839,6 @@ InvokeResult ReflMngr::Invoke(
 	return {};
 }
 
-
 void ReflMngr::ReleaseMono() {
 	mono_rsrc.release();
 }
@@ -1105,7 +1065,7 @@ bool ReflMngr::IsConstructible(TypeID typeID, Span<const TypeID> argTypeIDs) con
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto ctorID = StrID{ StrIDRegistry::Meta::ctor };
+	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
@@ -1120,7 +1080,7 @@ bool ReflMngr::IsDestructible(TypeID typeID) const noexcept {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto dtorID = StrID{ StrIDRegistry::Meta::dtor };
+	constexpr auto dtorID = StrIDRegistry::MetaID::dtor;
 
 	auto mtarget = typeinfo.methodinfos.find(dtorID);
 	size_t num = typeinfo.methodinfos.count(dtorID);
@@ -1138,7 +1098,7 @@ bool ReflMngr::Construct(ObjectPtr obj, Span<const TypeID> argTypeIDs, void* arg
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto ctorID = StrID{ StrIDRegistry::Meta::ctor };
+	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
@@ -1158,7 +1118,7 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto dtorID = StrID{ StrIDRegistry::Meta::dtor };
+	constexpr auto dtorID = StrIDRegistry::MetaID::dtor;
 	auto mtarget = typeinfo.methodinfos.find(dtorID);
 	size_t num = typeinfo.methodinfos.count(dtorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {

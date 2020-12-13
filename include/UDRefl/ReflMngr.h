@@ -5,7 +5,7 @@
 #include "IDRegistry.h"
 
 namespace Ubpa::UDRefl {
-	constexpr TypeID GlobalID = TypeID{ TypeIDRegistry::Meta::global };
+	constexpr TypeID GlobalID = TypeIDRegistry::MetaID::global;
 
 	class ReflMngr {
 	public:
@@ -143,11 +143,11 @@ namespace Ubpa::UDRefl {
 
 		template<typename T, typename... Args>
 		std::pair<StrID, MethodInfo> GenerateConstructor(AttrSet attrs = {})
-		{ return { StrID{StrIDRegistry::Meta::ctor}, { GenerateConstructorPtr<T, Args...>(), std::move(attrs) } }; }
+		{ return { StrIDRegistry::MetaID::ctor, { GenerateConstructorPtr<T, Args...>(), std::move(attrs) } }; }
 
 		template<typename T>
 		std::pair<StrID, MethodInfo> GenerateDestructor(AttrSet attrs = {})
-		{ return { StrID{StrIDRegistry::Meta::dtor}, { GenerateDestructorPtr<T>(), std::move(attrs) } }; }
+		{ return { StrIDRegistry::MetaID::dtor, { GenerateDestructorPtr<T>(), std::move(attrs) } }; }
 
 		template<typename Derived, typename Base>
 		static BaseInfo GenerateBaseInfo();

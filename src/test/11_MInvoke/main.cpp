@@ -68,7 +68,7 @@ int main() {
 		}
 	);
 
-	auto w = v->SyncMInvoke<const Vec&>(StrIDRegistry::Meta::operator_add, v.As<Vec>());
+	auto w = v->SyncMInvoke<const Vec&>(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
 
 	w->ForEachRVar(
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {

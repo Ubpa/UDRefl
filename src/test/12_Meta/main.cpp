@@ -84,6 +84,9 @@ int main() {
 	SharedObject w4 = v * pv;
 	SharedObject w5 = v / pv;
 
+	v->Invoke("hello");
+	v->Invoke(std::string_view{ "hello" });
+	ReflMngr::Instance().AlignedFree(ReflMngr::Instance().AlignedMalloc(1, 1));
 	SharedObject w6 = v[1];
 	v(pv);
 
