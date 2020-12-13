@@ -68,20 +68,25 @@ ReflMngr::Instance().ForEachMethod(
 ### Constructing types
 
 ```c++
+SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
+// do something
+
 // [ or ]
 // ObjectPtr v = ReflMngr::Instance().New(TypeID::of<Vec>);
 // // do something
 // ReflMngr::Instance().Delete(v);
 
-SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
-// do something
+// [ or ]
+// Vec data;
+// ObjectPtr v = Ptr(data);
+// // do something
 ```
 
 ### Set/get variables
 
 ```c++
-v->RWVar(StrID{ "x" }).As<float>() = 3.f;
-v->RWVar(StrID{ "x" }).As<float>() = 4.f;
+v->RWVar("x").As<float>() = 3.f;
+v->RWVar("y").As<float>() = 4.f;
 std::cout << "x: " << v->RVar("x").As<float>() << std::endl;
 ```
 
@@ -123,11 +128,12 @@ v->ForEachRVar(
 - reflect  global fields, methods or enums
 - classes with **single**-, **multiple**- and **virtual**-inheritance
 - constructors (arbitrary argument count) and destructors
-- methods (**virtual**, **abstract**, **overloaded**, arbitrary argument count)
+- methods (**virtual**, **abstract**, **overloaded**, arbitrary argument count) : you can pass arguments by a buffer (on stack or heap)
 - ability to invoke properties and methods of classes from any arbitrary class level
 - no header pollution: the reflection information is created in the cpp file to minimize compile time when modifying the data
 - working with custom types without the need of having the declaration of the type available at compile time (useful for plugins)
-- possibility to add additional **metadata / attribute** to all reflection objects
+- possibility to add additional **attribute** to all reflection objects
+- **meta** function: `operator +`, `operator-`, etc
 - **no** macro usage
 - **no** rtti required
 - **no** exceptions (this feature come with cost and is also regularly disabled on consoles)

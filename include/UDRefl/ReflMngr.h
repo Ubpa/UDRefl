@@ -408,7 +408,8 @@ namespace Ubpa::UDRefl {
 		///////////
 
 		void ReleaseMono();
-		void* MAllocate(MemoryResourceType type, size_t size, size_t alignment = alignof(std::max_align_t));
+
+		void* MAllocate  (MemoryResourceType type,            size_t size, size_t alignment = alignof(std::max_align_t));
 		void  MDeallocate(MemoryResourceType type, void* ptr, size_t size, size_t alignment = alignof(std::max_align_t));
 
 		SharedObject MInvoke(
