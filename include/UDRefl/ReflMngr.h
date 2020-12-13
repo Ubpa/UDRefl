@@ -259,29 +259,29 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		bool IsStaticInvocable(TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
-		bool IsConstInvocable (TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
-		bool IsInvocable      (TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsStaticInvocable(TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
+		bool IsConstInvocable (TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
+		bool IsInvocable      (TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
 
 		InvokeResult Invoke(
 			TypeID typeID,
 			StrID methodID,
 			void* result_buffer = nullptr,
-			Span<TypeID> argTypeIDs = {},
+			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ConstObjectPtr obj,
 			StrID methodID,
 			void* result_buffer = nullptr,
-			Span<TypeID> argTypeIDs = {},
+			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ObjectPtr obj,
 			StrID methodID,
 			void* result_buffer = nullptr,
-			Span<TypeID> argTypeIDs = {},
+			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr) const;
 
 		// -- template --
@@ -294,11 +294,11 @@ namespace Ubpa::UDRefl {
 		bool IsInvocable      (TypeID typeID, StrID methodID) const noexcept;
 
 		template<typename T>
-		T InvokeRet(TypeID      typeID, StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(TypeID      typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename T>
-		T InvokeRet(ConstObjectPtr obj, StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(ConstObjectPtr obj, StrID methodID, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		template<typename T>
-		T InvokeRet(ObjectPtr      obj, StrID methodID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		T InvokeRet(ObjectPtr      obj, StrID methodID, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(TypeID      typeID, StrID methodID, void* result_buffer, Args... args) const;
@@ -318,10 +318,10 @@ namespace Ubpa::UDRefl {
 		// Meta
 		/////////
 
-		bool IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs = {}) const noexcept;
+		bool IsConstructible(TypeID typeID, Span<const TypeID> argTypeIDs = {}) const noexcept;
 		bool IsDestructible (TypeID typeID) const noexcept;
 
-		bool Construct(ObjectPtr      obj, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		bool Construct(ObjectPtr      obj, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		bool Destruct (ConstObjectPtr obj) const;
 
 		void* Malloc(size_t size) const;
@@ -330,10 +330,10 @@ namespace Ubpa::UDRefl {
 		void* AlignedMalloc(size_t size, size_t alignment) const;
 		bool  AlignedFree  (void* ptr) const;
 
-		ObjectPtr New   (TypeID typeID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		ObjectPtr New   (TypeID typeID, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 		bool      Delete(ConstObjectPtr obj) const;
 
-		SharedObject MakeShared(TypeID typeID, Span<TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
+		SharedObject MakeShared(TypeID typeID, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;
 
 		// -- template --
 
@@ -414,21 +414,21 @@ namespace Ubpa::UDRefl {
 		SharedObject MInvoke(
 			TypeID typeID,
 			StrID methodID,
-			Span<TypeID> argTypeIDs = {},
+			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
 			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
 
 		SharedObject MInvoke(
 			ConstObjectPtr obj,
 			StrID methodID,
-			Span<TypeID> argTypeIDs = {},
+			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
 			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
 
 		SharedObject MInvoke(
 			ObjectPtr obj,
 			StrID methodID,
-			Span<TypeID> argTypeIDs = {},
+			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
 			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
 

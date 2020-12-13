@@ -31,7 +31,7 @@ namespace Ubpa::UDRefl {
 		size_t GetBufferAlignment() const noexcept { return alignment; }
 		const std::vector<size_t>& GetOffsets() const noexcept { return offsets; }
 		const std::vector<Parameter>& GetParameters() const noexcept { return params; }
-		bool IsConpatibleWith(Span<TypeID> typeIDs) const noexcept;
+		bool IsConpatibleWith(Span<const TypeID> typeIDs) const noexcept;
 		bool operator==(const ParamList& rhs) const noexcept;
 		bool operator!=(const ParamList& rhs) const noexcept { return ! operator==(rhs); }
 	private:

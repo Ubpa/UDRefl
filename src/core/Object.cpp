@@ -45,14 +45,14 @@ ConstObjectPtr ConstObjectPtr::DynamicCast(TypeID typeID) const noexcept {
 	return ReflMngr::Instance().DynamicCast(*this, typeID);
 }
 
-bool ConstObjectPtr::IsInvocable(StrID methodID, Span<TypeID> argTypeIDs) const noexcept {
+bool ConstObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
 	return ReflMngr::Instance().IsConstInvocable(ID, methodID, argTypeIDs);
 }
 
 InvokeResult ConstObjectPtr::Invoke(
 	StrID methodID,
 	void* result_buffer,
-	Span<TypeID> argTypeIDs,
+	Span<const TypeID> argTypeIDs,
 	void* args_buffer) const
 {
 	return ReflMngr::Instance().Invoke(*this, methodID, result_buffer, argTypeIDs, args_buffer);
@@ -60,7 +60,7 @@ InvokeResult ConstObjectPtr::Invoke(
 
 SharedObject ConstObjectPtr::MInvoke(
 	StrID methodID,
-	Span<TypeID> argTypeIDs,
+	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
 	MemoryResourceType memory_rsrc_type) const
 {
@@ -99,14 +99,14 @@ ObjectPtr ObjectPtr::RWVar(TypeID baseID, StrID fieldID) const noexcept {
 	return ReflMngr::Instance().RWVar(*this, baseID, fieldID);
 }
 
-bool ObjectPtr::IsInvocable(StrID methodID, Span<TypeID> argTypeIDs) const noexcept {
+bool ObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
 	return ReflMngr::Instance().IsInvocable(ID, methodID, argTypeIDs);
 }
 
 InvokeResult ObjectPtr::Invoke(
 	StrID methodID,
 	void* result_buffer,
-	Span<TypeID> argTypeIDs,
+	Span<const TypeID> argTypeIDs,
 	void* args_buffer) const
 {
 	return ReflMngr::Instance().Invoke(*this, methodID, result_buffer, argTypeIDs, args_buffer);
@@ -114,7 +114,7 @@ InvokeResult ObjectPtr::Invoke(
 
 SharedObject ObjectPtr::MInvoke(
 	StrID methodID,
-	Span<TypeID> argTypeIDs,
+	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
 	MemoryResourceType memory_rsrc_type) const
 {
