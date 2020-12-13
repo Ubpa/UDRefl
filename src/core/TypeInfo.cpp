@@ -77,7 +77,7 @@ bool TypeInfo::IsInvocable(StrID methodID, Span<TypeID> argTypeIDs) const noexce
 	return false;
 }
 
-InvokeResult TypeInfo::Invoke(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const {
+InvokeResult TypeInfo::Invoke(StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
@@ -87,14 +87,14 @@ InvokeResult TypeInfo::Invoke(StrID methodID, Span<TypeID> argTypeIDs, void* arg
 			return {
 				true,
 				target->second.methodptr.GetResultDesc().typeID,
-				target->second.methodptr.Invoke_Static(args_buffer, result_buffer)
+				target->second.methodptr.Invoke_Static(result_buffer, args_buffer)
 			};
 		}
 	}
 	return {};
 }
 
-InvokeResult TypeInfo::Invoke(const void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const {
+InvokeResult TypeInfo::Invoke(const void* obj, StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 	for (size_t i = 0; i < num; ++i, ++target) {
@@ -104,14 +104,14 @@ InvokeResult TypeInfo::Invoke(const void* obj, StrID methodID, Span<TypeID> argT
 			return {
 				true,
 				target->second.methodptr.GetResultDesc().typeID,
-				target->second.methodptr.Invoke(obj, args_buffer, result_buffer)
+				target->second.methodptr.Invoke(obj, result_buffer, args_buffer)
 			};
 		}
 	}
 	return {};
 }
 
-InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const {
+InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const {
 	auto target = methodinfos.find(methodID);
 	size_t num = methodinfos.count(methodID);
 
@@ -124,7 +124,7 @@ InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs
 				return {
 					true,
 					iter->second.methodptr.GetResultDesc().typeID,
-					iter->second.methodptr.Invoke(obj, args_buffer, result_buffer)
+					iter->second.methodptr.Invoke(obj, result_buffer, args_buffer)
 				};
 			}
 		}
@@ -139,7 +139,7 @@ InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs
 				return {
 					true,
 					iter->second.methodptr.GetResultDesc().typeID,
-					iter->second.methodptr.Invoke(obj, args_buffer, result_buffer)
+					iter->second.methodptr.Invoke(obj, result_buffer, args_buffer)
 				};
 			}
 		}
@@ -158,7 +158,7 @@ InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs
 //		{
 //			const auto& rst_desc = target->second.methodptr.GetResultDesc();
 //			void* result_buffer = result_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-//			auto dtor = target->second.methodptr.Invoke_Static(args_buffer, result_buffer);
+//			auto dtor = target->second.methodptr.Invoke_Static(result_buffer, args_buffer);
 //			if (dtor) {
 //				return {
 //					{rst_desc.typeID, result_buffer},
@@ -193,7 +193,7 @@ InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs
 //		{
 //			const auto& rst_desc = target->second.methodptr.GetResultDesc();
 //			void* result_buffer = result_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-//			auto dtor = target->second.methodptr.Invoke(obj, args_buffer, result_buffer);
+//			auto dtor = target->second.methodptr.Invoke(obj, result_buffer, args_buffer);
 //			if (dtor) {
 //				return {
 //					{rst_desc.typeID, result_buffer},

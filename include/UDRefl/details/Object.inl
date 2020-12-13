@@ -38,7 +38,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	T ConstObjectPtr::InvokeRet(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
-		auto result = Invoke(methodID, argTypeIDs, args_buffer, result_buffer);
+		auto result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
 		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
@@ -74,7 +74,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	T ObjectPtr::InvokeRet(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
-		auto result = Invoke(methodID, argTypeIDs, args_buffer, result_buffer);
+		auto result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
 		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}

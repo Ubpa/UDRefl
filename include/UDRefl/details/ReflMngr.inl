@@ -19,23 +19,23 @@ namespace Ubpa::UDRefl::details {
 			using Traits = FuncTraits<decltype(funcptr)>;
 			if constexpr (std::is_member_function_pointer_v<FuncPtr>) {
 				using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
-				constexpr auto wrapped_func = [](ObjPtr obj, ArgsView args, void* result_buffer) -> Destructor {
+				constexpr auto wrapped_func = [](ObjPtr obj, void* result_buffer, ArgsView args) -> Destructor {
 					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					constexpr auto f = wrap_function<funcptr>();
-					return f(obj, args.GetBuffer(), result_buffer);
+					return f(obj, result_buffer, args.GetBuffer());
 				};
 				constexpr auto decayed_wrapped_func = DecayLambda(wrapped_func);
 				return decayed_wrapped_func;
 			}
 			else if constexpr (is_function_pointer_v<FuncPtr>) {
-				constexpr auto wrapped_func = [](ArgsView args, void* result_buffer) -> Destructor {
+				constexpr auto wrapped_func = [](void* result_buffer, ArgsView args) -> Destructor {
 					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					constexpr auto f = wrap_function<funcptr>();
-					return f(args.GetBuffer(), result_buffer);
+					return f(result_buffer, args.GetBuffer());
 				};
 				constexpr auto decayed_wrapped_func = DecayLambda(wrapped_func);
 				return decayed_wrapped_func;
@@ -49,12 +49,12 @@ namespace Ubpa::UDRefl::details {
 			using Traits = WrapFuncTraits<std::decay_t<Func>>;
 			using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 			/*constexpr*/ auto wrapped_func =
-				[f = std::forward<Func>(func)](ObjPtr obj, ArgsView args, void* result_buffer) mutable -> Destructor {
+				[f = std::forward<Func>(func)](ObjPtr obj, void* result_buffer, ArgsView args) mutable -> Destructor {
 					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					auto wrapped_f = wrap_member_function(std::forward<Func>(f));
-					return wrapped_f(obj, args.GetBuffer(), result_buffer);
+					return wrapped_f(obj, result_buffer, args.GetBuffer());
 				};
 
 			return std::function{ wrapped_func };
@@ -63,12 +63,12 @@ namespace Ubpa::UDRefl::details {
 		template<typename Func, size_t... Ns>
 		static /*constexpr*/ auto GenerateStaticFunction(Func&& func, std::index_sequence<Ns...>) noexcept {
 			/*constexpr*/ auto wrapped_func =
-				[f = std::forward<Func>(func)](ArgsView args, void* result_buffer) mutable ->Destructor {
+				[f = std::forward<Func>(func)](void* result_buffer, ArgsView args) mutable ->Destructor {
 					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
 					auto wrapped_f = wrap_static_function(std::forward<Func>(f));
-					return wrapped_f(args.GetBuffer(), result_buffer);
+					return wrapped_f(result_buffer, args.GetBuffer());
 				};
 			return std::function{ wrapped_func };
 		}
@@ -430,7 +430,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	T ReflMngr::InvokeRet(TypeID typeID, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
-		auto result = Invoke(typeID, methodID, argTypeIDs, args_buffer, result_buffer);
+		auto result = Invoke(typeID, methodID, result_buffer, argTypeIDs, args_buffer);
 		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
@@ -438,7 +438,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	T ReflMngr::InvokeRet(ConstObjectPtr obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
-		auto result = Invoke(obj, methodID, argTypeIDs, args_buffer, result_buffer);
+		auto result = Invoke(obj, methodID, result_buffer, argTypeIDs, args_buffer);
 		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
@@ -446,7 +446,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	T ReflMngr::InvokeRet(ObjectPtr obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer) const {
 		std::uint8_t result_buffer[sizeof(T)];
-		auto result = Invoke(obj, methodID, argTypeIDs, args_buffer, result_buffer);
+		auto result = Invoke(obj, methodID, result_buffer, argTypeIDs, args_buffer);
 		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
@@ -456,10 +456,10 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(typeID, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
+			return Invoke(typeID, methodID, result_buffer, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
-			return Invoke(typeID, methodID, {}, nullptr, result_buffer);
+			return Invoke(typeID, methodID, result_buffer);
 	}
 
 	template<typename... Args>
@@ -467,10 +467,10 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
+			return Invoke(obj, methodID, result_buffer, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
-			return Invoke(obj, methodID, {}, nullptr, result_buffer);
+			return Invoke(obj, methodID, result_buffer);
 	}
 
 	template<typename... Args>
@@ -478,10 +478,10 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return Invoke(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), result_buffer);
+			return Invoke(obj, methodID, result_buffer, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer));
 		}
 		else
-			return Invoke(obj, methodID, {}, nullptr, result_buffer);
+			return Invoke(obj, methodID, result_buffer);
 	}
 
 	template<typename T, typename... Args>

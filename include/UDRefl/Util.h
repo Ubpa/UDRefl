@@ -215,12 +215,12 @@ namespace Ubpa::UDRefl {
 		return std::tuple{ type_buffer_decay<Ts>(std::forward<Ts>(ts))... };
 	}
 
-	// ({const?} void* obj, void* args_buffer, void* result_buffer) -> Destructor*
+	// ({const?} void* obj, void* result_buffer, void* args_buffer) -> Destructor*
 	// size: 1
 	template<auto func_ptr>
 	constexpr auto wrap_member_function() noexcept;
 
-	// (void* args_buffer, void* result_buffer) -> Destructor*
+	// (void* result_buffer, void* args_buffer) -> Destructor*
 	// size: 1
 	template<auto func_ptr>
 	constexpr auto wrap_static_function() noexcept;
@@ -232,12 +232,12 @@ namespace Ubpa::UDRefl {
 	template<auto func_ptr>
 	constexpr auto wrap_function() noexcept;
 
-	// ({const?} void* obj, void* args_buffer, void* result_buffer) -> Destructor*
+	// ({const?} void* obj, void* result_buffer, void* args_buffer) -> Destructor*
 	// size: sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_member_function(Func&& func) noexcept;
 
-	// (void* args_buffer, void* result_buffer) -> Destructor*
+	// (void* result_buffer, void* args_buffer) -> Destructor*
 	// size: sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_static_function(Func&& func) noexcept;

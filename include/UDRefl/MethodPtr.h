@@ -54,9 +54,9 @@ namespace Ubpa::UDRefl {
 
 	class MethodPtr {
 	public:
-		using MemberVariableFunction = Destructor(void*, ArgsView, void*);
-		using MemberConstFunction    = Destructor(const void*, ArgsView, void*);
-		using StaticFunction         = Destructor(ArgsView, void*);
+		using MemberVariableFunction = Destructor(void*, void*, ArgsView);
+		using MemberConstFunction    = Destructor(const void*, void*, ArgsView);
+		using StaticFunction         = Destructor(void*, ArgsView);
 
 		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
 			func{ (assert(func), std::move(func)) },
@@ -97,13 +97,13 @@ namespace Ubpa::UDRefl {
 				paramList != rhs.paramList;
 		}
 
-		Destructor Invoke(void* obj      , void* args_buffer, void* result_buffer) const;
-		Destructor Invoke(const void* obj, void* args_buffer, void* result_buffer) const;
-		Destructor Invoke(                 void* args_buffer, void* result_buffer) const;
+		Destructor Invoke(void* obj      , void* result_buffer, void* args_buffer) const;
+		Destructor Invoke(const void* obj, void* result_buffer, void* args_buffer) const;
+		Destructor Invoke(                 void* result_buffer, void* args_buffer) const;
 
-		Destructor Invoke_Static(void* args_buffer, void* result_buffer) const {
+		Destructor Invoke_Static(void* result_buffer, void* args_buffer) const {
 			assert(IsStatic());
-			return std::get<std::function<StaticFunction>>(func)({ args_buffer, paramList }, result_buffer);
+			return std::get<std::function<StaticFunction>>(func)(result_buffer, { args_buffer, paramList });
 		};
 
 	private:

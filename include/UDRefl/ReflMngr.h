@@ -266,23 +266,23 @@ namespace Ubpa::UDRefl {
 		InvokeResult Invoke(
 			TypeID typeID,
 			StrID methodID,
+			void* result_buffer = nullptr,
 			Span<TypeID> argTypeIDs = {},
-			void* args_buffer = nullptr,
-			void* result_buffer = nullptr) const;
+			void* args_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ConstObjectPtr obj,
 			StrID methodID,
+			void* result_buffer = nullptr,
 			Span<TypeID> argTypeIDs = {},
-			void* args_buffer = nullptr,
-			void* result_buffer = nullptr) const;
+			void* args_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ObjectPtr obj,
 			StrID methodID,
+			void* result_buffer = nullptr,
 			Span<TypeID> argTypeIDs = {},
-			void* args_buffer = nullptr,
-			void* result_buffer = nullptr) const;
+			void* args_buffer = nullptr) const;
 
 		// -- template --
 

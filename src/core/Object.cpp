@@ -51,11 +51,11 @@ bool ConstObjectPtr::IsInvocable(StrID methodID, Span<TypeID> argTypeIDs) const 
 
 InvokeResult ConstObjectPtr::Invoke(
 	StrID methodID,
+	void* result_buffer,
 	Span<TypeID> argTypeIDs,
-	void* args_buffer,
-	void* result_buffer) const
+	void* args_buffer) const
 {
-	return ReflMngr::Instance().Invoke(*this, methodID, argTypeIDs, args_buffer, result_buffer);
+	return ReflMngr::Instance().Invoke(*this, methodID, result_buffer, argTypeIDs, args_buffer);
 }
 
 //
@@ -96,11 +96,11 @@ bool ObjectPtr::IsInvocable(StrID methodID, Span<TypeID> argTypeIDs) const noexc
 
 InvokeResult ObjectPtr::Invoke(
 	StrID methodID,
+	void* result_buffer,
 	Span<TypeID> argTypeIDs,
-	void* args_buffer,
-	void* result_buffer) const
+	void* args_buffer) const
 {
-	return ReflMngr::Instance().Invoke(*this, methodID, argTypeIDs, args_buffer, result_buffer);
+	return ReflMngr::Instance().Invoke(*this, methodID, result_buffer, argTypeIDs, args_buffer);
 }
 
 void ObjectPtr::ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const {

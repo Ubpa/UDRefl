@@ -131,9 +131,9 @@ namespace Ubpa::UDRefl {
 
 		InvokeResult Invoke(
 			StrID methodID,
+			void* result_buffer = nullptr,
 			Span<TypeID> argTypeIDs = {},
-			void* args_buffer = nullptr,
-			void* result_buffer = nullptr) const;
+			void* args_buffer = nullptr) const;
 
 		template<typename... Args>
 		bool IsInvocable(StrID methodID) const noexcept;
@@ -182,9 +182,9 @@ namespace Ubpa::UDRefl {
 
 		InvokeResult Invoke(
 			StrID methodID,
+			void* result_buffer = nullptr,
 			Span<TypeID> argTypeIDs = {},
-			void* args_buffer = nullptr,
-			void* result_buffer = nullptr) const;
+			void* args_buffer = nullptr) const;
 
 		template<typename... Args>
 		bool IsInvocable(StrID methodID) const noexcept;
@@ -269,19 +269,21 @@ namespace Ubpa::UDRefl {
 		const SharedBuffer& GetBuffer() const& noexcept { return block; }
 		SharedBuffer        GetBuffer() && noexcept { return std::move(block); }
 
-		void* GetPtr()       noexcept { return block.Get(); }
+		      void* GetPtr()       noexcept { return block.Get(); }
 		const void* GetPtr() const noexcept { return block.Get(); }
 
 		template<typename T>
-		T* AsPtr()       noexcept { return reinterpret_cast<T*>(GetPtr()); }
+		      T* AsPtr()       noexcept { return reinterpret_cast<T*>(GetPtr()); }
 		template<typename T>
 		const T* AsPtr() const noexcept { return const_cast<SharedObject*>(this)->AsPtr<T>(); }
 
 		template<typename T>
-		T& As()       noexcept { assert(GetPtr()); return *AsPtr<T>(); }
+		      T& As()      &  noexcept { assert(GetPtr()); return *AsPtr<T>(); }
 		template<typename T>
-		const T& As() const noexcept { assert(GetPtr()); return *AsPtr<T>(); }
-
+		const T& As() const&  noexcept { assert(GetPtr()); return *AsPtr<T>(); }
+		template<typename T>
+		      T  As()      && noexcept { assert(GetPtr()); return std::move(*AsPtr<T>()); }
+		
 		ObjectPtr      AsObjectPtr()       noexcept { return { ID, block.Get() }; }
 		ConstObjectPtr AsObjectPtr() const noexcept { return { ID, block.Get() }; }
 

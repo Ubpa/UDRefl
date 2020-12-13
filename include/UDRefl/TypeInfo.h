@@ -42,10 +42,10 @@ namespace Ubpa::UDRefl {
 		bool IsInvocable      (StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
 
 		// without bases, static
-		InvokeResult Invoke(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const;
 		// without bases, const + static
-		InvokeResult Invoke(const void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(const void* obj, StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const;
 		// without bases, non-const + const + static, non-const && static > const
-		InvokeResult Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer, void* result_buffer) const;
+		InvokeResult Invoke(void* obj, StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const;
 	};
 }
