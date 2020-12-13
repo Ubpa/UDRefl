@@ -25,6 +25,9 @@ void ObjectPtrBase::ForEachRVar(const std::function<bool(TypeRef, FieldRef, Cons
 // ConstObjectPtr
 ///////////////////
 
+ConstObjectPtr::ConstObjectPtr(const SharedConstObject& obj) noexcept
+	: ConstObjectPtr{ obj.GetID(), obj.GetPtr() } {}
+
 ConstObjectPtr ConstObjectPtr::StaticCast_DerivedToBase(TypeID typeID) const noexcept {
 	return ReflMngr::Instance().StaticCast_DerivedToBase(*this, typeID);
 }

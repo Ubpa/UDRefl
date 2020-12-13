@@ -295,7 +295,7 @@ void ReflMngr::Clear() noexcept {
 			auto cur = iter;
 			++iter;
 
-			if (cur->second.fieldptr.IsDyanmicShared())
+			if (cur->second.fieldptr.IsDynamicShared())
 				typeinfo.fieldinfos.erase(cur);
 		}
 	}
@@ -1018,10 +1018,10 @@ SharedObject ReflMngr::MInvoke(
 			if (!iter->second.methodptr.IsMemberConst()
 				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 			{
-				const auto& methodptr = mtarget->second.methodptr;
+				const auto& methodptr = iter->second.methodptr;
 				const auto& rst_desc = methodptr.GetResultDesc();
 				void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
-				auto dtor = mtarget->second.methodptr.Invoke(obj, result_buffer, args_buffer);
+				auto dtor = iter->second.methodptr.Invoke(obj, result_buffer, args_buffer);
 				return {
 					{rst_desc.typeID, result_buffer},
 					details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
@@ -1036,10 +1036,10 @@ SharedObject ReflMngr::MInvoke(
 			if (iter->second.methodptr.IsMemberConst()
 				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
 			{
-				const auto& methodptr = mtarget->second.methodptr;
+				const auto& methodptr = iter->second.methodptr;
 				const auto& rst_desc = methodptr.GetResultDesc();
 				void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
-				auto dtor = mtarget->second.methodptr.Invoke(ConstObjectPtr{ obj }, result_buffer, args_buffer);
+				auto dtor = iter->second.methodptr.Invoke(ConstObjectPtr{ obj }, result_buffer, args_buffer);
 				return {
 					{rst_desc.typeID, result_buffer},
 					details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)

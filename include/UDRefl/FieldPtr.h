@@ -24,7 +24,7 @@ namespace Ubpa::UDRefl {
 				void*,              // static_obj           4 STATIC_VARIABLE
 				const void*,        // static_const_obj     5 STATIC_CONST
 				SharedBuffer,       // dynamic_obj          6 DYNAMIC_SHARED_VARIABLE
-				const SharedBuffer, // dynamic_obj          7 DYNAMIC_SHARED_CONST
+				SharedConstBuffer,  // dynamic_obj          7 DYNAMIC_SHARED_CONST
 				Buffer,             // dynamic_obj          8 DYNAMIC_BUFFER_VARIABLE
 				const Buffer        // dynamic_obj          9 DYNAMIC_BUFFER_CONST
 			>;
@@ -103,7 +103,7 @@ namespace Ubpa::UDRefl {
 		explicit constexpr FieldPtr(ObjectPtr      static_obj) noexcept : FieldPtr{ static_obj.GetID(), static_obj.GetPtr() } {}
 		explicit constexpr FieldPtr(ConstObjectPtr static_obj) noexcept : FieldPtr{ static_obj.GetID(), static_obj.GetPtr() } {}
 
-		explicit FieldPtr(SharedObject& obj) noexcept :
+		explicit FieldPtr(const SharedObject& obj) noexcept :
 			valueID{ obj.GetID() },
 			data{ std::in_place_index_t<6>{}, obj.GetBuffer() }
 		{ assert(obj); }
@@ -113,25 +113,29 @@ namespace Ubpa::UDRefl {
 			data{ std::in_place_index_t<6>{}, std::move(obj).GetBuffer() }
 		{ assert(std::get<6>(data)); }
 
-		explicit FieldPtr(const SharedObject& obj) noexcept :
+		explicit FieldPtr(const SharedConstObject& obj) noexcept :
 			valueID{ obj.GetID() },
 			data{ std::in_place_index_t<7>{}, obj.GetBuffer() }
 		{ assert(obj); }
 
-		FieldPtr(TypeID valueID, Buffer& buffer) noexcept :
-			valueID{ valueID },
-			data{ std::in_place_index_t<8>{}, buffer }
-		{ assert(valueID); }
+		explicit FieldPtr(SharedConstObject&& obj) noexcept :
+			valueID{ obj.GetID() },
+			data{ std::in_place_index_t<7>{}, obj.GetBuffer() }
+		{ assert(obj); }
 
-		FieldPtr(TypeID valueID, Buffer&& buffer) noexcept :
-			valueID{ valueID },
-			data{ std::in_place_index_t<8>{}, buffer }
-		{ assert(valueID); }
+		FieldPtr(TypeID valueID, const Buffer& buffer, bool isConst) noexcept;
 
-		FieldPtr(TypeID valueID, const Buffer& buffer) noexcept :
+		FieldPtr(TypeID valueID, const Buffer& buffer, std::true_type isConst) noexcept :
 			valueID{ valueID },
 			data{ std::in_place_index_t<9>{}, buffer }
 		{ assert(valueID); }
+
+		FieldPtr(TypeID valueID, const Buffer& buffer, std::false_type isConst) noexcept :
+			valueID{ valueID },
+			data{ std::in_place_index_t<8>{}, buffer }
+		{ assert(valueID); }
+
+		FieldPtr(TypeID valueID, const Buffer& buffer) noexcept : FieldPtr{ valueID, buffer, std::false_type{} } {}
 
 		constexpr TypeID GetValueID() const noexcept { return valueID; }
 
@@ -149,7 +153,7 @@ namespace Ubpa::UDRefl {
 		constexpr bool IsBasic()          const noexcept { return data.index() == 0 || data.index() == 1; }
 		constexpr bool IsVirtual()        const noexcept { return data.index() == 2 || data.index() == 3; }
 		constexpr bool IsStatic()         const noexcept { return data.index() == 4 || data.index() == 5; }
-		constexpr bool IsDyanmicShared()  const noexcept { return data.index() == 6 || data.index() == 7; }
+		constexpr bool IsDynamicShared()  const noexcept { return data.index() == 6 || data.index() == 7; }
 		constexpr bool IsDyanmicBuffer()  const noexcept { return data.index() == 8 || data.index() == 9; }
 
 		constexpr bool IsConst()    const noexcept { return data.index() & 1; }

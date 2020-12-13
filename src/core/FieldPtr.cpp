@@ -8,9 +8,20 @@ FieldPtr::FieldPtr(TypeID valueID, size_t forward_offset_value, bool isConst) no
 	assert(valueID);
 
 	if (isConst)
-		data.emplace<0>(forward_offset_value);
-	else
 		data.emplace<1>(forward_offset_value);
+	else
+		data.emplace<0>(forward_offset_value);
+}
+
+FieldPtr::FieldPtr(TypeID valueID, const Buffer& buffer, bool isConst) noexcept :
+	valueID{ valueID }
+{
+	assert(valueID);
+
+	if (isConst)
+		data.emplace<9>(buffer);
+	else
+		data.emplace<8>(buffer);
 }
 
 ObjectPtr FieldPtr::Map() noexcept {
@@ -32,9 +43,9 @@ ObjectPtr FieldPtr::Map() noexcept {
 			return nullptr;
 		}
 		else if constexpr (std::is_same_v<T, SharedBuffer>) {
-			return { valueID, value.Get() };
+			return { valueID, value.get() };
 		}
-		else if constexpr (std::is_same_v<T, const SharedBuffer>) {
+		else if constexpr (std::is_same_v<T, SharedConstBuffer>) {
 			assert(false);
 			return nullptr;
 		}
@@ -68,10 +79,10 @@ ConstObjectPtr FieldPtr::Map() const noexcept {
 			return { valueID, value };
 		}
 		else if constexpr (std::is_same_v<T, SharedBuffer>) {
-			return { valueID, value.Get() };
+			return { valueID, value.get() };
 		}
-		else if constexpr (std::is_same_v<T, const SharedBuffer>) {
-			return { valueID, value.Get() };
+		else if constexpr (std::is_same_v<T, SharedConstBuffer>) {
+			return { valueID, value.get() };
 		}
 		else if constexpr (std::is_same_v<T, Buffer>) {
 			return { valueID, value.data() };
@@ -102,10 +113,10 @@ ConstObjectPtr FieldPtr::Map(const void* obj) const noexcept {
 			return { valueID, value };
 		}
 		else if constexpr (std::is_same_v<T, SharedBuffer>) {
-			return { valueID, value.Get() };
+			return { valueID, value.get() };
 		}
-		else if constexpr (std::is_same_v<T, const SharedBuffer>) {
-			return { valueID, value.Get() };
+		else if constexpr (std::is_same_v<T, SharedConstBuffer>) {
+			return { valueID, value.get() };
 		}
 		else if constexpr (std::is_same_v<T, Buffer>) {
 			return { valueID, value.data() };
@@ -130,7 +141,7 @@ ObjectPtr FieldPtr::Map(void* obj) noexcept {
 	case 4:
 		return { valueID, std::get<4>(data) };
 	case 6:
-		return { valueID, std::get<6>(data).Get() };
+		return { valueID, std::get<6>(data).get() };
 	case 8:
 		return { valueID, std::get<8>(data).data() };
 	default:

@@ -12,8 +12,8 @@ namespace Ubpa::UDRefl::details {
 
 	template<typename... OrigArgs, typename... BufferArgs>
 	struct wrap_function_call_impl<TypeList<OrigArgs...>, TypeList<BufferArgs...>> {
-		template<typename Obj, auto func_ptr, typename ObjPtr>
-		static constexpr decltype(auto) run(ObjPtr ptr, void* args_buffer) {
+		template<typename Obj, auto func_ptr, typename ObjectPtr>
+		static constexpr decltype(auto) run(ObjectPtr ptr, void* args_buffer) {
 			return std::apply(
 				[ptr](auto&&... bufferArgs) -> decltype(auto) {
 					return (buffer_as<Obj>(ptr).*func_ptr)(type_buffer_recover<OrigArgs>(std::forward<decltype(bufferArgs)>(bufferArgs))...);
@@ -30,8 +30,8 @@ namespace Ubpa::UDRefl::details {
 				std::move(*reinterpret_cast<std::tuple<BufferArgs...>*>(args_buffer))
 			);
 		}
-		template<typename Obj, typename Func, typename ObjPtr>
-		static constexpr decltype(auto) run(ObjPtr ptr, Func&& func, void* args_buffer) {
+		template<typename Obj, typename Func, typename ObjectPtr>
+		static constexpr decltype(auto) run(ObjectPtr ptr, Func&& func, void* args_buffer) {
 			return std::apply(
 				[ptr, f = std::forward<Func>(func)](auto&&... bufferArgs) mutable -> decltype(auto) {
 					if constexpr (std::is_member_function_pointer_v<std::decay_t<Func>>)
@@ -96,9 +96,9 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using Obj = typename Traits::Object;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
-	using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
+	using ObjectPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
-	constexpr auto wrapped_function = [](ObjPtr obj, void* result_buffer, void* args_buffer) -> Destructor {
+	constexpr auto wrapped_function = [](ObjectPtr obj, void* result_buffer, void* args_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, args_buffer);
 			auto transformed_rst = type_buffer_decay<Return>(std::forward<Return>(rst));
@@ -120,10 +120,10 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 	using Return = typename Traits::Return;
 	using Obj = typename Traits::Object;
 	using ArgList = typename Traits::ArgList;
-	using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
+	using ObjectPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](ObjPtr obj, void* result_buffer, void* args_buffer) mutable -> Destructor {
+		[f = std::forward<Func>(func)](ObjectPtr obj, void* result_buffer, void* args_buffer) mutable -> Destructor {
 			if constexpr (!std::is_void_v<Return>) {
 				Return rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), args_buffer);
 				auto transformed_rst = type_buffer_decay<Return>(std::forward<Return>(rst));

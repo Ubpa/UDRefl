@@ -14,10 +14,22 @@ struct Vec {
 	Vec copy() const noexcept {
 		return *this;
 	}
-	Vec operator+(const SharedObject v) const noexcept {
+	Vec operator+(SharedConstObject v) const noexcept {
 		Vec rst;
 		rst.x = x + v.As<Vec>().x;
 		rst.y = y + v.As<Vec>().y;
+		return rst;
+	}
+	Vec operator+(ConstObjectPtr v) const noexcept {
+		Vec rst;
+		rst.x = x + v.As<Vec>().x;
+		rst.y = y + v.As<Vec>().y;
+		return rst;
+	}
+	Vec operator+(float k) const noexcept {
+		Vec rst;
+		rst.x = x + k;
+		rst.y = y + k;
 		return rst;
 	}
 };
@@ -28,7 +40,9 @@ int main() {
 	ReflMngr::Instance().AddField<&Vec::y>("y");
 	ReflMngr::Instance().AddMethod<&Vec::norm>("norm");
 	ReflMngr::Instance().AddMethod<&Vec::copy>("copy");
-	ReflMngr::Instance().AddMethod<&Vec::operator+>(StrIDRegistry::Meta::operator_add);
+	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(ConstObjectPtr)const noexcept>::run(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(SharedConstObject)const noexcept>::run(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(float)const noexcept>::run(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
 
 	// [ or ]
 	// ObjectPtr v = ReflMngr::Instance().New(TypeID::of<Vec>);
@@ -68,9 +82,32 @@ int main() {
 		}
 	);
 
-	auto w = v + v;
+	ObjectPtr pv = v;
+	auto w0 = v + v;
+	auto w1 = v + pv;
+	auto w2 = v + 1.f;
 
-	w->ForEachRVar(
+	w0->ForEachRVar(
+		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
+			std::cout
+				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< ": " << var.As<float>()
+				<< std::endl;
+			return true;
+		}
+	);
+
+	w1->ForEachRVar(
+		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
+			std::cout
+				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< ": " << var.As<float>()
+				<< std::endl;
+			return true;
+		}
+	);
+
+	w2->ForEachRVar(
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
