@@ -97,6 +97,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
+	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	constexpr auto wrapped_function = [](ObjPtr obj, void* result_buffer, void* args_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, args_buffer);
@@ -120,6 +121,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 	using Obj = typename Traits::Object;
 	using ArgList = typename Traits::ArgList;
 	using ObjPtr = std::conditional_t<Traits::is_const, const void*, void*>;
+	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
 		[f = std::forward<Func>(func)](ObjPtr obj, void* result_buffer, void* args_buffer) mutable -> Destructor {
 			if constexpr (!std::is_void_v<Return>) {
@@ -144,6 +146,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	using Traits = FuncTraits<FuncPtr>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
+	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	constexpr auto wrapped_function = [](void* result_buffer, void* args_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<func_ptr>(args_buffer);
@@ -165,6 +168,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using Traits = FuncTraits<std::decay_t<Func>>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
+	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
 		[f = std::forward<Func>(func)](void* result_buffer, void* args_buffer) mutable -> Destructor {
 			if constexpr (!std::is_void_v<Return>) {

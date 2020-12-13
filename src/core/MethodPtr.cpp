@@ -25,8 +25,11 @@ bool ParamList::IsConpatibleWith(Span<const TypeID> typeIDs) const noexcept {
 		return false;
 
 	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i].typeID != typeIDs[i])
-			return false;
+		if (params[i].typeID != typeIDs[i]) {
+			if ((params[i].typeID != TypeID::of<ConstObjectPtr> || typeIDs[i] != TypeID::of<ObjectPtr>)
+				&& (params[i].typeID != TypeID::of<const SharedObject&> || typeIDs[i] != TypeID::of<SharedObject>))
+				return false;
+		}
 	}
 
 	return true;

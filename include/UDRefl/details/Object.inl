@@ -69,7 +69,7 @@ namespace Ubpa::UDRefl {
 	SharedObject ConstObjectPtr::MInvoke(
 		StrID methodID,
 		MemoryResourceType memory_rsrc_type,
-		Args... args)
+		Args... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
@@ -83,25 +83,25 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	SharedObject ConstObjectPtr::MonoMInvoke(
 		StrID methodID,
-		Args... args)
+		Args... args) const
 	{
-		return MInvoke(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ConstObjectPtr::SyncMInvoke(
 		StrID methodID,
-		Args... args)
+		Args... args) const
 	{
-		return MInvoke(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ConstObjectPtr::UnsyncMInvoke(
 		StrID methodID,
-		Args... args)
+		Args... args) const
 	{
-		return MInvoke(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
@@ -144,7 +144,7 @@ namespace Ubpa::UDRefl {
 	SharedObject ObjectPtr::MInvoke(
 		StrID methodID,
 		MemoryResourceType memory_rsrc_type,
-		Args... args)
+		Args... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
@@ -158,25 +158,25 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	SharedObject ObjectPtr::MonoMInvoke(
 		StrID methodID,
-		Args... args)
+		Args... args) const
 	{
-		return MInvoke(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ObjectPtr::SyncMInvoke(
 		StrID methodID,
-		Args... args)
+		Args... args) const
 	{
-		return MInvoke(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ObjectPtr::UnsyncMInvoke(
 		StrID methodID,
-		Args... args)
+		Args... args) const
 	{
-		return MInvoke(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "SharedBuffer.h"
 #include "Util.h"
+#include "IDRegistry.h"
 
 #include <UTemplate/TypeID.h>
 #include <UContainer/Span.h>
@@ -151,22 +152,31 @@ namespace Ubpa::UDRefl {
 		SharedObject MInvoke(
 			StrID methodID,
 			MemoryResourceType memory_rsrc_type,
-			Args... args);
+			Args... args) const;
 
 		template<typename... Args>
 		SharedObject MonoMInvoke(
 			StrID methodID,
-			Args... args);
+			Args... args) const;
 
 		template<typename... Args>
 		SharedObject SyncMInvoke(
 			StrID methodID,
-			Args... args);
+			Args... args) const;
 
 		template<typename... Args>
 		SharedObject UnsyncMInvoke(
 			StrID methodID,
-			Args... args);
+			Args... args) const;
+
+		//
+		// Meta
+		/////////
+
+		template<typename Arg>
+		SharedObject operator+(Arg rhs) const {
+			return SyncMInvoke<Arg>(StrIDRegistry::Meta::operator_add, std::forward<Arg>(rhs));
+		}
 	};
 
 	class ObjectPtr : public ObjectPtrBase {
@@ -229,26 +239,37 @@ namespace Ubpa::UDRefl {
 		SharedObject MInvoke(
 			StrID methodID,
 			MemoryResourceType memory_rsrc_type,
-			Args... args);
+			Args... args) const;
 
 		template<typename... Args>
 		SharedObject MonoMInvoke(
 			StrID methodID,
-			Args... args);
+			Args... args) const;
 
 		template<typename... Args>
 		SharedObject SyncMInvoke(
 			StrID methodID,
-			Args... args);
+			Args... args) const;
 
 		template<typename... Args>
 		SharedObject UnsyncMInvoke(
 			StrID methodID,
-			Args... args);
+			Args... args) const;
 
 		// self [r/w] vars and all bases' [r/w] vars
 		void ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
+
+		//
+		// Meta
+		/////////
+
+		template<typename Arg>
+		SharedObject operator+(Arg rhs) const {
+			return SyncMInvoke<Arg>(StrIDRegistry::Meta::operator_add, std::forward<Arg>(rhs));
+		}
 	};
+
+	static_assert(sizeof(ObjectPtr) == sizeof(ConstObjectPtr) && alignof(ObjectPtr) == alignof(ConstObjectPtr));
 
 	// SharedBuffer + ID
 	class SharedObject {
@@ -344,6 +365,20 @@ namespace Ubpa::UDRefl {
 		long UseCount() const noexcept { return block.UseCount(); }
 
 		explicit operator bool() const noexcept { return ID && static_cast<bool>(block); }
+
+		//
+		// Meta
+		/////////
+
+		template<typename Arg>
+		SharedObject operator+(Arg rhs) {
+			return AsObjectPtr()->operator+<Arg>(std::forward<Arg>(rhs));
+		}
+
+		template<typename Arg>
+		SharedObject operator+(Arg rhs) const {
+			return AsObjectPtr()->operator+<Arg>(std::forward<Arg>(rhs));
+		}
 
 	private:
 		TypeID ID;
