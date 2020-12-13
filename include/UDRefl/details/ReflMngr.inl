@@ -577,4 +577,56 @@ namespace Ubpa::UDRefl {
 		AddMethod(TypeID::of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
 		return MakeShared(TypeID::of<T>, std::forward<Args>(args)...);
 	}
+
+	//
+	// Memory
+	///////////
+
+	template<typename... Args>
+	SharedObject ReflMngr::MInvoke(
+		TypeID typeID,
+		StrID methodID,
+		MemoryResourceType memory_rsrc_type,
+		Args... args)
+	{
+		if constexpr (sizeof...(Args) > 0) {
+			std::array argTypeIDs = { TypeID::of<Args>... };
+			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
+			return MInvoke(typeID, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+		}
+		else
+			return MInvoke(typeID, methodID, Span<TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::MInvoke(
+		ConstObjectPtr obj,
+		StrID methodID,
+		MemoryResourceType memory_rsrc_type,
+		Args... args)
+	{
+		if constexpr (sizeof...(Args) > 0) {
+			std::array argTypeIDs = { TypeID::of<Args>... };
+			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
+			return MInvoke(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+		}
+		else
+			return MInvoke(obj, methodID, Span<TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::MInvoke(
+		ObjectPtr obj,
+		StrID methodID,
+		MemoryResourceType memory_rsrc_type,
+		Args... args)
+	{
+		if constexpr (sizeof...(Args) > 0) {
+			std::array argTypeIDs = { TypeID::of<Args>... };
+			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
+			return MInvoke(obj, methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+		}
+		else
+			return MInvoke(obj, methodID, Span<TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+	}
 }

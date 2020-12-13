@@ -82,13 +82,13 @@ SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 ```c++
 v->RWVar(StrID{ "x" }).As<float>() = 3.f;
 v->RWVar(StrID{ "x" }).As<float>() = 4.f;
-std::cout << "x: " << v->RVar(StrID{ "x" }).As<float>() << std::endl;
+std::cout << "x: " << v->RVar("x").As<float>() << std::endl;
 ```
 
 ### Invoke Methods
 
 ```c++
-std::cout << "norm: " << v->Invoke<float>(StrID{ "norm" }) << std::endl;
+std::cout << "norm: " << v->Invoke<float>("norm") << std::endl;
 ```
 
 ### Iterate over variables

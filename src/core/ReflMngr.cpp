@@ -6,6 +6,17 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 namespace Ubpa::UDRefl::details {
+	static bool IsStaticInvokable(const TypeInfo& typeinfo, StrID methodID, Span<TypeID> argTypeIDs) {
+		auto mtarget = typeinfo.methodinfos.find(methodID);
+		size_t num = typeinfo.methodinfos.count(methodID);
+		for (size_t i = 0; i < num; ++i, ++mtarget) {
+			if (mtarget->second.methodptr.IsStatic()
+				&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+				return true;
+		}
+		return false;
+	}
+
 	static bool ForEachTypeID(
 		TypeID typeID,
 		const std::function<bool(TypeID)>& func,
@@ -203,6 +214,31 @@ namespace Ubpa::UDRefl::details {
 		}
 
 		return true;
+	}
+
+	DeleteFunc GenerateDeleteFunc(Destructor&& dtor, MemoryResourceType type, size_t size, size_t alignment) {
+		if (dtor && type != MemoryResourceType::MONO) {
+			return [d = std::move(dtor), type, size, alignment](void* ptr) {
+				d(ptr);
+				ReflMngr::Instance().MDeallocate(type, ptr, size, alignment);
+			};
+		}
+		else if (dtor && type == MemoryResourceType::MONO) {
+			return[d = std::move(dtor)] (void* ptr) {
+				d(ptr);
+			};
+		}
+		else if (!dtor && type != MemoryResourceType::MONO) {
+			return [type, size, alignment] (void* ptr) {
+				ReflMngr::Instance().MDeallocate(type, ptr, size, alignment);
+			};
+		}
+		else // !dtor && memory_rsrc_type == MemoryResourceType::MONO
+		{
+			return [](void* ptr) {
+				assert(ptr);
+			};
+		}
 	}
 }
 
@@ -527,15 +563,15 @@ ObjectPtr ReflMngr::DynamicCast(ObjectPtr obj, TypeID typeID) const noexcept {
 }
 
 ObjectPtr ReflMngr::RWVar(TypeID typeID, StrID fieldID) noexcept {
-	auto target = typeinfos.find(typeID);
-	if (target == typeinfos.end())
+	auto ttarget = typeinfos.find(typeID);
+	if (ttarget == typeinfos.end())
 		return nullptr;
 
-	auto& typeinfo = target->second;
+	auto& typeinfo = ttarget->second;
 
-	auto ptr = typeinfo.RWVar(fieldID);
-	if (ptr)
-		return ptr;
+	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsObject())
+		return ftarget->second.fieldptr.Map();
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto bptr = RWVar(baseID, fieldID);
@@ -547,15 +583,16 @@ ObjectPtr ReflMngr::RWVar(TypeID typeID, StrID fieldID) noexcept {
 }
 
 ConstObjectPtr ReflMngr::RVar(TypeID typeID, StrID fieldID) const noexcept {
-	auto target = typeinfos.find(typeID);
-	if (target == typeinfos.end())
+	auto ttarget = typeinfos.find(typeID);
+	if (ttarget == typeinfos.end())
 		return nullptr;
 
-	auto& typeinfo = target->second;
+	auto& typeinfo = ttarget->second;
 
-	auto ptr = typeinfo.RVar(fieldID);
-	if (ptr)
-		return ptr;
+
+	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsObject())
+		return ftarget->second.fieldptr.Map();
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto bptr = RVar(baseID, fieldID);
@@ -567,15 +604,16 @@ ConstObjectPtr ReflMngr::RVar(TypeID typeID, StrID fieldID) const noexcept {
 }
 
 ObjectPtr ReflMngr::RWVar(ObjectPtr obj, StrID fieldID) noexcept {
-	auto target = typeinfos.find(obj.GetID());
-	if (target == typeinfos.end())
+	auto ttarget = typeinfos.find(obj.GetID());
+	if (ttarget == typeinfos.end())
 		return nullptr;
 
-	auto& typeinfo = target->second;
+	auto& typeinfo = ttarget->second;
 
-	auto ptr = typeinfo.RWVar(obj, fieldID);
-	if (ptr)
-		return ptr;
+
+	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsVariable())
+		return ftarget->second.fieldptr.Map(obj);
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto bptr = RWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
@@ -587,15 +625,15 @@ ObjectPtr ReflMngr::RWVar(ObjectPtr obj, StrID fieldID) noexcept {
 }
 
 ConstObjectPtr ReflMngr::RVar(ConstObjectPtr obj, StrID fieldID) const noexcept {
-	auto target = typeinfos.find(obj.GetID());
-	if (target == typeinfos.end())
+	auto ttarget = typeinfos.find(obj.GetID());
+	if (ttarget == typeinfos.end())
 		return nullptr;
 
-	const auto& typeinfo = target->second;
+	const auto& typeinfo = ttarget->second;
 
-	auto ptr = typeinfo.RVar(obj, fieldID);
-	if (ptr)
-		return ptr;
+	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	if (ftarget != typeinfo.fieldinfos.end())
+		return ftarget->second.fieldptr.Map(obj);
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto bptr = RVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) }, fieldID);
@@ -632,13 +670,19 @@ bool ReflMngr::IsStaticInvocable(
 
 	const auto& typeinfo = typetarget->second;
 
-	if (typeinfo.IsStaticInvocable(methodID, argTypeIDs))
-		return true;
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.IsStatic()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			return true;
+	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		if (IsStaticInvocable(baseID, methodID, argTypeIDs))
 			return true;
 	}
+
 	return false;
 }
 
@@ -654,8 +698,13 @@ bool ReflMngr::IsConstInvocable(
 
 	const auto& typeinfo = typetarget->second;
 
-	if (typeinfo.IsConstInvocable(methodID, argTypeIDs))
-		return true;
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (!mtarget->second.methodptr.IsMemberVariable()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			return true;
+	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		if (IsConstInvocable(baseID, methodID, argTypeIDs))
@@ -677,8 +726,12 @@ bool ReflMngr::IsInvocable(
 
 	const auto& typeinfo = typetarget->second;
 
-	if (typeinfo.IsInvocable(methodID, argTypeIDs))
-		return true;
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			return true;
+	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		if (IsInvocable(baseID, methodID, argTypeIDs))
@@ -702,10 +755,19 @@ InvokeResult ReflMngr::Invoke(
 
 	const auto& typeinfo = typetarget->second;
 
-	auto rst = typeinfo.Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
-
-	if (rst.success)
-		return rst;
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.IsStatic()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+		{
+			return {
+				true,
+				mtarget->second.methodptr.GetResultDesc().typeID,
+				mtarget->second.methodptr.Invoke_Static(result_buffer, args_buffer)
+			};
+		}
+	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(baseID, methodID, result_buffer, argTypeIDs, args_buffer);
@@ -730,10 +792,19 @@ InvokeResult ReflMngr::Invoke(
 
 	const auto& typeinfo = typetarget->second;
 
-	auto rst = typeinfo.Invoke(obj, methodID, result_buffer, argTypeIDs, args_buffer);
-
-	if (rst.success)
-		return rst;
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (!mtarget->second.methodptr.IsMemberVariable()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+		{
+			return {
+				true,
+				mtarget->second.methodptr.GetResultDesc().typeID,
+				mtarget->second.methodptr.Invoke(obj, result_buffer, args_buffer)
+			};
+		}
+	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(
@@ -761,10 +832,38 @@ InvokeResult ReflMngr::Invoke(
 
 	const auto& typeinfo = typetarget->second;
 
-	auto rst = typeinfo.Invoke(obj, methodID, result_buffer, argTypeIDs, args_buffer);
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
 
-	if (rst.success)
-		return rst;
+	{ // 1. object variable and static
+		auto iter = mtarget;
+		for (size_t i = 0; i < num; ++i, ++iter) {
+			if (!iter->second.methodptr.IsMemberConst()
+				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			{
+				return {
+					true,
+					iter->second.methodptr.GetResultDesc().typeID,
+					iter->second.methodptr.Invoke(obj, result_buffer, args_buffer)
+				};
+			}
+		}
+	}
+
+	{ // 2. object const
+		auto iter = mtarget;
+		for (size_t i = 0; i < num; ++i, ++iter) {
+			if (iter->second.methodptr.IsMemberConst()
+				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			{
+				return {
+					true,
+					iter->second.methodptr.GetResultDesc().typeID,
+					iter->second.methodptr.Invoke(obj, result_buffer, args_buffer)
+				};
+			}
+		}
+	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = Invoke(
@@ -778,12 +877,202 @@ InvokeResult ReflMngr::Invoke(
 	return {};
 }
 
+
+void ReflMngr::ReleaseMono() {
+	mono_rsrc.release();
+}
+
+void* ReflMngr::MAllocate(MemoryResourceType type, size_t size, size_t alignment) {
+	switch (type)
+	{
+	case Ubpa::UDRefl::MemoryResourceType::MONO:
+		return mono_rsrc.allocate(size, alignment);
+	case Ubpa::UDRefl::MemoryResourceType::SYNC:
+		return sync_rsrc.allocate(size, alignment);
+	case Ubpa::UDRefl::MemoryResourceType::UNSYNC:
+		return unsync_rsrc.allocate(size, alignment);
+	default:
+		assert(false);
+		return nullptr;
+	}
+}
+
+void ReflMngr::MDeallocate(MemoryResourceType type, void* ptr, size_t size, size_t alignment) {
+	assert(ptr);
+	switch (type)
+	{
+	case Ubpa::UDRefl::MemoryResourceType::MONO:
+		return mono_rsrc.deallocate(ptr, size, alignment);
+	case Ubpa::UDRefl::MemoryResourceType::SYNC:
+		return sync_rsrc.deallocate(ptr, size, alignment);
+	case Ubpa::UDRefl::MemoryResourceType::UNSYNC:
+		return unsync_rsrc.deallocate(ptr, size, alignment);
+	default:
+		break;
+	}
+}
+
+SharedObject ReflMngr::MInvoke(
+	TypeID typeID,
+	StrID methodID,
+	Span<TypeID> argTypeIDs,
+	void* args_buffer,
+	MemoryResourceType memory_rsrc_type)
+{
+	auto typetarget = typeinfos.find(typeID);
+
+	if (typetarget == typeinfos.end())
+		return {};
+
+	const auto& typeinfo = typetarget->second;
+
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.IsStatic()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+		{
+			const auto& methodptr = mtarget->second.methodptr;
+			const auto& rst_desc = methodptr.GetResultDesc();
+			void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+			auto dtor = mtarget->second.methodptr.Invoke_Static(result_buffer, args_buffer);
+			return {
+				{rst_desc.typeID, result_buffer},
+				details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+			};
+		}
+	}
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto rst = MInvoke(baseID, methodID, argTypeIDs, args_buffer, memory_rsrc_type);
+		if (rst)
+			return rst;
+	}
+
+	return nullptr;
+}
+
+SharedObject ReflMngr::MInvoke(
+	ConstObjectPtr obj,
+	StrID methodID,
+	Span<TypeID> argTypeIDs,
+	void* args_buffer,
+	MemoryResourceType memory_rsrc_type)
+{
+	auto typetarget = typeinfos.find(obj.GetID());
+
+	if (typetarget == typeinfos.end())
+		return {};
+
+	const auto& typeinfo = typetarget->second;
+
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (!mtarget->second.methodptr.IsMemberVariable()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+		{
+			const auto& methodptr = mtarget->second.methodptr;
+			const auto& rst_desc = methodptr.GetResultDesc();
+			void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+			auto dtor = mtarget->second.methodptr.Invoke(obj, result_buffer, args_buffer);
+			return {
+				{rst_desc.typeID, result_buffer},
+				details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+			};
+		}
+	}
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto rst = MInvoke(
+			ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
+			methodID, argTypeIDs, args_buffer, memory_rsrc_type
+		);
+		if (rst)
+			return rst;
+	}
+
+	return nullptr;
+}
+
+SharedObject ReflMngr::MInvoke(
+	ObjectPtr obj,
+	StrID methodID,
+	Span<TypeID> argTypeIDs,
+	void* args_buffer,
+	MemoryResourceType memory_rsrc_type)
+{
+	auto typetarget = typeinfos.find(obj.GetID());
+
+	if (typetarget == typeinfos.end())
+		return {};
+
+	const auto& typeinfo = typetarget->second;
+
+	auto mtarget = typeinfo.methodinfos.find(methodID);
+	size_t num = typeinfo.methodinfos.count(methodID);
+
+	{ // 1. object variable and static
+		auto iter = mtarget;
+		for (size_t i = 0; i < num; ++i, ++iter) {
+			if (!iter->second.methodptr.IsMemberConst()
+				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			{
+				const auto& methodptr = mtarget->second.methodptr;
+				const auto& rst_desc = methodptr.GetResultDesc();
+				void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+				auto dtor = mtarget->second.methodptr.Invoke(obj, result_buffer, args_buffer);
+				return {
+					{rst_desc.typeID, result_buffer},
+					details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+				};
+			}
+		}
+	}
+
+	{ // 2. object const
+		auto iter = mtarget;
+		for (size_t i = 0; i < num; ++i, ++iter) {
+			if (iter->second.methodptr.IsMemberConst()
+				&& iter->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			{
+				const auto& methodptr = mtarget->second.methodptr;
+				const auto& rst_desc = methodptr.GetResultDesc();
+				void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+				auto dtor = mtarget->second.methodptr.Invoke(ConstObjectPtr{ obj }, result_buffer, args_buffer);
+				return {
+					{rst_desc.typeID, result_buffer},
+					details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+				};
+			}
+		}
+	}
+
+	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		auto rst = MInvoke(
+			ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
+			methodID, argTypeIDs, args_buffer, memory_rsrc_type
+		);
+		if (rst)
+			return rst;
+	}
+
+	return nullptr;
+}
+
 bool ReflMngr::IsConstructible(TypeID typeID, Span<TypeID> argTypeIDs) const noexcept {
 	auto target = typeinfos.find(typeID);
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	return typeinfo.IsInvocable(StrID(StrIDRegistry::Meta::ctor), argTypeIDs);
+	constexpr auto ctorID = StrID{ StrIDRegistry::Meta::ctor };
+	auto mtarget = typeinfo.methodinfos.find(ctorID);
+	size_t num = typeinfo.methodinfos.count(ctorID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+			return true;
+	}
+	return false;
 }
 
 bool ReflMngr::IsDestructible(TypeID typeID) const noexcept {
@@ -791,7 +1080,16 @@ bool ReflMngr::IsDestructible(TypeID typeID) const noexcept {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	return typeinfo.IsConstInvocable(StrID(StrIDRegistry::Meta::dtor), {});
+	constexpr auto dtorID = StrID{ StrIDRegistry::Meta::dtor };
+
+	auto mtarget = typeinfo.methodinfos.find(dtorID);
+	size_t num = typeinfo.methodinfos.count(dtorID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (!mtarget->second.methodptr.IsMemberVariable()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith({}))
+			return true;
+	}
+	return false;
 }
 
 bool ReflMngr::Construct(ObjectPtr obj, Span<TypeID> argTypeIDs, void* args_buffer) const {
@@ -800,8 +1098,18 @@ bool ReflMngr::Construct(ObjectPtr obj, Span<TypeID> argTypeIDs, void* args_buff
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	auto rst = typeinfo.Invoke(obj, StrID(StrIDRegistry::Meta::ctor), nullptr, argTypeIDs, args_buffer);
-	return rst.success;
+	constexpr auto ctorID = StrID{ StrIDRegistry::Meta::ctor };
+	auto mtarget = typeinfo.methodinfos.find(ctorID);
+	size_t num = typeinfo.methodinfos.count(ctorID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.IsMemberVariable()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+		{
+			mtarget->second.methodptr.Invoke(obj, nullptr, args_buffer);
+			return true;
+		}
+	}
+	return false;
 }
 
 bool ReflMngr::Destruct(ConstObjectPtr obj) const {
@@ -810,8 +1118,18 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	auto rst = typeinfo.Invoke(obj, StrID(StrIDRegistry::Meta::dtor), nullptr, {}, nullptr);
-	return rst.success;
+	constexpr auto dtorID = StrID{ StrIDRegistry::Meta::dtor };
+	auto mtarget = typeinfo.methodinfos.find(dtorID);
+	size_t num = typeinfo.methodinfos.count(dtorID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.IsMemberConst()
+			&& mtarget->second.methodptr.GetParamList().IsConpatibleWith({}))
+		{
+			mtarget->second.methodptr.Invoke(obj, nullptr, {});
+			return true;
+		}
+	}
+	return false;
 }
 
 void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<bool(TypeID)>& func) const {

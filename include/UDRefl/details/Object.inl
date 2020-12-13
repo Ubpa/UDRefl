@@ -66,6 +66,45 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
+	SharedObject ConstObjectPtr::MInvoke(
+		StrID methodID,
+		MemoryResourceType memory_rsrc_type,
+		Args... args)
+	{
+		if constexpr (sizeof...(Args) > 0) {
+			std::array argTypeIDs = { TypeID::of<Args>... };
+			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
+			return MInvoke(methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+		}
+		else
+			return MInvoke(methodID, Span<TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+	}
+
+	template<typename... Args>
+	SharedObject ConstObjectPtr::MonoMInvoke(
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ConstObjectPtr::SyncMInvoke(
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ConstObjectPtr::UnsyncMInvoke(
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
 	bool ObjectPtr::IsInvocable(StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsInvocable(ID, methodID, Span<TypeID>{argTypeIDs});
@@ -100,7 +139,47 @@ namespace Ubpa::UDRefl {
 		else
 			return InvokeRet<T>(methodID);
 	}
+
+	template<typename... Args>
+	SharedObject ObjectPtr::MInvoke(
+		StrID methodID,
+		MemoryResourceType memory_rsrc_type,
+		Args... args)
+	{
+		if constexpr (sizeof...(Args) > 0) {
+			std::array argTypeIDs = { TypeID::of<Args>... };
+			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
+			return MInvoke(methodID, Span<TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+		}
+		else
+			return MInvoke(methodID, Span<TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+	}
+
+	template<typename... Args>
+	SharedObject ObjectPtr::MonoMInvoke(
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ObjectPtr::SyncMInvoke(
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ObjectPtr::UnsyncMInvoke(
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
+	}
 }
+
 template<>
 struct std::hash<Ubpa::UDRefl::SharedObject> {
 	std::size_t operator()(const Ubpa::UDRefl::SharedObject& obj) const noexcept {

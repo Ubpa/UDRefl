@@ -403,17 +403,63 @@ namespace Ubpa::UDRefl {
 			TypeID typeID,
 			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
+		//
+		// Memory
+		///////////
+
+		void ReleaseMono();
+		void* MAllocate(MemoryResourceType type, size_t size, size_t alignment = alignof(std::max_align_t));
+		void  MDeallocate(MemoryResourceType type, void* ptr, size_t size, size_t alignment = alignof(std::max_align_t));
+
+		SharedObject MInvoke(
+			TypeID typeID,
+			StrID methodID,
+			Span<TypeID> argTypeIDs = {},
+			void* args_buffer = nullptr,
+			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
+
+		SharedObject MInvoke(
+			ConstObjectPtr obj,
+			StrID methodID,
+			Span<TypeID> argTypeIDs = {},
+			void* args_buffer = nullptr,
+			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
+
+		SharedObject MInvoke(
+			ObjectPtr obj,
+			StrID methodID,
+			Span<TypeID> argTypeIDs = {},
+			void* args_buffer = nullptr,
+			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
+
+		template<typename... Args>
+		SharedObject MInvoke(
+			TypeID typeID,
+			StrID methodID,
+			MemoryResourceType memory_rsrc_type,
+			Args... args);
+
+		template<typename... Args>
+		SharedObject MInvoke(
+			ConstObjectPtr obj,
+			StrID methodID,
+			MemoryResourceType memory_rsrc_type,
+			Args... args);
+
+		template<typename... Args>
+		SharedObject MInvoke(
+			ObjectPtr obj,
+			StrID methodID,
+			MemoryResourceType memory_rsrc_type,
+			Args... args);
+
 	private:
 		ReflMngr();
 		~ReflMngr();
 
-		//
-		// memory
-		///////////
-
-		std::pmr::monotonic_buffer_resource mono_rsrc;
+		std::pmr::monotonic_buffer_resource    mono_rsrc;
 		std::pmr::unsynchronized_pool_resource unsync_rsrc;
-		std::pmr::synchronized_pool_resource sync_rsrc;
+		std::pmr::synchronized_pool_resource   sync_rsrc;
 	};
 }
 

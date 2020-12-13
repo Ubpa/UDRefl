@@ -16,36 +16,5 @@ namespace Ubpa::UDRefl {
 		std::unordered_multimap<StrID, MethodInfo> methodinfos;
 		std::unordered_map<TypeID, BaseInfo> baseinfos;
 		AttrSet attrs;
-
-		//
-		// Field
-		//////////
-
-		// without bases, variable object
-		ObjectPtr      RWVar(StrID fieldID) noexcept;
-		// without bases, object
-		ConstObjectPtr RVar (StrID fieldID) const noexcept;
-		// without bases, variable
-		ObjectPtr      RWVar(void*       obj, StrID fieldID) noexcept;
-		// without bases, all
-		ConstObjectPtr RVar (const void* obj, StrID fieldID) const noexcept;
-
-		//
-		// Invoke
-		///////////
-
-		// without bases, static
-		bool IsStaticInvocable(StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
-		// without bases, const + static
-		bool IsConstInvocable (StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
-		// without bases, non-const + const + static
-		bool IsInvocable      (StrID methodID, Span<TypeID> argTypeIDs) const noexcept;
-
-		// without bases, static
-		InvokeResult Invoke(StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const;
-		// without bases, const + static
-		InvokeResult Invoke(const void* obj, StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const;
-		// without bases, non-const + const + static, non-const && static > const
-		InvokeResult Invoke(void* obj, StrID methodID, void* result_buffer, Span<TypeID> argTypeIDs, void* args_buffer) const;
 	};
 }
