@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SharedObject.h"
+#include "Object.h"
 
 #include <unordered_set>
 

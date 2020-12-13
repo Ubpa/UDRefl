@@ -329,11 +329,11 @@ bool ReflMngr::AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo) {
 	return true;
 }
 
-void* ReflMngr::Malloc(uint64_t size) const {
-	std::array argsTypeIDs = { TypeID::of<uint64_t> };
+void* ReflMngr::Malloc(size_t size) const {
+	std::array argsTypeIDs = { TypeID::of<size_t> };
 
-	std::uint8_t args_buffer[sizeof(uint64_t)];
-	buffer_get<uint64_t>(args_buffer, 0) = size;
+	std::uint8_t args_buffer[sizeof(size_t)];
+	buffer_get<size_t>(args_buffer, 0) = size;
 
 	std::uint8_t result_buffer[sizeof(void*)];
 
@@ -356,12 +356,12 @@ bool ReflMngr::Free(void* ptr) const {
 	return result.success;
 }
 
-void* ReflMngr::AlignedMalloc(uint64_t size, uint64_t alignment) const {
-	std::array argsTypeIDs = { TypeID::of<uint64_t>,TypeID::of<uint64_t> };
+void* ReflMngr::AlignedMalloc(size_t size, size_t alignment) const {
+	std::array argsTypeIDs = { TypeID::of<size_t>,TypeID::of<size_t> };
 
-	std::uint8_t args_buffer[2 * sizeof(uint64_t)];
-	buffer_get<uint64_t>(args_buffer, 0) = size;
-	buffer_get<uint64_t>(args_buffer, sizeof(uint64_t)) = alignment;
+	std::uint8_t args_buffer[2 * sizeof(size_t)];
+	buffer_get<size_t>(args_buffer, 0) = size;
+	buffer_get<size_t>(args_buffer, sizeof(size_t)) = alignment;
 
 	std::uint8_t result_buffer[sizeof(void*)];
 	

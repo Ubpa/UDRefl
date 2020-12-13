@@ -147,3 +147,79 @@ InvokeResult TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs
 
 	return {};
 }
+
+//SharedObject TypeInfo::Invoke(StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer,
+//	std::shared_ptr<std::pmr::memory_resource> result_rsrc) const {
+//	auto target = methodinfos.find(methodID);
+//	size_t num = methodinfos.count(methodID);
+//	for (size_t i = 0; i < num; ++i, ++target) {
+//		if (target->second.methodptr.IsStatic()
+//			&& target->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+//		{
+//			const auto& rst_desc = target->second.methodptr.GetResultDesc();
+//			void* result_buffer = result_rsrc->allocate(rst_desc.size, rst_desc.alignment);
+//			auto dtor = target->second.methodptr.Invoke_Static(args_buffer, result_buffer);
+//			if (dtor) {
+//				return {
+//					{rst_desc.typeID, result_buffer},
+//					[dtor = std::move(dtor), result_rsrc = std::move(result_rsrc), size = rst_desc.size, alignment = rst_desc.alignment]
+//					(void* result_buffer) {
+//						dtor(result_buffer);
+//						result_rsrc->deallocate(result_buffer, size, alignment);
+//					}
+//				};
+//			}
+//			else {
+//				return {
+//					{rst_desc.typeID, result_buffer},
+//					[result_rsrc = std::move(result_rsrc), size = rst_desc.size, alignment = rst_desc.alignment]
+//					(void* result_buffer) {
+//						result_rsrc->deallocate(result_buffer, size, alignment);
+//					}
+//				};
+//			}
+//		}
+//	}
+//	return {};
+//}
+//
+//SharedObject TypeInfo::Invoke(const void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer,
+//	std::shared_ptr<std::pmr::memory_resource> result_rsrc) const {
+//	auto target = methodinfos.find(methodID);
+//	size_t num = methodinfos.count(methodID);
+//	for (size_t i = 0; i < num; ++i, ++target) {
+//		if (!target->second.methodptr.IsMemberVariable()
+//			&& target->second.methodptr.GetParamList().IsConpatibleWith(argTypeIDs))
+//		{
+//			const auto& rst_desc = target->second.methodptr.GetResultDesc();
+//			void* result_buffer = result_rsrc->allocate(rst_desc.size, rst_desc.alignment);
+//			auto dtor = target->second.methodptr.Invoke(obj, args_buffer, result_buffer);
+//			if (dtor) {
+//				return {
+//					{rst_desc.typeID, result_buffer},
+//					[dtor = std::move(dtor), result_rsrc = std::move(result_rsrc), size = rst_desc.size, alignment = rst_desc.alignment]
+//					(void* result_buffer) {
+//						dtor(result_buffer);
+//						result_rsrc->deallocate(result_buffer, size, alignment);
+//					}
+//				};
+//			}
+//			else {
+//				return {
+//					{rst_desc.typeID, result_buffer},
+//					[result_rsrc = std::move(result_rsrc), size = rst_desc.size, alignment = rst_desc.alignment]
+//					(void* result_buffer) {
+//						result_rsrc->deallocate(result_buffer, size, alignment);
+//					}
+//				};
+//			}
+//		}
+//	}
+//	return {};
+//}
+//
+//// without bases, non-const + const + static, non-const && static > const
+//SharedObject TypeInfo::Invoke(void* obj, StrID methodID, Span<TypeID> argTypeIDs, void* args_buffer,
+//	std::shared_ptr<std::pmr::memory_resource> result_rsrc) const {
+//
+//}

@@ -1,4 +1,4 @@
-#include <UDRefl/ObjectPtr.h>
+#include <UDRefl/Object.h>
 
 #include <UDRefl/ReflMngr.h>
 
