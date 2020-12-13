@@ -42,8 +42,8 @@ int main() {
 	auto v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>, 1.f, 2.f);
 
 	ReflMngr::Instance().Invoke(v.AsObjectPtr(), StrID{ "NormalizeSelf" });
-	std::cout << ReflMngr::Instance().RVar(v, StrID{"x"}).As<float>() << ", "
-		<< ReflMngr::Instance().RVar(v, StrID{ "y" }).As<float>() << std::endl;
+	std::cout << ReflMngr::Instance().RVar(v.AsObjectPtr(), StrID{"x"}).As<float>() << ", "
+		<< ReflMngr::Instance().RVar(v.AsObjectPtr(), StrID{ "y" }).As<float>() << std::endl;
 
 	std::cout << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), StrID{ "Norm2" }) << std::endl;
 

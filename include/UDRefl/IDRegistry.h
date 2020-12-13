@@ -100,8 +100,8 @@ namespace Ubpa::UDRefl {
 			static constexpr char operator_assign_band[] = "UDRefl::operator&=";
 			static constexpr char operator_assign_bor[] = "UDRefl::operator|=";
 			static constexpr char operator_assign_bxor[] = "UDRefl::operator^=";
-			static constexpr char operator_assign_lshift[] = "UDRefl::operator<<";
-			static constexpr char operator_assign_rshift[] = "UDRefl::operator>>";
+			static constexpr char operator_assign_lshift[] = "UDRefl::operator<<=";
+			static constexpr char operator_assign_rshift[] = "UDRefl::operator>>=";
 
 			static constexpr char operator_new[] = "UDRefl::operator new";
 			static constexpr char operator_new_array[] = "UDRefl::operator new[]";

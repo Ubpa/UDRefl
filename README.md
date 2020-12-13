@@ -116,6 +116,7 @@ v->ForEachRVar(
 - [attr](src/test/08_attr/main.cpp) 
 - [lifecycle (malloc, free, ctor, dtor)](src/test/09_lifecycle/main.cpp) 
 - [dynamic field](src/test/10_dynamic/main.cpp) 
+- [meta function](src/test/12_Meta/main.cpp) 
 
 ## Feature
 

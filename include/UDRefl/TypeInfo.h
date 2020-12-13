@@ -6,10 +6,6 @@
 
 namespace Ubpa::UDRefl {
 	struct TypeInfo {
-		//
-		// Data
-		/////////
-
 		size_t size;
 		size_t alignment;
 		std::unordered_map<StrID, FieldInfo> fieldinfos;
