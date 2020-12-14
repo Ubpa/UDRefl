@@ -2,6 +2,7 @@
 
 #include <UDRefl/ReflMngr.h>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 //
@@ -19,6 +20,38 @@ ConstObjectPtr ObjectPtrBase::RVar(TypeID baseID, StrID fieldID) const noexcept 
 // self [r] vars and all bases' [r] vars
 void ObjectPtrBase::ForEachRVar(const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const {
 	return ReflMngr::Instance().ForEachRVar({ID, ptr}, func);
+}
+
+std::pmr::vector<TypeID> ObjectPtrBase::GetTypeIDs() {
+	return ReflMngr::Instance().GetTypeIDs(ID);
+}
+
+std::pmr::vector<TypeRef> ObjectPtrBase::GetTypes() {
+	return ReflMngr::Instance().GetTypes(ID);
+}
+
+std::pmr::vector<TypeFieldRef> ObjectPtrBase::GetTypeFields() {
+	return ReflMngr::Instance().GetTypeFields(ID);
+}
+
+std::pmr::vector<FieldRef> ObjectPtrBase::GetFields() {
+	return ReflMngr::Instance().GetFields(ID);
+}
+
+std::pmr::vector<TypeMethodRef> ObjectPtrBase::GetTypeMethods() {
+	return ReflMngr::Instance().GetTypeMethods(ID);
+}
+
+std::pmr::vector<MethodRef> ObjectPtrBase::GetMethods() {
+	return ReflMngr::Instance().GetMethods(ID);
+}
+
+std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ObjectPtrBase::GetTypeFieldRVars() {
+	return ReflMngr::Instance().GetTypeFieldRVars({ ID, ptr });
+}
+
+std::pmr::vector<ConstObjectPtr> ObjectPtrBase::GetRVars() {
+	return ReflMngr::Instance().GetRVars({ ID, ptr });
 }
 
 //
@@ -126,4 +159,12 @@ SharedObject ObjectPtr::MInvoke(
 
 void ObjectPtr::ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const {
 	return ReflMngr::Instance().ForEachRWVar(*this, func);
+}
+
+std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ObjectPtr::GetTypeFieldRWVars() {
+	return ReflMngr::Instance().GetTypeFieldRWVars(*this);
+}
+
+std::pmr::vector<ObjectPtr> ObjectPtr::GetRWVars() {
+	return ReflMngr::Instance().GetRWVars(*this);
 }

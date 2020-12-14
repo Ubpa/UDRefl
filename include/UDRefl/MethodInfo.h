@@ -8,9 +8,4 @@ namespace Ubpa::UDRefl {
 		MethodPtr methodptr;
 		AttrSet attrs;
 	};
-
-	struct Method {
-		StrID ID;
-		MethodInfo info;
-	};
 }

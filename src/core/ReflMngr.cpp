@@ -1157,7 +1157,7 @@ void ReflMngr::ForEachField(
 
 void ReflMngr::ForEachMethod(
 	TypeID typeID,
-	const std::function<bool(TypeRef, Method)>& func) const
+	const std::function<bool(TypeRef, MethodRef)>& func) const
 {
 	ForEachType(typeID, [&func](TypeRef type) {
 		for (auto& [methodID, methodInfo] : type.info.methodinfos) {
@@ -1166,6 +1166,22 @@ void ReflMngr::ForEachMethod(
 		}
 		return true;
 	});
+}
+
+void ReflMngr::ForEachRWVar(
+	TypeID typeID,
+	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
+{
+	std::set<TypeID> visitedVBs;
+	details::ForEachRWVar(typeID, func, visitedVBs);
+}
+
+void ReflMngr::ForEachRVar(
+	TypeID typeID,
+	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
+{
+	std::set<TypeID> visitedVBs;
+	details::ForEachRVar(typeID, func, visitedVBs);
 }
 
 void ReflMngr::ForEachRWVar(
@@ -1184,18 +1200,133 @@ void ReflMngr::ForEachRVar(
 	details::ForEachRVar(obj, func, visitedVBs);
 }
 
-void ReflMngr::ForEachRWVar(
-	TypeID typeID,
-	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
-{
-	std::set<TypeID> visitedVBs;
-	details::ForEachRWVar(typeID, func, visitedVBs);
+std::pmr::vector<TypeID> ReflMngr::GetTypeIDs(TypeID typeID) {
+	std::pmr::vector<TypeID> rst{ std::pmr::polymorphic_allocator<TypeID>{&sync_rsrc} };
+	ForEachTypeID(typeID, [&rst](TypeID typeID) {
+		rst.push_back(typeID);
+		return true;
+	});
+	return rst;
 }
 
-void ReflMngr::ForEachRVar(
-	TypeID typeID,
-	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
-{
-	std::set<TypeID> visitedVBs;
-	details::ForEachRVar(typeID, func, visitedVBs);
+std::pmr::vector<TypeRef> ReflMngr::GetTypes(TypeID typeID) {
+	std::pmr::vector<TypeRef> rst{ std::pmr::polymorphic_allocator<TypeRef>{&sync_rsrc} };
+	ForEachType(typeID, [&rst](TypeRef type) {
+		rst.push_back(type);
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<TypeFieldRef> ReflMngr::GetTypeFields(TypeID typeID) {
+	std::pmr::vector<TypeFieldRef> rst{ std::pmr::polymorphic_allocator<TypeFieldRef>{&sync_rsrc} };
+	ForEachField(typeID, [&rst](TypeRef type, FieldRef field) {
+		rst.emplace_back(TypeFieldRef{ type, field });
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<FieldRef> ReflMngr::GetFields(TypeID typeID) {
+	std::pmr::vector<FieldRef> rst{ std::pmr::polymorphic_allocator<FieldRef>{&sync_rsrc} };
+	ForEachField(typeID, [&rst](TypeRef type, FieldRef field) {
+		rst.push_back(field);
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<TypeMethodRef> ReflMngr::GetTypeMethods(TypeID typeID) {
+	std::pmr::vector<TypeMethodRef> rst{ std::pmr::polymorphic_allocator<TypeMethodRef>{&sync_rsrc} };
+	ForEachMethod(typeID, [&rst](TypeRef type, MethodRef field) {
+		rst.emplace_back(TypeMethodRef{ type, field });
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<MethodRef> ReflMngr::GetMethods(TypeID typeID) {
+	std::pmr::vector<MethodRef> rst{ std::pmr::polymorphic_allocator<MethodRef>{&sync_rsrc} };
+	ForEachMethod(typeID, [&rst](TypeRef type, MethodRef field) {
+		rst.push_back(field);
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(TypeID typeID) {
+	std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst
+		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ObjectPtr>>{&sync_rsrc} };
+	ForEachRWVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+		rst.emplace_back(std::tuple{ type, field, var });
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<ObjectPtr> ReflMngr::GetRWVars(TypeID typeID) {
+	std::pmr::vector<ObjectPtr> rst{ std::pmr::polymorphic_allocator<ObjectPtr>{&sync_rsrc} };
+	ForEachRWVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+		rst.push_back(var);
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(TypeID typeID) {
+	std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst
+		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ConstObjectPtr>>{&sync_rsrc} };
+	ForEachRVar(typeID, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
+		rst.emplace_back(std::tuple{ type, field, var });
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<ConstObjectPtr> ReflMngr::GetRVars(TypeID typeID) {
+	std::pmr::vector<ConstObjectPtr> rst{ std::pmr::polymorphic_allocator<ConstObjectPtr>{&sync_rsrc} };
+	ForEachRVar(typeID, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
+		rst.push_back(var);
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(ObjectPtr obj) {
+	std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst
+		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ObjectPtr>>{&sync_rsrc} };
+	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+		rst.emplace_back(std::tuple{ type, field, var });
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<ObjectPtr> ReflMngr::GetRWVars(ObjectPtr obj) {
+	std::pmr::vector<ObjectPtr> rst{ std::pmr::polymorphic_allocator<ObjectPtr>{&sync_rsrc} };
+	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+		rst.push_back(var);
+		return true;
+	});
+	return rst;
+}
+
+
+std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(ConstObjectPtr obj) {
+	std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst	
+		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ConstObjectPtr>>{&sync_rsrc} };
+	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
+		rst.emplace_back(std::tuple{ type, field, var });
+		return true;
+	});
+	return rst;
+}
+
+std::pmr::vector<ConstObjectPtr> ReflMngr::GetRVars(ConstObjectPtr obj) {
+	std::pmr::vector<ConstObjectPtr> rst{ std::pmr::polymorphic_allocator<ConstObjectPtr>{&sync_rsrc} };
+	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
+		rst.push_back(var);
+		return true;
+	});
+	return rst;
 }
