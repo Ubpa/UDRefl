@@ -447,19 +447,19 @@ namespace Ubpa::UDRefl {
 	///////////
 
 	template<typename... Args>
-	bool ReflMngr::IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept {
+	InvocableResult ReflMngr::IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsStaticInvocable(typeID, methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
-	bool ReflMngr::IsConstInvocable(TypeID typeID, StrID methodID) const noexcept {
+	InvocableResult ReflMngr::IsConstInvocable(TypeID typeID, StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsConstInvocable(typeID, methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
-	bool ReflMngr::IsInvocable(TypeID typeID, StrID methodID) const noexcept {
+	InvocableResult ReflMngr::IsInvocable(TypeID typeID, StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsInvocable(typeID, methodID, Span<const TypeID>{argTypeIDs});
 	}

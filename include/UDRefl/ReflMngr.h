@@ -1,8 +1,6 @@
 #pragma once
 
 #include "TypeInfo.h"
-#include "Object.h"
-#include "IDRegistry.h"
 
 namespace Ubpa::UDRefl {
 	constexpr TypeID GlobalID = TypeIDRegistry::MetaID::global;
@@ -335,9 +333,9 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		bool IsStaticInvocable(TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
-		bool IsConstInvocable (TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
-		bool IsInvocable      (TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
+		InvocableResult IsStaticInvocable(TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
+		InvocableResult IsConstInvocable (TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
+		InvocableResult IsInvocable      (TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}) const noexcept;
 
 		InvokeResult Invoke(
 			TypeID typeID,
@@ -363,11 +361,11 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename... Args>
-		bool IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept;
+		InvocableResult IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept;
 		template<typename... Args>
-		bool IsConstInvocable (TypeID typeID, StrID methodID) const noexcept;
+		InvocableResult IsConstInvocable (TypeID typeID, StrID methodID) const noexcept;
 		template<typename... Args>
-		bool IsInvocable      (TypeID typeID, StrID methodID) const noexcept;
+		InvocableResult IsInvocable      (TypeID typeID, StrID methodID) const noexcept;
 
 		template<typename T>
 		T InvokeRet(TypeID      typeID, StrID methodID, Span<const TypeID> argTypeIDs = {}, void* args_buffer = nullptr) const;

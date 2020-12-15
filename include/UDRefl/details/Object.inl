@@ -3,34 +3,8 @@
 #include <array>
 
 namespace Ubpa::UDRefl {
-	template<typename T>
-	T InvokeResult::Move(void* result_buffer) {
-		assert(result_buffer);
-
-		if constexpr (!std::is_reference_v<T> && std::is_default_constructible_v<std::remove_reference_t<T>>) {
-			if (!success)
-				return std::forward<T>(T{});
-		}
-		else
-			assert(success);
-
-		assert(resultID = TypeID::of<T>);
-
-		if constexpr (std::is_reference_v<T>) {
-			using PtrT = std::add_pointer_t<std::remove_reference_t<T>>;
-			assert(!destructor);
-			return std::forward<T>(*buffer_as<PtrT>(result_buffer));
-		}
-		else {
-			T rst = std::move(buffer_as<type_buffer_decay_t<T>>(result_buffer));
-			if (destructor)
-				destructor(result_buffer);
-			return std::forward<T>(rst);
-		}
-	}
-
 	template<typename... Args>
-	bool ConstObjectPtr::IsInvocable(StrID methodID) const noexcept {
+	InvocableResult ConstObjectPtr::IsInvocable(StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsInvocable(ID, methodID, Span<const TypeID>{argTypeIDs});
 	}
@@ -89,7 +63,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	bool ObjectPtr::IsInvocable(StrID methodID) const noexcept {
+	InvocableResult ObjectPtr::IsInvocable(StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsInvocable(ID, methodID, Span<const TypeID>{argTypeIDs});
 	}

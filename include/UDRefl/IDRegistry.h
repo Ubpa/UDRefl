@@ -5,7 +5,6 @@
 #include <string>
 #include <unordered_map>
 #include <memory_resource>
-#include <deque>
 
 #ifndef NDEBUG
 #include <unordered_set>

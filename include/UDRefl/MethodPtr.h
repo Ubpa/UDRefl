@@ -1,22 +1,11 @@
 #pragma once
 
 #include "Object.h"
-#include "Util.h"
 
 #include <vector>
 #include <variant>
 
 namespace Ubpa::UDRefl {
-	struct ResultDesc {
-		TypeID typeID{ TypeID::of<void> };
-		size_t size{ 0 };
-		size_t alignment{ 0 };
-
-		constexpr bool IsVoid() const noexcept {
-			return typeID == TypeID::of<void>;
-		}
-	};
-
 	struct Parameter {
 		TypeID typeID;
 		size_t size;

@@ -105,7 +105,7 @@ ConstObjectPtr ConstObjectPtr::DynamicCast(TypeID typeID) const noexcept {
 	return ReflMngr::Instance().DynamicCast(*this, typeID);
 }
 
-bool ConstObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
+InvocableResult ConstObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
 	return ReflMngr::Instance().IsConstInvocable(ID, methodID, argTypeIDs);
 }
 
@@ -159,7 +159,7 @@ ObjectPtr ObjectPtr::RWVar(TypeID baseID, StrID fieldID) const noexcept {
 	return ReflMngr::Instance().RWVar(*this, baseID, fieldID);
 }
 
-bool ObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
+InvocableResult ObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
 	return ReflMngr::Instance().IsInvocable(ID, methodID, argTypeIDs);
 }
 
