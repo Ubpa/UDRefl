@@ -33,7 +33,7 @@ int main() {
 		ReflMngr::Instance().AddMethod<MemFuncOf<Vec& (float)>::get(&Vec::operator+=)>(StrIDRegistry::Meta::operator_assign_add);
 	}
 	
-	auto obj = ReflMngr::Instance().MakeShared<Vec>();
+	auto obj = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 
 	{
 		Vec{ 10.f,10.f };

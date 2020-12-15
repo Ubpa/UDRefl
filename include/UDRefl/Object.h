@@ -266,9 +266,9 @@ namespace Ubpa::UDRefl {
 		/////////////
 
 		// variable
-		ObjectPtr      RWVar(StrID fieldID) const noexcept;
+		ObjectPtr RWVar(StrID fieldID) const noexcept;
 		// variable, for diamond inheritance
-		ObjectPtr      RWVar(TypeID baseID, StrID fieldID) const noexcept;
+		ObjectPtr RWVar(TypeID baseID, StrID fieldID) const noexcept;
 
 		ObjectPtr StaticCast_DerivedToBase (TypeID baseID)    const noexcept;
 		ObjectPtr StaticCast_BaseToDerived (TypeID derivedID) const noexcept;

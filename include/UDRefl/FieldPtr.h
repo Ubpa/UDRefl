@@ -15,6 +15,7 @@ namespace Ubpa::UDRefl {
 
 		static constexpr size_t BufferSize = std::max(sizeof(Offsetor), sizeof(SharedBuffer)); // maybe 64
 		using Buffer = std::aligned_storage_t<BufferSize>;
+		static_assert(sizeof(Buffer) == BufferSize);
 		using Data = 
 			std::variant<
 				size_t,             // forward_offset_value 0 BASIC_VARIABLE
