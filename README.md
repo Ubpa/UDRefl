@@ -89,15 +89,12 @@ std::cout << "norm: " << v->Invoke<float>("norm") << std::endl;
 ### Iterate over variables
 
 ```c++
-v->ForEachRVar(
-  [](TypeRef type, FieldRef field, ConstObjectPtr var) {
-    std::cout
-      << ReflMngr::Instance().nregistry.Nameof(field.ID)
-      << ": " << var.As<float>()
-      << std::endl;
-    return true;
-  }
-);
+for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
+  std::cout
+    << ReflMngr::Instance().nregistry.Nameof(field.ID)
+    << ": " << var.As<float>()
+    << std::endl;
+}
 ```
 
 ### other example
