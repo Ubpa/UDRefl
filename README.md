@@ -70,17 +70,6 @@ ReflMngr::Instance().ForEachMethod(
 ```c++
 SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 std::cout << v->TypeName() << std::endl; // prints "Vec"
-// do something
-
-// [ or ]
-// ObjectPtr v = ReflMngr::Instance().New(TypeID::of<Vec>);
-// // do something
-// ReflMngr::Instance().Delete(v);
-
-// [ or ]
-// Vec data;
-// ObjectPtr v = Ptr(data);
-// // do something
 ```
 
 ### Set/get variables

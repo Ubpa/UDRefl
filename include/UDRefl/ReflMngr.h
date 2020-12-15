@@ -227,10 +227,25 @@ namespace Ubpa::UDRefl {
 		template<auto field_data>
 		StrID AddField(std::string_view name, AttrSet attrs = {});
 
+		// data can be:
+		// 1. member object pointer
+		// 2. pointer to **non-void** and **non-function** type
+		// 3. functor : Value*(Object*)
+		// > - result must be an pointer of **non-void** type
+		// 4. enumerator
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int> = 0>
 		StrID AddField(TypeID typeID, std::string_view name, T&& data, AttrSet attrs = {})
-		{ return AddField(typeID, name, GenerateFieldPtr(std::forward<T>(data)), std::move(attrs)); }
+		{ return AddField(typeID, name, { GenerateFieldPtr(std::forward<T>(data)), std::move(attrs) }); }
+
+		// data can be:
+		// 1. member object pointer
+		// 2. functor : Value*(Object*)
+		// > - result must be an pointer of **non-void** type
+		// 3. enumerator
+		template<typename T,
+			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int> = 0>
+		StrID AddField(std::string_view name, T&& data, AttrSet attrs = {});
 
 		template<typename T, typename... Args>
 		StrID AddDynamicFieldWithAttr(TypeID typeID, std::string_view name, AttrSet attrs, Args&&... args)
@@ -413,12 +428,12 @@ namespace Ubpa::UDRefl {
 		// if T is not register, call RegisterTypeAuto
 		// else add ctor
 		template<typename T, typename... Args>
-		ObjectPtr New(Args... args);
+		ObjectPtr NewAuto(Args... args);
 
 		// if T is not register, call RegisterTypeAuto
 		// else add ctor
 		template<typename T, typename... Args>
-		SharedObject MakeShared(Args... args);
+		SharedObject MakeSharedAuto(Args... args);
 
 		//
 		// Algorithm

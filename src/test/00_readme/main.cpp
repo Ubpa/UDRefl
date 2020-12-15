@@ -19,10 +19,6 @@ int main() {
 	ReflMngr::Instance().AddField<&Vec::y>("y");
 	ReflMngr::Instance().AddMethod<&Vec::norm>("norm");
 
-	// [ or ]
-	// ObjectPtr v = ReflMngr::Instance().New(TypeID::of<Vec>);
-	// // do something
-	// ReflMngr::Instance().Delete(v);
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 	std::cout << v->TypeName() << std::endl; // prints "Vec"
 

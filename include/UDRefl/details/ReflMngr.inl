@@ -356,6 +356,29 @@ namespace Ubpa::UDRefl {
 		}
 	}
 
+
+	template<typename T,
+		std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int>>
+	StrID ReflMngr::AddField(std::string_view name, T&& data, AttrSet attrs) {
+		using RawT = std::remove_cv_t<std::remove_reference_t<T>>;
+		if constexpr (std::is_member_object_pointer_v<RawT>)
+			return AddField(TypeID::of<member_pointer_traits_object<RawT>>, name, std::forward<T>(data), std::move(attrs));
+		else if constexpr (std::is_enum_v<RawT>)
+			return AddField(TypeID::of<RawT>, name, std::forward<T>(data), std::move(attrs));
+		else {
+			using Traits = FuncTraits<RawT>;
+
+			using ArgList = typename Traits::ArgList;
+			static_assert(Length_v<ArgList> == 1);
+			using ObjectPtr = Front_t<ArgList>;
+			static_assert(std::is_pointer_v<ObjectPtr>);
+			using Obj = std::remove_pointer_t<ObjectPtr>;
+			static_assert(!std::is_const_v<Obj> && !std::is_volatile_v<Obj>);
+
+			return AddField(TypeID::of<Obj>, name, std::forward<T>(data), std::move(attrs));
+		}
+	}
+
 	template<auto member_func_ptr>
 	StrID ReflMngr::AddMethod(std::string_view name, AttrSet attrs) {
 		using MemberFuncPtr = decltype(member_func_ptr);
@@ -564,7 +587,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	ObjectPtr ReflMngr::New(Args... args) {
+	ObjectPtr ReflMngr::NewAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		if (!IsRegistered(TypeID::of<T>))
 			RegisterTypeAuto<T, Args...>();
@@ -584,7 +607,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	SharedObject ReflMngr::MakeShared(Args... args) {
+	SharedObject ReflMngr::MakeSharedAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		if (!IsRegistered(TypeID::of<T>))
 			RegisterTypeAuto<T, Args...>();

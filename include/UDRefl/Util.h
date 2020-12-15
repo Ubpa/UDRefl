@@ -165,7 +165,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	constexpr T type_buffer_recover(std::remove_reference_t<T>* t) noexcept {
-		return *t;
+		return std::forward<T>(*t);
 	}
 
 	template<typename T>
@@ -175,10 +175,10 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	constexpr auto type_buffer_decay(T t) noexcept {
-		if constexpr (std::is_lvalue_reference_v<T>)
+		if constexpr (std::is_reference_v<T>)
 			return &t;
 		else
-			return std::forward<T>(t);
+			return t;
 	}
 
 	template<typename T>
