@@ -405,81 +405,90 @@ namespace Ubpa::UDRefl {
 			ConstObjectPtr obj,
 			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
-		// gather (use sync_rsrc)
+		// gather
 
-		std::pmr::vector<TypeID>                                        GetTypeIDs        (TypeID      typeID);
-		std::pmr::vector<TypeRef>                                       GetTypes          (TypeID      typeID);
-		std::pmr::vector<TypeFieldRef>                                  GetTypeFields     (TypeID      typeID);
-		std::pmr::vector<FieldRef>                                      GetFields         (TypeID      typeID);
-		std::pmr::vector<TypeMethodRef>                                 GetTypeMethods    (TypeID      typeID);
-		std::pmr::vector<MethodRef>                                     GetMethods        (TypeID      typeID);
-		std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars(TypeID      typeID);
-		std::pmr::vector<ObjectPtr>                                     GetRWVars         (TypeID      typeID);
-		std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (TypeID      typeID);
-		std::pmr::vector<ConstObjectPtr>                                GetRVars          (TypeID      typeID);
-		std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars(ObjectPtr      obj);
-		std::pmr::vector<ObjectPtr>                                     GetRWVars         (ObjectPtr      obj);
-		std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (ConstObjectPtr obj);
-		std::pmr::vector<ConstObjectPtr>                                GetRVars          (ConstObjectPtr obj);
+		std::vector<TypeID>                                        GetTypeIDs        (TypeID      typeID);
+		std::vector<TypeRef>                                       GetTypes          (TypeID      typeID);
+		std::vector<TypeFieldRef>                                  GetTypeFields     (TypeID      typeID);
+		std::vector<FieldRef>                                      GetFields         (TypeID      typeID);
+		std::vector<TypeMethodRef>                                 GetTypeMethods    (TypeID      typeID);
+		std::vector<MethodRef>                                     GetMethods        (TypeID      typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars(TypeID      typeID);
+		std::vector<ObjectPtr>                                     GetRWVars         (TypeID      typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (TypeID      typeID);
+		std::vector<ConstObjectPtr>                                GetRVars          (TypeID      typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars(ObjectPtr      obj);
+		std::vector<ObjectPtr>                                     GetRWVars         (ObjectPtr      obj);
+		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (ConstObjectPtr obj);
+		std::vector<ConstObjectPtr>                                GetRVars          (ConstObjectPtr obj);
 
 		//
 		// Memory
 		///////////
 
-		void ReleaseMono();
-
-		void* MAllocate  (MemoryResourceType type,            size_t size, size_t alignment = alignof(std::max_align_t));
-		void  MDeallocate(MemoryResourceType type, void* ptr, size_t size, size_t alignment = alignof(std::max_align_t));
-
 		SharedObject MInvoke(
 			TypeID typeID,
 			StrID methodID,
 			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
-			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
+			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource());
 
 		SharedObject MInvoke(
 			ConstObjectPtr obj,
 			StrID methodID,
 			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
-			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
+			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource());
 
 		SharedObject MInvoke(
 			ObjectPtr obj,
 			StrID methodID,
 			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
-			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC);
+			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource());
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			TypeID typeID,
 			StrID methodID,
-			MemoryResourceType memory_rsrc_type,
+			std::pmr::memory_resource* result_rsrc,
 			Args... args);
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			ConstObjectPtr obj,
 			StrID methodID,
-			MemoryResourceType memory_rsrc_type,
+			std::pmr::memory_resource* result_rsrc,
 			Args... args);
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			ObjectPtr obj,
 			StrID methodID,
-			MemoryResourceType memory_rsrc_type,
+			std::pmr::memory_resource* result_rsrc,
+			Args... args);
+
+		template<typename... Args>
+		SharedObject DMInvoke(
+			TypeID typeID,
+			StrID methodID,
+			Args... args);
+
+		template<typename... Args>
+		SharedObject DMInvoke(
+			ConstObjectPtr obj,
+			StrID methodID,
+			Args... args);
+
+		template<typename... Args>
+		SharedObject DMInvoke(
+			ObjectPtr obj,
+			StrID methodID,
 			Args... args);
 
 	private:
 		ReflMngr();
 		~ReflMngr();
-
-		std::pmr::monotonic_buffer_resource    mono_rsrc;
-		std::pmr::unsynchronized_pool_resource unsync_rsrc;
-		std::pmr::synchronized_pool_resource   sync_rsrc;
 	};
 }
 

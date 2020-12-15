@@ -22,35 +22,35 @@ void ObjectPtrBase::ForEachRVar(const std::function<bool(TypeRef, FieldRef, Cons
 	return ReflMngr::Instance().ForEachRVar({ID, ptr}, func);
 }
 
-std::pmr::vector<TypeID> ObjectPtrBase::GetTypeIDs() {
+std::vector<TypeID> ObjectPtrBase::GetTypeIDs() {
 	return ReflMngr::Instance().GetTypeIDs(ID);
 }
 
-std::pmr::vector<TypeRef> ObjectPtrBase::GetTypes() {
+std::vector<TypeRef> ObjectPtrBase::GetTypes() {
 	return ReflMngr::Instance().GetTypes(ID);
 }
 
-std::pmr::vector<TypeFieldRef> ObjectPtrBase::GetTypeFields() {
+std::vector<TypeFieldRef> ObjectPtrBase::GetTypeFields() {
 	return ReflMngr::Instance().GetTypeFields(ID);
 }
 
-std::pmr::vector<FieldRef> ObjectPtrBase::GetFields() {
+std::vector<FieldRef> ObjectPtrBase::GetFields() {
 	return ReflMngr::Instance().GetFields(ID);
 }
 
-std::pmr::vector<TypeMethodRef> ObjectPtrBase::GetTypeMethods() {
+std::vector<TypeMethodRef> ObjectPtrBase::GetTypeMethods() {
 	return ReflMngr::Instance().GetTypeMethods(ID);
 }
 
-std::pmr::vector<MethodRef> ObjectPtrBase::GetMethods() {
+std::vector<MethodRef> ObjectPtrBase::GetMethods() {
 	return ReflMngr::Instance().GetMethods(ID);
 }
 
-std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ObjectPtrBase::GetTypeFieldRVars() {
+std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ObjectPtrBase::GetTypeFieldRVars() {
 	return ReflMngr::Instance().GetTypeFieldRVars({ ID, ptr });
 }
 
-std::pmr::vector<ConstObjectPtr> ObjectPtrBase::GetRVars() {
+std::vector<ConstObjectPtr> ObjectPtrBase::GetRVars() {
 	return ReflMngr::Instance().GetRVars({ ID, ptr });
 }
 
@@ -98,9 +98,9 @@ SharedObject ConstObjectPtr::MInvoke(
 	StrID methodID,
 	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
-	MemoryResourceType memory_rsrc_type) const
+	std::pmr::memory_resource* rst_rsrc) const
 {
-	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, memory_rsrc_type);
+	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, rst_rsrc);
 }
 
 //
@@ -152,19 +152,19 @@ SharedObject ObjectPtr::MInvoke(
 	StrID methodID,
 	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
-	MemoryResourceType memory_rsrc_type) const
+	std::pmr::memory_resource* rst_rsrc) const
 {
-	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, memory_rsrc_type);
+	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, rst_rsrc);
 }
 
 void ObjectPtr::ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const {
 	return ReflMngr::Instance().ForEachRWVar(*this, func);
 }
 
-std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ObjectPtr::GetTypeFieldRWVars() {
+std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ObjectPtr::GetTypeFieldRWVars() {
 	return ReflMngr::Instance().GetTypeFieldRWVars(*this);
 }
 
-std::pmr::vector<ObjectPtr> ObjectPtr::GetRWVars() {
+std::vector<ObjectPtr> ObjectPtr::GetRWVars() {
 	return ReflMngr::Instance().GetRWVars(*this);
 }

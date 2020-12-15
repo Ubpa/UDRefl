@@ -64,9 +64,9 @@ int main() {
 	ReflMngr::Instance().AddConstructor<Vec, float, float>();
 	ReflMngr::Instance().AddField<&Vec::x>("x");
 	ReflMngr::Instance().AddField<&Vec::y>("y");
-	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(ConstObjectPtr)const noexcept>::run(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
-	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(SharedConstObject)const noexcept>::run(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
-	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(float)const noexcept>::run(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(ConstObjectPtr)const noexcept>::get(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(SharedConstObject)const noexcept>::get(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(float)const noexcept>::get(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
 	ReflMngr::Instance().AddMethod<&Vec::operator- >(StrIDRegistry::Meta::operator_minus);
 	ReflMngr::Instance().AddMethod<&Vec::operator* >(StrIDRegistry::Meta::operator_mul);
 	ReflMngr::Instance().AddMethod<&Vec::operator/ >(StrIDRegistry::Meta::operator_div);

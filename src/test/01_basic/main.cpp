@@ -13,8 +13,8 @@ int main() {
 	
 	SharedObject p = ReflMngr::Instance().MakeShared<Point>();
 
-	ReflMngr::Instance().RWVar(p, StrID{ "x" }).As<float>() = 1.f;
-	ReflMngr::Instance().RWVar(p, StrID{ "y" }).As<float>() = 2.f;
+	ReflMngr::Instance().RWVar(p, "x").As<float>() = 1.f;
+	ReflMngr::Instance().RWVar(p, "y").As<float>() = 2.f;
 
 	p->ForEachRVar(
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {

@@ -3,8 +3,6 @@
 #include <UTemplate/Func.h>
 
 #include <cstdint>
-#include <type_traits>
-#include <tuple>
 #include <functional>
 
 namespace Ubpa::UDRefl {
@@ -13,45 +11,18 @@ namespace Ubpa::UDRefl {
 	using FreeFunc = std::function<void(void*)>;
 	using DeleteFunc = std::function<void(void*)>; // Destructor + FreeFunc
 
-	struct has_virtual_base_void {};
-	template<typename Void, typename Obj>
-	struct has_virtual_base_helper : std::true_type {};
-	template<typename Obj>
-	struct has_virtual_base_helper<
-		std::void_t<decltype(reinterpret_cast<has_virtual_base_void has_virtual_base_void::*>(std::declval<has_virtual_base_void Obj::*>()))>,
-		Obj> : std::false_type{};
-
-	template<typename T>
-	struct has_virtual_base : has_virtual_base_helper<void, T> {};
-	template<typename T>
-	constexpr bool has_virtual_base_v = has_virtual_base<T>::value;
-
-	template<typename Void, typename Base, typename Derived>
-	struct is_virtual_base_of_helper : std::is_base_of<Base, Derived> {};
-	template<typename Base, typename Derived>
-	struct is_virtual_base_of_helper<
-		std::void_t<decltype(static_cast<Derived*>(std::declval<Base*>()))>,
-		Base, Derived> : std::false_type {};
-
-	template<typename Base, typename Derived>
-	struct is_virtual_base_of : is_virtual_base_of_helper<void, Base, Derived> {};
-	template<typename Base, typename Derived>
-	constexpr bool is_virtual_base_of_v = is_virtual_base_of<Base, Derived>::value;
-
 	template<typename Obj, typename T>
 	std::size_t field_forward_offset_value(T Obj::* field_ptr) noexcept {
 		static_assert(!std::is_function_v<T>);
 		static_assert(!has_virtual_base_v<Obj>);
-		return reinterpret_cast<std::size_t>(
-			&(reinterpret_cast<Obj const volatile*>(nullptr)->*field_ptr)
-		);
+		return reinterpret_cast<std::size_t>(&(reinterpret_cast<Obj const volatile*>(nullptr)->*field_ptr));
 	}
 
-	template<typename FieldPtr, FieldPtr fieldptr>
+	template<auto fieldptr>
 	struct field_offsetor_impl;
 
 	template<typename Obj, typename T, T Obj::* fieldptr>
-	struct field_offsetor_impl<T Obj::*, fieldptr> {
+	struct field_offsetor_impl<fieldptr> {
 		static_assert(!std::is_function_v<T>);
 		static constexpr auto get() noexcept {
 			return [](const void* ptr) noexcept -> const void* {
@@ -62,9 +33,10 @@ namespace Ubpa::UDRefl {
 
 	template<auto fieldptr>
 	constexpr auto field_offsetor() noexcept {
-		return field_offsetor_impl<decltype(fieldptr), fieldptr>::get();
+		return field_offsetor_impl<fieldptr>::get();
 	}
 
+	// result size of field_offsetor(fieldptr) > result size of field_offsetor<fieldptr> 
 	template<typename T, typename Obj>
 	constexpr auto field_offsetor(T Obj::* fieldptr) noexcept {
 		static_assert(!std::is_function_v<T>);
@@ -99,6 +71,8 @@ namespace Ubpa::UDRefl {
 			return static_cast_functor<Base, Derived>();
 	}
 
+	// polymorphic: dynamic_cast
+	// virtual    : no static_cast (Base -> Derived)
 	template<typename Derived, typename Base>
 	constexpr InheritCastFunctions inherit_cast_functions() noexcept {
 		static_assert(std::is_base_of_v<Base, Derived>);

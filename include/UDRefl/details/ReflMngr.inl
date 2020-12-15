@@ -585,47 +585,74 @@ namespace Ubpa::UDRefl {
 	SharedObject ReflMngr::MInvoke(
 		TypeID typeID,
 		StrID methodID,
-		MemoryResourceType memory_rsrc_type,
+		std::pmr::memory_resource* rst_rsrc,
 		Args... args)
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return MInvoke(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+			return MInvoke(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), rst_rsrc);
 		}
 		else
-			return MInvoke(typeID, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+			return MInvoke(typeID, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
 	SharedObject ReflMngr::MInvoke(
 		ConstObjectPtr obj,
 		StrID methodID,
-		MemoryResourceType memory_rsrc_type,
+		std::pmr::memory_resource* rst_rsrc,
 		Args... args)
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), rst_rsrc);
 		}
 		else
-			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
 	SharedObject ReflMngr::MInvoke(
 		ObjectPtr obj,
 		StrID methodID,
-		MemoryResourceType memory_rsrc_type,
+		std::pmr::memory_resource* rst_rsrc,
 		Args... args)
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), rst_rsrc);
 		}
 		else
-			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::DMInvoke(
+		TypeID typeID,
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke<Args>(typeID, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::DMInvoke(
+		ConstObjectPtr obj,
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke<Args>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::DMInvoke(
+		ObjectPtr obj,
+		StrID methodID,
+		Args... args)
+	{
+		return MInvoke<Args>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 }

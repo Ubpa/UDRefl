@@ -68,40 +68,24 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	SharedObject ConstObjectPtr::MInvoke(
 		StrID methodID,
-		MemoryResourceType memory_rsrc_type,
+		std::pmr::memory_resource* rst_rsrc,
 		Args... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), rst_rsrc);
 		}
 		else
-			return MInvoke(methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+			return MInvoke(methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
-	SharedObject ConstObjectPtr::MonoMInvoke(
+	SharedObject ConstObjectPtr::DMInvoke(
 		StrID methodID,
 		Args... args) const
 	{
-		return MInvoke<Args...>(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
-	SharedObject ConstObjectPtr::SyncMInvoke(
-		StrID methodID,
-		Args... args) const
-	{
-		return MInvoke<Args...>(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
-	SharedObject ConstObjectPtr::UnsyncMInvoke(
-		StrID methodID,
-		Args... args) const
-	{
-		return MInvoke<Args...>(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
@@ -143,40 +127,24 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	SharedObject ObjectPtr::MInvoke(
 		StrID methodID,
-		MemoryResourceType memory_rsrc_type,
+		std::pmr::memory_resource* rst_rsrc,
 		Args... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			auto args_buffer = type_buffer_decay_as_tuple<Args...>(std::forward<Args>(args)...);
-			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), memory_rsrc_type);
+			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(&args_buffer), rst_rsrc);
 		}
 		else
-			return MInvoke(methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), memory_rsrc_type);
+			return MInvoke(methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
-	SharedObject ObjectPtr::MonoMInvoke(
+	SharedObject ObjectPtr::DMInvoke(
 		StrID methodID,
 		Args... args) const
 	{
-		return MInvoke<Args...>(methodID, MemoryResourceType::MONO, std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
-	SharedObject ObjectPtr::SyncMInvoke(
-		StrID methodID,
-		Args... args) const
-	{
-		return MInvoke<Args...>(methodID, MemoryResourceType::SYNC, std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
-	SharedObject ObjectPtr::UnsyncMInvoke(
-		StrID methodID,
-		Args... args) const
-	{
-		return MInvoke<Args...>(methodID, MemoryResourceType::UNSYNC, std::forward<Args>(args)...);
+		return MInvoke<Args...>(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 }
 

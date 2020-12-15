@@ -25,8 +25,8 @@ int main() {
 	// ReflMngr::Instance().Delete(v);
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 
-	v->RWVar(StrID{ "x" }).As<float>() = 3.f;
-	v->RWVar(StrID{ "y" }).As<float>() = 4.f;
+	v->RWVar("x").As<float>() = 3.f;
+	v->RWVar("y").As<float>() = 4.f;
 
 	std::cout << "x: " << v->RVar("x").As<float>() << std::endl;
 	std::cout << "norm: " << v->Invoke<float>("norm") << std::endl;

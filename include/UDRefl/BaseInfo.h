@@ -23,31 +23,27 @@ namespace Ubpa::UDRefl {
 		}
 
 		const void* StaticCast_DerivedToBase(const void* ptr) const noexcept {
-			return funcs.static_derived_to_base(ptr);
+			return StaticCast_DerivedToBase(const_cast<void*>(ptr));
 		}
 
-		// assert !IsVirtual()
+		// require non virtual
 		void* StaticCast_BaseToDerived(void* ptr) const noexcept {
-			assert(!IsVirtual());
-			return const_cast<void*>(funcs.static_base_to_derived(ptr));
+			return IsVirtual() ? nullptr : const_cast<void*>(funcs.static_base_to_derived(ptr));
 		}
 
-		// assert !IsVirtual()
+		// require non virtual
 		const void* StaticCast_BaseToDerived(const void* ptr) const noexcept {
-			assert(!IsVirtual());
-			return funcs.static_base_to_derived(ptr);
+			return StaticCast_BaseToDerived(const_cast<void*>(ptr));
 		}
 
-		// assert IsPolymorphic
+		// require polymorphic
 		void* DynamicCast_BaseToDerived(void* ptr) const noexcept {
-			assert(IsPolymorphic());
-			return const_cast<void*>(funcs.dynamic_base_to_derived(ptr));
+			return IsPolymorphic() ? const_cast<void*>(funcs.dynamic_base_to_derived(ptr)) : nullptr;
 		}
 
-		// assert IsPolymorphic
+		// require polymorphic
 		const void* DynamicCast_BaseToDerived(const void* ptr) const noexcept {
-			assert(IsPolymorphic());
-			return funcs.dynamic_base_to_derived(ptr);
+			return DynamicCast_BaseToDerived(const_cast<void*>(ptr));
 		}
 		
 	private:

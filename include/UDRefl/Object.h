@@ -11,10 +11,10 @@
 #include <functional>
 #include <memory>
 
-#define OBJECT_PTR_DEFINE_OPERATOR(op, name)                                                 \
-template<typename Arg>                                                                       \
-SharedObject operator##op (Arg rhs) const {                                                  \
-    return SyncMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_PTR_DEFINE_OPERATOR(op, name)                                              \
+template<typename Arg>                                                                    \
+SharedObject operator##op (Arg rhs) const {                                               \
+    return DMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
 }
 
 #define SHARED_OBJECT_DEFINE_OPERATOR(op)                            \
@@ -24,12 +24,6 @@ SharedObject operator##op (Arg rhs) const {                          \
 }
 
 namespace Ubpa::UDRefl {
-	enum class MemoryResourceType {
-		MONO,
-		SYNC,
-		UNSYNC,
-	};
-
 	struct InvokeResult {
 		bool success{ false };
 		TypeID resultID;
@@ -109,14 +103,14 @@ namespace Ubpa::UDRefl {
 		// self [r] vars and all bases' [r] vars
 		void ForEachRVar(const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
-		std::pmr::vector<TypeID>                                        GetTypeIDs();
-		std::pmr::vector<TypeRef>                                       GetTypes();
-		std::pmr::vector<TypeFieldRef>                                  GetTypeFields();
-		std::pmr::vector<FieldRef>                                      GetFields();
-		std::pmr::vector<TypeMethodRef>                                 GetTypeMethods();
-		std::pmr::vector<MethodRef>                                     GetMethods();
-		std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars();
-		std::pmr::vector<ConstObjectPtr>                                GetRVars();
+		std::vector<TypeID>                                        GetTypeIDs();
+		std::vector<TypeRef>                                       GetTypes();
+		std::vector<TypeFieldRef>                                  GetTypeFields();
+		std::vector<FieldRef>                                      GetFields();
+		std::vector<TypeMethodRef>                                 GetTypeMethods();
+		std::vector<MethodRef>                                     GetMethods();
+		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars();
+		std::vector<ConstObjectPtr>                                GetRVars();
 
 	protected:
 		template<typename T>
@@ -190,26 +184,16 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
-			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC) const;
+			std::pmr::memory_resource* rst_rsrc = std::pmr::get_default_resource()) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			StrID methodID,
-			MemoryResourceType memory_rsrc_type,
+			std::pmr::memory_resource* rst_rsrc,
 			Args... args) const;
 
 		template<typename... Args>
-		SharedObject MonoMInvoke(
-			StrID methodID,
-			Args... args) const;
-
-		template<typename... Args>
-		SharedObject SyncMInvoke(
-			StrID methodID,
-			Args... args) const;
-
-		template<typename... Args>
-		SharedObject UnsyncMInvoke(
+		SharedObject DMInvoke(
 			StrID methodID,
 			Args... args) const;
 
@@ -243,7 +227,7 @@ namespace Ubpa::UDRefl {
 
 		template<typename... Args>
 		SharedObject operator()(Args... args) const {
-			return SyncMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
+			return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
 				std::forward<Args>(args)...);
 		}
 	};
@@ -293,7 +277,7 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Span<const TypeID> argTypeIDs = {},
 			void* args_buffer = nullptr,
-			MemoryResourceType memory_rsrc_type = MemoryResourceType::SYNC) const;
+			std::pmr::memory_resource* rst_rsrc = std::pmr::get_default_resource()) const;
 
 		template<typename... Args>
 		bool IsInvocable(StrID methodID) const noexcept;
@@ -310,29 +294,19 @@ namespace Ubpa::UDRefl {
 		template<typename... Args>
 		SharedObject MInvoke(
 			StrID methodID,
-			MemoryResourceType memory_rsrc_type,
+			std::pmr::memory_resource* rst_rsrc,
 			Args... args) const;
 
 		template<typename... Args>
-		SharedObject MonoMInvoke(
-			StrID methodID,
-			Args... args) const;
-
-		template<typename... Args>
-		SharedObject SyncMInvoke(
-			StrID methodID,
-			Args... args) const;
-
-		template<typename... Args>
-		SharedObject UnsyncMInvoke(
+		SharedObject DMInvoke(
 			StrID methodID,
 			Args... args) const;
 
 		// self [r/w] vars and all bases' [r/w] vars
 		void ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
-		std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldRWVars();
-		std::pmr::vector<ObjectPtr>                                GetRWVars();
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldRWVars();
+		std::vector<ObjectPtr>                                GetRWVars();
 
 		//
 		// Meta
@@ -364,7 +338,7 @@ namespace Ubpa::UDRefl {
 
 		template<typename... Args>
 		SharedObject operator()(Args... args) const {
-			return SyncMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
+			return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
 				std::forward<Args>(args)...);
 		}
 	};

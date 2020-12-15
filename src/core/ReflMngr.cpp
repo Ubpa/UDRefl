@@ -216,25 +216,15 @@ namespace Ubpa::UDRefl::details {
 		return true;
 	}
 
-	DeleteFunc GenerateDeleteFunc(Destructor&& dtor, MemoryResourceType type, size_t size, size_t alignment) {
+	DeleteFunc GenerateDeleteFunc(Destructor&& dtor, std::pmr::memory_resource* result_rsrc, size_t size, size_t alignment) {
 		assert(size > 0);
-		if (dtor && type != MemoryResourceType::MONO) {
-			return [d = std::move(dtor), type, size, alignment](void* ptr) {
+		if (dtor) {
+			return [d = std::move(dtor), result_rsrc, size, alignment](void* ptr) {
 				d(ptr);
-				ReflMngr::Instance().MDeallocate(type, ptr, size, alignment);
+				result_rsrc->deallocate(ptr, size, alignment);
 			};
 		}
-		else if (dtor && type == MemoryResourceType::MONO) {
-			return[d = std::move(dtor)] (void* ptr) {
-				d(ptr);
-			};
-		}
-		else if (!dtor && type != MemoryResourceType::MONO) {
-			return [type, size, alignment] (void* ptr) {
-				ReflMngr::Instance().MDeallocate(type, ptr, size, alignment);
-			};
-		}
-		else // !dtor && memory_rsrc_type == MemoryResourceType::MONO
+		else // !dtor
 		{
 			return [](void* ptr) {
 				assert(ptr);
@@ -839,47 +829,14 @@ InvokeResult ReflMngr::Invoke(
 	return {};
 }
 
-void ReflMngr::ReleaseMono() {
-	mono_rsrc.release();
-}
-
-void* ReflMngr::MAllocate(MemoryResourceType type, size_t size, size_t alignment) {
-	switch (type)
-	{
-	case Ubpa::UDRefl::MemoryResourceType::MONO:
-		return mono_rsrc.allocate(size, alignment);
-	case Ubpa::UDRefl::MemoryResourceType::SYNC:
-		return sync_rsrc.allocate(size, alignment);
-	case Ubpa::UDRefl::MemoryResourceType::UNSYNC:
-		return unsync_rsrc.allocate(size, alignment);
-	default:
-		assert(false);
-		return nullptr;
-	}
-}
-
-void ReflMngr::MDeallocate(MemoryResourceType type, void* ptr, size_t size, size_t alignment) {
-	assert(ptr);
-	switch (type)
-	{
-	case Ubpa::UDRefl::MemoryResourceType::MONO:
-		return mono_rsrc.deallocate(ptr, size, alignment);
-	case Ubpa::UDRefl::MemoryResourceType::SYNC:
-		return sync_rsrc.deallocate(ptr, size, alignment);
-	case Ubpa::UDRefl::MemoryResourceType::UNSYNC:
-		return unsync_rsrc.deallocate(ptr, size, alignment);
-	default:
-		break;
-	}
-}
-
 SharedObject ReflMngr::MInvoke(
 	TypeID typeID,
 	StrID methodID,
 	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
-	MemoryResourceType memory_rsrc_type)
+	std::pmr::memory_resource* rst_rsrc)
 {
+	assert(rst_rsrc);
 	auto typetarget = typeinfos.find(typeID);
 
 	if (typetarget == typeinfos.end())
@@ -905,18 +862,18 @@ SharedObject ReflMngr::MInvoke(
 				};
 			}
 			else {
-				void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+				void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 				auto dtor = mtarget->second.methodptr.Invoke_Static(result_buffer, args_buffer);
 				return {
 					{rst_desc.typeID, result_buffer},
-					details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+					details::GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 				};
 			}
 		}
 	}
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto rst = MInvoke(baseID, methodID, argTypeIDs, args_buffer, memory_rsrc_type);
+		auto rst = MInvoke(baseID, methodID, argTypeIDs, args_buffer, rst_rsrc);
 		if (rst)
 			return rst;
 	}
@@ -929,8 +886,9 @@ SharedObject ReflMngr::MInvoke(
 	StrID methodID,
 	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
-	MemoryResourceType memory_rsrc_type)
+	std::pmr::memory_resource* rst_rsrc)
 {
+	assert(rst_rsrc);
 	auto typetarget = typeinfos.find(obj.GetID());
 
 	if (typetarget == typeinfos.end())
@@ -954,11 +912,11 @@ SharedObject ReflMngr::MInvoke(
 				};
 			}
 			else {
-				void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+				void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 				auto dtor = mtarget->second.methodptr.Invoke(obj, result_buffer, args_buffer);
 				return {
 					{rst_desc.typeID, result_buffer},
-					details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+					details::GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 				};
 			}
 		}
@@ -967,7 +925,7 @@ SharedObject ReflMngr::MInvoke(
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = MInvoke(
 			ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
-			methodID, argTypeIDs, args_buffer, memory_rsrc_type
+			methodID, argTypeIDs, args_buffer, rst_rsrc
 		);
 		if (rst)
 			return rst;
@@ -981,8 +939,9 @@ SharedObject ReflMngr::MInvoke(
 	StrID methodID,
 	Span<const TypeID> argTypeIDs,
 	void* args_buffer,
-	MemoryResourceType memory_rsrc_type)
+	std::pmr::memory_resource* rst_rsrc)
 {
+	assert(rst_rsrc);
 	auto typetarget = typeinfos.find(obj.GetID());
 
 	if (typetarget == typeinfos.end())
@@ -1010,11 +969,11 @@ SharedObject ReflMngr::MInvoke(
 					};
 				}
 				else {
-					void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 					auto dtor = iter->second.methodptr.Invoke(obj, result_buffer, args_buffer);
 					return {
 						{rst_desc.typeID, result_buffer},
-						details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+						details::GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 					};
 				}
 			}
@@ -1037,11 +996,11 @@ SharedObject ReflMngr::MInvoke(
 					};
 				}
 				else {
-					void* result_buffer = MAllocate(memory_rsrc_type, rst_desc.size, rst_desc.alignment);
+					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 					auto dtor = iter->second.methodptr.Invoke(ConstObjectPtr{ obj }, result_buffer, args_buffer);
 					return {
 						{rst_desc.typeID, result_buffer},
-						details::GenerateDeleteFunc(std::move(dtor), memory_rsrc_type, rst_desc.size, rst_desc.alignment)
+						details::GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 					};
 				}
 			}
@@ -1051,7 +1010,7 @@ SharedObject ReflMngr::MInvoke(
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto rst = MInvoke(
 			ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj) },
-			methodID, argTypeIDs, args_buffer, memory_rsrc_type
+			methodID, argTypeIDs, args_buffer, rst_rsrc
 		);
 		if (rst)
 			return rst;
@@ -1200,8 +1159,8 @@ void ReflMngr::ForEachRVar(
 	details::ForEachRVar(obj, func, visitedVBs);
 }
 
-std::pmr::vector<TypeID> ReflMngr::GetTypeIDs(TypeID typeID) {
-	std::pmr::vector<TypeID> rst{ std::pmr::polymorphic_allocator<TypeID>{&sync_rsrc} };
+std::vector<TypeID> ReflMngr::GetTypeIDs(TypeID typeID) {
+	std::vector<TypeID> rst;
 	ForEachTypeID(typeID, [&rst](TypeID typeID) {
 		rst.push_back(typeID);
 		return true;
@@ -1209,8 +1168,8 @@ std::pmr::vector<TypeID> ReflMngr::GetTypeIDs(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<TypeRef> ReflMngr::GetTypes(TypeID typeID) {
-	std::pmr::vector<TypeRef> rst{ std::pmr::polymorphic_allocator<TypeRef>{&sync_rsrc} };
+std::vector<TypeRef> ReflMngr::GetTypes(TypeID typeID) {
+	std::vector<TypeRef> rst;
 	ForEachType(typeID, [&rst](TypeRef type) {
 		rst.push_back(type);
 		return true;
@@ -1218,8 +1177,8 @@ std::pmr::vector<TypeRef> ReflMngr::GetTypes(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<TypeFieldRef> ReflMngr::GetTypeFields(TypeID typeID) {
-	std::pmr::vector<TypeFieldRef> rst{ std::pmr::polymorphic_allocator<TypeFieldRef>{&sync_rsrc} };
+std::vector<TypeFieldRef> ReflMngr::GetTypeFields(TypeID typeID) {
+	std::vector<TypeFieldRef> rst;
 	ForEachField(typeID, [&rst](TypeRef type, FieldRef field) {
 		rst.emplace_back(TypeFieldRef{ type, field });
 		return true;
@@ -1227,8 +1186,8 @@ std::pmr::vector<TypeFieldRef> ReflMngr::GetTypeFields(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<FieldRef> ReflMngr::GetFields(TypeID typeID) {
-	std::pmr::vector<FieldRef> rst{ std::pmr::polymorphic_allocator<FieldRef>{&sync_rsrc} };
+std::vector<FieldRef> ReflMngr::GetFields(TypeID typeID) {
+	std::vector<FieldRef> rst;
 	ForEachField(typeID, [&rst](TypeRef type, FieldRef field) {
 		rst.push_back(field);
 		return true;
@@ -1236,8 +1195,8 @@ std::pmr::vector<FieldRef> ReflMngr::GetFields(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<TypeMethodRef> ReflMngr::GetTypeMethods(TypeID typeID) {
-	std::pmr::vector<TypeMethodRef> rst{ std::pmr::polymorphic_allocator<TypeMethodRef>{&sync_rsrc} };
+std::vector<TypeMethodRef> ReflMngr::GetTypeMethods(TypeID typeID) {
+	std::vector<TypeMethodRef> rst;
 	ForEachMethod(typeID, [&rst](TypeRef type, MethodRef field) {
 		rst.emplace_back(TypeMethodRef{ type, field });
 		return true;
@@ -1245,8 +1204,8 @@ std::pmr::vector<TypeMethodRef> ReflMngr::GetTypeMethods(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<MethodRef> ReflMngr::GetMethods(TypeID typeID) {
-	std::pmr::vector<MethodRef> rst{ std::pmr::polymorphic_allocator<MethodRef>{&sync_rsrc} };
+std::vector<MethodRef> ReflMngr::GetMethods(TypeID typeID) {
+	std::vector<MethodRef> rst;
 	ForEachMethod(typeID, [&rst](TypeRef type, MethodRef field) {
 		rst.push_back(field);
 		return true;
@@ -1254,9 +1213,8 @@ std::pmr::vector<MethodRef> ReflMngr::GetMethods(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(TypeID typeID) {
-	std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst
-		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ObjectPtr>>{&sync_rsrc} };
+std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(TypeID typeID) {
+	std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst;
 	ForEachRWVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
@@ -1264,8 +1222,8 @@ std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFiel
 	return rst;
 }
 
-std::pmr::vector<ObjectPtr> ReflMngr::GetRWVars(TypeID typeID) {
-	std::pmr::vector<ObjectPtr> rst{ std::pmr::polymorphic_allocator<ObjectPtr>{&sync_rsrc} };
+std::vector<ObjectPtr> ReflMngr::GetRWVars(TypeID typeID) {
+	std::vector<ObjectPtr> rst;
 	ForEachRWVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.push_back(var);
 		return true;
@@ -1273,9 +1231,8 @@ std::pmr::vector<ObjectPtr> ReflMngr::GetRWVars(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(TypeID typeID) {
-	std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst
-		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ConstObjectPtr>>{&sync_rsrc} };
+std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(TypeID typeID) {
+	std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst;
 	ForEachRVar(typeID, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
@@ -1283,8 +1240,8 @@ std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTyp
 	return rst;
 }
 
-std::pmr::vector<ConstObjectPtr> ReflMngr::GetRVars(TypeID typeID) {
-	std::pmr::vector<ConstObjectPtr> rst{ std::pmr::polymorphic_allocator<ConstObjectPtr>{&sync_rsrc} };
+std::vector<ConstObjectPtr> ReflMngr::GetRVars(TypeID typeID) {
+	std::vector<ConstObjectPtr> rst;
 	ForEachRVar(typeID, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
 		rst.push_back(var);
 		return true;
@@ -1292,9 +1249,8 @@ std::pmr::vector<ConstObjectPtr> ReflMngr::GetRVars(TypeID typeID) {
 	return rst;
 }
 
-std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(ObjectPtr obj) {
-	std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst
-		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ObjectPtr>>{&sync_rsrc} };
+std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(ObjectPtr obj) {
+	std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst;
 	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
@@ -1302,8 +1258,8 @@ std::pmr::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFiel
 	return rst;
 }
 
-std::pmr::vector<ObjectPtr> ReflMngr::GetRWVars(ObjectPtr obj) {
-	std::pmr::vector<ObjectPtr> rst{ std::pmr::polymorphic_allocator<ObjectPtr>{&sync_rsrc} };
+std::vector<ObjectPtr> ReflMngr::GetRWVars(ObjectPtr obj) {
+	std::vector<ObjectPtr> rst;
 	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.push_back(var);
 		return true;
@@ -1312,9 +1268,8 @@ std::pmr::vector<ObjectPtr> ReflMngr::GetRWVars(ObjectPtr obj) {
 }
 
 
-std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(ConstObjectPtr obj) {
-	std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst	
-		{ std::pmr::polymorphic_allocator<std::tuple<TypeRef, FieldRef, ConstObjectPtr>>{&sync_rsrc} };
+std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(ConstObjectPtr obj) {
+	std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst;
 	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
@@ -1322,8 +1277,8 @@ std::pmr::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTyp
 	return rst;
 }
 
-std::pmr::vector<ConstObjectPtr> ReflMngr::GetRVars(ConstObjectPtr obj) {
-	std::pmr::vector<ConstObjectPtr> rst{ std::pmr::polymorphic_allocator<ConstObjectPtr>{&sync_rsrc} };
+std::vector<ConstObjectPtr> ReflMngr::GetRVars(ConstObjectPtr obj) {
+	std::vector<ConstObjectPtr> rst;
 	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
 		rst.push_back(var);
 		return true;
