@@ -18,7 +18,7 @@ namespace Ubpa::UDRefl {
 
 		if constexpr (std::is_lvalue_reference_v<T>) {
 			using PtrT = std::add_pointer_t<std::remove_reference_t<T>>;
-			assert(destructor == nullptr);
+			assert(!destructor);
 			return *buffer_as<PtrT>(result_buffer);
 		}
 		else {

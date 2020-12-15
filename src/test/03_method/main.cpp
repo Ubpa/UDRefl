@@ -26,6 +26,10 @@ struct Vec {
 		y += p.y;
 		return *this;
 	}
+
+	Vec&& move() noexcept {
+		return std::move(*this);
+	}
 };
 
 int main() {
@@ -37,6 +41,7 @@ int main() {
 		ReflMngr::Instance().AddMethod<&Vec::Norm2>("Norm2");
 		ReflMngr::Instance().AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
 		ReflMngr::Instance().AddMethod<&Vec::operator+= >(StrIDRegistry::Meta::operator_assign_add);
+		ReflMngr::Instance().AddMethod<&Vec::move >("move");
 	}
 
 	auto v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>, 1.f, 2.f);
@@ -53,6 +58,7 @@ int main() {
 		Vec{ 10.f,10.f }
 	);
 	std::cout << w.x << ", " << w.y << std::endl;
+	v->DMInvoke("move");
 	
 	return 0;
 }

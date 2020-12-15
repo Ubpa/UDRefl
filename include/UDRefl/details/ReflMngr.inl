@@ -18,8 +18,8 @@ namespace Ubpa::UDRefl::details {
 			using FuncPtr = decltype(funcptr);
 			using Traits = FuncTraits<decltype(funcptr)>;
 			if constexpr (std::is_member_function_pointer_v<FuncPtr>) {
-				using ObjectPtr = std::conditional_t<Traits::is_const, const void*, void*>;
-				constexpr auto wrapped_func = [](ObjectPtr obj, void* result_buffer, ArgsView args) -> Destructor {
+				using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
+				constexpr auto wrapped_func = [](MaybeConstVoidPtr obj, void* result_buffer, ArgsView args) -> Destructor {
 					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
@@ -47,9 +47,9 @@ namespace Ubpa::UDRefl::details {
 		template<typename Func, size_t... Ns>
 		static /*constexpr*/ auto GenerateMemberFunction(Func&& func, std::index_sequence<Ns...>) noexcept {
 			using Traits = WrapFuncTraits<std::decay_t<Func>>;
-			using ObjectPtr = std::conditional_t<Traits::is_const, const void*, void*>;
+			using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 			/*constexpr*/ auto wrapped_func =
-				[f = std::forward<Func>(func)](ObjectPtr obj, void* result_buffer, ArgsView args) mutable -> Destructor {
+				[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgsView args) mutable -> Destructor {
 					assert(((args.GetParamList().GetParameters()[Ns].typeID == TypeID::of<Args>)&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].size == sizeof(type_buffer_decay_t<Args>))&&...));
 					assert(((args.GetParamList().GetParameters()[Ns].alignment == alignof(type_buffer_decay_t<Args>))&&...));
@@ -203,14 +203,29 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	FieldPtr ReflMngr::GenerateDynamicFieldPtr(Args&&... args) {
-		using RawT = std::decay_t<T>;
+		using RawT = std::remove_cv_t<std::remove_reference_t<T>>;
+		if constexpr (FieldPtr::IsBufferable<RawT>()) {
+			FieldPtr::Buffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
+			return FieldPtr{ TypeID::of<RawT>, buffer, std::bool_constant<std::is_const_v<T>>{} };
+		}
+		else {
+			static_assert(alignof(RawT) <= alignof(max_align_t));
+			using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, SharedConstObject, SharedObject>;
+			MaybeConstSharedObject obj = { TypeID::of<RawT>, std::make_shared<RawT>(std::forward<Args>(args)...) };
+			return FieldPtr{ obj };
+		}
+	}
+
+	template<typename T, typename Alloc, typename... Args>
+	FieldPtr ReflMngr::GenerateDynamicFieldPtrByAlloc(const Alloc& alloc, Args&&... args) {
+		using RawT = std::remove_cv_t<std::remove_reference_t<T>>;
 		if constexpr (FieldPtr::IsBufferable<RawT>()) {
 			FieldPtr::Buffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
 			return FieldPtr{ TypeID::of<RawT>, buffer, std::bool_constant<std::is_const_v<T>>{} };
 		}
 		else {
 			using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, SharedConstObject, SharedObject>;
-			MaybeConstSharedObject obj = { TypeID::of<RawT>, std::make_shared<std::remove_cv_t<T>>(std::forward<Args>(args)...) };
+			MaybeConstSharedObject obj = { TypeID::of<RawT>, std::allocate_shared<RawT>(alloc, std::forward<Args>(args)...) };
 			return FieldPtr{ obj };
 		}
 	}

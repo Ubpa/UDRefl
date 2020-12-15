@@ -189,30 +189,40 @@ namespace Ubpa::UDRefl {
 		return std::tuple{ type_buffer_decay<Ts>(std::forward<Ts>(ts))... };
 	}
 
-	// ({const?} void* obj, void* result_buffer, void* args_buffer) -> Destructor*
-	// size: 1
+	// [func_ptr]
+	// - Func Obj::* : Func isn't && (const && is ok)
+	// - Func*
+	// [result]
+	// - type : ({const?} void* obj, void* result_buffer, void* args_buffer) -> Destructor
+	// - size : 1
 	template<auto func_ptr>
 	constexpr auto wrap_member_function() noexcept;
 
-	// (void* result_buffer, void* args_buffer) -> Destructor*
-	// size: 1
+	// [func_ptr]
+	// - Func*
+	// [result]
+	// - type : (void* result_buffer, void* args_buffer) -> Destructor
+	// - size : 1
 	template<auto func_ptr>
 	constexpr auto wrap_static_function() noexcept;
 
 	// static dispatch to
 	// - wrap_member_function
 	// - wrap_static_function
-	// size: 1
 	template<auto func_ptr>
 	constexpr auto wrap_function() noexcept;
 
-	// ({const?} void* obj, void* result_buffer, void* args_buffer) -> Destructor*
-	// size: sizeof(Func)
+	// Func: Ret(const? volatile? Object&, Args...)
+	// [result]
+	// - type : ({const?} void* obj, void* result_buffer, void* args_buffer) -> Destructor
+	// - size : sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_member_function(Func&& func) noexcept;
 
-	// (void* result_buffer, void* args_buffer) -> Destructor*
-	// size: sizeof(Func)
+	// Func: Ret(Args...)
+	// [result]
+	// - type : (void* result_buffer, void* args_buffer) -> Destructor
+	// - size : sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_static_function(Func&& func) noexcept;
 }

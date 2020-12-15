@@ -14,7 +14,7 @@ namespace Ubpa::UDRefl {
 		///////////
 
 		static constexpr size_t BufferSize = std::max(sizeof(Offsetor), sizeof(SharedBuffer)); // maybe 64
-		using Buffer = std::array<std::uint8_t, sizeof(BufferSize)>;
+		using Buffer = std::aligned_storage_t<BufferSize>;
 		using Data = 
 			std::variant<
 				size_t,             // forward_offset_value 0 BASIC_VARIABLE
@@ -31,14 +31,14 @@ namespace Ubpa::UDRefl {
 
 		template<typename T>
 		static constexpr bool IsBufferable() noexcept {
-			return std::is_trivially_copyable_v<T> && sizeof(T) <= BufferSize;
+			return std::is_trivially_copyable_v<T> && sizeof(T) <= BufferSize && alignof(T) <= alignof(Buffer);
 		}
 
 		template<typename T>
 		static constexpr Buffer ConvertToBuffer(const T& data) noexcept {
 			static_assert(IsBufferable<T>());
 			Buffer buffer{};
-			memcpy(buffer.data(), &data, sizeof(T));
+			memcpy(&buffer, &data, sizeof(T));
 			return buffer;
 		}
 

@@ -8,7 +8,6 @@
 #include "MethodPtr.h"
 #include "Object.h"
 #include "ReflMngr.h"
-#include "SharedBuffer.h"
 #include "Object.h"
 #include "TypeInfo.h"
 #include "IDRegistry.h"
