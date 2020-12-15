@@ -466,7 +466,7 @@ namespace Ubpa::UDRefl {
 			ConstObjectPtr obj,
 			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
-		// gather
+		// Gather (DFS)
 
 		std::vector<TypeID>                                        GetTypeIDs        (TypeID      typeID);
 		std::vector<TypeRef>                                       GetTypes          (TypeID      typeID);
@@ -482,6 +482,17 @@ namespace Ubpa::UDRefl {
 		std::vector<ObjectPtr>                                     GetRWVars         (ObjectPtr      obj);
 		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (ConstObjectPtr obj);
 		std::vector<ConstObjectPtr>                                GetRVars          (ConstObjectPtr obj);
+
+		// Find (DFS)
+
+		std::optional<TypeID   > FindTypeID(TypeID      typeID, const std::function<bool(TypeID        )>& func) const;
+		std::optional<TypeRef  > FindType  (TypeID      typeID, const std::function<bool(TypeRef       )>& func) const;
+		std::optional<FieldRef > FindField (TypeID      typeID, const std::function<bool(FieldRef      )>& func) const;
+		std::optional<MethodRef> FindMethod(TypeID      typeID, const std::function<bool(MethodRef     )>& func) const;
+		ObjectPtr                FindRWVar (TypeID      typeID, const std::function<bool(ObjectPtr     )>& func) const;
+		ConstObjectPtr           FindRVar  (TypeID      typeID, const std::function<bool(ConstObjectPtr)>& func) const;
+		ObjectPtr                FindRWVar (ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
+		ConstObjectPtr           FindRVar  (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
 
 		//
 		// Memory

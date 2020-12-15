@@ -9,6 +9,10 @@ using namespace Ubpa::UDRefl;
 // ObjectPtrBase
 //////////////////
 
+std::string_view ObjectPtrBase::TypeName() const noexcept {
+	return ReflMngr::Instance().tregistry.Nameof(ID);
+}
+
 ConstObjectPtr ObjectPtrBase::RVar(StrID fieldID) const noexcept {
 	return ReflMngr::Instance().RVar({ ID, ptr }, fieldID);
 }
@@ -52,6 +56,26 @@ std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ObjectPtrBase::GetTyp
 
 std::vector<ConstObjectPtr> ObjectPtrBase::GetRVars() {
 	return ReflMngr::Instance().GetRVars({ ID, ptr });
+}
+
+std::optional<TypeID> ObjectPtrBase::FindTypeID(const std::function<bool(TypeID)>& func) const {
+	return ReflMngr::Instance().FindTypeID(ID, func);
+}
+
+std::optional<TypeRef> ObjectPtrBase::FindType(const std::function<bool(TypeRef)>& func) const {
+	return ReflMngr::Instance().FindType(ID, func);
+}
+
+std::optional<FieldRef> ObjectPtrBase::FindField(const std::function<bool(FieldRef)>& func) const {
+	return ReflMngr::Instance().FindField(ID, func);
+}
+
+std::optional<MethodRef> ObjectPtrBase::FindMethod(const std::function<bool(MethodRef)>& func) const {
+	return ReflMngr::Instance().FindMethod(ID, func);
+}
+
+ConstObjectPtr ObjectPtrBase::FindRVar(const std::function<bool(ConstObjectPtr)>& func) const {
+	return ReflMngr::Instance().FindRVar({ ID, ptr }, func);
 }
 
 //
@@ -167,4 +191,8 @@ std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ObjectPtr::GetTypeFieldRWV
 
 std::vector<ObjectPtr> ObjectPtr::GetRWVars() {
 	return ReflMngr::Instance().GetRWVars(*this);
+}
+
+ObjectPtr ObjectPtr::FindRWVar(const std::function<bool(ObjectPtr)>& func) const {
+	return ReflMngr::Instance().FindRWVar(*this, func);
 }

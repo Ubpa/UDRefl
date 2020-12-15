@@ -69,6 +69,7 @@ ReflMngr::Instance().ForEachMethod(
 
 ```c++
 SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
+std::cout << v->TypeName() << std::endl; // prints "Vec"
 // do something
 
 // [ or ]

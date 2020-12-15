@@ -9,6 +9,7 @@
 #include <cassert>
 #include <functional>
 #include <memory>
+#include <optional>
 
 #define OBJECT_PTR_DEFINE_OPERATOR(op, name)                                              \
 template<typename Arg>                                                                    \
@@ -96,6 +97,8 @@ namespace Ubpa::UDRefl {
 		// ReflMngr
 		/////////////
 
+		std::string_view TypeName() const noexcept;
+
 		// all
 		ConstObjectPtr RVar(StrID fieldID) const noexcept;
 
@@ -113,6 +116,12 @@ namespace Ubpa::UDRefl {
 		std::vector<MethodRef>                                     GetMethods();
 		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars();
 		std::vector<ConstObjectPtr>                                GetRVars();
+
+		std::optional<TypeID   > FindTypeID(const std::function<bool(TypeID        )>& func) const;
+		std::optional<TypeRef  > FindType  (const std::function<bool(TypeRef       )>& func) const;
+		std::optional<FieldRef > FindField (const std::function<bool(FieldRef      )>& func) const;
+		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef     )>& func) const;
+		ConstObjectPtr           FindRVar  (const std::function<bool(ConstObjectPtr)>& func) const;
 
 	protected:
 		template<typename T>
@@ -309,6 +318,8 @@ namespace Ubpa::UDRefl {
 
 		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldRWVars();
 		std::vector<ObjectPtr>                                GetRWVars();
+
+		ObjectPtr FindRWVar(const std::function<bool(ObjectPtr)>& func) const;
 
 		//
 		// Meta

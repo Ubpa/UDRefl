@@ -24,7 +24,41 @@ FieldPtr::FieldPtr(TypeID valueID, const Buffer& buffer, bool isConst) noexcept 
 		data.emplace<8>(buffer);
 }
 
-ObjectPtr FieldPtr::Map() noexcept {
+ConstObjectPtr FieldPtr::RVar() const noexcept {
+	return std::visit([this](const auto& value) -> ConstObjectPtr {
+		using T = std::decay_t<decltype(value)>;
+		if constexpr (std::is_same_v<T, size_t>) {
+			assert(false);
+			return nullptr;
+		}
+		else if constexpr (std::is_same_v<T, Offsetor>) {
+			assert(false);
+			return nullptr;
+		}
+		else if constexpr (std::is_same_v<T, void*>) {
+			return { valueID, value };
+		}
+		else if constexpr (std::is_same_v<T, const void*>) {
+			return { valueID, value };
+		}
+		else if constexpr (std::is_same_v<T, SharedBuffer>) {
+			return { valueID, value.get() };
+		}
+		else if constexpr (std::is_same_v<T, SharedConstBuffer>) {
+			return { valueID, value.get() };
+		}
+		else if constexpr (std::is_same_v<T, Buffer>) {
+			return { valueID, &value };
+		}
+		/*else if constexpr (std::is_same_v<T, const Buffer>) {
+			return { valueID, &value };
+		}*/
+		else
+			static_assert(false);
+	}, data);
+}
+
+ObjectPtr FieldPtr::RWVar() noexcept {
 	return std::visit([this](auto& value) -> ObjectPtr {
 		using T = std::remove_reference_t<decltype(value)>;
 		if constexpr (std::is_same_v<T, size_t>) {
@@ -61,41 +95,7 @@ ObjectPtr FieldPtr::Map() noexcept {
 	}, data);
 }
 
-ConstObjectPtr FieldPtr::Map() const noexcept {
-	return std::visit([this](const auto& value) -> ConstObjectPtr {
-		using T = std::decay_t<decltype(value)>;
-		if constexpr (std::is_same_v<T, size_t>) {
-			assert(false);
-			return nullptr;
-		}
-		else if constexpr (std::is_same_v<T, Offsetor>) {
-			assert(false);
-			return nullptr;
-		}
-		else if constexpr (std::is_same_v<T, void*>) {
-			return { valueID, value };
-		}
-		else if constexpr (std::is_same_v<T, const void*>) {
-			return { valueID, value };
-		}
-		else if constexpr (std::is_same_v<T, SharedBuffer>) {
-			return { valueID, value.get() };
-		}
-		else if constexpr (std::is_same_v<T, SharedConstBuffer>) {
-			return { valueID, value.get() };
-		}
-		else if constexpr (std::is_same_v<T, Buffer>) {
-			return { valueID, &value };
-		}
-		else if constexpr (std::is_same_v<T, const Buffer>) {
-			return { valueID, value.data() };
-		}
-		else
-			static_assert(false);
-	}, data);
-}
-
-ConstObjectPtr FieldPtr::Map(const void* obj) const noexcept {
+ConstObjectPtr FieldPtr::RVar(const void* obj) const noexcept {
 	return std::visit([this, obj](const auto& value) -> ConstObjectPtr {
 		using T = std::decay_t<decltype(value)>;
 		if constexpr (std::is_same_v<T, size_t>) {
@@ -121,15 +121,15 @@ ConstObjectPtr FieldPtr::Map(const void* obj) const noexcept {
 		else if constexpr (std::is_same_v<T, Buffer>) {
 			return { valueID, &value };
 		}
-		else if constexpr (std::is_same_v<T, const Buffer>) {
-			return { valueID, value.data() };
-		}
+		/*else if constexpr (std::is_same_v<T, const Buffer>) {
+			return { valueID, &value };
+		}*/
 		else
 			static_assert(false);
 	}, data);
 }
 
-ObjectPtr FieldPtr::Map(void* obj) noexcept {
+ObjectPtr FieldPtr::RWVar(void* obj) noexcept {
 	switch (data.index())
 	{
 	case 0:

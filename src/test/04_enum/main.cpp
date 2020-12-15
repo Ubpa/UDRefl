@@ -28,16 +28,19 @@ int main() {
 		}
 	);
 
-	std::string_view name_red;
-	ReflMngr::Instance().ForEachRVar(
-		TypeID::of<Color>,
-		[&name_red](TypeRef type, FieldRef field, ConstObjectPtr var) mutable {
-			if (var.As<Color>() == Color::RED) {
-				name_red = ReflMngr::Instance().nregistry.Nameof(field.ID);
-				return false;
-			}
-			return true;
-		}
-	);
-	std::cout << "name of COLOR::RED : " << name_red << std::endl;
+	// enumerator -> name
+	Color c = Color::RED;
+	auto c_field = ReflMngr::Instance().FindField(TypeID::of<Color>, [c](FieldRef field) {
+		return field.info.fieldptr.RVar().As<Color>() == c;
+	});
+
+	std::cout << "name of " << static_cast<int>(c) << " : " << ReflMngr::Instance().nregistry.Nameof(c_field.value().ID) << std::endl;
+
+	// name -> enumerator
+	std::string_view name = "GREEN";
+	auto name_field = ReflMngr::Instance().FindField(TypeID::of<Color>, [name](FieldRef field) {
+		return ReflMngr::Instance().nregistry.Nameof(field.ID) == name;
+	});
+
+	std::cout << "value of " << name << " : " << static_cast<int>(name_field.value().info.fieldptr.RVar().As<Color>()) << std::endl;
 }

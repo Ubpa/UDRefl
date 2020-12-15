@@ -24,6 +24,7 @@ int main() {
 	// // do something
 	// ReflMngr::Instance().Delete(v);
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
+	std::cout << v->TypeName() << std::endl; // prints "Vec"
 
 	v->RWVar("x").As<float>() = 3.f;
 	v->RWVar("y").As<float>() = 4.f;
