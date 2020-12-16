@@ -21,6 +21,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	InvokeResult ConstObjectPtr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
+			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), result_buffer);
@@ -32,6 +33,7 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	T ConstObjectPtr::Invoke(StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
+			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
@@ -47,6 +49,7 @@ namespace Ubpa::UDRefl {
 		Args... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
+			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
@@ -85,6 +88,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	InvokeResult ObjectPtr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
+			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), result_buffer);
@@ -96,6 +100,7 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	T ObjectPtr::Invoke(StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
+			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
@@ -111,6 +116,7 @@ namespace Ubpa::UDRefl {
 		Args... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
+			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
@@ -164,11 +170,6 @@ inline bool operator>(const Ubpa::UDRefl::SharedConstObject& left, const Ubpa::U
 
 inline bool operator<=(const Ubpa::UDRefl::SharedConstObject& left, const Ubpa::UDRefl::SharedConstObject& right) noexcept {
 	return left.GetID() < right.GetID() || (left.GetID() == right.GetID() && left.GetPtr() <= right.GetPtr());
-}
-
-template <class Elem, typename Traits>
-std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& out, const Ubpa::UDRefl::SharedConstObject& obj) {
-	return out << obj.GetID().GetValue() << obj.GetPtr();
 }
 
 namespace std {

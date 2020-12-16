@@ -20,6 +20,12 @@ struct Vec {
 		rst.y = y + k;
 		return rst;
 	}
+	Vec operator+(const Vec& v) const noexcept {
+		Vec rst;
+		rst.x = x + v.x;
+		rst.y = y + v.y;
+		return rst;
+	}
 
 	Vec operator+(ConstObjectPtr v) const noexcept {
 		Vec rst;
@@ -45,7 +51,7 @@ struct Vec {
 		rst.y = y / v.As<Vec>().x;
 		return rst;
 	}
-	float operator[](int v) const noexcept {
+	float operator[](size_t v) const noexcept {
 		if (v == 0)
 			return x;
 		else if (v == 1)
@@ -59,6 +65,11 @@ struct Vec {
 	}
 };
 
+void f0(int);
+void f1(int&);
+void f2(int&&);
+void f3(const int&);
+
 int main() {
 	ReflMngr::Instance().RegisterTypeAuto<Vec>();
 	ReflMngr::Instance().AddConstructor<Vec, float, float>();
@@ -70,7 +81,6 @@ int main() {
 	ReflMngr::Instance().AddMethod<&Vec::operator- >(StrIDRegistry::Meta::operator_minus);
 	ReflMngr::Instance().AddMethod<&Vec::operator* >(StrIDRegistry::Meta::operator_mul);
 	ReflMngr::Instance().AddMethod<&Vec::operator/ >(StrIDRegistry::Meta::operator_div);
-	ReflMngr::Instance().AddMethod<&Vec::operator[] >(StrIDRegistry::Meta::operator_subscript);
 	ReflMngr::Instance().AddMethod<&Vec::operator() >(StrIDRegistry::Meta::operator_call);
 
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>, 3.f, 4.f);
@@ -83,11 +93,12 @@ int main() {
 	SharedObject w3 = v - pv;
 	SharedObject w4 = v * pv;
 	SharedObject w5 = v / pv;
+	SharedObject w6 = v + Vec{ 1.f,2.f };
 
 	v->Invoke("hello");
 	v->Invoke(std::string_view{ "hello" });
 	ReflMngr::Instance().AlignedFree(ReflMngr::Instance().AlignedMalloc(1, 1));
-	SharedObject w6 = v[1];
+	SharedObject w7 = v[static_cast<size_t>(1)];
 	v(pv);
 
 	for (const auto& w : std::array{ w0,w1,w2,w3,w4,w5,w6 }) {

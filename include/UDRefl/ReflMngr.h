@@ -575,7 +575,8 @@ namespace Ubpa::UDRefl {
 		// Type
 		/////////
 
-		bool IsPointerToVariable(ConstObjectPtr pointer_obj) const;
+		bool IsPointerOrReference(ConstObjectPtr pointer_obj) const;
+		bool IsPointerOrReferenceToVariable(ConstObjectPtr pointer_obj) const;
 		ObjectPtr Dereference(ConstObjectPtr pointer_obj);
 		ConstObjectPtr DereferenceAsConst(ConstObjectPtr pointer_obj);
 

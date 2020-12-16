@@ -135,11 +135,25 @@ SharedObject ConstObjectPtr::MInvoke(
 	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, rst_rsrc);
 }
 
+
+SharedObject ConstObjectPtr::operator+() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_plus);
+}
+
+SharedObject ConstObjectPtr::operator-() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_minus);
+}
+
+SharedObject ConstObjectPtr::operator~() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_bnot);
+}
+
+SharedObject ConstObjectPtr::operator[](std::size_t n) const {
+	return DMInvoke<std::size_t>(StrIDRegistry::MetaID::operator_subscript, n);
+}
+
 SharedObject ConstObjectPtr::operator*() const {
 	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
-}
-SharedObject ConstObjectPtr::operator[](std::size_t n) const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_subscript, n);
 }
 
 //
@@ -212,34 +226,58 @@ ObjectPtr ObjectPtr::FindRWVar(const std::function<bool(ObjectPtr)>& func) const
 	return ReflMngr::Instance().FindRWVar(*this, func);
 }
 
-SharedObject ObjectPtr::operator*() const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
+SharedObject ObjectPtr::operator+() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_plus);
+}
+
+SharedObject ObjectPtr::operator-() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_minus);
+}
+
+SharedObject ObjectPtr::operator~() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_bnot);
 }
 
 SharedObject ObjectPtr::operator++() const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_inc);
+	return DMInvoke(StrIDRegistry::MetaID::operator_pre_inc);
 }
 
 SharedObject ObjectPtr::operator++(int) const {
-	return DMInvoke<int>(StrIDRegistry::MetaID::operator_inc, 0);
+	return DMInvoke<int>(StrIDRegistry::MetaID::operator_post_inc, 0);
 }
 
 SharedObject ObjectPtr::operator--() const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_dec);
+	return DMInvoke(StrIDRegistry::MetaID::operator_pre_dec);
 }
 
 SharedObject ObjectPtr::operator--(int) const {
-	return DMInvoke<int>(StrIDRegistry::MetaID::operator_dec, 0);
+	return DMInvoke<int>(StrIDRegistry::MetaID::operator_post_dec, 0);
 }
 
 SharedObject ObjectPtr::operator[](std::size_t n) const {
 	return DMInvoke<std::size_t>(StrIDRegistry::MetaID::operator_subscript, n);
 }
 
-SharedObject SharedConstObject::operator*() {
-	return *AsObjectPtr();
+SharedObject ObjectPtr::operator*() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
 }
 
-SharedObject SharedConstObject::operator[](std::size_t n) {
+SharedObject SharedConstObject::operator+() const {
+	return +AsObjectPtr();
+}
+
+SharedObject SharedConstObject::operator-() const {
+	return -AsObjectPtr();
+}
+
+SharedObject SharedConstObject::operator~() const {
+	return ~AsObjectPtr();
+}
+
+SharedObject SharedConstObject::operator[](std::size_t n) const {
 	return AsObjectPtr()[n];
+}
+
+SharedObject SharedConstObject::operator*() const {
+	return *AsObjectPtr();
 }

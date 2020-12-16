@@ -200,11 +200,116 @@ namespace Ubpa::UDRefl {
 	template<typename Func>
 	constexpr auto wrap_static_function(Func&& func) noexcept;
 
+	//
 	// traits
+	///////////
+
 	template<typename T>
 	struct is_iterator;
 	template<typename T>
 	constexpr bool is_iterator_v = is_iterator<T>::value;
+
+	template<typename T>
+	using operator_puls = decltype(+std::declval<const T&>());
+	template<typename T>
+	using operator_minus = decltype(-std::declval<const T&>());
+
+	template<typename T, typename U = const T&>
+	using operator_add = decltype(std::declval<const T&>() + std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_sub = decltype(std::declval<const T&>() - std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_mul = decltype(std::declval<const T&>()* std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_div = decltype(std::declval<const T&>() / std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_mod = decltype(std::declval<const T&>() % std::declval<U>());
+
+	template<typename T>
+	using operator_bnot = decltype(~std::declval<const T&>());
+	template<typename T, typename U = const T&>
+	using operator_band = decltype(std::declval<const T&>()& std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_bor = decltype(std::declval<const T&>() | std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_bxor = decltype(std::declval<const T&>() ^ std::declval<U>());
+	template<typename T, typename U = std::ostream&>
+	using operator_lshift = decltype(std::declval<U>() << std::declval<T>());
+	template<typename T, typename U = std::istream&>
+	using operator_rshift = decltype(std::declval<U>() >> std::declval<T>());
+
+	template<typename T>
+	using operator_pre_inc = decltype(++std::declval<T&>());
+	template<typename T>
+	using operator_post_inc = decltype(std::declval<T&>()++);
+	template<typename T>
+	using operator_pre_dec = decltype(--std::declval<T&>());
+	template<typename T>
+	using operator_post_dec = decltype(std::declval<T&>()--);
+
+	template<typename T, typename U = const T&>
+	using operator_assign = decltype(std::declval<T&>() = std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_add = decltype(std::declval<T&>() += std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_sub = decltype(std::declval<T&>() -= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_mul = decltype(std::declval<T&>() *= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_div = decltype(std::declval<T&>() /= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_mod = decltype(std::declval<T&>() %= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_band = decltype(std::declval<T&>() &= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_bor = decltype(std::declval<T&>() |= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_assign_bxor = decltype(std::declval<T&>() ^= std::declval<U>());
+	template<typename T, typename U = std::size_t>
+	using operator_assign_lshift = decltype(std::declval<T&>() <<= std::declval<U>());
+	template<typename T, typename U = std::size_t>
+	using operator_assign_rshift = decltype(std::declval<T&>() >>= std::declval<U>());
+
+	template<typename T, typename U = const T&>
+	using operator_eq = decltype(std::declval<const T&>() == std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_neq = decltype(std::declval<const T&>() != std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_lt = decltype(std::declval<const T&>() < std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_le = decltype(std::declval<const T&>() <= std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_gt = decltype(std::declval<const T&>() > std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_ge = decltype(std::declval<const T&>() >= std::declval<U>());
+
+	template<typename T, typename U = const T&>
+	using operator_and = decltype(std::declval<const T&>() && std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_or = decltype(std::declval<const T&>() || std::declval<U>());
+	template<typename T, typename U = const T&>
+	using operator_not = decltype(!std::declval<const T&>());
+
+	template<typename T, typename U = std::size_t>
+	using operator_subscript = decltype(std::declval<T&>()[U]);
+	template<typename T, typename U = std::size_t>
+	using operator_subscript_const = decltype(std::declval<const T&>()[U]);
+	template<typename T>
+	using operator_deref = decltype(*std::declval<T&>());
+	template<typename T>
+	using operator_deref_const = decltype(*std::declval<const T&>());
+	template<typename T>
+	using operator_ref = decltype(&std::declval<T&>());
+	template<typename T>
+	using operator_ref_const = decltype(&std::declval<const T&>());
+	template<typename T>
+	using operator_member = decltype(std::declval<T&>().operator->());
+	template<typename T>
+	using operator_member_const = decltype(std::declval<const T&>().operator->());
+	template<typename T, typename U>
+	using operator_member_of_pointer = decltype(std::declval<T&>().operator->*(std::declval<U>()));
+	template<typename T, typename U>
+	using operator_member_of_pointer_const = decltype(std::declval<const T&>().operator->*(std::declval<U>()));
 }
 
 #include "details/Util.inl"
