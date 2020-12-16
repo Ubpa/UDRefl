@@ -14,7 +14,7 @@ namespace Ubpa::UDRefl {
 	struct ResultDesc {
 		TypeID typeID{ TypeID::of<void> };
 		size_t size{ 0 };
-		size_t alignment{ 0 };
+		size_t alignment{ 1 };
 
 		constexpr bool IsVoid() const noexcept {
 			return typeID == TypeID::of<void>;
@@ -40,15 +40,14 @@ namespace Ubpa::UDRefl {
 			assert(resultID = TypeID::of<T>);
 
 			if constexpr (std::is_reference_v<T>) {
-				using PtrT = std::add_pointer_t<std::remove_reference_t<T>>;
 				assert(!destructor);
-				return std::forward<T>(*buffer_as<PtrT>(result_buffer));
+				return std::forward<T>(*buffer_as<std::add_pointer_t<T>>(result_buffer));
 			}
 			else {
-				T rst = std::move(buffer_as<type_buffer_decay_t<T>>(result_buffer));
+				T rst = std::move(buffer_as<T>(result_buffer));
 				if (destructor)
 					destructor(result_buffer);
-				return std::forward<T>(rst);
+				return rst;
 			}
 		}
 

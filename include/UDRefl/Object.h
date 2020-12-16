@@ -398,7 +398,10 @@ namespace Ubpa::UDRefl {
 		const auto* AsPtr() const noexcept {
 			static_assert(!std::is_const_v<T> && !std::is_volatile_v<T>);
 			assert(ID.Is<T>());
-			return reinterpret_cast<const type_buffer_decay_t<T>*>(GetPtr());
+			if constexpr (std::is_reference_v<T>)
+				return reinterpret_cast<std::add_pointer_t<T>*>(GetPtr());
+			else
+				return reinterpret_cast<const T*>(GetPtr());
 		}
 
 		template<typename T>
@@ -532,7 +535,10 @@ namespace Ubpa::UDRefl {
 		auto* AsPtr() const noexcept {
 			static_assert(!std::is_const_v<T> && !std::is_volatile_v<T>);
 			assert(ID.Is<T>());
-			return reinterpret_cast<type_buffer_decay_t<T>*>(GetPtr());
+			if constexpr (std::is_reference_v<T>)
+				return reinterpret_cast<const std::add_pointer_t<T>*>(GetPtr());
+			else
+				return reinterpret_cast<T*>(GetPtr());
 		}
 
 		template<typename T>

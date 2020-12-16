@@ -1385,6 +1385,23 @@ ConstObjectPtr ReflMngr::FindRVar(ConstObjectPtr obj, const std::function<bool(C
 	return rst;
 }
 
+bool ReflMngr::IsPointerToVariable(ConstObjectPtr pointer_obj) const {
+	if (!pointer_obj)
+		return false;
+
+	auto name = tregistry.Nameof(pointer_obj.GetID());
+
+	std::string_view ele_name;
+	if (type_name_is_pointer(name))
+		ele_name = type_name_remove_pointer(name);
+	else if (type_name_is_reference(name))
+		ele_name = type_name_remove_reference(name);
+	else
+		return false;
+
+	return type_name_is_const(ele_name);
+}
+
 ObjectPtr ReflMngr::Dereference(ConstObjectPtr pointer_obj) {
 	if (!pointer_obj)
 		return nullptr;

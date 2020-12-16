@@ -163,32 +163,6 @@ namespace Ubpa::UDRefl {
 		return buffer_get<T>(buffer, 0);
 	}
 
-	template<typename T>
-	constexpr T type_buffer_recover(std::remove_reference_t<T>* t) noexcept {
-		return std::forward<T>(*t);
-	}
-
-	template<typename T>
-	constexpr T type_buffer_recover(T t) noexcept {
-		return std::forward<T>(t);
-	}
-
-	template<typename T>
-	constexpr auto type_buffer_decay(T t) noexcept {
-		if constexpr (std::is_reference_v<T>)
-			return &t;
-		else
-			return t;
-	}
-
-	template<typename T>
-	using type_buffer_decay_t = decltype(type_buffer_decay<T>(std::declval<T>()));
-
-	template<typename... Ts>
-	constexpr auto type_buffer_decay_as_tuple(Ts... ts) noexcept {
-		return std::tuple{ type_buffer_decay<Ts>(std::forward<Ts>(ts))... };
-	}
-
 	// [func_ptr]
 	// - Func Obj::* : Func isn't && (const && is ok)
 	// - Func*
