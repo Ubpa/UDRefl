@@ -78,6 +78,14 @@ ConstObjectPtr ObjectPtrBase::FindRVar(const std::function<bool(ConstObjectPtr)>
 	return ReflMngr::Instance().FindRVar({ ID, ptr }, func);
 }
 
+ObjectPtr ObjectPtrBase::Dereference() const {
+	return ReflMngr::Instance().Dereference({ ID, ptr });
+}
+
+ConstObjectPtr ObjectPtrBase::ObjectPtrBase::DereferenceAsConst() const {
+	return ReflMngr::Instance().DereferenceAsConst({ ID, ptr });
+}
+
 //
 // ConstObjectPtr
 ///////////////////
@@ -125,6 +133,13 @@ SharedObject ConstObjectPtr::MInvoke(
 	std::pmr::memory_resource* rst_rsrc) const
 {
 	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, rst_rsrc);
+}
+
+SharedObject ConstObjectPtr::operator*() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
+}
+SharedObject ConstObjectPtr::operator[](std::size_t n) const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_subscript, n);
 }
 
 //
@@ -195,4 +210,36 @@ std::vector<ObjectPtr> ObjectPtr::GetRWVars() {
 
 ObjectPtr ObjectPtr::FindRWVar(const std::function<bool(ObjectPtr)>& func) const {
 	return ReflMngr::Instance().FindRWVar(*this, func);
+}
+
+SharedObject ObjectPtr::operator*() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
+}
+
+SharedObject ObjectPtr::operator++() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_inc);
+}
+
+SharedObject ObjectPtr::operator++(int) const {
+	return DMInvoke<int>(StrIDRegistry::MetaID::operator_inc, 0);
+}
+
+SharedObject ObjectPtr::operator--() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_dec);
+}
+
+SharedObject ObjectPtr::operator--(int) const {
+	return DMInvoke<int>(StrIDRegistry::MetaID::operator_dec, 0);
+}
+
+SharedObject ObjectPtr::operator[](std::size_t n) const {
+	return DMInvoke<std::size_t>(StrIDRegistry::MetaID::operator_subscript, n);
+}
+
+SharedObject SharedConstObject::operator*() {
+	return *AsObjectPtr();
+}
+
+SharedObject SharedConstObject::operator[](std::size_t n) {
+	return AsObjectPtr()[n];
 }

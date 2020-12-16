@@ -571,6 +571,13 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args... args);
 
+		//
+		// Type
+		/////////
+
+		ObjectPtr Dereference(ConstObjectPtr pointer_obj);
+		ConstObjectPtr DereferenceAsConst(ConstObjectPtr pointer_obj);
+
 	private:
 		ReflMngr();
 		~ReflMngr();

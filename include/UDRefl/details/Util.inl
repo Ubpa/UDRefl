@@ -86,6 +86,11 @@ namespace Ubpa::UDRefl::details {
 		static constexpr bool is_const = std::is_const_v<CVObj>;
 		static_assert(is_const || !std::is_rvalue_reference_v<CVObjRef>);
 	};
+
+	template<typename Void, typename T>
+	struct is_iterator : std::false_type {};
+	template<typename T>
+	struct is_iterator<std::void_t<typename std::iterator_traits<T>::iterator_category>, T> : std::true_type {};
 }
 
 template<auto func_ptr>
@@ -213,3 +218,6 @@ constexpr auto Ubpa::UDRefl::wrap_function() noexcept {
 	else
 		static_assert(false);
 }
+
+template<typename T>
+struct Ubpa::UDRefl::is_iterator : details::is_iterator<void, T> {};
