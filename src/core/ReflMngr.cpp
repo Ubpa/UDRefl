@@ -299,14 +299,15 @@ ReflMngr::~ReflMngr() {
 }
 
 TypeID ReflMngr::RegisterType(std::string_view name, size_t size, size_t alignment) {
-	TypeID ID = tregistry.Register(name);
-	{
-		auto target = typeinfos.find(ID);
-		if (target == typeinfos.end())
-			target = typeinfos.emplace_hint(target, ID, TypeInfo{});
-		target->second.size = size;
-		target->second.alignment = alignment;
-	}
+	TypeID ID{ name };
+
+	auto target = typeinfos.find(ID);
+	if (target != typeinfos.end())
+		return ID;
+
+	tregistry.Register(ID, name);
+	typeinfos.emplace_hint(target, ID, TypeInfo{ size,alignment });
+
 	return ID;
 }
 

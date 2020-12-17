@@ -210,9 +210,9 @@ namespace Ubpa::UDRefl {
 	constexpr bool is_iterator_v = is_iterator<T>::value;
 
 	template<typename T>
-	using operator_puls = decltype(+std::declval<const T&>());
+	using operator_plus = decltype(+std::declval<const T&>());
 	template<typename T>
-	using operator_minus = decltype(-std::declval<const T&>());
+	using operator_minus = std::enable_if_t<!std::is_unsigned_v<T>, decltype(-std::declval<const T&>())>;
 
 	template<typename T, typename U = const T&>
 	using operator_add = decltype(std::declval<const T&>() + std::declval<U>());

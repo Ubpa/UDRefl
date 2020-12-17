@@ -13,40 +13,46 @@ bool ParamList::IsConpatibleWith(Span<const TypeID> typeIDs) const noexcept {
 			if ((params[i] != TypeID::of<ConstObjectPtr> || typeIDs[i] != TypeID::of<ObjectPtr>)
 				&& (params[i] != TypeID::of<SharedConstObject> || typeIDs[i] != TypeID::of<SharedObject>))
 			{
+				//     -     | T | T & | T&& | const T & | const T&& |
+				//       T   | - |  0  |  0  |     1     |     0     |
+				//       T & | 0 |  -  |  0  |     0     |     0     |
+				// const T & | 1 |  1  |  -  |     1     |     1     |
+				//       T&& | 1 |  0  |  0  |     -     |     0     |
+				// const T&& | 1 |  0  |  0  |     1     |     -     |
+
+				// because rhs(arg)'s ID maybe have no name in the registry
+				// so we use type_name_add_*_hash(...) to avoid it
+
 				auto lhs = ReflMngr::Instance().tregistry.Nameof(params[i]);
-				auto rhs = ReflMngr::Instance().tregistry.Nameof(typeIDs[i]);
-				assert(!type_name_is_const(lhs) && !type_name_is_volatile(lhs) && !type_name_is_const(rhs) && !type_name_is_volatile(rhs));
-				if (type_name_is_rvalue_reference(lhs)) {
-					if (type_name_is_lvalue_reference(rhs))
-						return false;
-					if (type_name_is_rvalue_reference(rhs)) {
-						auto unref_lhs = type_name_remove_reference(lhs);
+				assert(!type_name_is_const(lhs) && !type_name_is_volatile(lhs));
+				if (type_name_is_rvalue_reference(lhs)) { // &&{T} or &&{const{T}}
+					auto unref_lhs = type_name_remove_reference(lhs); // T or const{T}
+					assert(!type_name_is_volatile(unref_lhs));
+					auto raw_lhs = type_name_remove_const(unref_lhs); // T
+					if (TypeID{ raw_lhs } != typeIDs[i]) {
 						if (!type_name_is_const(unref_lhs))
 							return false;
-						auto unref_rhs = type_name_remove_reference(rhs);
-						assert(!type_name_is_volatile(unref_rhs));
-						if (type_name_remove_const(unref_lhs) != unref_rhs)
-							return false;
-					}
-					else {
-						if (type_name_remove_cvref(lhs) != rhs)
+
+						if (type_name_add_rvalue_reference_hash(raw_lhs) != typeIDs[i].GetValue())
 							return false;
 					}
 				}
-				else if (type_name_is_lvalue_reference(lhs)) {
-					auto unref_lhs = type_name_remove_reference(lhs);
+				else if (type_name_is_lvalue_reference(lhs)) { // &{T} or &{const{T}}
+					auto unref_lhs = type_name_remove_reference(lhs); // T or const{T}
 					if (!type_name_is_const(unref_lhs))
 						return false;
-					if (type_name_remove_const(unref_lhs) != type_name_remove_cvref(rhs))
-						return false;
+
+					if (type_name_add_rvalue_reference_hash(unref_lhs) != typeIDs[i].GetValue()) {
+						auto raw_lhs = type_name_remove_const(unref_lhs); // T
+
+						if (TypeID{ raw_lhs } != typeIDs[i]
+							|| type_name_add_lvalue_reference_hash(raw_lhs) != typeIDs[i].GetValue()
+							|| type_name_add_rvalue_reference_hash(raw_lhs) != typeIDs[i].GetValue())
+							return false;
+					}
 				}
-				else {
-					if (!type_name_is_rvalue_reference(rhs))
-						return false;
-					auto unref_rhs = type_name_remove_reference(rhs);
-					if (type_name_is_const(unref_rhs))
-						return false;
-					if(lhs != unref_rhs)
+				else { // T
+					if (type_name_add_rvalue_reference_hash(lhs) != typeIDs[i].GetValue())
 						return false;
 				}
 			}
