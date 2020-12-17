@@ -65,6 +65,301 @@ namespace Ubpa::UDRefl::details {
 			return std::function{ wrapped_func };
 		}
 	};
+
+	template<typename T>
+	struct TypeAutoRegister {
+		static void run(ReflMngr& mngr) {
+			if constexpr (is_valid_v<operator_plus, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_plus, [](const T& lhs) { return +lhs; });
+			if constexpr (is_valid_v<operator_minus, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_minus, [](const T& lhs) {
+				if constexpr (std::is_signed_v<T>)
+					return -lhs;
+					});
+
+			if constexpr (is_valid_v<operator_add, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_add, [](const T& lhs, const T& rhs) { return lhs + rhs; });
+			if constexpr (is_valid_v<operator_sub, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_sub, [](const T& lhs, const T& rhs) { return lhs - rhs; });
+			if constexpr (is_valid_v<operator_mul, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_mul, [](const T& lhs, const T& rhs) { return lhs * rhs; });
+			if constexpr (is_valid_v<operator_div, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_div, [](const T& lhs, const T& rhs) { return lhs / rhs; });
+			if constexpr (is_valid_v<operator_mod, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_mod, [](const T& lhs, const T& rhs) { return lhs % rhs; });
+
+			if constexpr (is_valid_v<operator_bnot, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_bnot, [](const T& lhs) { return ~lhs; });
+			if constexpr (is_valid_v<operator_band, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_band, [](const T& lhs, const T& rhs) { return lhs & rhs; });
+			if constexpr (is_valid_v<operator_bor, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_bor, [](const T& lhs, const T& rhs) { return lhs & rhs; });
+			if constexpr (is_valid_v<operator_bxor, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_bxor, [](const T& lhs, const T& rhs) { return lhs & rhs; });
+			if constexpr (is_valid_v<operator_lshift, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, std::ostream& rhs) -> decltype(auto) { return rhs << lhs; });
+			if constexpr (is_valid_v<operator_rshift, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](T& lhs, std::istream& rhs) -> decltype(auto) { return rhs >> lhs; });
+			if constexpr (is_valid_v<operator_lshift, T, std::size_t>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs << rhs; });
+			if constexpr (is_valid_v<operator_rshift, T, std::size_t>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs >> rhs; });
+
+			if constexpr (is_valid_v<operator_pre_inc, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_pre_inc, [](T& lhs) -> decltype(auto) { return ++lhs; });
+			if constexpr (is_valid_v<operator_post_inc, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_post_inc, [](T& lhs, int) -> decltype(auto) { return lhs++; });
+			if constexpr (is_valid_v<operator_pre_dec, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_pre_dec, [](T& lhs) -> decltype(auto) { return --lhs; });
+			if constexpr (is_valid_v<operator_post_dec, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_post_dec, [](T& lhs, int) -> decltype(auto) { return lhs--; });
+
+			/*if constexpr (is_valid_v<operator_assign, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign, [](T& lhs, const T& rhs) { return lhs = rhs; });*/
+			if constexpr (is_valid_v<operator_assign_add, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_add, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs += rhs; });
+			if constexpr (is_valid_v<operator_assign_sub, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_sub, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs -= rhs; });
+			if constexpr (is_valid_v<operator_assign_mul, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_mul, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs *= rhs; });
+			if constexpr (is_valid_v<operator_assign_div, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_div, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs /= rhs; });
+			if constexpr (is_valid_v<operator_assign_mod, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_mod, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs %= rhs; });
+			if constexpr (is_valid_v<operator_assign_band, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_band, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs &= rhs; });
+			if constexpr (is_valid_v<operator_assign_bor, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_bor, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs |= rhs; });
+			if constexpr (is_valid_v<operator_assign_bxor, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_bxor, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs ^= rhs; });
+			if constexpr (is_valid_v<operator_assign_lshift, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_lshift, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs <<= rhs; });
+			if constexpr (is_valid_v<operator_assign_rshift, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_rshift, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs >>= rhs; });
+			if constexpr (is_valid_v<operator_assign_lshift, T, std::size_t>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_lshift, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs <<= rhs; });
+			if constexpr (is_valid_v<operator_assign_rshift, T, std::size_t>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_rshift, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs >>= rhs; });
+
+			if constexpr (is_valid_v<operator_eq, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs == rhs; });
+			if constexpr (is_valid_v<operator_ne, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_ne, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs != rhs; });
+			if constexpr (is_valid_v<operator_lt, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lt, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs < rhs; });
+			if constexpr (is_valid_v<operator_gt, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_gt, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs > rhs; });
+			if constexpr (is_valid_v<operator_le, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_le, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs <= rhs; });
+			if constexpr (is_valid_v<operator_ge, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs >= rhs; });
+
+
+			if constexpr (is_valid_v<operator_subscript, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
+			if constexpr (is_valid_v<operator_subscript_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
+			if constexpr (is_valid_v<operator_deref, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_deref, [](T& lhs) -> decltype(auto) { return *lhs; });
+			if constexpr (is_valid_v<operator_deref_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_deref, [](const T& lhs) -> decltype(auto) { return *lhs; });
+			/*if constexpr (is_valid_v<operator_ref, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_ref, [](T& lhs) { return &lhs; });
+			if constexpr (is_valid_v<operator_ref_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_ref, [](const T& lhs) { return &lhs; });*/
+			/*if constexpr (is_valid_v<operator_member, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_member, [](T& lhs) { return lhs.operator->(); });
+			if constexpr (is_valid_v<operator_member_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_member, [](const T& lhs) { return lhs.operator->(); });*/
+
+			// iterator
+
+			if constexpr (is_iterator_v<T>) {
+				if constexpr (is_valid_v<operator_add, T, std::size_t>)
+					mngr.AddMemberMethod(StrIDRegistry::Meta::operator_add, [](const T& lhs, std::size_t rhs) { return lhs + rhs; });
+				if constexpr (is_valid_v<operator_sub, T, std::size_t>)
+					mngr.AddMemberMethod(StrIDRegistry::Meta::operator_sub, [](const T& lhs, std::size_t rhs) { return lhs - rhs; });
+			}
+
+			// container
+
+			// - iterator
+
+			if constexpr (is_valid_v<container_begin, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_begin, [](T& lhs) -> decltype(auto) { return lhs.begin(); });
+			if constexpr (is_valid_v<container_begin_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_begin, [](const T& lhs) -> decltype(auto) { return lhs.begin(); });
+			if constexpr (is_valid_v<container_cbegin, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_begin, [](const T& lhs) -> decltype(auto) { return lhs.cbegin(); });
+			if constexpr (is_valid_v<container_end, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_end, [](T& lhs) -> decltype(auto) { return lhs.end(); });
+			if constexpr (is_valid_v<container_end_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_end, [](const T& lhs) -> decltype(auto) { return lhs.end(); });
+			if constexpr (is_valid_v<container_cend, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_end, [](const T& lhs) -> decltype(auto) { return lhs.cend(); });
+
+			if constexpr (is_valid_v<container_rbegin, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_rbegin, [](T& lhs) -> decltype(auto) { return lhs.rbegin(); });
+			if constexpr (is_valid_v<container_rbegin_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_rbegin, [](const T& lhs) -> decltype(auto) { return lhs.rbegin(); });
+			if constexpr (is_valid_v<container_crbegin, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_crbegin, [](const T& lhs) -> decltype(auto) { return lhs.crbegin(); });
+			if constexpr (is_valid_v<container_rend, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_rend, [](T& lhs) -> decltype(auto) { return lhs.rend(); });
+			if constexpr (is_valid_v<container_rend_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_rend, [](const T& lhs) -> decltype(auto) { return lhs.rend(); });
+			if constexpr (is_valid_v<container_crend, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_crend, [](const T& lhs) -> decltype(auto) { return lhs.crend(); });
+
+			// - element access
+
+			if constexpr (is_valid_v<container_at, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](T& lhs, std::size_t n) -> decltype(auto) { return lhs.at(n); });
+			if constexpr (is_valid_v<container_at_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](const T& lhs, std::size_t n) -> decltype(auto) { return lhs.at(n); });
+
+			if constexpr (is_valid_v<container_data, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_data, [](T& lhs) -> decltype(auto) { return lhs.data(); });
+			if constexpr (is_valid_v<container_data_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_data, [](const T& lhs) -> decltype(auto) { return lhs.data(); });
+
+			if constexpr (is_valid_v<container_front, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_front, [](T& lhs) -> decltype(auto) { return lhs.front(); });
+			if constexpr (is_valid_v<container_front_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_front, [](const T& lhs) -> decltype(auto) { return lhs.front(); });
+
+			if constexpr (is_valid_v<container_back, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_back, [](T& lhs) -> decltype(auto) { return lhs.back(); });
+			if constexpr (is_valid_v<container_back_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_back, [](const T& lhs) -> decltype(auto) { return lhs.back(); });
+
+			if constexpr (is_valid_v<container_empty, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_empty, [](const T& lhs) -> decltype(auto) { return lhs.empty(); });
+
+			if constexpr (is_valid_v<container_size, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_size, [](const T& lhs) -> decltype(auto) { return lhs.size(); });
+
+			/*if constexpr (is_valid_v<container_max_size, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_max_size, [](const T& lhs) -> decltype(auto) { return lhs.max_size(); });*/
+
+			if constexpr (is_valid_v<container_resize_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_resize, [](T& lhs, std::size_t n) -> decltype(auto) { return lhs.resize(n); });
+
+			if constexpr (is_valid_v<container_resize_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_resize, [](T& lhs, std::size_t n, const typename T::value_type& value) -> decltype(auto) { return lhs.resize(n, value); });
+
+			if constexpr (is_valid_v<container_capacity, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_capacity, [](const T& lhs) -> decltype(auto) { return lhs.capacity(); });
+
+			if constexpr (is_valid_v<container_reserve, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_capacity, [](T& lhs, std::size_t n) -> decltype(auto) { return lhs.reserve(n); });
+
+			if constexpr (is_valid_v<container_shrink_to_fit, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_shrink_to_fit, [](T& lhs) -> decltype(auto) { return lhs.shrink_to_fit(); });
+
+			// - modifiers
+
+			if constexpr (is_valid_v<container_clear, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_clear, [](T& lhs) -> decltype(auto) { return lhs.clear(); });
+
+			if constexpr (is_valid_v<container_insert_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter, const typename T::value_type& value) -> decltype(auto) { return lhs.insert(iter, value); });
+
+			if constexpr (is_valid_v<container_insert_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter, typename T::value_type&& value) -> decltype(auto) { return lhs.insert(iter, std::move(value)); });
+
+			if constexpr (is_valid_v<container_insert_2, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter, std::size_t n, const typename T::value_type& value) -> decltype(auto) { return lhs.insert(iter, n, std::move(value)); });
+
+			// assign (TODO)
+
+			if constexpr (is_valid_v<container_erase_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::iterator iter) -> decltype(auto) { return lhs.erase(iter); });
+
+			if constexpr (is_valid_v<container_erase_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter) -> decltype(auto) { return lhs.erase(iter); });
+
+			if constexpr (is_valid_v<container_erase_2, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::iterator start, typename T::iterator end) -> decltype(auto) { return lhs.erase(start, end); });
+
+			if constexpr (is_valid_v<container_erase_3, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator start, typename T::const_iterator end) -> decltype(auto) { return lhs.erase(start, end); });
+
+			if constexpr (is_valid_v<container_push_front_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_push_front, [](T& lhs, const typename T::value_type& value) -> decltype(auto) { return lhs.push_front(value); });
+
+			if constexpr (is_valid_v<container_push_front_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_push_front, [](T& lhs, typename T::value_type&& value) -> decltype(auto) { return lhs.push_front(std::move(value)); });
+
+			if constexpr (is_valid_v<container_pop_front, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_pop_front, [](T& lhs) -> decltype(auto) { return lhs.pop_front(); });
+
+			if constexpr (is_valid_v<container_push_back_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_push_back, [](T& lhs, const typename T::value_type& value) -> decltype(auto) { return lhs.push_back(value); });
+			if constexpr (is_valid_v<container_push_back_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_push_back, [](T& lhs, typename T::value_type&& value) -> decltype(auto) { return lhs.push_back(std::move(value)); });
+
+			if constexpr (is_valid_v<container_pop_back, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_pop_back, [](T& lhs) -> decltype(auto) { return lhs.pop_back(); });
+
+			if constexpr (is_valid_v<container_swap, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_swap, [](T& lhs, T& rhs) -> decltype(auto) { return std::swap(lhs, rhs); });
+
+			if constexpr (is_valid_v<container_extract_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_extract, [](T& lhs, typename T::const_iterator iter) -> decltype(auto) { return lhs.extract(iter); });
+
+			if constexpr (is_valid_v<container_extract_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_extract, [](T& lhs, const typename T::key_type& key) -> decltype(auto) { return lhs.extract(key); });
+
+			if constexpr (is_valid_v<container_merge_0, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_merge, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs.merge(rhs); });
+			if constexpr (is_valid_v<container_merge_1, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_merge, [](T& lhs, T&& rhs) -> decltype(auto) { return lhs.merge(std::move(rhs)); });
+
+			// - lookup
+
+			if constexpr (is_valid_v<container_count, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_count, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.count(rhs); });
+
+			if constexpr (is_valid_v<container_find, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_find, [](T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.find(rhs); });
+			if constexpr (is_valid_v<container_find_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_find, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.find(rhs); });
+
+			if constexpr (is_valid_v<container_lower_bound, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_lower_bound, [](T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.lower_bound(rhs); });
+			if constexpr (is_valid_v<container_lower_bound_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_lower_bound, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.lower_bound(rhs); });
+
+			if constexpr (is_valid_v<container_upper_bound, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_upper_bound, [](T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.upper_bound(rhs); });
+			if constexpr (is_valid_v<container_upper_bound_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_upper_bound, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.upper_bound(rhs); });
+
+			if constexpr (is_valid_v<container_equal_range, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_equal_range, [](T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.equal_range(rhs); });
+			if constexpr (is_valid_v<container_equal_range_const, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_equal_range, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.equal_range(rhs); });
+
+			// - observers
+
+			if constexpr (is_valid_v<container_key_comp, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_key_comp, [](const T& lhs) -> decltype(auto) { return lhs.key_comp(); });
+
+			if constexpr (is_valid_v<container_value_comp, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_value_comp, [](const T& lhs) -> decltype(auto) { return lhs.value_comp(); });
+
+			if constexpr (is_valid_v<container_hash_function, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_hash_function, [](const T& lhs) -> decltype(auto) { return lhs.hash_function(); });
+
+			if constexpr (is_valid_v<container_key_eq, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_key_eq, [](const T& lhs) -> decltype(auto) { return lhs.key_eq(); });
+
+			if constexpr (is_valid_v<container_get_allocator, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::container_get_allocator, [](const T& lhs) -> decltype(auto) { return lhs.get_allocator(); });
+
+		}
+	};
 };
 
 namespace Ubpa::UDRefl {
@@ -328,94 +623,26 @@ namespace Ubpa::UDRefl {
 
 	template<typename T, typename... Args>
 	void ReflMngr::RegisterTypeAuto(AttrSet attrs_ctor, AttrSet attrs_dtor) {
-		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		if (IsRegistered(TypeID::of<T>))
+		static_assert(!std::is_volatile_v<T>);
+		if constexpr (std::is_void_v<T>)
 			return;
-		RegisterType(type_name<T>(), sizeof(T), alignof(T));
-		if constexpr (sizeof...(Args) > 0 || std::is_default_constructible_v<T>)
-			AddConstructor<T, Args...>(std::move(attrs_ctor));
-		if constexpr (std::is_destructible_v<T>)
-			AddDestructor<T>(std::move(attrs_dtor));
+		else if constexpr (std::is_const_v<T>)
+			RegisterTypeAuto<std::remove_const_t<T>, Args...>(std::move(attrs_ctor), std::move(attrs_dtor));
+		else if constexpr (std::is_reference_v<T>)
+			RegisterTypeAuto<std::remove_reference_t<T>, Args...>(std::move(attrs_ctor), std::move(attrs_dtor));
+		else if constexpr (std::is_pointer_v<T>)
+			RegisterTypeAuto<std::remove_pointer_t<T>, Args...>(std::move(attrs_ctor), std::move(attrs_dtor));
+		else {
+			if (IsRegistered(TypeID::of<T>))
+				return;
+			RegisterType(type_name<T>(), sizeof(T), alignof(T));
+			if constexpr (sizeof...(Args) > 0 || std::is_default_constructible_v<T>)
+				AddConstructor<T, Args...>(std::move(attrs_ctor));
+			if constexpr (std::is_destructible_v<T>)
+				AddDestructor<T>(std::move(attrs_dtor));
 
-		// meta
-
-		if constexpr (is_valid_v<operator_plus, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_plus, [](const T& lhs) { return +lhs; });
-		if constexpr (is_valid_v<operator_minus, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_minus, [](const T& lhs) { return -lhs; });
-
-		if constexpr (is_valid_v<operator_add, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_add, [](const T& lhs, const T& rhs) { return lhs + rhs; });
-		if constexpr (is_valid_v<operator_sub, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_sub, [](const T& lhs, const T& rhs) { return lhs + rhs; });
-		if constexpr (is_valid_v<operator_mul, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_mul, [](const T& lhs, const T& rhs) { return lhs * rhs; });
-		if constexpr (is_valid_v<operator_div, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_div, [](const T& lhs, const T& rhs) { return lhs / rhs; });
-		if constexpr (is_valid_v<operator_mod, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_mod, [](const T& lhs, const T& rhs) { return lhs % rhs; });
-
-		if constexpr (is_valid_v<operator_bnot, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_bnot, [](const T& lhs) { return ~lhs; });
-		if constexpr (is_valid_v<operator_band, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_band, [](const T& lhs, const T& rhs) { return lhs & rhs; });
-		if constexpr (is_valid_v<operator_bor, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_bor, [](const T& lhs, const T& rhs) { return lhs & rhs; });
-		if constexpr (is_valid_v<operator_bxor, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_bxor, [](const T& lhs, const T& rhs) { return lhs & rhs; });
-		if constexpr (is_valid_v<operator_lshift, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, std::ostream& rhs) -> decltype(auto) { return rhs << lhs; });
-		if constexpr (is_valid_v<operator_rshift, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](const T& lhs, std::istream& rhs) -> decltype(auto) { return rhs >> lhs; });
-
-		if constexpr (is_valid_v<operator_pre_inc, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_pre_inc, [](T& lhs) -> decltype(auto) { return ++lhs; });
-		if constexpr (is_valid_v<operator_post_inc, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_post_inc, [](T& lhs, int) -> decltype(auto) { return lhs++; });
-		if constexpr (is_valid_v<operator_pre_dec, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_pre_dec, [](T& lhs) -> decltype(auto) { return --lhs; });
-		if constexpr (is_valid_v<operator_post_dec, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_post_dec, [](T& lhs, int) -> decltype(auto) { return lhs--; });
-
-		/*if constexpr (is_valid_v<operator_assign, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign, [](T& lhs, const T& rhs) { return lhs = rhs; });*/
-		if constexpr (is_valid_v<operator_assign_add, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_add, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs += rhs; });
-		if constexpr (is_valid_v<operator_assign_sub, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_sub, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs -= rhs; });
-		if constexpr (is_valid_v<operator_assign_mul, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_mul, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs *= rhs; });
-		if constexpr (is_valid_v<operator_assign_div, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_div, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs /= rhs; });
-		if constexpr (is_valid_v<operator_assign_mod, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_mod, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs %= rhs; });
-		if constexpr (is_valid_v<operator_assign_band, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_band, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs &= rhs; });
-		if constexpr (is_valid_v<operator_assign_bor, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_bor, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs |= rhs; });
-		if constexpr (is_valid_v<operator_assign_bxor, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_bxor, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs ^= rhs; });
-		if constexpr (is_valid_v<operator_assign_lshift, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_lshift, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs <<= rhs; });
-		if constexpr (is_valid_v<operator_assign_rshift, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_assign_rshift, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs >>= rhs; });
-
-		if constexpr (is_valid_v<operator_subscript, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
-		if constexpr (is_valid_v<operator_subscript_const, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
-		if constexpr (is_valid_v<operator_deref, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_deref, [](T& lhs) -> decltype(auto) { return *lhs; });
-		if constexpr (is_valid_v<operator_deref_const, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_deref, [](const T& lhs) -> decltype(auto) { return *lhs; });
-		/*if constexpr (is_valid_v<operator_ref, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_ref, [](T& lhs) { return &lhs; });
-		if constexpr (is_valid_v<operator_ref_const, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_ref, [](const T& lhs) { return &lhs; });*/
-		/*if constexpr (is_valid_v<operator_member, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_member, [](T& lhs) { return lhs.operator->(); });
-		if constexpr (is_valid_v<operator_member_const, T>)
-			AddMemberMethod(StrIDRegistry::Meta::operator_member, [](const T& lhs) { return lhs.operator->(); });*/
+			details::TypeAutoRegister<T>::run(*this);
+		}
 	}
 
 	template<auto field_data>
@@ -774,7 +1001,7 @@ namespace Ubpa::UDRefl {
 		StrID methodID,
 		Args... args)
 	{
-		return MInvoke<Args>(typeID, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+		return MInvoke<Args...>(typeID, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
@@ -783,7 +1010,7 @@ namespace Ubpa::UDRefl {
 		StrID methodID,
 		Args... args)
 	{
-		return MInvoke<Args>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+		return MInvoke<Args...>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
@@ -792,6 +1019,6 @@ namespace Ubpa::UDRefl {
 		StrID methodID,
 		Args... args)
 	{
-		return MInvoke<Args>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+		return MInvoke<Args...>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 }

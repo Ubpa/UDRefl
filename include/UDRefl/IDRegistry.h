@@ -110,6 +110,56 @@ namespace Ubpa::UDRefl {
 
 			static constexpr char operator_call[] = "UDRefl::operator()";
 			static constexpr char operator_comma[] = "UDRefl::operator,";
+
+			// container
+
+			static constexpr char container_assign[] = "UDRefl::container_assign";
+
+			static constexpr char container_begin[] = "UDRefl::container_begin";
+			static constexpr char container_cbegin[] = "UDRefl::container_cbegin";
+			static constexpr char container_end[] = "UDRefl::container_end";
+			static constexpr char container_cend[] = "UDRefl::container_cend";
+			static constexpr char container_rbegin[] = "UDRefl::container_rbegin";
+			static constexpr char container_crbegin[] = "UDRefl::container_crbegin";
+			static constexpr char container_rend[] = "UDRefl::container_rend";
+			static constexpr char container_crend[] = "UDRefl::container_crend";
+
+			static constexpr char container_at[] = "UDRefl::container_at";
+			static constexpr char container_data[] = "UDRefl::container_data";
+			static constexpr char container_front[] = "UDRefl::container_front";
+			static constexpr char container_back[] = "UDRefl::container_back";
+
+			static constexpr char container_empty[] = "UDRefl::container_empty";
+			static constexpr char container_size[] = "UDRefl::container_size";
+			static constexpr char container_max_size[] = "UDRefl::container_max_size";
+			static constexpr char container_resize[] = "UDRefl::container_resize";
+			static constexpr char container_capacity[] = "UDRefl::container_capacity";
+			static constexpr char container_reserve[] = "UDRefl::container_reserve";
+			static constexpr char container_shrink_to_fit[] = "UDRefl::container_shrink_to_fit";
+
+			static constexpr char container_clear[] = "UDRefl::container_clear";
+			static constexpr char container_insert[] = "UDRefl::container_insert";
+			static constexpr char container_insert_or_assign[] = "UDRefl::container_insert_or_assign";
+			static constexpr char container_erase[] = "UDRefl::container_erase";
+			static constexpr char container_push_front[] = "UDRefl::container_push_front";
+			static constexpr char container_pop_front[] = "UDRefl::container_pop_front";
+			static constexpr char container_push_back[] = "UDRefl::container_push_back";
+			static constexpr char container_pop_back[] = "UDRefl::container_pop_back";
+			static constexpr char container_swap[] = "UDRefl::container_swap";
+			static constexpr char container_merge[] = "UDRefl::container_merge";
+			static constexpr char container_extract[] = "UDRefl::container_extract";
+
+			static constexpr char container_count[] = "UDRefl::container_count";
+			static constexpr char container_find[] = "UDRefl::container_find";
+			static constexpr char container_lower_bound[] = "UDRefl::container_lower_bound";
+			static constexpr char container_upper_bound[] = "UDRefl::container_upper_bound";
+			static constexpr char container_equal_range[] = "UDRefl::container_equal_range";
+
+			static constexpr char container_key_comp[] = "UDRefl::container_key_comp";
+			static constexpr char container_value_comp[] = "UDRefl::container_value_comp";
+			static constexpr char container_hash_function[] = "UDRefl::container_hash_function";
+			static constexpr char container_key_eq[] = "UDRefl::container_key_eq";
+			static constexpr char container_get_allocator[] = "UDRefl::container_get_allocator";
 		};
 		struct MetaID {
 			//
@@ -180,6 +230,56 @@ namespace Ubpa::UDRefl {
 
 			static constexpr StrID operator_call{ Meta::operator_call };
 			static constexpr StrID operator_comma{ Meta::operator_comma };
+
+			// container
+
+			static constexpr StrID container_assign = Meta::container_assign;
+
+			static constexpr StrID container_begin = Meta::container_begin;
+			static constexpr StrID container_cbegin = Meta::container_cbegin;
+			static constexpr StrID container_end = Meta::container_end;
+			static constexpr StrID container_cend = Meta::container_cend;
+			static constexpr StrID container_rbegin = Meta::container_rbegin;
+			static constexpr StrID container_crbegin = Meta::container_crbegin;
+			static constexpr StrID container_rend = Meta::container_rend;
+			static constexpr StrID container_crend = Meta::container_crend;
+
+			static constexpr StrID container_at = Meta::container_at;
+			static constexpr StrID container_data = Meta::container_data;
+			static constexpr StrID container_front = Meta::container_front;
+			static constexpr StrID container_back = Meta::container_back;
+
+			static constexpr StrID container_empty = Meta::container_empty;
+			static constexpr StrID container_size = Meta::container_size;
+			static constexpr StrID container_max_size = Meta::container_max_size;
+			static constexpr StrID container_resize = Meta::container_resize;
+			static constexpr StrID container_capacity = Meta::container_capacity;
+			static constexpr StrID container_reserve = Meta::container_reserve;
+			static constexpr StrID container_shrink_to_fit = Meta::container_shrink_to_fit;
+
+			static constexpr StrID container_clear = Meta::container_clear;
+			static constexpr StrID container_insert = Meta::container_insert;
+			static constexpr StrID container_insert_or_assign = Meta::container_insert_or_assign;
+			static constexpr StrID container_erase = Meta::container_erase;
+			static constexpr StrID container_push_front = Meta::container_push_front;
+			static constexpr StrID container_pop_front = Meta::container_pop_front;
+			static constexpr StrID container_push_back = Meta::container_push_back;
+			static constexpr StrID container_pop_back = Meta::container_pop_back;
+			static constexpr StrID container_swap = Meta::container_swap;
+			static constexpr StrID container_merge = Meta::container_merge;
+			static constexpr StrID container_extract = Meta::container_extract;
+
+			static constexpr StrID container_count = Meta::container_count;
+			static constexpr StrID container_find = Meta::container_find;
+			static constexpr StrID container_lower_bound = Meta::container_lower_bound;
+			static constexpr StrID container_upper_bound = Meta::container_upper_bound;
+			static constexpr StrID container_equal_range = Meta::container_equal_range;
+
+			static constexpr StrID container_key_comp = Meta::container_key_comp;
+			static constexpr StrID container_value_comp = Meta::container_value_comp;
+			static constexpr StrID container_hash_function = Meta::container_hash_function;
+			static constexpr StrID container_key_eq = Meta::container_key_eq;
+			static constexpr StrID container_get_allocator = Meta::container_get_allocator;
 		};
 
 		using IDRegistry<StrID>::RegisterUnmanaged;
@@ -207,7 +307,10 @@ namespace Ubpa::UDRefl {
 		using IDRegistry<TypeID>::Register;
 		using IDRegistry<TypeID>::IsRegistered;
 
-		TypeIDRegistry() { RegisterUnmanaged(Meta::global); }
+		TypeIDRegistry() {
+			RegisterUnmanaged(Meta::global);
+			RegisterUnmanaged(Meta::t_void);
+		}
 
 		TypeID RegisterUnmanaged(std::string_view name) { TypeID ID{ name }; IDRegistry<TypeID>::RegisterUnmanaged(ID, name); return ID; }
 		TypeID Register(std::string_view name) { TypeID ID{ name }; IDRegistry<TypeID>::Register(ID, name); return ID; }

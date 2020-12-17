@@ -71,4 +71,54 @@ StrIDRegistry::StrIDRegistry() {
 
 	RegisterUnmanaged(Meta::operator_call);
 	RegisterUnmanaged(Meta::operator_comma);
+
+	// container
+
+	RegisterUnmanaged(Meta::container_assign);
+
+	RegisterUnmanaged(Meta::container_begin);
+	RegisterUnmanaged(Meta::container_cbegin);
+	RegisterUnmanaged(Meta::container_end);
+	RegisterUnmanaged(Meta::container_cend);
+	RegisterUnmanaged(Meta::container_rbegin);
+	RegisterUnmanaged(Meta::container_crbegin);
+	RegisterUnmanaged(Meta::container_rend);
+	RegisterUnmanaged(Meta::container_crend);
+
+	RegisterUnmanaged(Meta::container_at);
+	RegisterUnmanaged(Meta::container_data);
+	RegisterUnmanaged(Meta::container_front);
+	RegisterUnmanaged(Meta::container_back);
+
+	RegisterUnmanaged(Meta::container_empty);
+	RegisterUnmanaged(Meta::container_size);
+	RegisterUnmanaged(Meta::container_max_size);
+	RegisterUnmanaged(Meta::container_resize);
+	RegisterUnmanaged(Meta::container_capacity);
+	RegisterUnmanaged(Meta::container_reserve);
+	RegisterUnmanaged(Meta::container_shrink_to_fit);
+
+	RegisterUnmanaged(Meta::container_clear);
+	RegisterUnmanaged(Meta::container_insert);
+	RegisterUnmanaged(Meta::container_insert_or_assign);
+	RegisterUnmanaged(Meta::container_erase);
+	RegisterUnmanaged(Meta::container_push_front);
+	RegisterUnmanaged(Meta::container_pop_front);
+	RegisterUnmanaged(Meta::container_push_back);
+	RegisterUnmanaged(Meta::container_pop_back);
+	RegisterUnmanaged(Meta::container_swap);
+	RegisterUnmanaged(Meta::container_merge);
+	RegisterUnmanaged(Meta::container_extract);
+
+	RegisterUnmanaged(Meta::container_count);
+	RegisterUnmanaged(Meta::container_find);
+	RegisterUnmanaged(Meta::container_lower_bound);
+	RegisterUnmanaged(Meta::container_upper_bound);
+	RegisterUnmanaged(Meta::container_equal_range);
+
+	RegisterUnmanaged(Meta::container_key_comp);
+	RegisterUnmanaged(Meta::container_value_comp);
+	RegisterUnmanaged(Meta::container_hash_function);
+	RegisterUnmanaged(Meta::container_key_eq);
+	RegisterUnmanaged(Meta::container_get_allocator);
 }

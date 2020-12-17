@@ -7,16 +7,29 @@
 
 #include <optional>
 
-#define OBJECT_PTR_DEFINE_OPERATOR(op, name)                                              \
-template<typename Arg>                                                                    \
-SharedObject operator##op (Arg rhs) const {                                               \
-    return DMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_PTR_DEFINE_OPERATOR(op, name)                                               \
+template<typename Arg>                                                                     \
+SharedObject operator##op (Arg rhs) const {                                                \
+    return ADMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
 }
 
-#define SHARED_OBJECT_DEFINE_OPERATOR(op)                            \
-template<typename Arg>                                               \
-SharedObject operator##op (Arg rhs) const {                          \
-    return AsObjectPtr()->operator##op<Arg>(std::forward<Arg>(rhs)); \
+#define OBJECT_PTR_DEFINE_CMP_OPERATOR(op, name)                                                       \
+template<typename Arg>                                                                                 \
+bool operator##op (Arg rhs) const {                                                                    \
+    SharedObject rst = ADMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
+    return rst.GetID().Is<bool>() ? rst.As<bool>() : false;                                            \
+}
+
+#define SHARED_OBJECT_DEFINE_OPERATOR(op)                             \
+template<typename Arg>                                                \
+SharedObject operator##op (Arg rhs) const {                           \
+    return AsObjectPtr()->operator##op <Arg>(std::forward<Arg>(rhs)); \
+}
+
+#define SHARED_OBJECT_DEFINE_CMP_OPERATOR(op)                         \
+template<typename Arg>                                                \
+bool operator##op (Arg rhs) const {                                   \
+    return AsObjectPtr()->operator##op <Arg>(std::forward<Arg>(rhs)); \
 }
 
 #define SHARED_OBJECT_DEFINE_UNARY_OPERATOR(op) \
@@ -81,16 +94,59 @@ namespace Ubpa::UDRefl {
 		ObjectPtr Dereference() const;
 		ConstObjectPtr DereferenceAsConst() const;
 
+		//
+		// container
+		//////////////
+
+		// - iterator
+
+		SharedObject begin() const;
+		SharedObject cbegin() const;
+		SharedObject end() const;
+		SharedObject cend() const;
+		SharedObject rbegin() const;
+		SharedObject crbegin() const;
+		SharedObject rend() const;
+		SharedObject crend() const;
+
+		// - element access
+
+		SharedObject data() const;
+		SharedObject front() const;
+		SharedObject back() const;
+		SharedObject empty() const;
+		SharedObject size() const;
+		//SharedObject max_size() const;
+		SharedObject capacity() const;
+
+		// - observers
+
+		SharedObject key_comp() const;
+		SharedObject value_comp() const;
+		SharedObject hash_function() const;
+		SharedObject key_eq() const;
+		SharedObject get_allocator() const;
+
 	protected:
 		template<typename T>
-		constexpr T* AsPtr() const noexcept {
-			static_assert(!std::is_reference_v<T> && !std::is_const_v<T>);
-			assert(Is<T>());
-			return reinterpret_cast<T*>(ptr);
+		constexpr auto* AsPtr() const noexcept {
+			static_assert(!std::is_const_v<T> && !std::is_volatile_v<T>);
+			assert(ID.Is<T>());
+			if constexpr (std::is_reference_v<T>)
+				return reinterpret_cast<std::add_pointer_t<T>*>(ptr);
+			else
+				return reinterpret_cast<T*>(ptr);
 		}
 
 		template<typename T>
-		constexpr T& As() const noexcept { assert(ptr); return *AsPtr<T>(); }
+		constexpr decltype(auto) As() const noexcept {
+			assert(ptr);
+			const auto* ptr = AsPtr<T>();
+			if constexpr (std::is_reference_v<T>)
+				return std::forward<T>(**ptr);
+			else
+				return *ptr;
+		}
 
 	protected:
 		TypeID ID;
@@ -167,6 +223,19 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args... args) const;
 
+		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		template<typename... Args>
+		SharedObject AMInvoke(
+			StrID methodID,
+			std::pmr::memory_resource* rst_rsrc,
+			Args... args) const;
+
+		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		template<typename... Args>
+		SharedObject ADMInvoke(
+			StrID methodID,
+			Args... args) const;
+
 		//
 		// Meta
 		/////////
@@ -197,6 +266,13 @@ namespace Ubpa::UDRefl {
 
 		OBJECT_PTR_DEFINE_OPERATOR([], subscript)
 		OBJECT_PTR_DEFINE_OPERATOR(->*, member_of_pointer)
+
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(==, eq);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(!=, ne);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(< , lt);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(<=, le);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(> , gt);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(>=, ge);
 			
 		SharedObject operator+() const;
 		SharedObject operator-() const;
@@ -287,6 +363,19 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args... args) const;
 
+		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		template<typename... Args>
+		SharedObject AMInvoke(
+			StrID methodID,
+			std::pmr::memory_resource* rst_rsrc,
+			Args... args) const;
+
+		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		template<typename... Args>
+		SharedObject ADMInvoke(
+			StrID methodID,
+			Args... args) const;
+
 		// self [r/w] vars and all bases' [r/w] vars
 		void ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
@@ -325,6 +414,13 @@ namespace Ubpa::UDRefl {
 
 		OBJECT_PTR_DEFINE_OPERATOR([], subscript)
 		OBJECT_PTR_DEFINE_OPERATOR(->*, member_of_pointer)
+
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(==, eq);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(!=, ne);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(< , lt);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(<=, le);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(> , gt);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(>=, ge);
 			
 		SharedObject operator+() const;
 		SharedObject operator-() const;
@@ -343,6 +439,23 @@ namespace Ubpa::UDRefl {
 			return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
 				std::forward<Args>(args)...);
 		}
+
+		//
+		// container
+		//////////////
+
+		// - iterator
+
+		SharedObject begin() const;
+		SharedObject end() const;
+		SharedObject rbegin() const;
+		SharedObject rend() const;
+
+		// - element access
+
+		SharedObject data() const;
+		SharedObject front() const;
+		SharedObject back() const;
 	};
 
 	static_assert(sizeof(ObjectPtr) == sizeof(ConstObjectPtr) && alignof(ObjectPtr) == alignof(ConstObjectPtr));
@@ -473,6 +586,13 @@ namespace Ubpa::UDRefl {
 
 		SHARED_OBJECT_DEFINE_OPERATOR([])
 		SHARED_OBJECT_DEFINE_OPERATOR(->*)
+
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(==)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(!=)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(>)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(>=)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(<)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(<=)
 			
 		SharedObject operator+() const;
 		SharedObject operator-() const;
@@ -620,6 +740,14 @@ namespace Ubpa::UDRefl {
 		SHARED_OBJECT_DEFINE_OPERATOR(>>=)
 
 		SHARED_OBJECT_DEFINE_OPERATOR([])
+		SHARED_OBJECT_DEFINE_OPERATOR(->*)
+
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(==)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(!=)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(>)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(>=)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(<)
+		SHARED_OBJECT_DEFINE_CMP_OPERATOR(<=)
 			
 		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(+)
 		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(-)
@@ -650,6 +778,27 @@ namespace Ubpa::UDRefl {
 			return ConstObjectPtr{ TypeID::of<std::remove_cv_t<U>>, &p };
 		else
 			return ObjectPtr{ TypeID::of<std::remove_volatile_t<U>>, &p };
+	}
+
+	template<typename T>
+	constexpr TypeID ArgID(const T& arg) noexcept {
+		if constexpr (std::is_same_v<T, ObjectPtr> || std::is_same_v<T, SharedObject>)
+			return arg.GetID();
+		else {
+			static_assert(!std::is_same_v<T, ConstObjectPtr> && !std::is_same_v<T, SharedConstObject>);
+			return TypeID::of<T>;
+		}
+	}
+
+	template<typename T>
+	constexpr void* ArgPtr(T&& arg) noexcept {
+		using U = std::remove_reference_t<T>;
+		if constexpr (std::is_same_v<U, ObjectPtr> || std::is_same_v<U, SharedObject>)
+			return arg.GetPtr();
+		else {
+			static_assert(!std::is_same_v<U, ConstObjectPtr> && !std::is_same_v<U, SharedConstObject>);
+			return &arg;
+		}
 	}
 }
 
