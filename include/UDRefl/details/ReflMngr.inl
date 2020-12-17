@@ -508,7 +508,7 @@ namespace Ubpa::UDRefl {
 		else {
 			static_assert(alignof(RawT) <= alignof(max_align_t));
 			using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, SharedConstObject, SharedObject>;
-			MaybeConstSharedObject obj = { TypeID::of<RawT>, std::make_shared<RawT>(std::forward<Args>(args)...) };
+			MaybeConstSharedObject obj{ TypeID::of<RawT>, std::make_shared<RawT>(std::forward<Args>(args)...) };
 			return FieldPtr{ obj };
 		}
 	}

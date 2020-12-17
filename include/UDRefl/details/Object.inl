@@ -3,14 +3,18 @@
 #include <array>
 
 namespace Ubpa::UDRefl {
+	//
+	// ObjectPtrBase
+	//////////////////
+
 	template<typename... Args>
-	InvocableResult ConstObjectPtr::IsInvocable(StrID methodID) const noexcept {
+	InvocableResult ObjectPtrBase::IsInvocable(StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
 		return IsInvocable(ID, methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename T>
-	T ConstObjectPtr::InvokeRet(StrID methodID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
+	T ObjectPtrBase::InvokeRet(StrID methodID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
 		auto result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
@@ -19,7 +23,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ConstObjectPtr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ObjectPtrBase::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
@@ -31,7 +35,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ConstObjectPtr::Invoke(StrID methodID, Args... args) const {
+	T ObjectPtrBase::Invoke(StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
@@ -43,7 +47,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ConstObjectPtr::MInvoke(
+	SharedObject ObjectPtrBase::MInvoke(
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
 		Args... args) const
@@ -59,7 +63,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ConstObjectPtr::DMInvoke(
+	SharedObject ObjectPtrBase::DMInvoke(
 		StrID methodID,
 		Args... args) const
 	{
@@ -67,7 +71,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ConstObjectPtr::AMInvoke(
+	SharedObject ObjectPtrBase::AMInvoke(
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
 		Args... args) const
@@ -83,12 +87,16 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ConstObjectPtr::ADMInvoke(
+	SharedObject ObjectPtrBase::ADMInvoke(
 		StrID methodID,
 		Args... args) const
 	{
 		return AMInvoke<Args...>(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
+
+	//
+	// ObjectPtr
+	//////////////
 
 	template<typename... Args>
 	InvocableResult ObjectPtr::IsInvocable(StrID methodID) const noexcept {
@@ -183,6 +191,20 @@ namespace Ubpa::UDRefl {
 }
 
 template<>
+struct std::hash<Ubpa::UDRefl::ObjectPtr> {
+	std::size_t operator()(const Ubpa::UDRefl::ObjectPtr& obj) const noexcept {
+		return obj.GetID().GetValue() ^ std::hash<const void*>()(obj.GetPtr());
+	}
+};
+
+template<>
+struct std::hash<Ubpa::UDRefl::ConstObjectPtr> {
+	std::size_t operator()(const Ubpa::UDRefl::ConstObjectPtr& obj) const noexcept {
+		return obj.GetID().GetValue() ^ std::hash<const void*>()(obj.GetPtr());
+	}
+};
+
+template<>
 struct std::hash<Ubpa::UDRefl::SharedObject> {
 	std::size_t operator()(const Ubpa::UDRefl::SharedObject& obj) const noexcept {
 		return obj.GetID().GetValue() ^ std::hash<const void*>()(obj.GetPtr());
@@ -204,4 +226,3 @@ namespace std {
 		left.Swap(right);
 	}
 }
-
