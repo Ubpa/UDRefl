@@ -243,8 +243,10 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	using operator_post_dec = decltype(std::declval<T&>()--);
 
-	template<typename T, typename U = const T&>
-	using operator_assign = decltype(std::declval<T&>() = std::declval<U>());
+	template<typename T>
+	using operator_assign_copy = std::enable_if_t<std::is_copy_assignable_v<T>, decltype(std::declval<T&>() = std::declval<const T&>())> ;
+	template<typename T>
+	using operator_assign_move = std::enable_if_t<std::is_move_assignable_v<T>, decltype(std::declval<T&>() = std::declval<T&&>())>;
 	template<typename T, typename U = const T&>
 	using operator_assign_add = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() += std::declval<U>())>;
 	template<typename T, typename U = const T&>

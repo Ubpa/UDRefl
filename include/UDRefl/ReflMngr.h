@@ -1,5 +1,7 @@
 #pragma once
 
+#include "attrs/ContainerType.h"
+
 #include "TypeInfo.h"
 
 namespace Ubpa::UDRefl {
@@ -209,6 +211,7 @@ namespace Ubpa::UDRefl {
 		StrID AddField(TypeID typeID, std::string_view name, FieldInfo fieldinfo);
 		StrID AddMethod(TypeID typeID, std::string_view name, MethodInfo methodinfo);
 		bool AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo);
+		bool AddAttr(TypeID typeID, const Attr& attr);
 
 		// -- template --
 
@@ -470,6 +473,7 @@ namespace Ubpa::UDRefl {
 			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
 		// self [r/w] vars and all bases' [r/w] vars
+		// if obj is &{const{T}}, then return directly
 		void ForEachRWVar(
 			ObjectPtr obj,
 			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
@@ -584,6 +588,8 @@ namespace Ubpa::UDRefl {
 		ReflMngr();
 		~ReflMngr();
 	};
+
+	inline static std::add_const_t<ReflMngr*> Mngr = &ReflMngr::Instance();
 }
 
 #include "details/ReflMngr.inl"

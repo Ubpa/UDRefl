@@ -1,24 +1,62 @@
 #include <UDRefl/UDRefl.h>
 #include <iostream>
 
+#include "A.h"
+
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-int main() {
-	ReflMngr::Instance().RegisterTypeAuto<std::array<size_t, 5>>();
+void Serializer(ConstObjectPtr obj) {
+	if (type_name_is_arithmetic(obj->TypeName()))
+		std::cout << obj;
+	else {
+		std::cout << "{";
+		std::cout << "\"TYPE\":\"" << obj->TypeName() << "\"";
+		auto iter = obj->GetType()->attrs.find(TypeID::of<ContainerType>);
+		if (iter != obj->GetType()->attrs.end()) {
+			auto containerType = *iter;
+			if (containerType == ContainerType::VECTOR) {
+				std::cout << ",\"DATA\":[";
+				for (size_t i = 0; i < obj->size(); i++) {
+					Serializer(obj[i]->DereferenceAsConst());
+					if (i + 1 != obj->size())
+						std::cout << ",";
+				}
+				std::cout << "]";
+			}
+		}
+		else { // normal object
+			size_t N = obj->GetRVars().size();
+			if (N > 0)
+				std::cout << ",";
+			size_t i = 0;
+			obj->ForEachRVar([N, &i](TypeRef type, FieldRef field, ConstObjectPtr var) {
+				std::cout << "\"" << Mngr->nregistry.Nameof(field.ID) << "\":";
+				Serializer(var);
+				if (i != N - 1)
+					std::cout << ",";
+				i++;
+				return true;
+			});
+		}
+		std::cout << "}";
+	}
+}
 
-	for (const auto& [ID, info] : ReflMngr::Instance().typeinfos) {
-		ReflMngr::Instance().ForEachMethod(ID, [](TypeRef type, MethodRef method) {
-			std::cout << ReflMngr::Instance().tregistry.Nameof(type.ID) << ": "
-				<< ReflMngr::Instance().nregistry.Nameof(method.ID)
-				<< std::endl;
-			return true;
-		});
+int main() {
+	RegisterA();
+
+	A a;
+	for (size_t i = 0; i < 10; i++) {
+		std::vector<std::vector<size_t>> row;
+		for (size_t j = 0; j < 10; j++) {
+			std::vector<size_t> column;
+			for (size_t k = 0; k < 10; k++)
+				column.push_back(k);
+			row.push_back(std::move(column));
+		}
+		a.data.push_back(std::move(row));
 	}
 
-	SharedObject arr = ReflMngr::Instance().MakeShared(TypeID::of<std::array<size_t, 5>>);
-	for (size_t i = 0; i < arr->size(); i++)
-		arr[i] = i;
-	for (SharedObject ele : arr)
-		std::cout << ele->TypeName() << ": " << ele << std::endl;
+	Serializer(Ptr(a));
 }

@@ -266,6 +266,19 @@ ReflMngr::ReflMngr() {
 	};
 
 	typeinfos.emplace(tregistry.Register(TypeIDRegistry::Meta::global), std::move(global));
+
+	RegisterTypeAuto<ContainerType>();
+	AddField<ContainerType::ARRAY>("ARRAY");
+	AddField<ContainerType::VECTOR>("VECTOR");
+	AddField<ContainerType::DEQUE>("DEQUE");
+	AddField<ContainerType::FORWARD_LIST>("FORWARD_LIST");
+	AddField<ContainerType::LIST>("LIST");
+	AddField<ContainerType::SET>("SET");
+	AddField<ContainerType::MAP>("MAP");
+	AddField<ContainerType::UNORDERED_SET>("UNORDERED_SET");
+	AddField<ContainerType::UNORDERED_MAP>("UNORDERED_MAP");
+	AddField<ContainerType::STACK>("STACK");
+	AddField<ContainerType::QUEUE>("QUEUE");
 }
 
 void ReflMngr::Clear() noexcept {
@@ -354,6 +367,18 @@ bool ReflMngr::AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo) {
 	if (btarget != typeinfo.baseinfos.end())
 		return false;
 	typeinfo.baseinfos.emplace_hint(btarget, baseID, std::move(baseinfo));
+	return true;
+}
+
+bool ReflMngr::AddAttr(TypeID typeID, const Attr& attr) {
+	auto ttarget = typeinfos.find(typeID);
+	if (ttarget == typeinfos.end())
+		return false;
+	auto& typeinfo = ttarget->second;
+	auto atarget = typeinfo.attrs.find(attr);
+	if (atarget != typeinfo.attrs.end())
+		return false;
+	typeinfo.attrs.emplace_hint(atarget, attr);
 	return true;
 }
 
@@ -1113,7 +1138,9 @@ bool ReflMngr::IsDestructible(TypeID typeID) const noexcept {
 }
 
 bool ReflMngr::Construct(ObjectPtr obj, Span<const TypeID> argTypeIDs, void* args_buffer) const {
-	assert(obj.Valid());
+	if (!obj.GetPtr())
+		return false;
+
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())
 		return false;
@@ -1133,7 +1160,9 @@ bool ReflMngr::Construct(ObjectPtr obj, Span<const TypeID> argTypeIDs, void* arg
 }
 
 bool ReflMngr::Destruct(ConstObjectPtr obj) const {
-	assert(obj.Valid());
+	if (!obj.GetPtr())
+		return false;
+
 	auto target = typeinfos.find(obj.GetID());
 	if (target == typeinfos.end())
 		return false;
@@ -1154,12 +1183,12 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 
 void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<bool(TypeID)>& func) const {
 	std::set<TypeID> visitedVBs;
-	details::ForEachTypeID(typeID, func, visitedVBs);
+	details::ForEachTypeID(Dereference(typeID), func, visitedVBs);
 }
 
 void ReflMngr::ForEachType(TypeID typeID, const std::function<bool(TypeRef)>& func) const {
 	std::set<TypeID> visitedVBs;
-	details::ForEachTypeInfo(typeID, func, visitedVBs);
+	details::ForEachTypeInfo(Dereference(typeID), func, visitedVBs);
 }
 
 void ReflMngr::ForEachField(
@@ -1193,7 +1222,7 @@ void ReflMngr::ForEachRWVar(
 	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	details::ForEachRWVar(typeID, func, visitedVBs);
+	details::ForEachRWVar(Dereference(typeID), func, visitedVBs);
 }
 
 void ReflMngr::ForEachRVar(
@@ -1201,7 +1230,7 @@ void ReflMngr::ForEachRVar(
 	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	details::ForEachRVar(typeID, func, visitedVBs);
+	details::ForEachRVar(Dereference(typeID), func, visitedVBs);
 }
 
 void ReflMngr::ForEachRWVar(
@@ -1209,7 +1238,18 @@ void ReflMngr::ForEachRWVar(
 	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	details::ForEachRWVar(obj, func, visitedVBs);
+	switch (GetDereferenceProperty(obj.GetID()))
+	{
+	case Ubpa::UDRefl::DereferenceProperty::NOT_REFERENCE:
+		details::ForEachRWVar(obj, func, visitedVBs);
+		break;
+	case Ubpa::UDRefl::DereferenceProperty::VARIABLE:
+		details::ForEachRWVar(Dereference(obj), func, visitedVBs);
+		break;
+	case Ubpa::UDRefl::DereferenceProperty::CONST:
+	default:
+		break;
+	}
 }
 
 void ReflMngr::ForEachRVar(
@@ -1217,7 +1257,18 @@ void ReflMngr::ForEachRVar(
 	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	details::ForEachRVar(obj, func, visitedVBs);
+	switch (GetDereferenceProperty(obj.GetID()))
+	{
+	case Ubpa::UDRefl::DereferenceProperty::NOT_REFERENCE:
+		details::ForEachRVar(obj, func, visitedVBs);
+		break;
+	case Ubpa::UDRefl::DereferenceProperty::CONST:
+	case Ubpa::UDRefl::DereferenceProperty::VARIABLE:
+		details::ForEachRVar(DereferenceAsConst(obj), func, visitedVBs);
+		break;
+	default:
+		break;
+	}
 }
 
 std::vector<TypeID> ReflMngr::GetTypeIDs(TypeID typeID) {
@@ -1458,7 +1509,7 @@ TypeID ReflMngr::Dereference(TypeID ID) const {
 	auto name = tregistry.Nameof(ID);
 
 	if (!type_name_is_reference(name))
-		return {};
+		return ID;
 
 	std::string_view ele_name = type_name_remove_reference(name);
 
@@ -1468,7 +1519,7 @@ TypeID ReflMngr::Dereference(TypeID ID) const {
 }
 
 ObjectPtr ReflMngr::Dereference(ConstObjectPtr pointer_obj) const {
-	if (!pointer_obj.Valid())
+	if (!pointer_obj.GetPtr())
 		return nullptr;
 
 	auto name = tregistry.Nameof(pointer_obj.GetID());
