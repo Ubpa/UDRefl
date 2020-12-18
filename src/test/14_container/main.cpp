@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "A.h"
+#include "B.h"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
@@ -45,6 +46,7 @@ void Serializer(ConstObjectPtr obj) {
 
 int main() {
 	RegisterA();
+	RegisterB();
 
 	A a;
 	for (size_t i = 0; i < 10; i++) {
@@ -58,5 +60,8 @@ int main() {
 		a.data.push_back(std::move(row));
 	}
 
+	B b{ false, 1.f,2.f,3,'4',5 };
+
 	Serializer(Ptr(a));
+	Serializer(Ptr(b));
 }

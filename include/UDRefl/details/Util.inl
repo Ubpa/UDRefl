@@ -29,11 +29,11 @@ namespace Ubpa::UDRefl::details {
 		template<typename Obj, typename Func, typename MaybeConstVoidPtr>
 		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, Func&& func, void* args_buffer) {
 			return std::apply(
-				[ptr, f = std::forward<Func>(func)](auto*... pointers) mutable -> decltype(auto) {
+				[ptr, f = std::forward<Func>(func)](auto*... pointers) -> decltype(auto) {
 					if constexpr (std::is_member_function_pointer_v<std::decay_t<Func>>)
 						return (buffer_as<Obj>(ptr).*f)(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
 					else {
-						return std::forward<Func>(f)(
+						return f(
 							buffer_as<Obj>(ptr),
 							std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...
 						);
@@ -45,8 +45,8 @@ namespace Ubpa::UDRefl::details {
 		template<typename Func>
 		static constexpr decltype(auto) run(Func&& func, void* args_buffer) {
 			return std::apply(
-				[f = std::forward<Func>(func)](auto*... pointers) mutable -> decltype(auto) {
-					return std::forward<Func>(f)(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
+				[f = std::forward<Func>(func)](auto*... pointers) -> decltype(auto) {
+					return f(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
 				},
 				*reinterpret_cast<std::array<void*, sizeof...(Args)>*>(args_buffer)
 			);

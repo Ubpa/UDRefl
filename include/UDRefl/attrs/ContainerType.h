@@ -18,6 +18,9 @@ namespace Ubpa::UDRefl {
 
 	// traits
 
+	template<typename T> struct IsContainer;
+	template<typename T> constexpr bool IsContainer_v = IsContainer<T>::value;
+
 	template<typename T> struct IsArray;
 	template<typename T> constexpr bool IsArray_v = IsArray<T>::value;
 	template<typename T> struct IsVector;

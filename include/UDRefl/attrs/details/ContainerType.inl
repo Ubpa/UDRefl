@@ -76,3 +76,8 @@ namespace Ubpa::UDRefl::details {
 
 template<typename T>
 struct Ubpa::UDRefl::IsVector : Ubpa::UDRefl::details::IsVector<T> {};
+
+template<typename T>
+struct Ubpa::UDRefl::IsContainer : std::bool_constant<
+	Ubpa::UDRefl::IsVector_v<T>
+> {};
