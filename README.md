@@ -22,7 +22,7 @@ Extremely **fast** C++17 dynamic reflection library
 
 ## How to Use
 
-> the example code is [here](src/test/00_readme/main.cpp) 
+> the example code is [here](src/test/00_readme/main.cpp), other examples is [here](#other example) 
 
 Suppose you need to reflect `struct Vec` 
 
@@ -109,6 +109,8 @@ for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
 - [lifecycle (malloc, free, ctor, dtor)](src/test/09_lifecycle/main.cpp) 
 - [dynamic field](src/test/10_dynamic/main.cpp) 
 - [meta function](src/test/12_Meta/main.cpp) 
+- [reference](src/test/13_ref/main.cpp) 
+- [serialize](src/test/15_serialize/main.cpp) 
 
 ## Feature
 
@@ -120,6 +122,8 @@ for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
 - no header pollution: the reflection information is created in the cpp file to minimize compile time when modifying the data
 - working with custom types without the need of having the declaration of the type available at compile time (useful for plugins)
 - possibility to add additional **attribute** to all reflection objects
+- reference
+- standard container
 - **meta** function: `operator +`, `operator-`, etc
 - **no** macro usage
 - **no** rtti required
