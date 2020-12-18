@@ -21,11 +21,11 @@ int main() {
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
 	std::cout << v->TypeName() << std::endl; // prints "Vec"
 
-	v->RWVar("x").As<float>() = 3.f;
-	v->RWVar("y").As<float>() = 4.f;
+	v->RWVar("x") = 3.f;
+	v->RWVar("y") = 4.f;
 
-	std::cout << "x: " << v->RVar("x").As<float>() << std::endl;
-	std::cout << "norm: " << v->Invoke<float>("norm") << std::endl;
+	std::cout << "x: " << v->RVar("x") << std::endl;
+	std::cout << "norm: " << v->DMInvoke("norm") << std::endl;
 	
 	for (auto field : ReflMngr::Instance().GetFields(TypeID::of<Vec>))
 		std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << std::endl;
@@ -36,7 +36,7 @@ int main() {
 	for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
 		std::cout
 			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-			<< ": " << var.As<float>()
+			<< ": " << var
 			<< std::endl;
 	}
 }

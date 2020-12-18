@@ -139,10 +139,11 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 				if (result_buffer) {
 					if constexpr (std::is_reference_v<Return>) {
 						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-						return destructor<Return>();
+						return destructor<std::add_pointer_t<Return>>();
 					}
 					else {
-						buffer_as<Return>(result_buffer) = std::move(rst);
+						static_assert(std::is_move_constructible_v<Return>);
+						new(result_buffer)Return{ std::move(rst) };
 						return destructor<Return>();
 					}
 				}
@@ -171,10 +172,11 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 			if (result_buffer) {
 				if constexpr (std::is_reference_v<Return>) {
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-					return destructor<Return>();
+					return destructor<std::add_pointer_t<Return>>();
 				}
 				else {
-					buffer_as<Return>(result_buffer) = std::move(rst);
+					static_assert(std::is_move_constructible_v<Return>);
+					new(result_buffer)Return{ std::move(rst) };
 					return destructor<Return>();
 				}
 			}
@@ -202,10 +204,11 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 				if (result_buffer) {
 					if constexpr (std::is_reference_v<Return>) {
 						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-						return destructor<Return>();
+						return destructor<std::add_pointer_t<Return>>();
 					}
 					else {
-						buffer_as<Return>(result_buffer) = std::move(rst);
+						static_assert(std::is_move_constructible_v<Return>);
+						new(result_buffer)Return{ std::move(rst) };
 						return destructor<Return>();
 					}
 				}

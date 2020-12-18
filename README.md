@@ -75,15 +75,15 @@ std::cout << v->TypeName() << std::endl; // prints "Vec"
 ### Set/get variables
 
 ```c++
-v->RWVar("x").As<float>() = 3.f;
-v->RWVar("y").As<float>() = 4.f;
-std::cout << "x: " << v->RVar("x").As<float>() << std::endl;
+v->RWVar("x") = 3.f;
+v->RWVar("y") = 4.f;
+std::cout << "x: " << v->RVar("x") << std::endl;
 ```
 
 ### Invoke Methods
 
 ```c++
-std::cout << "norm: " << v->Invoke<float>("norm") << std::endl;
+std::cout << "norm: " << v->DMInvoke("norm") << std::endl;
 ```
 
 ### Iterate over variables
@@ -92,7 +92,7 @@ std::cout << "norm: " << v->Invoke<float>("norm") << std::endl;
 for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
   std::cout
     << ReflMngr::Instance().nregistry.Nameof(field.ID)
-    << ": " << var.As<float>()
+    << ": " << var
     << std::endl;
 }
 ```
