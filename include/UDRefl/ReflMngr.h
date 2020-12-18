@@ -216,9 +216,9 @@ namespace Ubpa::UDRefl {
 		void RegisterType();
 
 		// RegisterType<T>
-		// AddConstructor<T, Args...>
+		// AddConstructor<T>
 		// AddDestructor<T>
-		template<typename T, typename... Args>
+		template<typename T>
 		void RegisterTypeAuto(AttrSet attrs_ctor = {}, AttrSet attrs_dtor = {});
 
 		// get TypeID from field_data
@@ -575,10 +575,10 @@ namespace Ubpa::UDRefl {
 		// Type
 		/////////
 
-		bool IsPointerOrReference(ConstObjectPtr pointer_obj) const;
-		bool IsPointerOrReferenceToVariable(ConstObjectPtr pointer_obj) const;
-		ObjectPtr Dereference(ConstObjectPtr pointer_obj);
-		ConstObjectPtr DereferenceAsConst(ConstObjectPtr pointer_obj);
+		DereferenceProperty GetDereferenceProperty(TypeID ID) const;
+		TypeID Dereference(TypeID ID) const;
+		ObjectPtr Dereference(ConstObjectPtr pointer_obj) const;
+		ConstObjectPtr DereferenceAsConst(ConstObjectPtr pointer_obj) const;
 
 	private:
 		ReflMngr();

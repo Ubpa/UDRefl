@@ -75,7 +75,7 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_minus, [](const T& lhs) {
 				if constexpr (std::is_signed_v<T>)
 					return -lhs;
-					});
+			});
 
 			if constexpr (is_valid_v<operator_add, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_add, [](const T& lhs, const T& rhs) { return lhs + rhs; });
@@ -97,13 +97,13 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<operator_bxor, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_bxor, [](const T& lhs, const T& rhs) { return lhs & rhs; });
 			if constexpr (is_valid_v<operator_lshift, T>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, std::ostream& rhs) -> decltype(auto) { return rhs << lhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](T& lhs, std::istream& rhs) -> decltype(auto) { return rhs >> lhs; });
 			if constexpr (is_valid_v<operator_rshift, T>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](T& lhs, std::istream& rhs) -> decltype(auto) { return rhs >> lhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](const T& lhs, std::ostream& rhs) -> decltype(auto) { return rhs << lhs; });
 			if constexpr (is_valid_v<operator_lshift, T, std::size_t>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs << rhs; });
 			if constexpr (is_valid_v<operator_rshift, T, std::size_t>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs >> rhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs >> rhs; });
 
 			if constexpr (is_valid_v<operator_pre_inc, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_pre_inc, [](T& lhs) -> decltype(auto) { return ++lhs; });
@@ -114,8 +114,8 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<operator_post_dec, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_post_dec, [](T& lhs, int) -> decltype(auto) { return lhs--; });
 
-			/*if constexpr (is_valid_v<operator_assign, T>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign, [](T& lhs, const T& rhs) { return lhs = rhs; });*/
+			if constexpr (is_valid_v<operator_assign, T>)
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign, [](T& lhs, const T& rhs) { return lhs = rhs; });
 			if constexpr (is_valid_v<operator_assign_add, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_add, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs += rhs; });
 			if constexpr (is_valid_v<operator_assign_sub, T>)
@@ -534,7 +534,7 @@ namespace Ubpa::UDRefl {
 			static_assert(!std::is_const_v<Return> && !std::is_volatile_v<Return> && !std::is_volatile_v<std::remove_reference_t<Return>>);
 			using U = std::conditional_t<std::is_reference_v<Return>, std::add_pointer_t<Return>, Return>;
 			tregistry.Register<Return>();
-			RegisterTypeAuto<std::remove_const_t<std::remove_reference_t<Return>>>();
+			RegisterTypeAuto<Return>();
 			return {
 				TypeID::of<Return>,
 				sizeof(U),
@@ -550,7 +550,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Params) > 0) {
 			static_assert(((!std::is_const_v<Params> && !std::is_volatile_v<Params> && !std::is_volatile_v<std::remove_reference_t<Params>>)&&...));
 			(tregistry.Register<Params>(), ...);
-			(RegisterTypeAuto<std::remove_const_t<std::remove_reference_t<Params>>>(), ...);
+			(RegisterTypeAuto<std::remove_const_t<Params>>(), ...);
 			return { { TypeID::of<Params>... } };
 		}
 		else
@@ -581,7 +581,7 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	MethodPtr ReflMngr::GenerateDestructorPtr() {
 		return GenerateMemberMethodPtr([](const T& obj) {
-			if constexpr (!std::is_trivial_v<T>)
+			if constexpr (!std::is_trivially_destructible_v<T>)
 				obj.~T();
 		});
 	}
@@ -621,27 +621,29 @@ namespace Ubpa::UDRefl {
 		RegisterTypeAuto<T>();
 	}
 
-	template<typename T, typename... Args>
+	template<typename T>
 	void ReflMngr::RegisterTypeAuto(AttrSet attrs_ctor, AttrSet attrs_dtor) {
 		static_assert(!std::is_volatile_v<T>);
 		if constexpr (std::is_void_v<T>)
 			return;
-		else if constexpr (std::is_const_v<T>)
-			RegisterTypeAuto<std::remove_const_t<T>, Args...>(std::move(attrs_ctor), std::move(attrs_dtor));
-		else if constexpr (std::is_reference_v<T>)
-			RegisterTypeAuto<std::remove_reference_t<T>, Args...>(std::move(attrs_ctor), std::move(attrs_dtor));
-		else if constexpr (std::is_pointer_v<T>)
-			RegisterTypeAuto<std::remove_pointer_t<T>, Args...>(std::move(attrs_ctor), std::move(attrs_dtor));
 		else {
-			if (IsRegistered(TypeID::of<T>))
-				return;
-			RegisterType(type_name<T>(), sizeof(T), alignof(T));
-			if constexpr (sizeof...(Args) > 0 || std::is_default_constructible_v<T>)
-				AddConstructor<T, Args...>(std::move(attrs_ctor));
-			if constexpr (std::is_destructible_v<T>)
-				AddDestructor<T>(std::move(attrs_dtor));
+			if constexpr (std::is_const_v<T>)
+				RegisterTypeAuto<std::remove_const_t<T>>(std::move(attrs_ctor), std::move(attrs_dtor));
+			else if constexpr (std::is_reference_v<T>)
+				RegisterTypeAuto<std::remove_reference_t<T>>(std::move(attrs_ctor), std::move(attrs_dtor));
+			else if constexpr (std::is_pointer_v<T>)
+				RegisterTypeAuto<std::remove_pointer_t<T>>(std::move(attrs_ctor), std::move(attrs_dtor));
+			else {
+				if (IsRegistered(TypeID::of<T>))
+					return;
+				RegisterType(type_name<T>(), sizeof(T), alignof(T));
+				if constexpr (std::is_default_constructible_v<T>)
+					AddConstructor<T>(std::move(attrs_ctor));
+				if constexpr (std::is_destructible_v<T>)
+					AddDestructor<T>(std::move(attrs_dtor));
 
-			details::TypeAutoRegister<T>::run(*this);
+				details::TypeAutoRegister<T>::run(*this);
+			}
 		}
 	}
 

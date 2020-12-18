@@ -78,7 +78,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { ArgID(args)... };
+			std::array argTypeIDs = { ArgID<Args>(std::forward<Args>(args))... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(ArgPtr(args))... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
@@ -173,7 +173,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { ArgID(args)... };
+			std::array argTypeIDs = { ArgID<Args>(std::forward<Args>(args))... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(ArgPtr(args))... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
@@ -225,4 +225,176 @@ namespace std {
 	inline void swap(Ubpa::UDRefl::SharedConstObject& left, Ubpa::UDRefl::SharedConstObject& right) noexcept {
 		left.Swap(right);
 	}
+}
+
+template<typename T>
+struct Ubpa::UDRefl::IsObjectOrPtr {
+private:
+	using U = std::remove_cv_t<T>;
+public:
+	static constexpr bool value =
+		std::is_same_v<T, ObjectPtr>
+		|| std::is_same_v<T, ConstObjectPtr>
+		|| std::is_same_v<T, SharedObject>
+		|| std::is_same_v<T, SharedConstObject>;
+};
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator==(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) == Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator!=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) != Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) < Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) > Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) <= Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) >= Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+T& operator<<(T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+	return ptr >> lhs;
+}
+
+//template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+//Ubpa::UDRefl::SharedObject operator>>(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+//	return ptr << lhs;
+//}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator==(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) == ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator!=(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) != ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) < ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) > ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<=(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) <= ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>=(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) >= ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+T& operator<<(T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return ptr >> lhs;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+Ubpa::UDRefl::SharedObject operator>>(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	return ptr << lhs;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator==(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) == Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator!=(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) != Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) < Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) > Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<=(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) <= Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>=(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) >= Ubpa::UDRefl::ConstCast(ptr);
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+T& operator<<(T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+	return ptr >> lhs;
+}
+
+//template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+//Ubpa::UDRefl::SharedObject operator>>(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
+//	return ptr << lhs;
+//}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator==(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) == ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator!=(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) != ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) < ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) > ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator<=(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) <= ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+bool operator>=(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return Ubpa::UDRefl::Ptr(lhs) >= ptr;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+T& operator<<(T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return ptr >> lhs;
+}
+
+template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+Ubpa::UDRefl::SharedObject operator>>(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
+	return ptr << lhs;
 }

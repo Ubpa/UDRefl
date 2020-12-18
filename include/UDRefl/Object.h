@@ -13,11 +13,22 @@ SharedObject operator##op (Arg rhs) const {                                     
     return ADMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_PTR_DEFINE_CMP_OPERATOR(op, name)                                                       \
-template<typename Arg>                                                                                 \
-bool operator##op (Arg rhs) const {                                                                    \
-    SharedObject rst = ADMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
-    return rst.GetID().Is<bool>() ? rst.As<bool>() : false;                                            \
+#define OBJECT_PTR_DEFINE_CMP_OPERATOR(op, name)                                                              \
+template<typename Arg>                                                                                        \
+bool operator##op (Arg rhs) const {                                                                           \
+    return static_cast<bool>(ADMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs))); \
+}
+
+#define OBJECT_PTR_DEFINE_CONTAINER(name)                                                   \
+template<typename Arg>                                                                      \
+SharedObject name (Arg rhs) const {                                                         \
+    return ADMInvoke<Arg>(StrIDRegistry::MetaID::container_##name, std::forward<Arg>(rhs)); \
+}
+
+#define OBJECT_PTR_DEFINE_CONTAINER_VAR(name)                                                        \
+template<typename... Args>                                                                           \
+SharedObject name (Args... args) const {                                                             \
+    return ADMInvoke<Args...>(StrIDRegistry::MetaID::container_##name, std::forward<Args>(args)...); \
 }
 
 #define SHARED_OBJECT_DEFINE_OPERATOR(op)                             \
@@ -59,7 +70,8 @@ namespace Ubpa::UDRefl {
 		constexpr void Reset() noexcept { ptr = nullptr; }
 		constexpr void Clear() noexcept { *this = ObjectPtrBase{}; }
 
-		constexpr operator bool() const noexcept { return ptr != nullptr; }
+		constexpr bool Valid() const noexcept { return ID.Valid() && ptr; }
+		explicit operator bool() const noexcept { return ptr != nullptr ? (Is<bool>() ? *reinterpret_cast<bool*>(ptr) : true) : false; }
 
 		//
 		// ReflMngr
@@ -121,43 +133,6 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args... args) const;
 
-		//
-		// Meta
-		/////////
-
-		OBJECT_PTR_DEFINE_OPERATOR(+, add)
-		OBJECT_PTR_DEFINE_OPERATOR(-, sub)
-		OBJECT_PTR_DEFINE_OPERATOR(*, mul)
-		OBJECT_PTR_DEFINE_OPERATOR(/, div)
-		OBJECT_PTR_DEFINE_OPERATOR(%, mod)
-		OBJECT_PTR_DEFINE_OPERATOR(&, band)
-		OBJECT_PTR_DEFINE_OPERATOR(|, bor)
-		OBJECT_PTR_DEFINE_OPERATOR(^, bxor)
-		OBJECT_PTR_DEFINE_OPERATOR(<<, lshift)
-		OBJECT_PTR_DEFINE_OPERATOR(>>, rshift)
-
-		OBJECT_PTR_DEFINE_OPERATOR([], subscript)
-		OBJECT_PTR_DEFINE_OPERATOR(->*, member_of_pointer)
-
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(==, eq);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(!=, ne);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(< , lt);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(<=, le);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(> , gt);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(>=, ge);
-			
-		SharedObject operator+() const;
-		SharedObject operator-() const;
-		SharedObject operator~() const;
-		SharedObject operator[](std::size_t n) const;
-		SharedObject operator*() const;
-
-		template<typename... Args>
-		SharedObject operator()(Args... args) const {
-			return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
-				std::forward<Args>(args)...);
-		}
-
 		std::string_view TypeName() const noexcept;
 
 		// all
@@ -184,8 +159,51 @@ namespace Ubpa::UDRefl {
 		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef     )>& func) const;
 		ConstObjectPtr           FindRVar  (const std::function<bool(ConstObjectPtr)>& func) const;
 
-		ObjectPtr Dereference() const;
-		ConstObjectPtr DereferenceAsConst() const;
+		DereferenceProperty GetDereferenceProperty() const;
+		TypeID              DereferenceID() const;
+		ObjectPtr           Dereference() const;
+		ConstObjectPtr      DereferenceAsConst() const;
+
+		//
+		// Meta
+		/////////
+
+		OBJECT_PTR_DEFINE_OPERATOR(+, add)
+		OBJECT_PTR_DEFINE_OPERATOR(-, sub)
+		OBJECT_PTR_DEFINE_OPERATOR(*, mul)
+		OBJECT_PTR_DEFINE_OPERATOR(/, div)
+		OBJECT_PTR_DEFINE_OPERATOR(%, mod)
+		OBJECT_PTR_DEFINE_OPERATOR(&, band)
+		OBJECT_PTR_DEFINE_OPERATOR(|, bor)
+		OBJECT_PTR_DEFINE_OPERATOR(^, bxor)
+
+		OBJECT_PTR_DEFINE_OPERATOR([], subscript)
+		OBJECT_PTR_DEFINE_OPERATOR(->*, member_of_pointer)
+
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(==, eq);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(!=, ne);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(< , lt);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(<=, le);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(> , gt);
+		OBJECT_PTR_DEFINE_CMP_OPERATOR(>=, ge);
+			
+		SharedObject operator+() const;
+		SharedObject operator-() const;
+		SharedObject operator~() const;
+		SharedObject operator[](std::size_t n) const;
+		SharedObject operator*() const;
+
+		template<typename... Args>
+		SharedObject operator()(Args... args) const {
+			return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
+				std::forward<Args>(args)...);
+		}
+
+		template<typename T>
+		T& operator>>(T& out) const {
+			ADMInvoke<T&>(StrIDRegistry::MetaID::operator_rshift, out);
+			return out;
+		}
 
 		//
 		// container
@@ -204,6 +222,7 @@ namespace Ubpa::UDRefl {
 
 		// - element access
 
+		OBJECT_PTR_DEFINE_CONTAINER(at)
 		SharedObject data() const;
 		SharedObject front() const;
 		SharedObject back() const;
@@ -211,6 +230,14 @@ namespace Ubpa::UDRefl {
 		SharedObject size() const;
 		//SharedObject max_size() const;
 		SharedObject capacity() const;
+
+		// - lookup
+
+		OBJECT_PTR_DEFINE_CONTAINER(count)
+		OBJECT_PTR_DEFINE_CONTAINER(find)
+		OBJECT_PTR_DEFINE_CONTAINER(lower_bound)
+		OBJECT_PTR_DEFINE_CONTAINER(upper_bound)
+		OBJECT_PTR_DEFINE_CONTAINER(equal_range)
 
 		// - observers
 
@@ -222,7 +249,7 @@ namespace Ubpa::UDRefl {
 
 	protected:
 		template<typename T>
-		constexpr auto* AsPtr() const noexcept {
+		auto* AsPtr() const noexcept {
 			static_assert(!std::is_const_v<T> && !std::is_volatile_v<T>);
 			assert(ID.Is<T>());
 			if constexpr (std::is_reference_v<T>)
@@ -232,7 +259,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename T>
-		constexpr decltype(auto) As() const noexcept {
+		decltype(auto) As() const noexcept {
 			assert(ptr);
 			auto* ptr = AsPtr<T>();
 			if constexpr (std::is_reference_v<T>)
@@ -264,8 +291,6 @@ namespace Ubpa::UDRefl {
 		template<typename T>
 		constexpr const T& As() const noexcept { return ObjectPtrBase::As<T>(); }
 
-		constexpr operator const void* () const noexcept { return ptr; }
-
 		constexpr       ConstObjectPtr* operator->()       noexcept { return this; }
 		constexpr const ConstObjectPtr* operator->() const noexcept { return this; }
 	};
@@ -282,7 +307,6 @@ namespace Ubpa::UDRefl {
 		using ObjectPtrBase::AsPtr;
 		using ObjectPtrBase::As;
 
-		constexpr operator void*() const noexcept { return ptr; }
 		constexpr operator ConstObjectPtr() const noexcept { return {ID, ptr}; }
 
 		constexpr       ObjectPtr* operator->()       noexcept { return this; }
@@ -364,18 +388,8 @@ namespace Ubpa::UDRefl {
 		//
 		// Meta
 		/////////
-
-		OBJECT_PTR_DEFINE_OPERATOR(+, add)
-		OBJECT_PTR_DEFINE_OPERATOR(-, sub)
-		OBJECT_PTR_DEFINE_OPERATOR(*, mul)
-		OBJECT_PTR_DEFINE_OPERATOR(/, div)
-		OBJECT_PTR_DEFINE_OPERATOR(%, mod)
-		OBJECT_PTR_DEFINE_OPERATOR(&, band)
-		OBJECT_PTR_DEFINE_OPERATOR(|, bor)
-		OBJECT_PTR_DEFINE_OPERATOR(^, bxor)
-		OBJECT_PTR_DEFINE_OPERATOR(<<, lshift)
-		OBJECT_PTR_DEFINE_OPERATOR(>>, rshift)
 		
+		OBJECT_PTR_DEFINE_OPERATOR(=, assign)
 		OBJECT_PTR_DEFINE_OPERATOR(+=, assign_add)
 		OBJECT_PTR_DEFINE_OPERATOR(-=, assign_sub)
 		OBJECT_PTR_DEFINE_OPERATOR(*=, assign_mul)
@@ -389,17 +403,7 @@ namespace Ubpa::UDRefl {
 
 		OBJECT_PTR_DEFINE_OPERATOR([], subscript)
 		OBJECT_PTR_DEFINE_OPERATOR(->*, member_of_pointer)
-
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(==, eq);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(!=, ne);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(< , lt);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(<=, le);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(> , gt);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(>=, ge);
 			
-		SharedObject operator+() const;
-		SharedObject operator-() const;
-		SharedObject operator~() const;
 		SharedObject operator++() const;
 		SharedObject operator++(int) const;
 		SharedObject operator--() const;
@@ -413,9 +417,16 @@ namespace Ubpa::UDRefl {
 				std::forward<Args>(args)...);
 		}
 
+		template<typename T>
+		SharedObject operator<<(const T& in) const {
+			return ADMInvoke<const T&>(StrIDRegistry::MetaID::operator_lshift, in);
+		}
+
 		//
 		// container
 		//////////////
+
+		OBJECT_PTR_DEFINE_CONTAINER_VAR(assign)
 
 		// - iterator
 
@@ -426,9 +437,37 @@ namespace Ubpa::UDRefl {
 
 		// - element access
 
+		OBJECT_PTR_DEFINE_CONTAINER(at)
 		SharedObject data() const;
 		SharedObject front() const;
 		SharedObject back() const;
+
+		// - capacity
+
+		OBJECT_PTR_DEFINE_CONTAINER(resize)
+		void reserve(std::size_t n) const;
+		void shrink_to_fit() const;
+
+		// - modifiers
+
+		void clear() const;
+		OBJECT_PTR_DEFINE_CONTAINER_VAR(insert)
+		OBJECT_PTR_DEFINE_CONTAINER_VAR(insert_or_assign)
+		OBJECT_PTR_DEFINE_CONTAINER_VAR(erase)
+		OBJECT_PTR_DEFINE_CONTAINER(push_front)
+		OBJECT_PTR_DEFINE_CONTAINER(push_back)
+		void pop_front() const;
+		void pop_back() const;
+		OBJECT_PTR_DEFINE_CONTAINER(swap)
+		OBJECT_PTR_DEFINE_CONTAINER(merge)
+		OBJECT_PTR_DEFINE_CONTAINER(extract)
+		
+		// - lookup
+
+		OBJECT_PTR_DEFINE_CONTAINER(find)
+		OBJECT_PTR_DEFINE_CONTAINER(lower_bound)
+		OBJECT_PTR_DEFINE_CONTAINER(upper_bound)
+		OBJECT_PTR_DEFINE_CONTAINER(equal_range)
 	};
 
 	static_assert(sizeof(ObjectPtr) == sizeof(ConstObjectPtr) && alignof(ObjectPtr) == alignof(ConstObjectPtr));
@@ -478,7 +517,8 @@ namespace Ubpa::UDRefl {
 
 		long UseCount() const noexcept { return buffer.use_count(); }
 
-		operator bool() const noexcept { return ID && static_cast<bool>(buffer); }
+		constexpr bool Valid() const noexcept { return ID.Valid() && buffer; }
+		explicit operator bool() const noexcept { return ID ? static_cast<bool>(AsObjectPtr()) : false; }
 
 		//
 		// Meta
@@ -492,7 +532,6 @@ namespace Ubpa::UDRefl {
 		SHARED_OBJECT_DEFINE_OPERATOR(&)
 		SHARED_OBJECT_DEFINE_OPERATOR(|)
 		SHARED_OBJECT_DEFINE_OPERATOR(^)
-		SHARED_OBJECT_DEFINE_OPERATOR(<<)
 
 		SHARED_OBJECT_DEFINE_CMP_OPERATOR(==)
 		SHARED_OBJECT_DEFINE_CMP_OPERATOR(!=)
@@ -516,38 +555,15 @@ namespace Ubpa::UDRefl {
 			return AsObjectPtr()->operator() < Args... > (std::forward<Args>(args)...);
 		}
 
+		template<typename T>
+		T& operator>>(T& out) const { return AsObjectPtr() >> out; }
+
 		//
 		// container
 		//////////////
 
-		// - iterator
-
 		SharedObject begin() const;
-		SharedObject cbegin() const;
 		SharedObject end() const;
-		SharedObject cend() const;
-		SharedObject rbegin() const;
-		SharedObject crbegin() const;
-		SharedObject rend() const;
-		SharedObject crend() const;
-
-		// - element access
-
-		SharedObject data() const;
-		SharedObject front() const;
-		SharedObject back() const;
-		SharedObject empty() const;
-		SharedObject size() const;
-		//SharedObject max_size() const;
-		SharedObject capacity() const;
-
-		// - observers
-
-		SharedObject key_comp() const;
-		SharedObject value_comp() const;
-		SharedObject hash_function() const;
-		SharedObject key_eq() const;
-		SharedObject get_allocator() const;
 
 	protected:
 		void Swap(SharedObjectBase& rhs) noexcept {
@@ -728,9 +744,8 @@ namespace Ubpa::UDRefl {
 		/////////
 
 		using SharedObjectBase::operator*;
-
-		SHARED_OBJECT_DEFINE_OPERATOR(>>)
 		
+		SHARED_OBJECT_DEFINE_OPERATOR(=)
 		SHARED_OBJECT_DEFINE_OPERATOR(+=)
 		SHARED_OBJECT_DEFINE_OPERATOR(-=)
 		SHARED_OBJECT_DEFINE_OPERATOR(*=)
@@ -757,25 +772,22 @@ namespace Ubpa::UDRefl {
 			return AsObjectPtr()->operator()<Args...>(std::forward<Args>(args)...);
 		}
 
+		template<typename T>
+		T& operator<<(const T& in) const { return AsObjectPtr() << in; }
+
 		//
 		// container
 		//////////////
 
-		// - iterator
-
-		SharedObject begin() const;
-		SharedObject end() const;
-		SharedObject rbegin() const;
-		SharedObject rend() const;
-
-		// - element access
-
-		SharedObject data() const;
-		SharedObject front() const;
-		SharedObject back() const;
+		SharedObject begin() const { return AsObjectPtr()->begin(); }
+		SharedObject end() const { return AsObjectPtr()->end(); }
 	};
 
 	static_assert(sizeof(SharedObject) == sizeof(SharedConstObject) && alignof(SharedObject) == alignof(SharedConstObject));
+
+	inline SharedObject ConstCast(const SharedConstObject& obj) {
+		return { obj.GetID(), std::const_pointer_cast<void>(obj.GetBuffer()) };
+	}
 
 	template<typename T>
 	constexpr auto Ptr(T&& p) noexcept {
@@ -787,7 +799,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	constexpr TypeID ArgID(const T& arg) noexcept {
+	constexpr TypeID ArgID(T&& arg) noexcept {
 		if constexpr (std::is_same_v<T, ObjectPtr> || std::is_same_v<T, SharedObject>)
 			return arg.GetID();
 		else {
@@ -806,10 +818,19 @@ namespace Ubpa::UDRefl {
 			return &arg;
 		}
 	}
+
+	template<typename T>
+	struct IsObjectOrPtr;
+	template<typename T>
+	constexpr bool IsObjectOrPtr_v = IsObjectOrPtr<T>::value;
 }
 
 #undef OBJECT_PTR_DEFINE_OPERATOR
+#undef OBJECT_PTR_DEFINE_CMP_OPERATOR
+#undef OBJECT_PTR_DEFINE_CONTAINER
+#undef OBJECT_PTR_DEFINE_CONTAINER_VAR
 #undef SHARED_OBJECT_DEFINE_OPERATOR
+#undef SHARED_OBJECT_DEFINE_CMP_OPERATOR
 #undef SHARED_OBJECT_DEFINE_UNARY_OPERATOR
 
 #include "details/Object.inl"

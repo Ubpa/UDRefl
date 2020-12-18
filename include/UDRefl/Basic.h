@@ -92,4 +92,10 @@ namespace Ubpa::UDRefl {
 		TypeRef type;
 		MethodRef method;
 	};
+
+	enum class DereferenceProperty {
+		NOT_REFERENCE,
+		VARIABLE,
+		CONST,
+	};
 }
