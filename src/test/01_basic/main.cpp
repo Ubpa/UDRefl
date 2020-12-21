@@ -9,7 +9,7 @@ struct Point { float x, y; };
 int main() {
 	ReflMngr::Instance().RegisterTypeAuto<Point>();
 	ReflMngr::Instance().AddField<&Point::x>("x");
-	ReflMngr::Instance().AddField<&Point::x>("y");
+	ReflMngr::Instance().AddField<&Point::y>("y");
 	
 	SharedObject p = ReflMngr::Instance().MakeShared(TypeID::of<Point>);
 
