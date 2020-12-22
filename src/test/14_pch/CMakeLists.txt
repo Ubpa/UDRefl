@@ -1,3 +1,8 @@
+set(c_options "")
+if(MSVC)
+  set(c_options "/bigobj")
+endif()
+
 Ubpa_AddTarget(
   TEST
   MODE EXE
@@ -5,7 +10,7 @@ Ubpa_AddTarget(
   LIB
     Ubpa::UDRefl_core
   C_OPTION
-    /bigobj
+    ${c_options}
 )
 
 target_precompile_headers(${tname} REUSE_FROM UDRefl_core)
