@@ -33,7 +33,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	InvocableResult ObjectPtrBase::IsInvocable(StrID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID::of<Args>... };
+		std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsInvocable(methodID, Span<const TypeID>{argTypeIDs});
 	}
 
@@ -42,7 +42,7 @@ namespace Ubpa::UDRefl {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
 		InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
-		assert(result.resultID == TypeID::of<T>);
+		assert(result.resultID == TypeID_of<T>);
 		return result.Move<T>(result_buffer);
 	}
 
@@ -50,7 +50,7 @@ namespace Ubpa::UDRefl {
 	InvokeResult ObjectPtrBase::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID::of<Args>... };
+			std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -62,7 +62,7 @@ namespace Ubpa::UDRefl {
 	T ObjectPtrBase::Invoke(StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID::of<Args>... };
+			std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -78,7 +78,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID::of<Args>... };
+			std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
@@ -146,7 +146,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	InvocableResult ObjectPtr::IsInvocable(StrID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID::of<Args>... };
+		std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsInvocable(methodID, Span<const TypeID>{argTypeIDs});
 	}
 
@@ -156,7 +156,7 @@ namespace Ubpa::UDRefl {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
 			InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
-			assert(result.resultID == TypeID::of<T>);
+			assert(result.resultID == TypeID_of<T>);
 			return result.Move<T>(result_buffer);
 		}
 		else
@@ -167,7 +167,7 @@ namespace Ubpa::UDRefl {
 	InvokeResult ObjectPtr::InvokeArgs(StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID::of<Args>... };
+			std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -179,7 +179,7 @@ namespace Ubpa::UDRefl {
 	T ObjectPtr::Invoke(StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID::of<Args>... };
+			std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -195,7 +195,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID::of<Args>... };
+			std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}

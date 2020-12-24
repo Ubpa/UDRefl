@@ -27,10 +27,6 @@ struct Vec {
 		y += p.y;
 		return *this;
 	}
-
-	Vec&& move() noexcept {
-		return std::move(*this);
-	}
 };
 
 int main() {
@@ -42,16 +38,15 @@ int main() {
 		ReflMngr::Instance().AddMethod<&Vec::Norm2>("Norm2");
 		ReflMngr::Instance().AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
 		ReflMngr::Instance().AddMethod<&Vec::operator+= >(StrIDRegistry::Meta::operator_assign_add);
-		ReflMngr::Instance().AddMethod<&Vec::move >("move");
 	}
 
-	auto v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>, 1.f, 2.f);
+	auto v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>, 1.f, 2.f);
 
-	ReflMngr::Instance().Invoke(v.AsObjectPtr(), StrID{ "NormalizeSelf" });
-	std::cout << ReflMngr::Instance().RVar(v.AsObjectPtr(), StrID{"x"}).As<float>() << ", "
-		<< ReflMngr::Instance().RVar(v.AsObjectPtr(), StrID{ "y" }).As<float>() << std::endl;
+	ReflMngr::Instance().Invoke(v.AsObjectPtr(), "NormalizeSelf");
+	std::cout << ReflMngr::Instance().RVar(v.AsObjectPtr(), "x") << ", "
+		<< ReflMngr::Instance().RVar(v.AsObjectPtr(), "y") << std::endl;
 
-	std::cout << ReflMngr::Instance().Invoke<float>(v.AsObjectPtr(), StrID{ "Norm2" }) << std::endl;
+	std::cout << ReflMngr::Instance().DMInvoke(v.AsObjectPtr(), "Norm2") << std::endl;
 
 	auto& w = ReflMngr::Instance().Invoke<Vec&, const Vec&>(
 		v.AsObjectPtr(),
@@ -59,7 +54,6 @@ int main() {
 		Vec{ 10.f,10.f }
 	);
 	std::cout << w.x << ", " << w.y << std::endl;
-	v->DMInvoke("move");
 	
 	return 0;
 }

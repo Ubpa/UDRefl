@@ -20,19 +20,19 @@ int main() {
 	ReflMngr::Instance().AddField<&A::sc_data>("sc_data");
 
 	A a;
-	ObjectPtr ptr{ TypeID::of<A>, &a };
+	auto ptr = Ptr(a);
 
-	ReflMngr::Instance().ForEachField(TypeID::of<A>, [](TypeRef, FieldRef field) {
+	ReflMngr::Instance().ForEachField(TypeID_of<A>, [](TypeRef, FieldRef field) {
 		auto field_name = ReflMngr::Instance().nregistry.Nameof(field.ID);
 		std::cout << field_name << std::endl;
 		return true;
 	});
 
-	ReflMngr::Instance().RWVar(ptr, StrID{ "data" }).As<int>() = 10;
-	ReflMngr::Instance().RWVar(ptr, StrID{ "sdata" }).As<int>() = 20;
+	ReflMngr::Instance().RWVar(ptr, "data") = 10;
+	ReflMngr::Instance().RWVar(ptr, "s_data") = 20;
 
-	ReflMngr::Instance().ForEachRVar(TypeID::of<A>, [](TypeRef, FieldRef field, ConstObjectPtr ptr) {
-		std::cout << ptr.As<int>() << std::endl;
+	ReflMngr::Instance().ForEachRVar(TypeID_of<A>, [](TypeRef, FieldRef field, ConstObjectPtr ptr) {
+		std::cout << ptr << std::endl;
 		return true;
 	});
 

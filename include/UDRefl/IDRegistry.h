@@ -319,10 +319,10 @@ namespace Ubpa::UDRefl {
 
 		// unmanaged
 		template<typename T>
-		void Register() { IDRegistry<TypeID>::RegisterUnmanaged(TypeID::of<T>, type_name<T>()); }
+		void Register() { IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<T>, type_name<T>()); }
 
 		template<typename T>
-		bool IsRegistered() const noexcept { return IDRegistry<TypeID>::IsRegistered(TypeID::of<T>); }
+		bool IsRegistered() const noexcept { return IDRegistry<TypeID>::IsRegistered(TypeID_of<T>); }
 	};
 }
 

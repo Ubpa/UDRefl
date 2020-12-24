@@ -29,18 +29,18 @@ int main() {
 		ReflMngr::Instance().AddField<&D::d>("d");
 	}
 
-	auto d = ReflMngr::Instance().MakeShared(TypeID::of<D>);
+	auto d = ReflMngr::Instance().MakeShared(TypeID_of<D>);
 
-	ReflMngr::Instance().RWVar(d, StrID{ "a" }).As<float>() = 1.f;
-	ReflMngr::Instance().RWVar(d, StrID{ "b" }).As<float>() = 2.f;
-	ReflMngr::Instance().RWVar(d, StrID{ "c" }).As<float>() = 3.f;
-	ReflMngr::Instance().RWVar(d, StrID{ "d" }).As<float>() = 4.f;
+	ReflMngr::Instance().RWVar(d, "a") = 1.f;
+	ReflMngr::Instance().RWVar(d, "b") = 2.f;
+	ReflMngr::Instance().RWVar(d, "c") = 3.f;
+	ReflMngr::Instance().RWVar(d, "d") = 4.f;
 
 	d->ForEachRVar(
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var.As<float>()
+				<< ": " << var
 				<< std::endl;
 			return true;
 		}
