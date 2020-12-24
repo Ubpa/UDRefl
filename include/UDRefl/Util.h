@@ -363,6 +363,16 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename U = typename T::size_type>
 	using container_at_const = decltype(std::declval<const T&>().at(std::declval<U>()));
 
+	template<typename T, typename U = const typename T::key_type&>
+	using container_at_key = decltype(std::declval<T&>().at(std::declval<U>()));
+	template<typename T, typename U = const typename T::key_type&>
+	using container_at_key_const = decltype(std::declval<const T&>().at(std::declval<U>()));
+
+	template<typename T, typename U = const typename T::key_type&>
+	using container_subscript_key_0 = decltype(std::declval<T&>()[std::declval<U>()]);
+	template<typename T, typename U = typename T::key_type&&>
+	using container_subscript_key_1 = decltype(std::declval<T&>()[std::declval<U>()]);
+
 	template<typename T, typename U = typename T::size_type>
 	using container_subscript = decltype(std::declval<T&>()[std::declval<U>()]);
 	template<typename T, typename U = typename T::size_type>
@@ -403,6 +413,9 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	using container_capacity = decltype(std::declval<const T&>().capacity());
 
+	template<typename T>
+	using container_bucket_count = decltype(std::declval<const T&>().bucket_count());
+
 	template<typename T, typename U = typename T::size_type>
 	using container_reserve = decltype(std::declval<T&>().reserve(std::declval<U>()));
 
@@ -420,6 +433,10 @@ namespace Ubpa::UDRefl {
 	using container_insert_1 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
 	template<typename T, typename U = typename T::const_iterator, typename V = typename T::size_type, typename W = const typename T::value_type&>
 	using container_insert_2 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>(), std::declval<W>()));
+	template<typename T, typename U = typename T::node_type&&>
+	using container_insert_3 = decltype(std::declval<T&>().insert(std::declval<U>()));
+	template<typename T, typename U = typename T::const_iterator, typename V = typename T::node_type&&>
+	using container_insert_4 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
 
 	template<typename T, typename U = const typename T::key_type&, typename V = const typename T::mapped_type&>
 	using container_insert_or_assign_0 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
@@ -446,6 +463,8 @@ namespace Ubpa::UDRefl {
 	using container_erase_2 = decltype(std::declval<T&>().erase(std::declval<U>(), std::declval<U>()));
 	template<typename T, typename U = typename T::const_iterator>
 	using container_erase_3 = decltype(std::declval<T&>().erase(std::declval<U>(), std::declval<U>()));
+	template<typename T, typename U = const typename T::key_type&>
+	using container_erase_4 = decltype(std::declval<T&>().erase(std::declval<U>()));
 
 	template<typename T, typename U = const typename T::value_type&>
 	using container_push_front_0 = decltype(std::declval<T&>().push_front(std::declval<U>()));

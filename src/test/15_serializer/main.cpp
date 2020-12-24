@@ -1,12 +1,10 @@
 #include <UDRefl/UDRefl.h>
 #include <iostream>
 
+#include "Vector.h"
+
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
-
-struct A {
-	std::vector<std::vector<size_t>> data;
-};
 
 void Serializer(ConstObjectPtr obj) {
 	if (type_name_is_arithmetic(obj->TypeName()))
@@ -41,10 +39,10 @@ void Serializer(ConstObjectPtr obj) {
 }
 
 int main() {
-	Ubpa::UDRefl::Mngr->RegisterTypeAuto<A>();
-	Ubpa::UDRefl::Mngr->AddField<&A::data>("data");
+	RegisterVector();
 
-	A a;
+	Vector a;
+
 	for (size_t i = 0; i < 10; i++) {
 		std::vector<size_t> row;
 		for (size_t j = 0; j < 10; j++)

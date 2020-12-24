@@ -95,6 +95,7 @@ StrIDRegistry::StrIDRegistry() {
 	RegisterUnmanaged(Meta::container_max_size);
 	RegisterUnmanaged(Meta::container_resize);
 	RegisterUnmanaged(Meta::container_capacity);
+	RegisterUnmanaged(Meta::container_bucket_count);
 	RegisterUnmanaged(Meta::container_reserve);
 	RegisterUnmanaged(Meta::container_shrink_to_fit);
 
