@@ -272,18 +272,18 @@ ReflMngr::ReflMngr() {
 	typeinfos.emplace(tregistry.Register(TypeIDRegistry::Meta::global), std::move(global));
 
 	RegisterTypeAuto<ContainerType>();
-	AddField<ContainerType::UNKNOWN>("UNKNOWN");
-	AddField<ContainerType::ARRAY>("ARRAY");
-	AddField<ContainerType::VECTOR>("VECTOR");
-	AddField<ContainerType::DEQUE>("DEQUE");
-	AddField<ContainerType::FORWARD_LIST>("FORWARD_LIST");
-	AddField<ContainerType::LIST>("LIST");
-	AddField<ContainerType::SET>("SET");
-	AddField<ContainerType::MAP>("MAP");
-	AddField<ContainerType::UNORDERED_SET>("UNORDERED_SET");
-	AddField<ContainerType::UNORDERED_MAP>("UNORDERED_MAP");
-	AddField<ContainerType::STACK>("STACK");
-	AddField<ContainerType::QUEUE>("QUEUE");
+	AddField<ContainerType::Unknown>("Unknown");
+	AddField<ContainerType::Array>("Array");
+	AddField<ContainerType::Vector>("Vector");
+	AddField<ContainerType::Deque>("Deque");
+	AddField<ContainerType::ForwardList>("ForwardList");
+	AddField<ContainerType::List>("List");
+	AddField<ContainerType::Set>("Set");
+	AddField<ContainerType::Map>("Map");
+	AddField<ContainerType::UnorderedSet>("UnorderedSet");
+	AddField<ContainerType::UnorderedMap>("UnorderedMap");
+	AddField<ContainerType::Stack>("Stack");
+	AddField<ContainerType::Queue>("Queue");
 }
 
 void ReflMngr::Clear() noexcept {

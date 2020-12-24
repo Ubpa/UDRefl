@@ -385,7 +385,7 @@ namespace Ubpa::UDRefl::details {
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_get_allocator, [](const T& lhs) -> decltype(auto) { return lhs.get_allocator(); });
 
 				if constexpr (IsVector_v<T>)
-					mngr.AddAttr(TypeID_of<T>, mngr.MakeShared(TypeID_of<ContainerType>, ContainerType::VECTOR));
+					mngr.AddAttr(TypeID_of<T>, mngr.MakeShared(TypeID_of<ContainerType>, ContainerType::Vector));
 			}
 		}
 	};
