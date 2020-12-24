@@ -13,14 +13,14 @@ int main() {
 	
 	SharedObject p = ReflMngr::Instance().MakeShared(TypeID_of<Point>);
 
-	ReflMngr::Instance().RWVar(p, "x").As<float>() = 1.f;
-	ReflMngr::Instance().RWVar(p, "y").As<float>() = 2.f;
+	ReflMngr::Instance().RWVar(p, "x") = 1.f;
+	ReflMngr::Instance().RWVar(p, "y") = 2.f;
 
 	p->ForEachRVar(
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var.As<float>()
+				<< ": " << var
 				<< std::endl;
 			return true;
 		}
@@ -31,7 +31,7 @@ int main() {
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var.As<float>()
+				<< ": " << var
 				<< std::endl;
 			return true;
 		}

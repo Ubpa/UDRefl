@@ -63,7 +63,7 @@ int main() {
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var.As<float>()
+				<< ": " << var
 				<< std::endl;
 			return true;
 		}
@@ -75,7 +75,7 @@ int main() {
 		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var.As<float>()
+				<< ": " << var
 				<< std::endl;
 			return true;
 		}
