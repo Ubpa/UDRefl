@@ -1,6 +1,10 @@
 set(c_options "")
 if(MSVC)
-  list(APPEND c_options "/wd5030;/wd4251")
+  list(APPEND c_options "/wd5030")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  list(APPEND c_options "-Wno-attributes")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  list(APPEND c_options "-Wno-attributes")
 endif()
 
 Ubpa_AddTarget(
