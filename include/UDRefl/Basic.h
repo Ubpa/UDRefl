@@ -94,8 +94,8 @@ namespace Ubpa::UDRefl {
 	};
 
 	enum class DereferenceProperty {
-		NOT_REFERENCE,
-		VARIABLE,
-		CONST,
+		NotReference,
+		Variable,
+		Const,
 	};
 }
