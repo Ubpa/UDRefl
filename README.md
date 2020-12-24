@@ -49,7 +49,7 @@ ReflMngr::Instance().AddMethod<&Vec::norm>("norm");
 
 ```c++
 ReflMngr::Instance().ForEachField(
-  TypeID::of<Vec>,
+  TypeID_of<Vec>,
   [](Type type, Field field) {
     std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << std::endl;
 	return true;
@@ -57,7 +57,7 @@ ReflMngr::Instance().ForEachField(
 );
 
 ReflMngr::Instance().ForEachMethod(
-  TypeID::of<Vec>,
+  TypeID_of<Vec>,
   [](Type type, Method method) {
     std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
 	return true;
@@ -68,7 +68,7 @@ ReflMngr::Instance().ForEachMethod(
 ### Constructing types
 
 ```c++
-SharedObject v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>);
+SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
 std::cout << v->TypeName() << std::endl; // prints "Vec"
 ```
 

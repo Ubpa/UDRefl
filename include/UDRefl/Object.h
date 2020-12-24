@@ -63,7 +63,7 @@ namespace Ubpa::UDRefl {
 		constexpr TypeID GetID() const noexcept { return ID; }
 
 		template<typename T>
-		constexpr bool Is() const noexcept { return ID == TypeID::of<T>; }
+		constexpr bool Is() const noexcept { return ID == TypeID_of<T>; }
 
 		constexpr void Reset() noexcept { ptr = nullptr; }
 		constexpr void Clear() noexcept { *this = ObjectPtrBase{}; }
@@ -277,7 +277,7 @@ namespace Ubpa::UDRefl {
 		constexpr ConstObjectPtr(TypeID ID, const void* ptr) noexcept : ObjectPtrBase{ ID, const_cast<void*>(ptr) } {}
 
 		template<typename T, std::enable_if_t<!std::is_void_v<T>, int> = 0>
-		constexpr ConstObjectPtr(const T* ptr) : ConstObjectPtr{ TypeID::of<std::remove_volatile_t<T>>, ptr } {}
+		constexpr ConstObjectPtr(const T* ptr) : ConstObjectPtr{ TypeID_of<std::remove_volatile_t<T>>, ptr } {}
 
 		ConstObjectPtr(const SharedConstObject& obj) noexcept;
 
@@ -297,7 +297,7 @@ namespace Ubpa::UDRefl {
 		using ObjectPtrBase::ObjectPtrBase;
 
 		template<typename T, std::enable_if_t<!std::is_void_v<T>, int> = 0>
-		constexpr ObjectPtr(std::remove_const_t<T>* ptr) : ObjectPtr{ TypeID::of<std::remove_volatile_t<T>>, ptr } {}
+		constexpr ObjectPtr(std::remove_const_t<T>* ptr) : ObjectPtr{ TypeID_of<std::remove_volatile_t<T>>, ptr } {}
 
 		constexpr void* GetPtr() const noexcept { return ptr; }
 
@@ -781,9 +781,9 @@ namespace Ubpa::UDRefl {
 	constexpr auto Ptr(T&& p) noexcept {
 		using U = std::remove_reference_t<T>;
 		if constexpr (std::is_const_v<U>)
-			return ConstObjectPtr{ TypeID::of<std::remove_cv_t<U>>, &p };
+			return ConstObjectPtr{ TypeID_of<std::remove_cv_t<U>>, &p };
 		else
-			return ObjectPtr{ TypeID::of<std::remove_volatile_t<U>>, &p };
+			return ObjectPtr{ TypeID_of<std::remove_volatile_t<U>>, &p };
 	}
 
 	template<typename T>
@@ -792,7 +792,7 @@ namespace Ubpa::UDRefl {
 			return arg.GetID();
 		else {
 			static_assert(!std::is_same_v<T, ConstObjectPtr> && !std::is_same_v<T, SharedConstObject>);
-			return TypeID::of<T>;
+			return TypeID_of<T>;
 		}
 	}
 

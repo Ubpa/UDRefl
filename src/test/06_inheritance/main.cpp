@@ -29,10 +29,10 @@ int main() {
 		ReflMngr::Instance().AddField<&D::d>("d");
 	}
 
-	auto d = ReflMngr::Instance().MakeShared(TypeID::of<D>);
+	auto d = ReflMngr::Instance().MakeShared(TypeID_of<D>);
 
-	ReflMngr::Instance().RWVar(d, TypeID::of<B>, StrID{ "a" }).As<float>() = 1.f;
-	ReflMngr::Instance().RWVar(d, TypeID::of<C>, StrID{ "a" }).As<float>() = 2.f;
+	ReflMngr::Instance().RWVar(d, TypeID_of<B>, StrID{ "a" }).As<float>() = 1.f;
+	ReflMngr::Instance().RWVar(d, TypeID_of<C>, StrID{ "a" }).As<float>() = 2.f;
 	ReflMngr::Instance().RWVar(d, StrID{ "b" }).As<float>() = 3.f;
 	ReflMngr::Instance().RWVar(d, StrID{ "c" }).As<float>() = 4.f;
 	ReflMngr::Instance().RWVar(d, StrID{ "d" }).As<float>() = 5.f;

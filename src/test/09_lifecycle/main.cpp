@@ -19,7 +19,7 @@ int main() {
 	ReflMngr::Instance().AddField<&Point::x>("x");
 	ReflMngr::Instance().AddField<&Point::y>("y");
 	
-	SharedObject p = ReflMngr::Instance().MakeShared(TypeID::of<Point>);
+	SharedObject p = ReflMngr::Instance().MakeShared(TypeID_of<Point>);
 	ReflMngr::Instance().RWVar(p, StrID{ "x" }).As<float>() = 1.f;
 	ReflMngr::Instance().RWVar(p, StrID{ "y" }).As<float>() = 2.f;
 

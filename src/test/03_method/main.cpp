@@ -45,7 +45,7 @@ int main() {
 		ReflMngr::Instance().AddMethod<&Vec::move >("move");
 	}
 
-	auto v = ReflMngr::Instance().MakeShared(TypeID::of<Vec>, 1.f, 2.f);
+	auto v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>, 1.f, 2.f);
 
 	ReflMngr::Instance().Invoke(v.AsObjectPtr(), StrID{ "NormalizeSelf" });
 	std::cout << ReflMngr::Instance().RVar(v.AsObjectPtr(), StrID{"x"}).As<float>() << ", "
