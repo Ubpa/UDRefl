@@ -2,6 +2,30 @@
 
 #include <array>
 
+#define OBJECT_PTR_DEFINE_OPERATOR(type, op, name)                                         \
+template<typename Arg>                                                                     \
+SharedObject type::operator op (Arg rhs) const {                                           \
+    return ADMInvoke<Arg>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
+}
+
+#define OBJECT_PTR_DEFINE_CONTAINER_T(type, name)                                           \
+template<typename Arg>                                                                      \
+SharedObject type::name (Arg rhs) const {                                                   \
+    return ADMInvoke<Arg>(StrIDRegistry::MetaID::container_##name, std::forward<Arg>(rhs)); \
+}
+
+#define OBJECT_PTR_DEFINE_CONTAINER_VARS_T(type, name)                                               \
+template<typename... Args>                                                                           \
+SharedObject type::name (Args... args) const {                                                       \
+    return ADMInvoke<Args...>(StrIDRegistry::MetaID::container_##name, std::forward<Args>(args)...); \
+}
+
+#define SHARED_OBJECT_DEFINE_OPERATOR_T(type, op)                    \
+template<typename Arg>                                               \
+SharedObject type::operator op (Arg rhs) const {                     \
+    return AsObjectPtr()->operator op <Arg>(std::forward<Arg>(rhs)); \
+}
+
 namespace Ubpa::UDRefl {
 	//
 	// ObjectPtrBase
@@ -10,14 +34,14 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	InvocableResult ObjectPtrBase::IsInvocable(StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
-		return IsInvocable(ID, methodID, Span<const TypeID>{argTypeIDs});
+		return IsInvocable(methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename T>
 	T ObjectPtrBase::InvokeRet(StrID methodID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
-		auto result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
+		InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
 		assert(result.resultID == TypeID::of<T>);
 		return result.Move<T>(result_buffer);
 	}
@@ -28,10 +52,10 @@ namespace Ubpa::UDRefl {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return Invoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), result_buffer);
+			return Invoke(methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
 		else
-			return Invoke(methodID, {}, nullptr, result_buffer);
+			return Invoke(methodID, result_buffer);
 	}
 
 	template<typename T, typename... Args>
@@ -93,6 +117,28 @@ namespace Ubpa::UDRefl {
 	{
 		return AMInvoke<Args...>(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
+	
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, +, add)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, -, sub)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, *, mul)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, /, div)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, %, mod)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, &, band)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, |, bor)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtrBase, ^, bxor)
+
+	template<typename... Args>
+	SharedObject ObjectPtrBase::operator()(Args... args) const {
+		return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
+			std::forward<Args>(args)...);
+	}
+
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtrBase, at)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtrBase, count)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtrBase, find)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtrBase, lower_bound)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtrBase, upper_bound)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtrBase, equal_range)
 
 	//
 	// ObjectPtr
@@ -101,7 +147,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	InvocableResult ObjectPtr::IsInvocable(StrID methodID) const noexcept {
 		std::array argTypeIDs = { TypeID::of<Args>... };
-		return IsInvocable(ID, methodID, Span<const TypeID>{argTypeIDs});
+		return IsInvocable(methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename T>
@@ -109,7 +155,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
-			auto result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
+			InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
 			assert(result.resultID == TypeID::of<T>);
 			return result.Move<T>(result_buffer);
 		}
@@ -123,10 +169,10 @@ namespace Ubpa::UDRefl {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			std::array argTypeIDs = { TypeID::of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return Invoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), result_buffer);
+			return Invoke(methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
 		else
-			return Invoke(methodID, {}, nullptr, result_buffer);
+			return Invoke(methodID, result_buffer);
 	}
 
 	template<typename T, typename... Args>
@@ -187,6 +233,85 @@ namespace Ubpa::UDRefl {
 		Args... args) const
 	{
 		return AMInvoke<Args...>(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+	}
+		
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, =, assign)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, +=, assign_add)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, -=, assign_sub)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, *=, assign_mul)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, /=, assign_div)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, %=, assign_mod)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, &=, assign_band)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, |=, assign_bor)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, ^=, assign_bxor)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, <<=, assign_lshift)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, >>=, assign_rshift)
+
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, [], subscript)
+	OBJECT_PTR_DEFINE_OPERATOR(ObjectPtr, ->*, member_of_pointer)
+
+	template<typename... Args>
+	SharedObject ObjectPtr::operator()(Args... args) const {
+		return DMInvoke<Args...>(StrIDRegistry::MetaID::operator_call,
+			std::forward<Args>(args)...);
+	}
+
+	template<typename T>
+	SharedObject ObjectPtr::operator<<(const T& in) const {
+		return ADMInvoke<const T&>(StrIDRegistry::MetaID::operator_lshift, in);
+	}
+
+	//
+	// container
+	//////////////
+
+	OBJECT_PTR_DEFINE_CONTAINER_VARS_T(ObjectPtr, assign)
+
+	// - element access
+
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, at)
+
+	// - capacity
+
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, resize)
+
+	// - modifiers
+
+	OBJECT_PTR_DEFINE_CONTAINER_VARS_T(ObjectPtr, insert)
+	OBJECT_PTR_DEFINE_CONTAINER_VARS_T(ObjectPtr, insert_or_assign)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, erase)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, push_front)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, push_back)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, swap)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, merge)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, extract)
+
+	// - lookup
+
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, find)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, lower_bound)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, upper_bound)
+	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, equal_range)
+
+	//
+	// SharedObjectBase
+	/////////////////////
+
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, +)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, -)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, *)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, /)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, %)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, &)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, |)
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, ^)
+
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, [])
+	SHARED_OBJECT_DEFINE_OPERATOR_T(SharedObjectBase, ->*)
+
+	template<typename... Args>
+	SharedObject SharedObjectBase::operator()(Args... args) const {
+		return AsObjectPtr()->operator() < Args... > (std::forward<Args>(args)...);
 	}
 }
 
@@ -398,3 +523,8 @@ template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 
 Ubpa::UDRefl::SharedObject operator>>(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
 	return ptr << lhs;
 }
+
+#undef OBJECT_PTR_DEFINE_OPERATOR
+#undef OBJECT_PTR_DEFINE_CONTAINER_T
+#undef OBJECT_PTR_DEFINE_CONTAINER_VARS_T
+#undef SHARED_OBJECT_DEFINE_OPERATOR_T

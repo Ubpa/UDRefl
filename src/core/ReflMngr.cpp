@@ -2,6 +2,10 @@
 
 #include <set>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <malloc.h>
+#endif
+
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
@@ -237,19 +241,19 @@ ReflMngr::ReflMngr() {
 	MethodInfo methodinfo_malloc{ GenerateMethodPtr<&malloc>() };
 	MethodInfo methodinfo_free{ GenerateMethodPtr<&free>() };
 
-#if defined(WIN32) || defined(_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64)
 	#define UBPA_UDREFL_ALIGN_MALLOC _aligned_malloc
 #else
 	#define UBPA_UDREFL_ALIGN_MALLOC aligned_alloc
-#endif // defined(WIN32) || defined(_WINDOWS)
+#endif // defined(_WIN32) || defined(_WIN64)
 	MethodInfo methodinfo_aligned_malloc{ GenerateMethodPtr<&UBPA_UDREFL_ALIGN_MALLOC>() };
 #undef UBPA_UDREFL_ALIGN_MALLOC
 
-#if defined(WIN32) || defined(_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64)
 #define UBPA_UDREFL_ALIGN_FREE _aligned_free
 #else
 #define UBPA_UDREFL_ALIGN_FREE free
-#endif // defined(WIN32) || defined(_WINDOWS)
+#endif // defined(_WIN32) || defined(_WIN64)
 	MethodInfo methodinfo_aligned_free{ GenerateMethodPtr<&UBPA_UDREFL_ALIGN_FREE>() };
 #undef UBPA_UDREFL_ALIGN_FREE
 

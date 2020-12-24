@@ -231,7 +231,7 @@ constexpr auto Ubpa::UDRefl::wrap_function() noexcept {
 	else if constexpr (std::is_member_function_pointer_v<FuncPtr>)
 		return wrap_member_function<func_ptr>();
 	else
-		static_assert(false);
+		static_assert(always_false<decltype(func_ptr)>);
 }
 
 template<typename T>

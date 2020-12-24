@@ -16,7 +16,7 @@ namespace Ubpa::UDRefl {
 	std::size_t field_forward_offset_value(T Obj::* field_ptr) noexcept {
 		static_assert(!std::is_function_v<T>);
 		static_assert(!has_virtual_base_v<Obj>);
-		return reinterpret_cast<std::size_t>(&(reinterpret_cast<Obj const volatile*>(nullptr)->*field_ptr));
+		return reinterpret_cast<std::size_t>(&(reinterpret_cast<const Obj*>(0)->*field_ptr));
 	}
 
 	template<auto fieldptr>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstring>
 
 namespace Ubpa::UDRefl {
 	template<typename T>
@@ -43,7 +44,7 @@ namespace Ubpa::UDRefl {
 		assert(name.data());
 
 		auto buffer = reinterpret_cast<char*>(resource.allocate(name.size(), alignof(char)));
-		memcpy(buffer, name.data(), name.size());
+		std::memcpy(buffer, name.data(), name.size());
 
 		id2name.emplace_hint(target, ID, std::string_view{ buffer, name.size() });
 

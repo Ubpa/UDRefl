@@ -87,7 +87,7 @@ Destructor MethodPtr::Invoke(void* obj, void* result_buffer, void* args_buffer) 
 		else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
 			return f(     result_buffer, { args_buffer,paramList });
 		else
-			static_assert(false);
+			static_assert(always_false<Func>);
 	}, func);
 };
 
@@ -103,7 +103,7 @@ Destructor MethodPtr::Invoke(const void* obj, void* result_buffer, void* args_bu
 		else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
 			return f(     result_buffer, { args_buffer,paramList });
 		else
-			static_assert(false);
+			static_assert(always_false<Func>);
 	}, func);
 };
 
@@ -121,6 +121,6 @@ Destructor MethodPtr::Invoke(void* result_buffer, void* args_buffer) const {
 		else if constexpr (std::is_same_v<Func, std::function<StaticFunction>>)
 			return f(result_buffer, { args_buffer,paramList });
 		else
-			static_assert(false);
+			static_assert(always_false<Func>);
 	}, func);
 };
