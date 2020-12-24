@@ -6,16 +6,16 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 enum class Color {
-	RED,
-	GREEN,
-	BLUE
+	Red,
+	Green,
+	Blue
 };
 
 int main() {
 	ReflMngr::Instance().RegisterTypeAuto<Color>();
-	ReflMngr::Instance().AddField<Color::RED>("RED");
-	ReflMngr::Instance().AddField<Color::GREEN>("GREEN");
-	ReflMngr::Instance().AddField<Color::BLUE>("BLUE");
+	ReflMngr::Instance().AddField<Color::Red>("Red");
+	ReflMngr::Instance().AddField<Color::Green>("Green");
+	ReflMngr::Instance().AddField<Color::Blue>("Blue");
 
 	ReflMngr::Instance().ForEachRVar(
 		TypeID::of<Color>,
@@ -29,7 +29,7 @@ int main() {
 	);
 
 	// enumerator -> name
-	Color c = Color::RED;
+	Color c = Color::Red;
 	auto c_field = ReflMngr::Instance().FindField(TypeID::of<Color>, [c](FieldRef field) {
 		return field.info.fieldptr.RVar().As<Color>() == c;
 	});

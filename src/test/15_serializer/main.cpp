@@ -13,7 +13,7 @@ void Serializer(ConstObjectPtr obj) {
 		std::cout << "{" << "\"TYPE\":\"" << obj->TypeName() << "\",";
 		auto iter = obj->GetType()->attrs.find(TypeID::of<ContainerType>);
 		if (iter != obj->GetType()->attrs.end()) {
-			if (*iter == ContainerType::VECTOR) {
+			if (*iter == ContainerType::Vector) {
 				std::cout << "\"DATA\":[";
 				for (size_t i = 0; i < obj->size(); i++) {
 					Serializer(obj[i]->DereferenceAsConst());
