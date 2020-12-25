@@ -225,15 +225,18 @@ namespace Ubpa::UDRefl {
 		void RegisterTypeAuto(AttrSet attrs_ctor = {}, AttrSet attrs_dtor = {});
 
 		// get TypeID from field_data
+		// field_data can be
+		// 1. member object pointer
+		// 2. enumerator
 		template<auto field_data>
 		StrID AddField(std::string_view name, AttrSet attrs = {});
 
 		// data can be:
 		// 1. member object pointer
-		// 2. pointer to **non-void** and **non-function** type
-		// 3. functor : Value*(Object*)
+		// 2. enumerator
+		// 3. pointer to **non-void** and **non-function** type
+		// 4. functor : Value*(Object*)
 		// > - result must be an pointer of **non-void** type
-		// 4. enumerator
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int> = 0>
 		StrID AddField(TypeID typeID, std::string_view name, T&& data, AttrSet attrs = {})

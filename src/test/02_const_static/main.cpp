@@ -16,8 +16,8 @@ int main() {
 	ReflMngr::Instance().RegisterTypeAuto<A>();
 	ReflMngr::Instance().AddField<&A::data>("data");
 	ReflMngr::Instance().AddField<&A::c_data>("c_data");
-	ReflMngr::Instance().AddField<&A::s_data>("s_data");
-	ReflMngr::Instance().AddField<&A::sc_data>("sc_data");
+	ReflMngr::Instance().AddField(TypeID_of<A>, "s_data", &A::s_data);
+	ReflMngr::Instance().AddField(TypeID_of<A>, "sc_data", &A::sc_data);
 
 	A a;
 	auto ptr = Ptr(a);
@@ -35,6 +35,9 @@ int main() {
 		std::cout << ptr << std::endl;
 		return true;
 	});
+
+	for(auto ptr : ptr->GetRVars())
+		std::cout << ptr << std::endl;
 
 	return 0;
 }

@@ -462,10 +462,11 @@ namespace Ubpa::UDRefl {
 			using Value = std::remove_pointer_t<FieldData>;
 			tregistry.Register<Value>();
 			RegisterTypeAuto<std::remove_const_t<Value>>();
-			const auto buffer = FieldPtr::ConvertToBuffer(field_data);
+			auto buffer = FieldPtr::ConvertToBuffer(field_data);
 			return {
 				TypeID_of<std::remove_const_t<Value>>,
-				buffer
+				buffer,
+				std::true_type{}
 			};
 		}
 		else
@@ -474,7 +475,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	FieldPtr ReflMngr::GenerateFieldPtr(T&& data) {
-		using RawT = std::decay_t<T>;
+		using RawT = std::remove_cv_t<std::remove_reference_t<T>>;
 		static_assert(!std::is_same_v<RawT, size_t>);
 		if constexpr (std::is_member_object_pointer_v<RawT>) {
 			using Traits = member_pointer_traits<RawT>;
@@ -499,15 +500,14 @@ namespace Ubpa::UDRefl {
 				};
 			}
 		}
-		else if constexpr (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && std::is_void_v<std::remove_pointer_t<RawT>>) {
+		else if constexpr (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && !std::is_void_v<std::remove_pointer_t<RawT>>) {
 			using Value = std::remove_pointer_t<RawT>;
 			static_assert(!std::is_volatile_v<Value>);
 			tregistry.Register<Value>();
 			RegisterTypeAuto<std::remove_const_t<Value>>();
 			return {
 				TypeID_of<std::remove_const_t<Value>>,
-				data,
-				std::bool_constant<std::is_const_v<Value>>{}
+				data
 			};
 		}
 		else if constexpr (std::is_enum_v<RawT>) {
@@ -716,20 +716,15 @@ namespace Ubpa::UDRefl {
 				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
 			);
 		}
-		else if constexpr (std::is_pointer_v<FieldData>) {
-			return AddField(
-				TypeID_of<std::remove_const_t<std::remove_pointer_t<FieldData>>>,
-				name,
-				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
-			);
-		}
-		else {
+		else if constexpr (std::is_member_object_pointer_v<FieldData>) {
 			return AddField(
 				TypeID_of<std::remove_const_t<member_pointer_traits_object<FieldData>>>,
 				name,
 				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
 			);
 		}
+		else
+			static_assert(always_false<FieldData>, "if field_data is a static field, use AddField(TypeID, name, field_data, attrs)");
 	}
 
 
