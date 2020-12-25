@@ -69,15 +69,20 @@ int main() {
 		}
 	);
 
-	auto w = v->DMInvoke<const Vec&>(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
+	auto w0 = v->MInvoke(StrIDRegistry::MetaID::operator_add, std::pmr::get_default_resource(), v.As<Vec>());
+	auto w1 = v->DMInvoke(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
+	auto w2 = v->ADMInvoke(StrIDRegistry::MetaID::operator_add, v);
 
-	w->ForEachRVar(
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var
-				<< std::endl;
-			return true;
-		}
-	);
+	std::array arr_w = { w0,w1,w2 };
+	for (auto w : arr_w) {
+		w->ForEachRVar(
+			[](TypeRef type, FieldRef field, ConstObjectPtr var) {
+				std::cout
+					<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+					<< ": " << var
+					<< std::endl;
+				return true;
+			}
+		);
+	}
 }

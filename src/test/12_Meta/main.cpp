@@ -38,7 +38,12 @@ struct Vec {
 		rst.y = y / v.y;
 		return rst;
 	}
-	float operator[](size_t v) const noexcept {
+	Vec& operator+=(const Vec& v) noexcept {
+		x += v.x;
+		y += v.y;
+		return *this;
+	}
+	float operator[](std::size_t v) const noexcept {
 		if (v == 0)
 			return x;
 		else if (v == 1)
@@ -67,12 +72,6 @@ int main() {
 	SharedObject w5 = v / pv;
 	SharedObject w6 = v + Vec{ 1.f,2.f };
 
-	v->Invoke("hello");
-	v->Invoke(std::string_view{ "hello" });
-	ReflMngr::Instance().AlignedFree(ReflMngr::Instance().AlignedMalloc(1, 1));
-	SharedObject w7 = v[static_cast<size_t>(1)];
-	v(pv);
-
 	for (const auto& w : std::array{ w0,w1,w2,w3,w4,w5,w6 }) {
 		w->ForEachRVar(
 			[](TypeRef type, FieldRef field, ConstObjectPtr var) {
@@ -84,4 +83,7 @@ int main() {
 			}
 		);
 	}
+
+	SharedObject ele_1 = (v += Vec{ 10.f,10.f })[static_cast<std::size_t>(1)];
+	std::cout << "ele_1: " << ele_1 << std::endl;
 }

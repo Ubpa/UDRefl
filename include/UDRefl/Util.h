@@ -163,6 +163,14 @@ namespace Ubpa::UDRefl {
 		return buffer_get<T>(buffer, 0);
 	}
 
+	//
+	// Wrap
+	/////////
+	//
+	// - if result is reference, function will store a pointer in the result buffer
+	// - return type can't be const/volatile
+	//
+
 	// [func_ptr]
 	// - Func Obj::* : Func isn't && (const && is ok)
 	// - Func*

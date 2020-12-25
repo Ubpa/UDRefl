@@ -19,9 +19,8 @@ namespace Ubpa::UDRefl {
 			assert(target->second == name);
 			return;
 		}
-		else
-			target = id2name.emplace_hint(target, ID, name);
-		target->second = name;
+
+		id2name.emplace_hint(target, ID, name);
 
 #ifndef NDEBUG
 		unmanagedIDs.insert(ID);

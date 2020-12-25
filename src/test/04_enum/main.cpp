@@ -37,7 +37,7 @@ int main() {
 	std::cout << "name of " << static_cast<int>(c) << " : " << ReflMngr::Instance().nregistry.Nameof(c_field.value().ID) << std::endl;
 
 	// name -> enumerator
-	std::string_view name = "GREEN";
+	std::string_view name = "Green";
 	auto name_field = ReflMngr::Instance().FindField(TypeID_of<Color>, [name](FieldRef field) {
 		return ReflMngr::Instance().nregistry.Nameof(field.ID) == name;
 	});

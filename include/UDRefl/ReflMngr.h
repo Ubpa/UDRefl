@@ -517,6 +517,10 @@ namespace Ubpa::UDRefl {
 		//
 		// Memory
 		///////////
+		//
+		// - MInvoke will allocate buffer for result, and move to SharedObject
+		// - if result is reference, SharedObject's Ptr is a pointer of referenced object
+		// 
 
 		SharedObject MInvoke(
 			TypeID typeID,
@@ -584,8 +588,13 @@ namespace Ubpa::UDRefl {
 
 		DereferenceProperty GetDereferenceProperty(TypeID ID) const;
 		TypeID Dereference(TypeID ID) const;
-		ObjectPtr Dereference(ConstObjectPtr pointer_obj) const;
-		ConstObjectPtr DereferenceAsConst(ConstObjectPtr pointer_obj) const;
+		// require: DereferenceProperty(ref_obj.GetID()) == DereferenceProperty::Variable
+		ObjectPtr Dereference(ConstObjectPtr ref_obj) const;
+		// require: DereferenceProperty(ref_obj.GetID()) != DereferenceProperty::NotReference
+		ConstObjectPtr DereferenceAsConst(ConstObjectPtr ref_obj) const;
+
+		TypeID AddConstLValueReference(TypeID ID);
+		ConstObjectPtr AddConstLValueReference(ConstObjectPtr obj);
 
 	private:
 		ReflMngr();

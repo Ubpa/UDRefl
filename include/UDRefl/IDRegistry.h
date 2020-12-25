@@ -27,6 +27,9 @@ namespace Ubpa::UDRefl {
 		void UnregisterUnmanaged(T ID);
 		void Clear() noexcept;
 
+	protected:
+		std::pmr::polymorphic_allocator<char> get_allocator() { return &resource; }
+
 	private:
 		std::pmr::monotonic_buffer_resource resource;
 		std::pmr::unordered_map<T, std::string_view> id2name;
@@ -299,13 +302,13 @@ namespace Ubpa::UDRefl {
 			static constexpr TypeID t_void = Meta::t_void;
 		};
 
-		using IDRegistry<TypeID>::Register;
-		using IDRegistry<TypeID>::IsRegistered;
-
 		TypeIDRegistry() {
 			RegisterUnmanaged(Meta::global);
 			RegisterUnmanaged(Meta::t_void);
 		}
+
+		using IDRegistry<TypeID>::Register;
+		using IDRegistry<TypeID>::IsRegistered;
 
 		// unmanaged
 		template<typename T>
@@ -313,6 +316,8 @@ namespace Ubpa::UDRefl {
 
 		template<typename T>
 		bool IsRegistered() const { return IDRegistry<TypeID>::IsRegistered(TypeID_of<T>); }
+
+		TypeID RegisterAddConstLValueReference(TypeID ID);
 	};
 }
 

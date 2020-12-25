@@ -89,6 +89,7 @@ ConstObjectPtr ObjectPtrBase::FindRVar(const std::function<bool(ConstObjectPtr)>
 DereferenceProperty ObjectPtrBase::GetDereferenceProperty() const {
 	return ReflMngr::Instance().GetDereferenceProperty(ID);
 }
+
 TypeID ObjectPtrBase::DereferenceID() const {
 	return ReflMngr::Instance().Dereference(ID);
 }
@@ -99,6 +100,14 @@ ObjectPtr ObjectPtrBase::Dereference() const {
 
 ConstObjectPtr ObjectPtrBase::ObjectPtrBase::DereferenceAsConst() const {
 	return ReflMngr::Instance().DereferenceAsConst({ ID, ptr });
+}
+
+TypeID ObjectPtrBase::AddConstLValueReferenceID() const {
+	return ReflMngr::Instance().AddConstLValueReference(ID);
+}
+
+ConstObjectPtr ObjectPtrBase::AddConstLValueReference() const {
+	return ReflMngr::Instance().AddConstLValueReference({ ID, ptr });
 }
 
 SharedObject ObjectPtrBase::cbegin() const {

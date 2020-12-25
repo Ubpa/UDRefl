@@ -1,5 +1,6 @@
 #include <UDRefl/IDRegistry.h>
 
+using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 StrIDRegistry::StrIDRegistry() {
@@ -122,4 +123,17 @@ StrIDRegistry::StrIDRegistry() {
 	RegisterUnmanaged(Meta::container_hash_function);
 	RegisterUnmanaged(Meta::container_key_eq);
 	RegisterUnmanaged(Meta::container_get_allocator);
+}
+
+TypeID TypeIDRegistry::RegisterAddConstLValueReference(TypeID ID) {
+	std::string_view name = Nameof(ID);
+	if (name.empty())
+		return {};
+
+	auto clref_name = type_name_add_const_lvalue_reference(name, get_allocator());
+
+	if (clref_name.data() == name.data())
+		return ID;
+
+	return RegisterUnmanaged(clref_name);
 }
