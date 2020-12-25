@@ -20,10 +20,10 @@ SharedObject type::name (Args... args) const {                                  
     return ADMInvoke<Args...>(StrIDRegistry::MetaID::container_##name, std::forward<Args>(args)...); \
 }
 
-#define SHARED_OBJECT_DEFINE_OPERATOR_T(type, op)                   \
-template<typename Arg>                                              \
-SharedObject type::operator op (Arg rhs) const {                    \
-    return AsObjectPtr()->operator op<Arg>(std::forward<Arg>(rhs)); \
+#define SHARED_OBJECT_DEFINE_OPERATOR_T(type, op)                    \
+template<typename Arg>                                               \
+SharedObject type::operator op (Arg rhs) const {                     \
+    return AsObjectPtr()->operator op <Arg>(std::forward<Arg>(rhs)); \
 }
 
 #define DEFINE_OPERATOR_LSHIFT(Lhs, Rhs)            \
@@ -144,6 +144,7 @@ namespace Ubpa::UDRefl {
 	// ConstObjectPtr
 	///////////////////
 
+	OBJECT_PTR_DEFINE_OPERATOR_T(ConstObjectPtr, [], subscript)
 	OBJECT_PTR_DEFINE_OPERATOR_T(ConstObjectPtr, ->*, member_of_pointer)
 
 	template<typename... Args>

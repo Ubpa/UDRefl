@@ -296,6 +296,7 @@ namespace Ubpa::UDRefl {
 
 		using ObjectPtrBase::operator*;
 
+		OBJECT_PTR_DECLARE_OPERATOR([], subscript);
 		OBJECT_PTR_DECLARE_OPERATOR(->*, member_of_pointer);
 
 		SharedObject operator~() const;
