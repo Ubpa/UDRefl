@@ -436,5 +436,4 @@ SharedObject SharedObjectBase::end() const {
 //  SharedConstObject
 ///////////////////////
 
-SharedConstObject::SharedConstObject(const SharedObject& obj) : SharedConstObject{ obj.GetID(), obj.GetBuffer() } {}
-SharedConstObject::SharedConstObject(SharedObject&& obj) noexcept : SharedConstObject{ obj.GetID(), obj.GetBuffer() } {}
+SharedConstObject::SharedConstObject(SharedObject obj) noexcept : SharedConstObject{ obj.GetID(), std::move(obj.GetBuffer()) } {}

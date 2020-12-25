@@ -30,7 +30,7 @@ int main() {
 
 	// enumerator -> name
 	Color c = Color::Red;
-	auto c_field = ReflMngr::Instance().FindField(TypeID::of<Color>, [c](FieldRef field) {
+	auto c_field = ReflMngr::Instance().FindField(TypeID_of<Color>, [c](FieldRef field) {
 		return field.info.fieldptr.RVar() == c;
 	});
 

@@ -414,7 +414,7 @@ namespace Ubpa::UDRefl {
 		SharedObject operator()(Args... args) const;
 
 		template<typename T>
-		SharedObject operator<<(const T& in) const;
+		SharedObject operator<<(T&& in) const;
 
 		//
 		// container
@@ -481,13 +481,10 @@ namespace Ubpa::UDRefl {
 		constexpr SharedObjectBase(std::nullptr_t) noexcept {}
 		explicit constexpr SharedObjectBase(TypeID ID) noexcept : ID{ ID } {}
 
-		SharedObjectBase(TypeID ID, const SharedBuffer& buffer) noexcept : ID{ ID }, buffer{ buffer } {}
-		SharedObjectBase(TypeID ID, SharedBuffer&& buffer) noexcept : ID{ ID }, buffer{ std::move(buffer) } {}
+		SharedObjectBase(TypeID ID, SharedBuffer buffer) noexcept : ID{ ID }, buffer{ std::move(buffer) } {}
 
 		template<typename T>
-		SharedObjectBase(TypeID ID, const std::shared_ptr<T>& buffer) noexcept : ID{ ID }, buffer{ buffer } {}
-		template<typename T>
-		SharedObjectBase(TypeID ID, std::shared_ptr<T>&& buffer) noexcept : ID{ ID }, buffer{ std::move(buffer) } {}
+		SharedObjectBase(TypeID ID, std::shared_ptr<T> buffer) noexcept : ID{ ID }, buffer{ std::move(buffer) } {}
 
 		template<typename Deleter>
 		SharedObjectBase(ObjectPtr obj, Deleter d) noexcept : ID{ obj.GetID() }, buffer{ obj.GetPtr(), std::move(d) } {}
@@ -604,16 +601,12 @@ namespace Ubpa::UDRefl {
 		SharedConstObject(const SharedConstObject& obj) noexcept : SharedObjectBase{ obj.ID, obj.buffer } {}
 		SharedConstObject(SharedConstObject&& obj) noexcept : SharedObjectBase{ obj.ID, std::move(obj.buffer) } {}
 
-		SharedConstObject(const SharedObject& obj);
-		SharedConstObject(SharedObject&& obj) noexcept;
+		SharedConstObject(SharedObject obj) noexcept;
 
-		SharedConstObject(TypeID ID, const SharedConstBuffer& buffer) noexcept : SharedObjectBase{ ID, std::const_pointer_cast<void>(buffer) } {}
-		SharedConstObject(TypeID ID, SharedConstBuffer&& buffer) noexcept : SharedObjectBase{ ID, std::const_pointer_cast<void>(std::move(buffer)) } {}
+		SharedConstObject(TypeID ID, SharedConstBuffer buffer) noexcept : SharedObjectBase{ ID, std::const_pointer_cast<void>(std::move(buffer)) } {}
 
 		template<typename T>
-		SharedConstObject(TypeID ID, const std::shared_ptr<const T>& buffer) noexcept : SharedObjectBase{ ID, std::const_pointer_cast<T>(buffer) } {}
-		template<typename T>
-		SharedConstObject(TypeID ID, std::shared_ptr<const T>&& buffer) noexcept : SharedObjectBase{ ID, std::const_pointer_cast<T>(std::move(buffer)) } {}
+		SharedConstObject(TypeID ID, std::shared_ptr<const T> buffer) noexcept : SharedObjectBase{ ID, std::const_pointer_cast<T>(std::move(buffer)) } {}
 
 		template<typename U, typename Deleter>
 		SharedConstObject(ConstObjectPtr obj, Deleter d) noexcept : SharedObjectBase{ ConstCast(obj), std::move(d) } {}
@@ -761,7 +754,7 @@ namespace Ubpa::UDRefl {
 		}
 
 		template<typename T>
-		T& operator<<(const T& in) const { return AsObjectPtr() << in; }
+		SharedObject operator<<(T&& in) const { return AsObjectPtr() << std::forward<T>(in); }
 
 		//
 		// container
