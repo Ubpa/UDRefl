@@ -163,13 +163,13 @@ namespace Ubpa::UDRefl {
 		constexpr bool IsObject()   const noexcept { return data.index() >= 4; }
 
 		// { variable | const } object
-		ConstObjectPtr RVar() const noexcept;
+		ConstObjectPtr RVar() const;
 
 		// variable object
-		ObjectPtr RWVar() noexcept;
+		ObjectPtr RWVar();
 
 		// all
-		ConstObjectPtr RVar(const void* obj) const noexcept;
+		ConstObjectPtr RVar(const void* obj) const;
 
 		// variable
 		ObjectPtr RWVar(void* obj) noexcept;

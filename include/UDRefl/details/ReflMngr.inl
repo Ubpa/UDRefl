@@ -818,20 +818,20 @@ namespace Ubpa::UDRefl {
 	///////////
 
 	template<typename... Args>
-	InvocableResult ReflMngr::IsStaticInvocable(TypeID typeID, StrID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID_of<Args>... };
+	InvocableResult ReflMngr::IsStaticInvocable(TypeID typeID, StrID methodID) const {
+		constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsStaticInvocable(typeID, methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
-	InvocableResult ReflMngr::IsConstInvocable(TypeID typeID, StrID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID_of<Args>... };
+	InvocableResult ReflMngr::IsConstInvocable(TypeID typeID, StrID methodID) const {
+		constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsConstInvocable(typeID, methodID, Span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename... Args>
-	InvocableResult ReflMngr::IsInvocable(TypeID typeID, StrID methodID) const noexcept {
-		std::array argTypeIDs = { TypeID_of<Args>... };
+	InvocableResult ReflMngr::IsInvocable(TypeID typeID, StrID methodID) const {
+		constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsInvocable(typeID, methodID, Span<const TypeID>{argTypeIDs});
 	}
 
@@ -866,7 +866,7 @@ namespace Ubpa::UDRefl {
 	InvokeResult ReflMngr::InvokeArgs(TypeID typeID, StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(typeID, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -878,7 +878,7 @@ namespace Ubpa::UDRefl {
 	InvokeResult ReflMngr::InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(obj, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -890,7 +890,7 @@ namespace Ubpa::UDRefl {
 	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Invoke(obj, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -902,7 +902,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(TypeID typeID, StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -914,7 +914,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(ConstObjectPtr obj, StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -926,7 +926,7 @@ namespace Ubpa::UDRefl {
 	T ReflMngr::Invoke(ObjectPtr obj, StrID methodID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return InvokeRet<T>(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -939,8 +939,8 @@ namespace Ubpa::UDRefl {
 	/////////
 
 	template<typename... Args>
-	bool ReflMngr::IsConstructible(TypeID typeID) const noexcept {
-		std::array argTypeIDs = { TypeID_of<Args>... };
+	bool ReflMngr::IsConstructible(TypeID typeID) const {
+		constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsConstructible(typeID, Span<const TypeID>{argTypeIDs});
 	}
 
@@ -948,7 +948,7 @@ namespace Ubpa::UDRefl {
 	bool ReflMngr::Construct(ObjectPtr obj, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return Construct(obj, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -960,7 +960,7 @@ namespace Ubpa::UDRefl {
 	ObjectPtr ReflMngr::New(TypeID typeID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return New(typeID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -980,7 +980,7 @@ namespace Ubpa::UDRefl {
 	SharedObject ReflMngr::MakeShared(TypeID typeID, Args... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MakeShared(typeID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
 		}
@@ -1009,7 +1009,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
@@ -1026,7 +1026,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
@@ -1043,7 +1043,7 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { TypeID_of<Args>... };
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
 			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}

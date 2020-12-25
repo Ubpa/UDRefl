@@ -27,7 +27,7 @@ namespace Ubpa::UDRefl {
 		Destructor destructor;
 
 		template<typename T>
-		T Move(void* result_buffer) {
+		T Move(void* result_buffer) noexcept(std::is_reference_v<T> || std::is_nothrow_destructible_v<T> && std::is_nothrow_move_constructible_v<T>) {
 			assert(result_buffer);
 
 			if constexpr (!std::is_reference_v<T> && std::is_default_constructible_v<T>) {

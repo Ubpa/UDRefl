@@ -9,8 +9,8 @@ namespace Ubpa::UDRefl {
 	class ParamList {
 	public:
 		ParamList() noexcept = default;
-		ParamList(std::vector<TypeID> params) : params{ std::move(params) } {}
-		const std::vector<TypeID>& GetParameters() const noexcept { return params; }
+		ParamList(std::vector<TypeID> params) noexcept : params{ std::move(params) } {}
+		Span<const TypeID> GetParameters() const noexcept { return params; }
 		bool IsConpatibleWith(Span<const TypeID> typeIDs) const noexcept;
 		bool operator==(const ParamList& rhs) const noexcept;
 		bool operator!=(const ParamList& rhs) const noexcept { return ! operator==(rhs); }
@@ -39,30 +39,30 @@ namespace Ubpa::UDRefl {
 		using MemberConstFunction    = Destructor(const void*, void*, ArgsView);
 		using StaticFunction         = Destructor(             void*, ArgsView);
 
-		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			func{ (assert(func), std::move(func)) },
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) } {}
 
-		MethodPtr(std::function<MemberConstFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(std::function<MemberConstFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			func{ (assert(func), std::move(func)) },
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) } {}
 
-		MethodPtr(std::function<StaticFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(std::function<StaticFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			func{ (assert(func), std::move(func)) },
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) } {}
 
-		MethodPtr(MemberVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(MemberVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			MethodPtr{ std::function<MemberVariableFunction>{func}, std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 
-		MethodPtr(MemberConstFunction*    func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(MemberConstFunction*    func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			MethodPtr{ std::function<MemberConstFunction>{func}, std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 
-		MethodPtr(StaticFunction*         func, ResultDesc resultDesc = {}, ParamList paramList = {}) noexcept :
+		MethodPtr(StaticFunction*         func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			MethodPtr{ std::function<StaticFunction>{func}, std::move(resultDesc), std::move(paramList) }
 		{ assert(func); }
 
@@ -78,7 +78,7 @@ namespace Ubpa::UDRefl {
 				paramList != rhs.paramList;
 		}
 
-		Destructor Invoke(void* obj      , void* result_buffer, void* args_buffer) const;
+		Destructor Invoke(      void* obj, void* result_buffer, void* args_buffer) const;
 		Destructor Invoke(const void* obj, void* result_buffer, void* args_buffer) const;
 		Destructor Invoke(                 void* result_buffer, void* args_buffer) const;
 

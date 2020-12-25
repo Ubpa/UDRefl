@@ -9,15 +9,23 @@ using namespace Ubpa::UDRefl;
 // ObjectPtrBase
 //////////////////
 
-std::string_view ObjectPtrBase::TypeName() const noexcept {
+TypeInfo* ObjectPtrBase::GetType() const {
+	auto target = ReflMngr::Instance().typeinfos.find(ID);
+	if (target == ReflMngr::Instance().typeinfos.end())
+		return nullptr;
+
+	return &target->second;
+}
+
+std::string_view ObjectPtrBase::TypeName() const {
 	return ReflMngr::Instance().tregistry.Nameof(ID);
 }
 
-ConstObjectPtr ObjectPtrBase::RVar(StrID fieldID) const noexcept {
+ConstObjectPtr ObjectPtrBase::RVar(StrID fieldID) const {
 	return ReflMngr::Instance().RVar({ ID, ptr }, fieldID);
 }
 
-ConstObjectPtr ObjectPtrBase::RVar(TypeID baseID, StrID fieldID) const noexcept {
+ConstObjectPtr ObjectPtrBase::RVar(TypeID baseID, StrID fieldID) const {
 	return ReflMngr::Instance().RVar({ ID, ptr }, baseID, fieldID);
 }
 
@@ -93,32 +101,16 @@ ConstObjectPtr ObjectPtrBase::ObjectPtrBase::DereferenceAsConst() const {
 	return ReflMngr::Instance().DereferenceAsConst({ ID, ptr });
 }
 
-SharedObject ObjectPtrBase::begin() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_begin);
-}
-
 SharedObject ObjectPtrBase::cbegin() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_cbegin);
-}
-
-SharedObject ObjectPtrBase::end() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_end);
 }
 
 SharedObject ObjectPtrBase::cend() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_cend);
 }
 
-SharedObject ObjectPtrBase::rbegin() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_rbegin);
-}
-
 SharedObject ObjectPtrBase::crbegin() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_crbegin);
-}
-
-SharedObject ObjectPtrBase::rend() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_rend);
 }
 
 SharedObject ObjectPtrBase::crend() const {
@@ -126,18 +118,6 @@ SharedObject ObjectPtrBase::crend() const {
 }
 
 // - element access
-
-SharedObject ObjectPtrBase::data() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_data);
-}
-
-SharedObject ObjectPtrBase::front() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_front);
-}
-
-SharedObject ObjectPtrBase::back() const {
-	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_back);
-}
 
 SharedObject ObjectPtrBase::empty() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_empty);
@@ -149,6 +129,10 @@ SharedObject ObjectPtrBase::size() const {
 
 SharedObject ObjectPtrBase::capacity() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_capacity);
+}
+
+SharedObject ObjectPtrBase::bucket_count() const {
+	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_bucket_count);
 }
 
 // - observers
@@ -173,35 +157,7 @@ SharedObject ObjectPtrBase::get_allocator() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_get_allocator);
 }
 
-TypeInfo* ObjectPtrBase::GetType() const noexcept {
-	auto target = ReflMngr::Instance().typeinfos.find(ID);
-	if (target == ReflMngr::Instance().typeinfos.end())
-		return nullptr;
-	
-	return &target->second;
-}
-
-ConstObjectPtr ObjectPtrBase::StaticCast_DerivedToBase(TypeID typeID) const noexcept {
-	return ReflMngr::Instance().StaticCast_DerivedToBase(ConstObjectPtr{ ID, ptr }, typeID);
-}
-
-ConstObjectPtr ObjectPtrBase::StaticCast_BaseToDerived(TypeID typeID) const noexcept {
-	return ReflMngr::Instance().StaticCast_BaseToDerived(ConstObjectPtr{ ID, ptr }, typeID);
-}
-
-ConstObjectPtr ObjectPtrBase::DynamicCast_BaseToDerived(TypeID typeID) const noexcept {
-	return ReflMngr::Instance().DynamicCast_BaseToDerived(ConstObjectPtr{ ID, ptr }, typeID);
-}
-
-ConstObjectPtr ObjectPtrBase::StaticCast(TypeID typeID) const noexcept {
-	return ReflMngr::Instance().StaticCast(ConstObjectPtr{ ID, ptr }, typeID);
-}
-
-ConstObjectPtr ObjectPtrBase::DynamicCast(TypeID typeID) const noexcept {
-	return ReflMngr::Instance().DynamicCast(ConstObjectPtr{ ID, ptr }, typeID);
-}
-
-InvocableResult ObjectPtrBase::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
+InvocableResult ObjectPtrBase::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const {
 	return ReflMngr::Instance().IsConstInvocable(ID, methodID, argTypeIDs);
 }
 
@@ -232,18 +188,6 @@ SharedObject ObjectPtrBase::operator-() const {
 	return DMInvoke(StrIDRegistry::MetaID::operator_minus);
 }
 
-SharedObject ObjectPtrBase::operator~() const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_bnot);
-}
-
-SharedObject ObjectPtrBase::operator[](std::size_t n) const {
-	return DMInvoke<std::size_t>(StrIDRegistry::MetaID::operator_subscript, n);
-}
-
-SharedObject ObjectPtrBase::operator*() const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
-}
-
 //
 // ConstObjectPtr
 ///////////////////
@@ -251,39 +195,99 @@ SharedObject ObjectPtrBase::operator*() const {
 ConstObjectPtr::ConstObjectPtr(const SharedConstObject& obj) noexcept
 	: ConstObjectPtr{ obj.GetID(), obj.GetPtr() } {}
 
+ConstObjectPtr ConstObjectPtr::StaticCast_DerivedToBase(TypeID typeID) const {
+	return ReflMngr::Instance().StaticCast_DerivedToBase(*this, typeID);
+}
+
+ConstObjectPtr ConstObjectPtr::StaticCast_BaseToDerived(TypeID typeID) const {
+	return ReflMngr::Instance().StaticCast_BaseToDerived(*this, typeID);
+}
+
+ConstObjectPtr ConstObjectPtr::DynamicCast_BaseToDerived(TypeID typeID) const {
+	return ReflMngr::Instance().DynamicCast_BaseToDerived(*this, typeID);
+}
+
+ConstObjectPtr ConstObjectPtr::StaticCast(TypeID typeID) const {
+	return ReflMngr::Instance().StaticCast(*this, typeID);
+}
+
+ConstObjectPtr ConstObjectPtr::DynamicCast(TypeID typeID) const {
+	return ReflMngr::Instance().DynamicCast(*this, typeID);
+}
+
+SharedObject ConstObjectPtr::operator~() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_bnot);
+}
+
+SharedObject ConstObjectPtr::operator[](std::size_t n) const {
+	return DMInvoke<std::size_t>(StrIDRegistry::MetaID::operator_subscript, n);
+}
+
+SharedObject ConstObjectPtr::operator*() const {
+	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
+}
+
+SharedObject ConstObjectPtr::begin() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_begin);
+}
+
+SharedObject ConstObjectPtr::end() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_end);
+}
+
+SharedObject ConstObjectPtr::rbegin() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_rbegin);
+}
+
+SharedObject ConstObjectPtr::rend() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_rend);
+}
+
+SharedObject ConstObjectPtr::data() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_data);
+}
+
+SharedObject ConstObjectPtr::front() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_front);
+}
+
+SharedObject ConstObjectPtr::back() const {
+	return ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_back);
+}
+
 //
 // ObjectPtr
 //////////////
 
-ObjectPtr ObjectPtr::StaticCast_DerivedToBase(TypeID typeID) const noexcept {
+ObjectPtr ObjectPtr::StaticCast_DerivedToBase(TypeID typeID) const {
 	return ReflMngr::Instance().StaticCast_DerivedToBase(*this, typeID);
 }
 
-ObjectPtr ObjectPtr::StaticCast_BaseToDerived(TypeID typeID) const noexcept {
+ObjectPtr ObjectPtr::StaticCast_BaseToDerived(TypeID typeID) const {
 	return ReflMngr::Instance().StaticCast_BaseToDerived(*this, typeID);
 }
 
-ObjectPtr ObjectPtr::DynamicCast_BaseToDerived(TypeID typeID) const noexcept {
+ObjectPtr ObjectPtr::DynamicCast_BaseToDerived(TypeID typeID) const {
 	return ReflMngr::Instance().DynamicCast_BaseToDerived(*this, typeID);
 }
 
-ObjectPtr ObjectPtr::StaticCast(TypeID typeID) const noexcept {
+ObjectPtr ObjectPtr::StaticCast(TypeID typeID) const {
 	return ReflMngr::Instance().StaticCast(*this, typeID);
 }
 
-ObjectPtr ObjectPtr::DynamicCast(TypeID typeID) const noexcept {
+ObjectPtr ObjectPtr::DynamicCast(TypeID typeID) const {
 	return ReflMngr::Instance().DynamicCast(*this, typeID);
 }
 
-ObjectPtr ObjectPtr::RWVar(StrID fieldID) const noexcept {
+ObjectPtr ObjectPtr::RWVar(StrID fieldID) const {
 	return ReflMngr::Instance().RWVar(*this, fieldID);
 }
 
-ObjectPtr ObjectPtr::RWVar(TypeID baseID, StrID fieldID) const noexcept {
+ObjectPtr ObjectPtr::RWVar(TypeID baseID, StrID fieldID) const {
 	return ReflMngr::Instance().RWVar(*this, baseID, fieldID);
 }
 
-InvocableResult ObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const noexcept {
+InvocableResult ObjectPtr::IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs) const {
 	return ReflMngr::Instance().IsInvocable(ID, methodID, argTypeIDs);
 }
 
@@ -416,14 +420,6 @@ SharedObject SharedObjectBase::operator~() const {
 	return ~AsObjectPtr();
 }
 
-SharedObject SharedObjectBase::operator[](std::size_t n) const {
-	return AsObjectPtr()[n];
-}
-
-SharedObject SharedObjectBase::operator*() const {
-	return *AsObjectPtr();
-}
-
 SharedObject SharedObjectBase::begin() const {
 	return AsObjectPtr().begin();
 }
@@ -433,7 +429,13 @@ SharedObject SharedObjectBase::end() const {
 }
 
 //
-//  SharedConstObject
-///////////////////////
+// SharedConstObject
+//////////////////////
 
-SharedConstObject::SharedConstObject(SharedObject obj) noexcept : SharedConstObject{ obj.GetID(), std::move(obj.GetBuffer()) } {}
+SharedObject SharedConstObject::operator[](std::size_t n) const {
+	return AsObjectPtr()[n];
+}
+
+SharedObject SharedConstObject::operator*() const {
+	return *AsObjectPtr();
+}
