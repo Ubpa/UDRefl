@@ -1,4 +1,4 @@
-#include <UDRefl/UDRefl.h>
+#include <UDRefl_pch.h>
 #include <iostream>
 
 #include "A.h"
@@ -10,8 +10,6 @@ using namespace Ubpa::UDRefl;
 int main() {
 	RegisterA();
 	RegisterB();
-
-	ReflMngr::Instance().RegisterTypeAuto<std::array<size_t, 5>>();
 
 	for (const auto& [ID, info] : ReflMngr::Instance().typeinfos) {
 		ReflMngr::Instance().ForEachMethod(ID, [](TypeRef type, MethodRef method) {

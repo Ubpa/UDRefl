@@ -177,7 +177,6 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<operator_ge, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs >= rhs; });
 
-
 			if constexpr (is_valid_v<operator_subscript, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
 			if constexpr (is_valid_v<operator_subscript_const, T>)

@@ -1,11 +1,17 @@
+set(c_options "")
+if(MSVC)
+  set(c_options "/bigobj")
+endif()
+
 Ubpa_AddTarget(
-  MODE INTERFACE
+  MODE STATIC
   RET_TARGET_NAME tname
+  SOURCE
+    "${PROJECT_SOURCE_DIR}/include/UDRefl_pch.h"
   LIB
     Ubpa::UDRefl_core
+  C_OPTION
+    ${c_options}
 )
 
-target_precompile_headers(${tname} INTERFACE
-  $<BUILD_INTERFACE:"${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.h">
-  $<INSTALL_INTERFACE:${package_name}/include/UDRefl/UDRefl.h>
-)
+target_precompile_headers(${tname} PRIVATE "${PROJECT_SOURCE_DIR}/include/UDRefl_pch.h")
