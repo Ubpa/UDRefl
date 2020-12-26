@@ -13,4 +13,3 @@ int main() {
 		std::cout << ele->TypeName() << ": " << ele << std::endl;
 	return 0;
 }
-

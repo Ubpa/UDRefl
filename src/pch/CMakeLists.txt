@@ -1,6 +1,6 @@
-set(c_options "")
-if(MSVC)
-  set(c_options "/bigobj")
+if(NOT UDReflBuildBigObj)
+  message(WARNING "skip a target because the current environment doesn't support building a big obj")
+  return()
 endif()
 
 Ubpa_AddTarget(
@@ -10,8 +10,6 @@ Ubpa_AddTarget(
     "${PROJECT_SOURCE_DIR}/include/UDRefl_pch.h"
   LIB
     Ubpa::UDRefl_core
-  C_OPTION
-    ${c_options}
 )
 
 target_precompile_headers(${tname} PRIVATE "${PROJECT_SOURCE_DIR}/include/UDRefl_pch.h")

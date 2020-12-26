@@ -1,6 +1,6 @@
 #include "B.h"
 
-#include <UDRefl_pch.h>
+#include <UDRefl/UDRefl.h>
 
 void RegisterB() {
 	Ubpa::UDRefl::Mngr->RegisterTypeAuto<B>();

@@ -11,6 +11,8 @@ Ubpa_InitProject()
 Ubpa_AddDep(UContainer 0.0.9)
 Ubpa_AddDep(UTemplate 0.5.4)
 
+include(cmake/Platform.cmake)
+
 Ubpa_AddSubDirsRec(include)
 Ubpa_AddSubDirsRec(src)
 

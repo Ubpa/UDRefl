@@ -12,7 +12,6 @@ if(MSVC)
   set(c_options_i "/bigobj")
 endif()
 
-
 Ubpa_AddTarget(
   MODE STATIC
   RET_TARGET_NAME tname

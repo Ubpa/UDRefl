@@ -1,3 +1,8 @@
+if(NOT UDReflBuildBigObj)
+  message(WARNING "skip a target because the current environment doesn't support building a big obj")
+  return()
+endif()
+
 Ubpa_AddTarget(
   TEST
   MODE EXE
@@ -6,4 +11,4 @@ Ubpa_AddTarget(
     Ubpa::UDRefl_core
 )
 
-target_precompile_headers(${tname} REUSE_FROM UDRefl_pch)
+target_precompile_headers(${tname} REUSE_FROM ${UDReflPchTargetName})

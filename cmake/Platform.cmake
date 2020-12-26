@@ -1,0 +1,13 @@
+if (CMAKE_SYSTEM_NAME MATCHES "Windows" AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  set(UDReflBuildBigObj FALSE)
+else()
+  set(UDReflBuildBigObj TRUE)
+endif()
+message(STATUS "UDReflBuildBigObj: ${UDReflBuildBigObj}")
+
+if (UDReflBuildBigObj)
+  set(UDReflPchTargetName "UDRefl_pch")
+else()
+  set(UDReflPchTargetName "UDRefl_core")
+endif()
+message(STATUS "UDReflPchTargetName: ${UDReflPchTargetName}")

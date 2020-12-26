@@ -3,7 +3,7 @@
 #include <UDRefl/UDRefl.h>
 
 namespace Ubpa::UDRefl {
-	void RegisterBasic() {
+	inline void RegisterBasic() {
 		ReflMngr::Instance().RegisterTypeAuto<bool>();
 		ReflMngr::Instance().RegisterTypeAuto<std::uint8_t>();
 		ReflMngr::Instance().RegisterTypeAuto<std::uint16_t>();
