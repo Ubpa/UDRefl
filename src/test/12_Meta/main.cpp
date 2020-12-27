@@ -65,7 +65,6 @@ int main() {
 	ObjectPtr pv = v;
 	SharedObject w0 = v + v;
 	SharedObject w1 = v + pv;
-	float fv = 1.f;
 	SharedObject w2 = v + 1.f;
 	SharedObject w3 = v - pv;
 	SharedObject w4 = v * pv;
