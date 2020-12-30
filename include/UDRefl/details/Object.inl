@@ -37,7 +37,45 @@ inline Lhs& operator >>(Lhs& lhs, const Rhs& rhs) { \
 	return lhs;                                     \
 }
 
+namespace Ubpa::UDRefl::details {
+	template<typename T>
+	constexpr TypeID ArgID(T&& arg) noexcept {
+		if constexpr (std::is_same_v<T, ObjectPtr> || std::is_same_v<T, SharedObject>)
+			return arg.GetID();
+		else if constexpr (std::is_same_v<T, ConstObjectPtr> || std::is_same_v<T, SharedConstObject>)
+			return ConstObjectPtr{ arg }.AddConstLValueReferenceID();
+		else
+			return TypeID_of<T>;
+	}
+
+	template<typename T>
+	constexpr void* ArgPtr(T&& arg) noexcept {
+		using U = std::remove_reference_t<T>;
+		if constexpr (std::is_same_v<U, ObjectPtr> || std::is_same_v<U, SharedObject>)
+			return arg.GetPtr();
+		else if constexpr (std::is_same_v<U, ConstObjectPtr> || std::is_same_v<U, SharedConstObject>)
+			return const_cast<void*>(arg.GetPtr());
+		else {
+			static_assert(!std::is_same_v<U, ConstObjectPtr> && !std::is_same_v<U, SharedConstObject>);
+			return &arg;
+		}
+	}
+}
+
 namespace Ubpa::UDRefl {
+	//
+	// Utils
+	//////////
+
+	template<typename T>
+	constexpr auto Ptr(T&& p) noexcept {
+		using U = std::remove_reference_t<T>;
+		if constexpr (std::is_const_v<U>)
+			return ConstObjectPtr{ TypeID_of<std::remove_cv_t<U>>, &p };
+		else
+			return ObjectPtr{ TypeID_of<std::remove_volatile_t<U>>, &p };
+	}
+
 	//
 	// ObjectPtrBase
 	//////////////////
@@ -113,8 +151,8 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { ArgID<Args>(std::forward<Args>(args))... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(ArgPtr(args))... };
+			std::array argTypeIDs = { details::ArgID<Args>(std::forward<Args>(args))... };
+			std::array args_buffer{ reinterpret_cast<std::size_t>(details::ArgPtr(args))... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
 		else
@@ -238,8 +276,8 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
-			std::array argTypeIDs = { ArgID<Args>(std::forward<Args>(args))... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(ArgPtr(args))... };
+			std::array argTypeIDs = { details::ArgID<Args>(std::forward<Args>(args))... };
+			std::array args_buffer{ reinterpret_cast<std::size_t>(details::ArgPtr(args))... };
 			return MInvoke(methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
 		}
 		else

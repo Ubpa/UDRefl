@@ -800,37 +800,9 @@ namespace Ubpa::UDRefl {
 		return { obj.GetID(), std::const_pointer_cast<void>(obj.GetBuffer()) };
 	}
 
+	// generate ObjectPtr/ConstObjectPtr
 	template<typename T>
-	constexpr auto Ptr(T&& p) noexcept {
-		using U = std::remove_reference_t<T>;
-		if constexpr (std::is_const_v<U>)
-			return ConstObjectPtr{ TypeID_of<std::remove_cv_t<U>>, &p };
-		else
-			return ObjectPtr{ TypeID_of<std::remove_volatile_t<U>>, &p };
-	}
-
-	template<typename T>
-	constexpr TypeID ArgID(T&& arg) noexcept {
-		if constexpr (std::is_same_v<T, ObjectPtr> || std::is_same_v<T, SharedObject>)
-			return arg.GetID();
-		else if constexpr (std::is_same_v<T, ConstObjectPtr> || std::is_same_v<T, SharedConstObject>)
-			return ConstObjectPtr{ arg }.AddConstLValueReferenceID();
-		else
-			return TypeID_of<T>;
-	}
-
-	template<typename T>
-	constexpr void* ArgPtr(T&& arg) noexcept {
-		using U = std::remove_reference_t<T>;
-		if constexpr (std::is_same_v<U, ObjectPtr> || std::is_same_v<U, SharedObject>)
-			return arg.GetPtr();
-		else if constexpr (std::is_same_v<U, ConstObjectPtr> || std::is_same_v<U, SharedConstObject>)
-			return const_cast<void*>(arg.GetPtr());
-		else {
-			static_assert(!std::is_same_v<U, ConstObjectPtr> && !std::is_same_v<U, SharedConstObject>);
-			return &arg;
-		}
-	}
+	constexpr auto Ptr(T&& p) noexcept;
 
 	template<typename T>
 	struct IsObjectOrPtr;

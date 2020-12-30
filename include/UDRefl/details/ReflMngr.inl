@@ -675,30 +675,30 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	void ReflMngr::RegisterTypeAuto(AttrSet attrs_ctor, AttrSet attrs_dtor) {
+	void ReflMngr::RegisterTypeAuto() {
 		static_assert(!std::is_volatile_v<T>);
 		if constexpr (std::is_void_v<T>)
 			return;
 		else {
 			if constexpr (std::is_const_v<T>)
-				RegisterTypeAuto<std::remove_const_t<T>>(std::move(attrs_ctor), std::move(attrs_dtor));
+				RegisterTypeAuto<std::remove_const_t<T>>();
 			else if constexpr (std::is_reference_v<T>)
-				RegisterTypeAuto<std::remove_cv_t<std::remove_reference_t<T>>>(std::move(attrs_ctor), std::move(attrs_dtor));
+				RegisterTypeAuto<std::remove_cv_t<std::remove_reference_t<T>>>();
 			else if constexpr (std::is_pointer_v<T>)
-				RegisterTypeAuto<std::remove_cv_t<std::remove_pointer_t<T>>>(std::move(attrs_ctor), std::move(attrs_dtor));
+				RegisterTypeAuto<std::remove_cv_t<std::remove_pointer_t<T>>>();
 			else {
 				if (IsRegistered(TypeID_of<T>))
 					return;
 				RegisterType(type_name<T>(), sizeof(T), alignof(T));
 
 				if constexpr (std::is_default_constructible_v<T>)
-					AddConstructor<T>(std::move(attrs_ctor));
+					AddConstructor<T>();
 				if constexpr (std::is_copy_constructible_v<T>)
-					AddConstructor<T, const T&>(std::move(attrs_ctor));
+					AddConstructor<T, const T&>();
 				if constexpr (std::is_move_constructible_v<T>)
-					AddConstructor<T, T&&>(std::move(attrs_ctor));
+					AddConstructor<T, T&&>();
 				if constexpr (std::is_destructible_v<T>)
-					AddDestructor<T>(std::move(attrs_dtor));
+					AddDestructor<T>();
 
 				details::TypeAutoRegister<T>::run(*this);
 			}
