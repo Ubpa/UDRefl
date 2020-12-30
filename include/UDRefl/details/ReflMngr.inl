@@ -970,7 +970,7 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	ObjectPtr ReflMngr::NewAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		RegisterTypeAuto<T, Args...>();
+		RegisterTypeAuto<T>();
 		AddMethod(TypeID_of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
 		return New(TypeID_of<T>, std::forward<Args>(args)...);
 	}
@@ -990,7 +990,7 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	SharedObject ReflMngr::MakeSharedAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		RegisterTypeAuto<T, Args...>();
+		RegisterTypeAuto<T>();
 		AddMethod(TypeID_of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
 		return MakeShared(TypeID_of<T>, std::forward<Args>(args)...);
 	}
