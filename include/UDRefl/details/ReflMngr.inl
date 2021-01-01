@@ -23,7 +23,7 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (std::is_member_function_pointer_v<FuncPtr>) {
 				using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 				constexpr auto wrapped_func = [](MaybeConstVoidPtr obj, void* result_buffer, ArgsView args) -> Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns] == TypeID_of<Args>)&&...));
+					assert(((args.GetParamList()[Ns] == TypeID_of<Args>)&&...));
 					constexpr auto f = wrap_function<funcptr>();
 					return f(obj, result_buffer, args.GetBuffer());
 				};
@@ -32,7 +32,7 @@ namespace Ubpa::UDRefl::details {
 			}
 			else if constexpr (is_function_pointer_v<FuncPtr>) {
 				constexpr auto wrapped_func = [](void* result_buffer, ArgsView args) -> Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns] == TypeID_of<Args>)&&...));
+					assert(((args.GetParamList()[Ns] == TypeID_of<Args>)&&...));
 					constexpr auto f = wrap_function<funcptr>();
 					return f(result_buffer, args.GetBuffer());
 				};
@@ -49,7 +49,7 @@ namespace Ubpa::UDRefl::details {
 			using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 			/*constexpr*/ auto wrapped_func =
 				[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgsView args) mutable -> Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns] == TypeID_of<Args>)&&...));
+					assert(((args.GetParamList()[Ns] == TypeID_of<Args>)&&...));
 					auto wrapped_f = wrap_member_function(std::forward<Func>(f));
 					return wrapped_f(obj, result_buffer, args.GetBuffer());
 				};
@@ -61,7 +61,7 @@ namespace Ubpa::UDRefl::details {
 		static /*constexpr*/ auto GenerateStaticFunction(Func&& func, std::index_sequence<Ns...>) noexcept {
 			/*constexpr*/ auto wrapped_func =
 				[f = std::forward<Func>(func)](void* result_buffer, ArgsView args) mutable ->Destructor {
-					assert(((args.GetParamList().GetParameters()[Ns] == TypeID_of<Args>)&&...));
+					assert(((args.GetParamList()[Ns] == TypeID_of<Args>)&&...));
 					auto wrapped_f = wrap_static_function(std::forward<Func>(f));
 					return wrapped_f(result_buffer, args.GetBuffer());
 				};
@@ -835,7 +835,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(TypeID typeID, StrID methodID, Span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
 		InvokeResult result = Invoke(typeID, methodID, result_buffer, argTypeIDs, args_buffer);
@@ -844,7 +844,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ConstObjectPtr obj, StrID methodID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(ConstObjectPtr obj, StrID methodID, Span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
 		InvokeResult result = Invoke(obj, methodID, result_buffer, argTypeIDs, args_buffer);
@@ -853,7 +853,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ObjectPtr obj, StrID methodID, Span<const TypeID> argTypeIDs, void* args_buffer) const {
+	T ReflMngr::InvokeRet(ObjectPtr obj, StrID methodID, Span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
 		InvokeResult result = Invoke(obj, methodID, result_buffer, argTypeIDs, args_buffer);
@@ -862,72 +862,66 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(TypeID typeID, StrID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(TypeID typeID, StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return Invoke(typeID, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Invoke(typeID, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
 			return Invoke(typeID, methodID, result_buffer);
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return Invoke(obj, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Invoke(obj, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
 			return Invoke(obj, methodID, result_buffer);
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args... args) const {
+	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return Invoke(obj, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Invoke(obj, methodID, result_buffer, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
 			return Invoke(obj, methodID, result_buffer);
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(TypeID typeID, StrID methodID, Args... args) const {
+	T ReflMngr::Invoke(TypeID typeID, StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return InvokeRet<T>(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return InvokeRet<T>(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(typeID, methodID);
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ConstObjectPtr obj, StrID methodID, Args... args) const {
+	T ReflMngr::Invoke(ConstObjectPtr obj, StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return InvokeRet<T>(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return InvokeRet<T>(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(obj, methodID);
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ObjectPtr obj, StrID methodID, Args... args) const {
+	T ReflMngr::Invoke(ObjectPtr obj, StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return InvokeRet<T>(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return InvokeRet<T>(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(obj, methodID);
@@ -944,27 +938,25 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	bool ReflMngr::Construct(ObjectPtr obj, Args... args) const {
+	bool ReflMngr::Construct(ObjectPtr obj, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return Construct(obj, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Construct(obj, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
-			return Construct(obj);
+			return Construct(obj, Span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr));
 	}
 
 	template<typename... Args>
-	ObjectPtr ReflMngr::New(TypeID typeID, Args... args) const {
+	ObjectPtr ReflMngr::New(TypeID typeID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return New(typeID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return New(typeID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
-			return New(typeID);
+			return New(typeID, Span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr));
 	}
 
 	template<typename T, typename... Args>
@@ -976,15 +968,14 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ReflMngr::MakeShared(TypeID typeID, Args... args) const {
+	SharedObject ReflMngr::MakeShared(TypeID typeID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return MakeShared(typeID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()));
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MakeShared(typeID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
 		}
 		else
-			return MakeShared(typeID);
+			return MakeShared(typeID, Span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr));
 	}
 
 	template<typename T, typename... Args>
@@ -1004,16 +995,15 @@ namespace Ubpa::UDRefl {
 		TypeID typeID,
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
-		Args... args)
+		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return MInvoke(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MInvoke(typeID, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(typeID, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
+			return MInvoke(typeID, methodID, Span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
@@ -1021,16 +1011,15 @@ namespace Ubpa::UDRefl {
 		ConstObjectPtr obj,
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
-		Args... args)
+		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
+			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
@@ -1038,42 +1027,52 @@ namespace Ubpa::UDRefl {
 		ObjectPtr obj,
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
-		Args... args)
+		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			static_assert(!((std::is_const_v<Args> || std::is_volatile_v<Args>) || ...));
 			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
-			std::array args_buffer{ reinterpret_cast<std::size_t>(&args)... };
-			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<void*>(args_buffer.data()), rst_rsrc);
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MInvoke(obj, methodID, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(obj, methodID, Span<const TypeID>{}, static_cast<void*>(nullptr), rst_rsrc);
+			return MInvoke(obj, methodID);
 	}
 
 	template<typename... Args>
 	SharedObject ReflMngr::DMInvoke(
 		TypeID typeID,
 		StrID methodID,
-		Args... args)
+		Args&&... args) const
 	{
-		return MInvoke<Args...>(typeID, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+		return MInvoke(typeID, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ReflMngr::DMInvoke(
 		ConstObjectPtr obj,
 		StrID methodID,
-		Args... args)
+		Args&&... args) const
 	{
-		return MInvoke<Args...>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+		return MInvoke(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	SharedObject ReflMngr::DMInvoke(
 		ObjectPtr obj,
 		StrID methodID,
-		Args... args)
+		Args&&... args) const
 	{
-		return MInvoke<Args...>(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+		return MInvoke(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	ObjectPtr ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, Args&&... args) const {
+		if constexpr (sizeof...(Args) > 0) {
+			constexpr std::array argTypeIDs = { TypeID_of<Args>... };
+			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MNew(typeID, rsrc, Span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+		}
+		else
+			return MNew(typeID, rsrc, Span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr));
 	}
 }

@@ -302,22 +302,27 @@ namespace Ubpa::UDRefl {
 			static constexpr TypeID t_void = Meta::t_void;
 		};
 
-		TypeIDRegistry() {
-			RegisterUnmanaged(Meta::global);
-			RegisterUnmanaged(Meta::t_void);
-		}
+		TypeIDRegistry();
 
 		using IDRegistry<TypeID>::Register;
 		using IDRegistry<TypeID>::IsRegistered;
 
 		// unmanaged
+		// non-const, non-volatile
 		template<typename T>
-		void Register() { IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<T>, type_name<T>()); }
+		void Register();
 
 		template<typename T>
-		bool IsRegistered() const { return IDRegistry<TypeID>::IsRegistered(TypeID_of<T>); }
+		bool IsRegistered() const;
 
+		//
+		// Type Computation
+		/////////////////////
+
+		TypeID RegisterAddLValueReference(TypeID ID);
 		TypeID RegisterAddConstLValueReference(TypeID ID);
+		TypeID RegisterAddRValueReference(TypeID ID);
+		TypeID RegisterAddConstRValueReference(TypeID ID);
 	};
 }
 

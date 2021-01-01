@@ -9,29 +9,29 @@ namespace Ubpa::UDRefl::details {
 	template<typename... Args>
 	struct wrap_function_call<TypeList<Args...>> {
 		template<typename Obj, auto func_ptr, typename MaybeConstVoidPtr>
-		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, void* args_buffer) {
+		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, ArgsBuffer args_buffer) {
 			return std::apply(
 				[ptr](auto... pointers) -> decltype(auto) {
-					return (buffer_as<Obj>(ptr).*func_ptr)(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
+					return (buffer_as<Obj>(ptr).*func_ptr)(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
 				},
-				*reinterpret_cast<std::array<void*, sizeof...(Args)>*>(args_buffer)
+				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(args_buffer)
 			);
 		}
 		template<auto func_ptr>
-		static constexpr decltype(auto) run(void* args_buffer) {
+		static constexpr decltype(auto) run(ArgsBuffer args_buffer) {
 			return std::apply(
 				[](auto... pointers) -> decltype(auto) {
-					return func_ptr(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
+					return func_ptr(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
 				},
-				*reinterpret_cast<std::array<void*, sizeof...(Args)>*>(args_buffer)
+				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(args_buffer)
 			);
 		}
 		template<typename Obj, typename Func, typename MaybeConstVoidPtr>
-		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, Func&& func, void* args_buffer) {
+		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, Func&& func, ArgsBuffer args_buffer) {
 			return std::apply(
 				[ptr, f = std::forward<Func>(func)](auto*... pointers) -> decltype(auto) {
 					if constexpr (std::is_member_function_pointer_v<std::decay_t<Func>>)
-						return (buffer_as<Obj>(ptr).*f)(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
+						return (buffer_as<Obj>(ptr).*f)(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
 					else {
 						return f(
 							buffer_as<Obj>(ptr),
@@ -39,16 +39,16 @@ namespace Ubpa::UDRefl::details {
 						);
 					}
 				},
-				*reinterpret_cast<std::array<void*, sizeof...(Args)>*>(args_buffer)
+				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(args_buffer)
 			);
 		}
 		template<typename Func>
-		static constexpr decltype(auto) run(Func&& func, void* args_buffer) {
+		static constexpr decltype(auto) run(Func&& func, ArgsBuffer args_buffer) {
 			return std::apply(
-				[f = std::forward<Func>(func)](auto*... pointers) -> decltype(auto) {
-					return f(std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...);
+				[f = std::forward<Func>(func)](auto... pointers) -> decltype(auto) {
+					return f(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
 				},
-				*reinterpret_cast<std::array<void*, sizeof...(Args)>*>(args_buffer)
+				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(args_buffer)
 			);
 		}
 	};
@@ -100,7 +100,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using ArgList = typename Traits::ArgList;
 	using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
-	constexpr auto wrapped_function = [](MaybeConstVoidPtr obj, void* result_buffer, void* args_buffer) -> Destructor {
+	constexpr auto wrapped_function = [](MaybeConstVoidPtr obj, void* result_buffer, ArgsBuffer args_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, args_buffer);
 			if (result_buffer) {
@@ -133,7 +133,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 	using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, void* args_buffer) mutable -> Destructor {
+		[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgsBuffer args_buffer) mutable -> Destructor {
 			if constexpr (!std::is_void_v<Return>) {
 				Return rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), args_buffer);
 				if (result_buffer) {
@@ -166,7 +166,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
-	constexpr auto wrapped_function = [](void* result_buffer, void* args_buffer) -> Destructor {
+	constexpr auto wrapped_function = [](void* result_buffer, ArgsBuffer args_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
 			Return rst = details::wrap_function_call<ArgList>::template run<func_ptr>(args_buffer);
 			if (result_buffer) {
@@ -198,7 +198,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using ArgList = typename Traits::ArgList;
 	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](void* result_buffer, void* args_buffer) mutable -> Destructor {
+		[f = std::forward<Func>(func)](void* result_buffer, ArgsBuffer args_buffer) mutable -> Destructor {
 			if constexpr (!std::is_void_v<Return>) {
 				Return rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), args_buffer);
 				if (result_buffer) {

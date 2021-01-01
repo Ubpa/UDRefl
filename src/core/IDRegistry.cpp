@@ -125,15 +125,63 @@ StrIDRegistry::StrIDRegistry() {
 	RegisterUnmanaged(Meta::container_get_allocator);
 }
 
+TypeIDRegistry::TypeIDRegistry() {
+	RegisterUnmanaged(Meta::global);
+	RegisterUnmanaged(Meta::t_void);
+}
+
+//
+// Type Computation
+/////////////////////
+
+TypeID TypeIDRegistry::RegisterAddLValueReference(TypeID ID) {
+	std::string_view name = Nameof(ID);
+	if (name.empty())
+		return {};
+
+	auto rst_name = type_name_add_lvalue_reference(name, get_allocator());
+
+	if (rst_name.data() == name.data())
+		return ID;
+
+	return RegisterUnmanaged(rst_name);
+}
+
 TypeID TypeIDRegistry::RegisterAddConstLValueReference(TypeID ID) {
 	std::string_view name = Nameof(ID);
 	if (name.empty())
 		return {};
 
-	auto clref_name = type_name_add_const_lvalue_reference(name, get_allocator());
+	auto rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
 
-	if (clref_name.data() == name.data())
+	if (rst_name.data() == name.data())
 		return ID;
 
-	return RegisterUnmanaged(clref_name);
+	return RegisterUnmanaged(rst_name);
+}
+
+TypeID TypeIDRegistry::RegisterAddRValueReference(TypeID ID) {
+	std::string_view name = Nameof(ID);
+	if (name.empty())
+		return {};
+
+	auto rst_name = type_name_add_rvalue_reference(name, get_allocator());
+
+	if (rst_name.data() == name.data())
+		return ID;
+
+	return RegisterUnmanaged(rst_name);
+}
+
+TypeID TypeIDRegistry::RegisterAddConstRValueReference(TypeID ID) {
+	std::string_view name = Nameof(ID);
+	if (name.empty())
+		return {};
+
+	auto rst_name = type_name_add_const_rvalue_reference(name, get_allocator());
+
+	if (rst_name.data() == name.data())
+		return ID;
+
+	return RegisterUnmanaged(rst_name);
 }

@@ -26,13 +26,12 @@ void Serializer(ConstObjectPtr obj) {
 		else { // normal object
 			size_t N = obj->GetRVars().size();
 			size_t i = 0;
-			obj->ForEachRVar([N, &i](TypeRef type, FieldRef field, ConstObjectPtr var) {
+			for (const auto& [type, field, var] : obj->GetTypeFieldRVars()) {
 				std::cout << "\"" << Mngr->nregistry.Nameof(field.ID) << "\":";
 				Serializer(var);
 				if (++i != N)
 					std::cout << ",";
-				return true;
-			});
+			}
 		}
 		std::cout << "}";
 	}

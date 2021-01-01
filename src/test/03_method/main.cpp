@@ -42,18 +42,13 @@ int main() {
 
 	auto v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>, 1.f, 2.f);
 
-	ReflMngr::Instance().Invoke(v.AsObjectPtr(), "NormalizeSelf");
-	std::cout << ReflMngr::Instance().RVar(v.AsObjectPtr(), "x") << ", "
-		<< ReflMngr::Instance().RVar(v.AsObjectPtr(), "y") << std::endl;
+	v->Invoke("NormalizeSelf");
+	std::cout << v->RVar("x") << ", " << v->RVar("y") << std::endl;
 
-	std::cout << ReflMngr::Instance().DMInvoke(v.AsObjectPtr(), "Norm2") << std::endl;
+	std::cout << v->DMInvoke("Norm2") << std::endl;
 
-	auto& w = ReflMngr::Instance().Invoke<Vec&, const Vec&>(
-		v.AsObjectPtr(),
-		StrIDRegistry::MetaID::operator_assign_add,
-		Vec{ 10.f,10.f }
-	);
-	std::cout << w.x << ", " << w.y << std::endl;
+	auto w = v += Vec{ 10.f,10.f };
+	std::cout << w->RVar("x") << ", " << w->RVar("y") << std::endl;
 	
 	return 0;
 }

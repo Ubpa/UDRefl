@@ -31,20 +31,17 @@ int main() {
 
 	auto d = ReflMngr::Instance().MakeShared(TypeID_of<D>);
 
-	ReflMngr::Instance().RWVar(d, "a") = 1.f;
-	ReflMngr::Instance().RWVar(d, "b") = 2.f;
-	ReflMngr::Instance().RWVar(d, "c") = 3.f;
-	ReflMngr::Instance().RWVar(d, "d") = 4.f;
+	d->RWVar("a") = 1.f;
+	d->RWVar("b") = 3.f;
+	d->RWVar("c") = 4.f;
+	d->RWVar("d") = 5.f;
 
-	d->ForEachRVar(
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var
-				<< std::endl;
-			return true;
-		}
-	);
+	for (const auto& [type, field, var] : d->GetTypeFieldRVars()) {
+		std::cout
+			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< ": " << var
+			<< std::endl;
+	}
 
 	return 0;
 }

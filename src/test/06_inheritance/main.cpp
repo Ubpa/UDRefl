@@ -30,22 +30,18 @@ int main() {
 	}
 
 	auto d = ReflMngr::Instance().MakeShared(TypeID_of<D>);
+	d->RWVar(TypeID_of<B>, "a") = 1.f;
+	d->RWVar(TypeID_of<C>, "a") = 2.f;
+	d->RWVar("b") = 3.f;
+	d->RWVar("c") = 4.f;
+	d->RWVar("d") = 5.f;
 
-	ReflMngr::Instance().RWVar(d, TypeID_of<B>, "a") = 1.f;
-	ReflMngr::Instance().RWVar(d, TypeID_of<C>, "a") = 2.f;
-	ReflMngr::Instance().RWVar(d, "b") = 3.f;
-	ReflMngr::Instance().RWVar(d, "c") = 4.f;
-	ReflMngr::Instance().RWVar(d, "d") = 5.f;
-
-	d->ForEachRVar(
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var
-				<< std::endl;
-			return true;
-		}
-	);
+	for (const auto& [type, field, var] : d->GetTypeFieldRVars()) {
+		std::cout
+			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< ": " << var
+			<< std::endl;
+	}
 
 	return 0;
 }

@@ -20,16 +20,13 @@ int main() {
 	ReflMngr::Instance().AddField<&Point::y>("y");
 	
 	SharedObject p = ReflMngr::Instance().MakeShared(TypeID_of<Point>);
-	ReflMngr::Instance().RWVar(p, StrID{ "x" }) = 1.f;
-	ReflMngr::Instance().RWVar(p, StrID{ "y" }) = 2.f;
+	p->RWVar("x") = 1.f;
+	p->RWVar("y") = 2.f;
 
-	p->ForEachRVar(
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var
-				<< std::endl;
-			return true;
-		}
-	);
+	for (const auto& [type, field, var] : p->GetTypeFieldRVars()) {
+		std::cout
+			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< ": " << var
+			<< std::endl;
+	}
 }

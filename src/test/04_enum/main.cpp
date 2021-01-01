@@ -17,16 +17,13 @@ int main() {
 	ReflMngr::Instance().AddField<Color::Green>("Green");
 	ReflMngr::Instance().AddField<Color::Blue>("Blue");
 
-	ReflMngr::Instance().ForEachRVar(
-		TypeID_of<Color>,
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << static_cast<int>(var.As<Color>())
-				<< std::endl;
-			return true;
-		}
-	);
+
+	for (const auto& [type, field, var] : ReflMngr::Instance().GetTypeFieldRVars(TypeID_of<Color>)) {
+		std::cout
+			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< ": " << static_cast<int>(var.As<Color>())
+			<< std::endl;
+	}
 
 	// enumerator -> name
 	Color c = Color::Red;

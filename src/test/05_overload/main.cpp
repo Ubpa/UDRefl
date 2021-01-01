@@ -36,22 +36,13 @@ int main() {
 	auto obj = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
 
 	{
-		auto& v = ReflMngr::Instance().Invoke<Vec&, const Vec&>(
-			obj.AsObjectPtr(),
-			StrIDRegistry::MetaID::operator_assign_add,
-			Vec{ 10.f,10.f }
-		);
-
-		std::cout << v.x << ", " << v.y << std::endl;
+		auto v = obj += Vec{ 10.f,10.f };
+		std::cout << v->RVar("x") << ", " << v->RVar("y") << std::endl;
 	}
 
 	{
-		auto& v = ReflMngr::Instance().Invoke<Vec&, float>(
-			obj.AsObjectPtr(),
-			StrIDRegistry::MetaID::operator_assign_add,
-			2.f
-		);
-		std::cout << v.x << ", " << v.y << std::endl;
+		auto v = obj += 2.f;
+		std::cout << v->RVar("x") << ", " << v->RVar("y") << std::endl;
 	}
 	
 	return 0;

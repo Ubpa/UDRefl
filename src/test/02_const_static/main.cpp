@@ -22,19 +22,14 @@ int main() {
 	A a;
 	auto ptr = Ptr(a);
 
-	ReflMngr::Instance().ForEachField(TypeID_of<A>, [](TypeRef, FieldRef field) {
-		auto field_name = ReflMngr::Instance().nregistry.Nameof(field.ID);
-		std::cout << field_name << std::endl;
-		return true;
-	});
+	for (auto field : ReflMngr::Instance().GetFields(TypeID_of<A>))
+		std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << std::endl;
 
 	ReflMngr::Instance().RWVar(ptr, "data") = 10;
 	ReflMngr::Instance().RWVar(ptr, "s_data") = 20;
 
-	ReflMngr::Instance().ForEachRVar(TypeID_of<A>, [](TypeRef, FieldRef field, ConstObjectPtr ptr) {
+	for (auto ptr : ReflMngr::Instance().GetRVars(TypeID_of<A>))
 		std::cout << ptr << std::endl;
-		return true;
-	});
 
 	for(auto ptr : ptr->GetRVars())
 		std::cout << ptr << std::endl;

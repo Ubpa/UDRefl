@@ -12,12 +12,8 @@ int main() {
 	RegisterB();
 
 	for (const auto& [ID, info] : ReflMngr::Instance().typeinfos) {
-		ReflMngr::Instance().ForEachMethod(ID, [](TypeRef type, MethodRef method) {
-			std::cout << ReflMngr::Instance().tregistry.Nameof(type.ID) << ": "
-				<< ReflMngr::Instance().nregistry.Nameof(method.ID)
-				<< std::endl;
-			return true;
-		});
+		for (auto method : ReflMngr::Instance().GetMethods(ID))
+			std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
 	}
 
 	return 0;

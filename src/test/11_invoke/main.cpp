@@ -32,26 +32,18 @@ int main() {
 
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
 
-	v->RWVar(StrID{ "x" }) = 3.f;
-	v->RWVar(StrID{ "y" }) = 4.f;
+	v->RWVar("x") = 3.f;
+	v->RWVar("y") = 4.f;
 
-	ReflMngr::Instance().ForEachMethod(
-		TypeID_of<Vec>,
-		[](TypeRef type, MethodRef method) {
-			std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
-			return true;
-		}
-	);
+	for (auto method : ReflMngr::Instance().GetMethods(TypeID_of<Vec>))
+		std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
 
-	v->ForEachRVar(
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-				<< ": " << var
-				<< std::endl;
-			return true;
-		}
-	);
+	for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
+		std::cout
+			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< ": " << var
+			<< std::endl;
+	}
 
 	auto w0 = v->MInvoke(StrIDRegistry::MetaID::operator_add, std::pmr::get_default_resource(), v.As<Vec>());
 	auto w1 = v->DMInvoke(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
@@ -59,14 +51,11 @@ int main() {
 
 	std::array arr_w = { w0,w1,w2 };
 	for (auto w : arr_w) {
-		w->ForEachRVar(
-			[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-				std::cout
-					<< ReflMngr::Instance().nregistry.Nameof(field.ID)
-					<< ": " << var
-					<< std::endl;
-				return true;
-			}
-		);
+		for (const auto& [type, field, var] : w->GetTypeFieldRVars()) {
+			std::cout
+				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< ": " << var
+				<< std::endl;
+		}
 	}
 }

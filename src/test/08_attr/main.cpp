@@ -42,29 +42,23 @@ int main() {
 
 	auto p = Mngr->MakeShared(TypeID_of<Point>, 1.f, 2.f);
 
-	Mngr->RWVar(p, StrID{ "x" }).As<float>() += 1.f;
-	Mngr->RWVar(p, StrID{ "y" }).As<float>() += 2.f;
+	p->RWVar("x") += 1.f;
+	p->RWVar("y") += 2.f;
 
-	p->ForEachRVar(
-		[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-			for (const auto& attr : field.info.attrs) {
-				std::cout << "[" << Mngr->tregistry.Nameof(attr.GetID()) << "]" << std::endl;
-				attr->ForEachRVar(
-					[](TypeRef type, FieldRef field, ConstObjectPtr var) {
-						std::cout
-							<< Mngr->nregistry.Nameof(field.ID)
-							<< ": " << var.As<float>()
-							<< std::endl;
-						return true;
-					}
-				);
-				std::cout << "------" << std::endl;
+	for (const auto& [type, field, var] : p->GetTypeFieldRVars()) {
+		for (const auto& attr : field.info.attrs) {
+			std::cout << "[" << Mngr->tregistry.Nameof(attr.GetID()) << "]" << std::endl;
+			for (const auto& [type, field, var] :attr->GetTypeFieldRVars()) {
+				std::cout
+					<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+					<< ": " << var
+					<< std::endl;
 			}
-			std::cout
-				<< Mngr->nregistry.Nameof(field.ID)
-				<< ": " << var.As<float>()
-				<< std::endl;
-			return true;
+			std::cout << "------" << std::endl;
 		}
-	);
+		std::cout
+			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< ": " << var
+			<< std::endl;
+	}
 }

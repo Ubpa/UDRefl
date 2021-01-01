@@ -56,6 +56,8 @@ struct A {
 
 int main() {
 	ReflMngr::Instance().RegisterTypeAuto<A>();
+	ReflMngr::Instance().RegisterTypeAuto<Data>();
+	ReflMngr::Instance().AddField<&Data::value>("value");
 	ReflMngr::Instance().AddConstructor<A, Data&, Data&&>();
 	ReflMngr::Instance().AddField("lref", [](A* a) {
 		return &a->lref;
@@ -74,23 +76,23 @@ int main() {
 
 	Data f = 1.f;
 	Data g = 2.f;
-	auto a = ReflMngr::Instance().MakeShared<Data&, Data&&>(TypeID_of<A>, f, std::move(g));
-	std::cout << "a.rref: " << a->RVar("rref").As<Data>().value << std::endl;
-	std::cout << "a.lref: " << a->RVar("lref").As<Data>().value << std::endl;
+	auto a = ReflMngr::Instance().MakeShared(TypeID_of<A>, f, std::move(g));
+	std::cout << "a.rref: " << a->RVar("rref").RVar("value") << std::endl;
+	std::cout << "a.lref: " << a->RVar("lref").RVar("value") << std::endl;
 
-	a->RWVar("lref").As<Data>().value = 2.f;
-	a->RWVar("rref").As<Data>().value = 3.f;
-	std::cout << "a.lref: " << a->RVar("lref").As<Data>().value << std::endl;
-	std::cout << "a.rref: " << a->RVar("rref").As<Data>().value << std::endl;
+	a->RWVar("lref").RWVar("value") = 2.f;
+	a->RWVar("rref").RWVar("value") = 3.f;
+	std::cout << "a.lref: " << a->RVar("lref").RVar("value") << std::endl;
+	std::cout << "a.rref: " << a->RVar("rref").RVar("value") << std::endl;
 	std::cout << "f: " << f.value << std::endl;
 	std::cout << "g: " << g.value << std::endl;
 
-	std::cout << "a.get_r(): " << a->Invoke<Data&&>("get_r").value << std::endl;
-	std::cout << "a.get_c(): " << a->Invoke<const Data&>("get_c").value << std::endl;
+	std::cout << "a.get_r(): " << a->DMInvoke("get_r")->RVar("value") << std::endl;
+	std::cout << "a.get_c(): " << a->DMInvoke("get_r")->RVar("value") << std::endl;
 
-	a->Invoke<void, Data>("set", g);
-	a->Invoke<void, Data&&>("set_r", std::move(g));
-	std::cout << "a.lref: " << a->Invoke<Data&&>("get_r").value << std::endl;
-	std::cout << "a.get_c(): " << a->DMInvoke("get_c")->DereferenceAsConst().As<Data>().value << std::endl;
+	a->Invoke<void>("set", g);
+	a->Invoke<void>("set_r", std::move(g));
+	std::cout << "a.lref: " << a->DMInvoke("get_r")->RVar("value") << std::endl;
+	std::cout << "a.get_c(): " << a->DMInvoke("get_c")->RVar("value") << std::endl;
 	return 0;
 }
