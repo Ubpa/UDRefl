@@ -17,8 +17,12 @@ namespace Ubpa::UDRefl {
 		//
 		// Data
 		/////////
+		//
+		// <typeinfos> does't contain reference/pointer/const/volatile type
+		// enum is a special type (all member is static)
+		//
 
-		StrIDRegistry nregistry;
+		StrIDRegistry  nregistry;
 		TypeIDRegistry tregistry;
 
 		std::unordered_map<TypeID, TypeInfo> typeinfos;
@@ -326,9 +330,9 @@ namespace Ubpa::UDRefl {
 		//
 		// Field
 		//////////
-		// 
+		//
 		// - RWVar is not support reference
-		// 
+		//
 
 		// variable object
 		ObjectPtr      RWVar(TypeID      typeID, StrID fieldID);
@@ -346,9 +350,12 @@ namespace Ubpa::UDRefl {
 		//
 		// Invoke
 		///////////
-		// 
-		// - args_buffer maybe change for copy
-		// 
+		//
+		// - auto search methods in bases
+		// - support overload
+		// - require IsCompatible()
+		// - if parameter type is T, and argument type is T&/const T&/const T&&, call Construct(...) for copy
+		//
 
 		// parameter <- argument
 		// - same
@@ -548,7 +555,8 @@ namespace Ubpa::UDRefl {
 		//
 		// - MInvoke will allocate buffer for result, and move to SharedObject
 		// - if result is reference, SharedObject's Ptr is a pointer of referenced object
-		// 
+		// - DMInvoke's 'D' means 'default' (use the default memory resource)
+		//
 
 		SharedObject MInvoke(
 			TypeID typeID,
@@ -619,6 +627,9 @@ namespace Ubpa::UDRefl {
 		//
 		// Type
 		/////////
+		//
+		// - 'reference' include lvalue reference, rvalue reference and pointer
+		//
 
 		DereferenceProperty GetDereferenceProperty(TypeID ID) const;
 		TypeID Dereference(TypeID ID) const;
