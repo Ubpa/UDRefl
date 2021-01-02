@@ -9,6 +9,7 @@
   - improve `MethodPtr` 
   - improve `TypeIDRegistry::Register/RegisterUnmanaged`  
   - simplify `ObjectPtr` and `SharedObj`'s `operator x=` (`x` is `+,-,*,/,...`)
+  - `ReflMngr` add algorithms for owned
 - 0.6.0
   - copy argument for `T <- T&/const T&/const T&&` when invoking.
   - use perfect forwarding for invoke.

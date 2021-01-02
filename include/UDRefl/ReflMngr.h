@@ -521,33 +521,50 @@ namespace Ubpa::UDRefl {
 			ConstObjectPtr obj,
 			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
+		// self [r/w] owned vars and all bases' [r/w] owned vars
+		// if obj is &{const{T}}, then return directly
+		void ForEachRWOwnedVar(
+			ObjectPtr obj,
+			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
+
+		// self [r] owned vars and all bases' [r] owned vars
+		void ForEachROwnedVar(
+			ConstObjectPtr obj,
+			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
+
 		// Gather (DFS)
 
-		std::vector<TypeID>                                        GetTypeIDs        (TypeID      typeID);
-		std::vector<TypeRef>                                       GetTypes          (TypeID      typeID);
-		std::vector<TypeFieldRef>                                  GetTypeFields     (TypeID      typeID);
-		std::vector<FieldRef>                                      GetFields         (TypeID      typeID);
-		std::vector<TypeMethodRef>                                 GetTypeMethods    (TypeID      typeID);
-		std::vector<MethodRef>                                     GetMethods        (TypeID      typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars(TypeID      typeID);
-		std::vector<ObjectPtr>                                     GetRWVars         (TypeID      typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (TypeID      typeID);
-		std::vector<ConstObjectPtr>                                GetRVars          (TypeID      typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars(ObjectPtr      obj);
-		std::vector<ObjectPtr>                                     GetRWVars         (ObjectPtr      obj);
-		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars (ConstObjectPtr obj);
-		std::vector<ConstObjectPtr>                                GetRVars          (ConstObjectPtr obj);
+		std::vector<TypeID>                                        GetTypeIDs             (TypeID      typeID);
+		std::vector<TypeRef>                                       GetTypes               (TypeID      typeID);
+		std::vector<TypeFieldRef>                                  GetTypeFields          (TypeID      typeID);
+		std::vector<FieldRef>                                      GetFields              (TypeID      typeID);
+		std::vector<TypeMethodRef>                                 GetTypeMethods         (TypeID      typeID);
+		std::vector<MethodRef>                                     GetMethods             (TypeID      typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars     (TypeID      typeID);
+		std::vector<ObjectPtr>                                     GetRWVars              (TypeID      typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars      (TypeID      typeID);
+		std::vector<ConstObjectPtr>                                GetRVars               (TypeID      typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars     (ObjectPtr      obj);
+		std::vector<ObjectPtr>                                     GetRWVars              (ObjectPtr      obj);
+		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars      (ConstObjectPtr obj);
+		std::vector<ConstObjectPtr>                                GetRVars               (ConstObjectPtr obj);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWOwnedVars(ObjectPtr      obj);
+		std::vector<ObjectPtr>                                     GetRWOwnedVars         (ObjectPtr      obj);
+		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldROwnedVars (ConstObjectPtr obj);
+		std::vector<ConstObjectPtr>                                GetROwnedVars          (ConstObjectPtr obj);
 
 		// Find (DFS)
 
-		std::optional<TypeID   > FindTypeID(TypeID      typeID, const std::function<bool(TypeID        )>& func) const;
-		std::optional<TypeRef  > FindType  (TypeID      typeID, const std::function<bool(TypeRef       )>& func) const;
-		std::optional<FieldRef > FindField (TypeID      typeID, const std::function<bool(FieldRef      )>& func) const;
-		std::optional<MethodRef> FindMethod(TypeID      typeID, const std::function<bool(MethodRef     )>& func) const;
-		ObjectPtr                FindRWVar (TypeID      typeID, const std::function<bool(ObjectPtr     )>& func) const;
-		ConstObjectPtr           FindRVar  (TypeID      typeID, const std::function<bool(ConstObjectPtr)>& func) const;
-		ObjectPtr                FindRWVar (ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
-		ConstObjectPtr           FindRVar  (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
+		std::optional<TypeID   > FindTypeID    (TypeID      typeID, const std::function<bool(TypeID        )>& func) const;
+		std::optional<TypeRef  > FindType      (TypeID      typeID, const std::function<bool(TypeRef       )>& func) const;
+		std::optional<FieldRef > FindField     (TypeID      typeID, const std::function<bool(FieldRef      )>& func) const;
+		std::optional<MethodRef> FindMethod    (TypeID      typeID, const std::function<bool(MethodRef     )>& func) const;
+		ObjectPtr                FindRWVar     (TypeID      typeID, const std::function<bool(ObjectPtr     )>& func) const;
+		ConstObjectPtr           FindRVar      (TypeID      typeID, const std::function<bool(ConstObjectPtr)>& func) const;
+		ObjectPtr                FindRWVar     (ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
+		ConstObjectPtr           FindRVar      (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
+		ObjectPtr                FindRWOwnedVar(ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
+		ConstObjectPtr           FindROwnedVar (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
 
 		//
 		// Memory

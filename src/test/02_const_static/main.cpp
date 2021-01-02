@@ -28,11 +28,26 @@ int main() {
 	ReflMngr::Instance().RWVar(ptr, "data") = 10;
 	ReflMngr::Instance().RWVar(ptr, "s_data") = 20;
 
-	for (auto ptr : ReflMngr::Instance().GetRVars(TypeID_of<A>))
-		std::cout << ptr << std::endl;
+	std::cout
+		<< "//" << std::endl
+		<< "// unowned var" << std::endl
+		<< "////////////////" << std::endl;
+	for (auto [type, field, var] : ReflMngr::Instance().GetTypeFieldRVars(TypeID_of<A>))
+		std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << ": " << var << std::endl;
 
-	for(auto ptr : ptr->GetRVars())
-		std::cout << ptr << std::endl;
+	std::cout
+		<< "//" << std::endl
+		<< "// object var" << std::endl
+		<< "///////////////" << std::endl;
+	for (auto [type, field, var] : ptr->GetTypeFieldRVars())
+		std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << ": " << var << std::endl;
+
+	std::cout
+		<< "//" << std::endl
+		<< "// object owned var" << std::endl
+		<< "/////////////////////" << std::endl;
+	for (auto [type, field, var] : ptr->GetTypeFieldROwnedVars())
+		std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << ": " << var << std::endl;
 
 	return 0;
 }
