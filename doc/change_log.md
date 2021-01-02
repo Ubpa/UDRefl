@@ -1,5 +1,14 @@
 # Change Log
 
+[TOC]
+
+## 0.6
+
+- 0.6.1
+  - `RWVar` support non-constant reference object.
+  - improve `MethodPtr` 
+  - improve `TypeIDRegistry::Register/RegisterUnmanaged`  
+  - simplify `ObjectPtr` and `SharedObj`'s `operator x=` (`x` is `+,-,*,/,...`)
 - 0.6.0
   - copy argument for `T <- T&/const T&/const T&&` when invoking.
   - use perfect forwarding for invoke.

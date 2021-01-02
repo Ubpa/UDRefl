@@ -331,7 +331,7 @@ namespace Ubpa::UDRefl {
 		// Field
 		//////////
 		//
-		// - RWVar is not support reference
+		// - RWVar is not support const reference
 		//
 
 		// variable object

@@ -32,6 +32,21 @@ namespace Ubpa::UDRefl {
 		using MemberConstFunction    = Destructor(const void*, void*, ArgsView);
 		using StaticFunction         = Destructor(             void*, ArgsView);
 
+		MethodPtr(MemberVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
+			func{ func },
+			resultDesc{ std::move(resultDesc) },
+			paramList{ std::move(paramList) } { assert(func); }
+
+		MethodPtr(MemberConstFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
+			func{ func },
+			resultDesc{ std::move(resultDesc) },
+			paramList{ std::move(paramList) } { assert(func); }
+
+		MethodPtr(StaticFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
+			func{ func },
+			resultDesc{ std::move(resultDesc) },
+			paramList{ std::move(paramList) } { assert(func); }
+
 		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
 			func{ (assert(func), std::move(func)) },
 			resultDesc{ std::move(resultDesc) },
@@ -47,21 +62,9 @@ namespace Ubpa::UDRefl {
 			resultDesc{ std::move(resultDesc) },
 			paramList{ std::move(paramList) } {}
 
-		MethodPtr(MemberVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			MethodPtr{ std::function<MemberVariableFunction>{func}, std::move(resultDesc), std::move(paramList) }
-		{ assert(func); }
-
-		MethodPtr(MemberConstFunction*    func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			MethodPtr{ std::function<MemberConstFunction>{func}, std::move(resultDesc), std::move(paramList) }
-		{ assert(func); }
-
-		MethodPtr(StaticFunction*         func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			MethodPtr{ std::function<StaticFunction>{func}, std::move(resultDesc), std::move(paramList) }
-		{ assert(func); }
-
-		bool IsMemberVariable() const noexcept { return func.index() == 0; }
-		bool IsMemberConst   () const noexcept { return func.index() == 1; }
-		bool IsStatic        () const noexcept { return func.index() == 2; }
+		bool IsMemberVariable() const noexcept { return func.index() == 0 || func.index() == 3; }
+		bool IsMemberConst   () const noexcept { return func.index() == 1 || func.index() == 4; }
+		bool IsStatic        () const noexcept { return func.index() == 2 || func.index() == 5; }
 
 		const ParamList&  GetParamList() const noexcept { return paramList; }
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
@@ -75,13 +78,11 @@ namespace Ubpa::UDRefl {
 		Destructor Invoke(const void* obj, void* result_buffer, ArgsBuffer args_buffer) const;
 		Destructor Invoke(                 void* result_buffer, ArgsBuffer args_buffer) const;
 
-		Destructor Invoke_Static(void* result_buffer, ArgsBuffer args_buffer) const {
-			assert(IsStatic());
-			return std::get<std::function<StaticFunction>>(func)(result_buffer, { args_buffer, paramList });
-		};
-
 	private:
 		std::variant<
+			MemberVariableFunction*,
+			MemberConstFunction*,
+			StaticFunction*,
 			std::function<MemberVariableFunction>,
 			std::function<MemberConstFunction>,
 			std::function<StaticFunction>

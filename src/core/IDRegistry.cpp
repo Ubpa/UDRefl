@@ -130,6 +130,42 @@ TypeIDRegistry::TypeIDRegistry() {
 	RegisterUnmanaged(Meta::t_void);
 }
 
+void TypeIDRegistry::RegisterUnmanaged(TypeID ID, std::string_view name) {
+	if (type_name_is_const(name) || type_name_is_volatile(name)) {
+		assert(false);
+		return;
+	}
+
+	IDRegistry<TypeID>::RegisterUnmanaged(ID, name);
+}
+
+TypeID TypeIDRegistry::RegisterUnmanaged(std::string_view name) {
+	if (type_name_is_const(name) || type_name_is_volatile(name)) {
+		assert(false);
+		return {};
+	}
+
+	return IDRegistry<TypeID>::RegisterUnmanaged(name);
+}
+
+void TypeIDRegistry::Register(TypeID ID, std::string_view name) {
+	if (type_name_is_const(name) || type_name_is_volatile(name)) {
+		assert(false);
+		return;
+	}
+
+	IDRegistry<TypeID>::Register(ID, name);
+}
+
+TypeID TypeIDRegistry::Register(std::string_view name) {
+	if (type_name_is_const(name) || type_name_is_volatile(name)) {
+		assert(false);
+		return {};
+	}
+
+	return IDRegistry<TypeID>::Register(name);
+}
+
 //
 // Type Computation
 /////////////////////
