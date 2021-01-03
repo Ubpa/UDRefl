@@ -22,7 +22,7 @@ Extremely **fast** C++17 dynamic reflection library
 
 ## Documentaion [->](doc/)
 
-- [to-do](doc/todo/md) 
+- [to-do](doc/todo.md) 
 - [change log](doc/change_log.md) 
 
 ## How to Use
