@@ -3,9 +3,8 @@
 #include "Basic.h"
 #include "IDRegistry.h"
 
-#include <UContainer/Span.h>
-
 #include <optional>
+#include <span>
 
 #define OBJECT_PTR_DECLARE_OPERATOR(op, name) \
 template<typename Arg>                        \
@@ -91,19 +90,19 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		InvocableResult IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs = {}) const;
+		InvocableResult IsInvocable(StrID methodID, std::span<const TypeID> argTypeIDs = {}) const;
 
 		InvokeResult Invoke(
 			StrID methodID,
 			void* result_buffer = nullptr,
-			Span<const TypeID> argTypeIDs = {},
+			std::span<const TypeID> argTypeIDs = {},
 			ArgsBuffer args_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvocableResult IsInvocable(StrID methodID) const;
 
 		template<typename T>
-		T InvokeRet(StrID methodID, Span<const TypeID> argTypeIDs = {}, ArgsBuffer args_buffer = nullptr) const;
+		T InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgsBuffer args_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const;
@@ -113,7 +112,7 @@ namespace Ubpa::UDRefl {
 
 		SharedObject MInvoke(
 			StrID methodID,
-			Span<const TypeID> argTypeIDs = {},
+			std::span<const TypeID> argTypeIDs = {},
 			ArgsBuffer args_buffer = nullptr,
 			std::pmr::memory_resource* rst_rsrc = std::pmr::get_default_resource()) const;
 
@@ -381,17 +380,17 @@ namespace Ubpa::UDRefl {
 		// if &{const&{T}}, return nullptr
 		ObjectPtr RWVar(TypeID baseID, StrID fieldID) const;
 
-		InvocableResult IsInvocable(StrID methodID, Span<const TypeID> argTypeIDs = {}) const;
+		InvocableResult IsInvocable(StrID methodID, std::span<const TypeID> argTypeIDs = {}) const;
 
 		InvokeResult Invoke(
 			StrID methodID,
 			void* result_buffer = nullptr,
-			Span<const TypeID> argTypeIDs = {},
+			std::span<const TypeID> argTypeIDs = {},
 			ArgsBuffer args_buffer = nullptr) const;
 
 		SharedObject MInvoke(
 			StrID methodID,
-			Span<const TypeID> argTypeIDs = {},
+			std::span<const TypeID> argTypeIDs = {},
 			ArgsBuffer args_buffer = nullptr,
 			std::pmr::memory_resource* rst_rsrc = std::pmr::get_default_resource()) const;
 
@@ -399,7 +398,7 @@ namespace Ubpa::UDRefl {
 		InvocableResult IsInvocable(StrID methodID) const;
 
 		template<typename T>
-		T InvokeRet(StrID methodID, Span<const TypeID> argTypeIDs = {}, ArgsBuffer args_buffer = nullptr) const;
+		T InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgsBuffer args_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const;

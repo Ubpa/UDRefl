@@ -24,7 +24,6 @@ Ubpa_AddTarget(
   C_OPTION_INTERFACE
     ${c_options_i}
   LIB
-    Ubpa::UContainer_core
     Ubpa::UTemplate_core
 )
 
