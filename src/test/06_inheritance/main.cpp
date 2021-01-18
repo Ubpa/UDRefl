@@ -13,18 +13,18 @@ struct D : B, C { float d; };
 
 int main() {
 	{ // register
-		ReflMngr::Instance().RegisterTypeAuto<A>();
+		ReflMngr::Instance().RegisterType<A>();
 		ReflMngr::Instance().AddField<&A::a>("a");
 
-		ReflMngr::Instance().RegisterTypeAuto<B>();
+		ReflMngr::Instance().RegisterType<B>();
 		ReflMngr::Instance().AddBases<B, A>();
 		ReflMngr::Instance().AddField<&B::b>("b");
 
-		ReflMngr::Instance().RegisterTypeAuto<C>();
+		ReflMngr::Instance().RegisterType<C>();
 		ReflMngr::Instance().AddBases<C, A>();
 		ReflMngr::Instance().AddField<&C::c>("c");
 
-		ReflMngr::Instance().RegisterTypeAuto<D>();
+		ReflMngr::Instance().RegisterType<D>();
 		ReflMngr::Instance().AddBases<D, B, C>();
 		ReflMngr::Instance().AddField<&D::d>("d");
 	}

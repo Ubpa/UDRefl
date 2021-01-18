@@ -27,14 +27,14 @@ struct Point {
 
 int main() {
 	{ // register
-		Mngr->RegisterTypeAuto<UInspector::Range>();
+		Mngr->RegisterType<UInspector::Range>();
 		Mngr->AddField<&UInspector::Range::min_value>("min_value");
 		Mngr->AddField<&UInspector::Range::max_value>("max_value");
 		Mngr->AddConstructor<UInspector::Range, float, float>();
 
-		Mngr->RegisterTypeAuto<UInspector::A>();
+		Mngr->RegisterType<UInspector::A>();
 
-		Mngr->RegisterTypeAuto<Point>();
+		Mngr->RegisterType<Point>();
 		Mngr->AddConstructor<Point, float, float>();
 		Mngr->AddField<&Point::x>("x", { Mngr->MakeShared(TypeID_of<UInspector::Range>, 1.f, 2.f) });
 		Mngr->AddField<&Point::y>("y", { Mngr->MakeShared(TypeID_of<UInspector::A>) });

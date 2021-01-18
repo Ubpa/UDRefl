@@ -7,7 +7,7 @@ using namespace Ubpa::UDRefl;
 struct Point { float x, y; };
 
 int main() {
-	ReflMngr::Instance().RegisterTypeAuto<Point>();
+	ReflMngr::Instance().RegisterType<Point>();
 	ReflMngr::Instance().AddField<&Point::x>("x");
 	ReflMngr::Instance().AddField<&Point::y>("y");
 	

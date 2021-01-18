@@ -542,6 +542,60 @@ namespace Ubpa::UDRefl {
 	using container_get_allocator = decltype(std::declval<const T&>().get_allocator());
 
 	// - list operations (TODO)
+
+	// - member type
+	// - > key_type
+	// - > mapped_type
+	// - > value_type
+	// - > allocator_type
+	// - > size_type
+	// - > difference_type
+	// - > key_compare
+	// - > value_coompare
+	// - > iterator
+	// - > const_iterator
+	// - > local_iterator
+	// - > const_local_iterator
+	// - > reverse_iterator
+	// - > const_reverse_iterator
+	// - > node_type
+	// - > insert_return_type
+	// - > > position
+	// - > > inserted
+	// - > > node
+
+	template<typename T>
+	using container_key_type = typename T::key_type;
+	template<typename T>
+	using container_mapped_type = typename T::mapped_type;
+	template<typename T>
+	using container_value_type = typename T::value_type;
+	template<typename T>
+	using container_allocator_type = typename T::allocator_type;
+	template<typename T>
+	using container_size_type = typename T::size_type;
+	template<typename T>
+	using container_difference_type = typename T::difference_type;
+	template<typename T>
+	using container_key_compare = typename T::key_compare;
+	template<typename T>
+	using container_value_coompare = typename T::value_coompare;
+	template<typename T>
+	using container_iterator = typename T::iterator;
+	template<typename T>
+	using container_const_iterator = typename T::const_iterator;
+	template<typename T>
+	using container_reverse_iterator = typename T::reverse_iterator;
+	template<typename T>
+	using container_const_reverse_iterator = typename T::const_reverse_iterator;
+	template<typename T>
+	using container_local_iterator = typename T::local_iterator;
+	template<typename T>
+	using container_const_local_iterator = typename T::const_local_iterator;
+	template<typename T>
+	using container_node_type = typename T::node_type;
+	template<typename T>
+	using container_insert_return_type = typename T::insert_return_type;
 }
 
 #include "details/Util.inl"

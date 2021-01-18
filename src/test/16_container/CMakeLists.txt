@@ -11,4 +11,4 @@ Ubpa_AddTarget(
     Ubpa::UDRefl_core
 )
 
-target_precompile_headers(${tname} REUSE_FROM ${UDReflPchTargetName})
+target_precompile_headers(${tname} REUSE_FROM UDRefl_core)

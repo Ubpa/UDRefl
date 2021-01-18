@@ -406,6 +406,49 @@ namespace Ubpa::UDRefl::details {
 
 				if constexpr (IsVector_v<T>)
 					mngr.AddAttr(TypeID_of<T>, mngr.MakeShared(TypeID_of<ContainerType>, ContainerType::Vector));
+
+				// - type
+
+				if constexpr (is_valid_v<container_key_type, T>)
+					mngr.RegisterType<typename T::key_type>();
+				if constexpr (is_valid_v<container_mapped_type, T>)
+					mngr.RegisterType<typename T::mapped_type>();
+				if constexpr (is_valid_v<container_value_type, T>)
+					mngr.RegisterType<typename T::value_type>();
+				if constexpr (is_valid_v<container_allocator_type, T>) {
+					using Allocator = typename T::allocator_type;
+					mngr.RegisterType<Allocator>();
+					mngr.AddMemberMethod("allocate", [](Allocator& lhs, std::size_t rhs) -> decltype(auto) { return lhs.allocate(rhs); });
+					mngr.AddMethod<&Allocator::deallocate>("deallocate");
+				}
+				if constexpr (is_valid_v<container_size_type, T>)
+					mngr.RegisterType<typename T::size_type>();
+				if constexpr (is_valid_v<container_difference_type, T>)
+					mngr.RegisterType<typename T::difference_type>();
+				if constexpr (is_valid_v<container_key_compare, T>)
+					mngr.RegisterType<typename T::key_compare>();
+				if constexpr (is_valid_v<container_value_coompare, T>)
+					mngr.RegisterType<typename T::value_coompare>();
+				if constexpr (is_valid_v<container_iterator, T>)
+					mngr.RegisterType<typename T::iterator>();
+				if constexpr (is_valid_v<container_const_iterator, T>)
+					mngr.RegisterType<typename T::const_iterator>();
+				if constexpr (is_valid_v<container_reverse_iterator, T>)
+					mngr.RegisterType<typename T::reverse_iterator>();
+				if constexpr (is_valid_v<container_const_reverse_iterator, T>)
+					mngr.RegisterType<typename T::const_reverse_iterator>();
+				if constexpr (is_valid_v<container_local_iterator, T>)
+					mngr.RegisterType<typename T::local_iterator>();
+				if constexpr (is_valid_v<container_const_local_iterator, T>)
+					mngr.RegisterType<typename T::const_local_iterator>();
+				if constexpr (is_valid_v<container_node_type, T>)
+					mngr.RegisterType<typename T::node_type>();
+				if constexpr (is_valid_v<container_insert_return_type, T>) {
+					mngr.RegisterType<typename T::insert_return_type>();
+					mngr.AddField<&T::allocator_type::position>("position");
+					mngr.AddField<&T::allocator_type::inserted>("inserted");
+					mngr.AddField<&T::allocator_type::node>("node");
+				}
 			}
 		}
 	};
@@ -427,7 +470,7 @@ namespace Ubpa::UDRefl {
 			static_assert(!std::is_void_v<Value> && !std::is_function_v<Value> && !std::is_volatile_v<Value>);
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			tregistry.Register<Value>();
-			RegisterTypeAuto<std::remove_const_t<Value>>();
+			RegisterType<std::remove_const_t<Value>>();
 			return {
 				TypeID_of<std::remove_const_t<Value>>,
 				field_data
@@ -441,7 +484,7 @@ namespace Ubpa::UDRefl {
 			static_assert(!std::is_function_v<Value> && !std::is_volatile_v<Value>);
 
 			tregistry.Register<Value>();
-			RegisterTypeAuto<std::remove_const_t<Value>>();
+			RegisterType<std::remove_const_t<Value>>();
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
 					TypeID_of<std::remove_const_t<Value>>,
@@ -460,7 +503,7 @@ namespace Ubpa::UDRefl {
 		else if constexpr (std::is_enum_v<FieldData>) {
 			using Value = std::remove_pointer_t<FieldData>;
 			tregistry.Register<Value>();
-			RegisterTypeAuto<std::remove_const_t<Value>>();
+			RegisterType<std::remove_const_t<Value>>();
 			auto buffer = FieldPtr::ConvertToBuffer(field_data);
 			return {
 				TypeID_of<std::remove_const_t<Value>>,
@@ -483,7 +526,7 @@ namespace Ubpa::UDRefl {
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			static_assert(!std::is_reference_v<Value> && !std::is_volatile_v<Value>);
 			tregistry.Register<Value>();
-			RegisterTypeAuto<std::remove_const_t<Value>>();
+			RegisterType<std::remove_const_t<Value>>();
 			if constexpr (has_virtual_base_v<Object>) {
 				return {
 					TypeID_of<std::remove_const_t<Value>>,
@@ -503,7 +546,7 @@ namespace Ubpa::UDRefl {
 			using Value = std::remove_pointer_t<RawT>;
 			static_assert(!std::is_volatile_v<Value>);
 			tregistry.Register<Value>();
-			RegisterTypeAuto<std::remove_const_t<Value>>();
+			RegisterType<std::remove_const_t<Value>>();
 			return {
 				TypeID_of<std::remove_const_t<Value>>,
 				data
@@ -511,7 +554,7 @@ namespace Ubpa::UDRefl {
 		}
 		else if constexpr (std::is_enum_v<RawT>) {
 			tregistry.Register<RawT>();
-			RegisterTypeAuto<std::remove_const_t<RawT>>();
+			RegisterType<std::remove_const_t<RawT>>();
 			const auto buffer = FieldPtr::ConvertToBuffer(data);
 			return {
 				TypeID_of<std::remove_const_t<RawT>>,
@@ -534,7 +577,7 @@ namespace Ubpa::UDRefl {
 			static_assert(!std::is_void_v<Value> && !std::is_volatile_v<Value>);
 
 			tregistry.Register<Value>();
-			RegisterTypeAuto<std::remove_const_t<Value>>();
+			RegisterType<std::remove_const_t<Value>>();
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 
 			auto offsetor = [f=std::forward<T>(data)](const void* obj) -> const void* {
@@ -553,7 +596,7 @@ namespace Ubpa::UDRefl {
 	FieldPtr ReflMngr::GenerateDynamicFieldPtr(Args&&... args) {
 		static_assert(!std::is_reference_v<T> && !std::is_volatile_v<T>);
 		using RawT = std::remove_const_t<T>;
-		RegisterTypeAuto<RawT>();
+		RegisterType<RawT>();
 		if constexpr (FieldPtr::IsBufferable<RawT>()) {
 			FieldPtr::Buffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
 			return FieldPtr{ TypeID_of<RawT>, buffer, std::bool_constant<std::is_const_v<T>>{} };
@@ -587,7 +630,6 @@ namespace Ubpa::UDRefl {
 			static_assert(!std::is_const_v<Return> && !std::is_volatile_v<Return> && !std::is_volatile_v<std::remove_reference_t<Return>>);
 			using U = std::conditional_t<std::is_reference_v<Return>, std::add_pointer_t<Return>, Return>;
 			tregistry.Register<Return>();
-			RegisterTypeAuto<Return>();
 			return {
 				TypeID_of<Return>,
 				sizeof(U),
@@ -603,7 +645,6 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Params) > 0) {
 			static_assert(((!std::is_const_v<Params> && !std::is_volatile_v<Params> && !std::is_volatile_v<std::remove_reference_t<Params>>)&&...));
 			(tregistry.Register<Params>(), ...);
-			(RegisterTypeAuto<Params>(), ...);
 			return { { TypeID_of<Params>... } };
 		}
 		else
@@ -671,21 +712,16 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	void ReflMngr::RegisterType() {
-		RegisterTypeAuto<T>();
-	}
-
-	template<typename T>
-	void ReflMngr::RegisterTypeAuto() {
 		static_assert(!std::is_volatile_v<T>);
 		if constexpr (std::is_void_v<T>)
 			return;
 		else {
 			if constexpr (std::is_const_v<T>)
-				RegisterTypeAuto<std::remove_const_t<T>>();
+				RegisterType<std::remove_const_t<T>>();
 			else if constexpr (std::is_reference_v<T>)
-				RegisterTypeAuto<std::remove_cv_t<std::remove_reference_t<T>>>();
+				RegisterType<std::remove_cvref_t<T>>();
 			else if constexpr (std::is_pointer_v<T>)
-				RegisterTypeAuto<std::remove_cv_t<std::remove_pointer_t<T>>>();
+				RegisterType<std::remove_cv_t<std::remove_pointer_t<T>>>();
 			else {
 				if (IsRegistered(TypeID_of<T>))
 					return;
@@ -962,7 +998,7 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	ObjectPtr ReflMngr::NewAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		RegisterTypeAuto<T>();
+		RegisterType<T>();
 		AddMethod(TypeID_of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
 		return New(TypeID_of<T>, std::forward<Args>(args)...);
 	}
@@ -981,7 +1017,7 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	SharedObject ReflMngr::MakeSharedAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		RegisterTypeAuto<T>();
+		RegisterType<T>();
 		AddMethod(TypeID_of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
 		return MakeShared(TypeID_of<T>, std::forward<Args>(args)...);
 	}

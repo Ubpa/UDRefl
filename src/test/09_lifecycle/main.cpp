@@ -15,7 +15,7 @@ struct Point {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterTypeAuto<Point>();
+	ReflMngr::Instance().RegisterType<Point>();
 	ReflMngr::Instance().AddField<&Point::x>("x");
 	ReflMngr::Instance().AddField<&Point::y>("y");
 	

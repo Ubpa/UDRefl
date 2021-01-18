@@ -55,8 +55,8 @@ struct A {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterTypeAuto<A>();
-	ReflMngr::Instance().RegisterTypeAuto<Data>();
+	ReflMngr::Instance().RegisterType<A>();
+	ReflMngr::Instance().RegisterType<Data>();
 	ReflMngr::Instance().AddField<&Data::value>("value");
 	ReflMngr::Instance().AddConstructor<A, Data&, Data&&>();
 	ReflMngr::Instance().AddField("lref", [](A* a) {

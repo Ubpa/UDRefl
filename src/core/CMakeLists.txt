@@ -1,15 +1,10 @@
 set(c_options "")
 if(MSVC)
-  list(APPEND c_options "/wd5030")
+  list(APPEND c_options "/wd5030;/bigobj")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   list(APPEND c_options "-Wno-attributes")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   list(APPEND c_options "-Wno-attributes")
-endif()
-
-set(c_options_i "")
-if(MSVC)
-  set(c_options_i "/bigobj")
 endif()
 
 Ubpa_AddTarget(
@@ -21,8 +16,6 @@ Ubpa_AddTarget(
     "${PROJECT_SOURCE_DIR}/include"
   C_OPTION
     ${c_options}
-  C_OPTION_INTERFACE
-    ${c_options_i}
   LIB
     Ubpa::UTemplate_core
 )

@@ -24,7 +24,7 @@ struct Vec {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterTypeAuto<Vec>();
+	ReflMngr::Instance().RegisterType<Vec>();
 	ReflMngr::Instance().AddField<&Vec::x>("x");
 	ReflMngr::Instance().AddField<&Vec::y>("y");
 	ReflMngr::Instance().AddMethod<&Vec::norm>("norm");

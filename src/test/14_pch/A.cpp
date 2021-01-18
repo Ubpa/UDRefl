@@ -3,6 +3,6 @@
 #include <UDRefl/UDRefl.h>
 
 void RegisterA() {
-	Ubpa::UDRefl::Mngr->RegisterTypeAuto<A>();
+	Ubpa::UDRefl::Mngr->RegisterType<A>();
 	Ubpa::UDRefl::Mngr->AddField<&A::data>("data");
 }

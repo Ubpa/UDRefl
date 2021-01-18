@@ -13,7 +13,7 @@ struct A {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterTypeAuto<A>();
+	ReflMngr::Instance().RegisterType<A>();
 	ReflMngr::Instance().AddField<&A::data>("data");
 	ReflMngr::Instance().AddField<&A::c_data>("c_data");
 	ReflMngr::Instance().AddField(TypeID_of<A>, "s_data", &A::s_data);

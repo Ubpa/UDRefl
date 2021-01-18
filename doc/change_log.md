@@ -2,6 +2,16 @@
 
 [TOC]
 
+## 0.7
+
+- 0.7.0
+  - use C++20
+  - use `std::span` 
+  - rename `RegisterTypeAuto` to `RegisterType` 
+  - auto register type's inner type (e.g. `value_type`, `key_type`, `mapped_type`, `iterator`, ...) 
+  - remove `RegisterType` in `ReflMngr::GenerateParamList` and `ReflMngr::GenerateResultDesc` 
+  - delete target `pch` 
+
 ## 0.6
 
 - 0.6.1
