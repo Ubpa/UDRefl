@@ -4,6 +4,7 @@
 - [x] cast (reference) more
 - [ ] traits
   - [ ] simplify
+  - [ ]  -> concept
   - [ ] container
     - [ ] list
     - [ ] multi set/map
@@ -14,5 +15,4 @@
 - [x] improve method ptr
 - [x] perfect forwarding when invoking (auto copy)
 - [x] simplify assign operator
-- [ ] improve `A..Invoke` 
 

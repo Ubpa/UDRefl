@@ -18,7 +18,7 @@
 
 > **U**bpa **D**ynamic **R**eflection
 
-Extremely **fast** C++17 dynamic reflection library
+Extremely **fast** C++20 dynamic reflection library
 
 ## Documentaion [->](doc/)
 
@@ -125,7 +125,13 @@ for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
 - **no** macro usage
 - **no** rtti required
 - **no** exceptions (this feature come with cost and is also regularly disabled on consoles)
-- **no** external compiler or tool needed, only standard ISO C++17
+- **no** external compiler or tool needed, only standard ISO C++20
+
+## Compiler compatibility
+
+- Clang/LLVM >= 10.0
+- GCC >= 10.0
+- MSVC >= 1926
 
 ## Licensing
 
