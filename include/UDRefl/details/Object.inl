@@ -418,122 +418,112 @@ public:
 };
 
 namespace Ubpa::UDRefl {
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	inline bool operator== (const ConstObjectPtr& lhs, const ConstObjectPtr& rhs) {
+    	return static_cast<bool>(lhs.ADMInvoke(StrIDRegistry::MetaID::operator_eq, rhs))
+		|| static_cast<bool>(rhs.ADMInvoke(StrIDRegistry::MetaID::operator_eq, lhs));
+	}
+
+	inline bool operator!= (const ObjectPtr& lhs, const ObjectPtr& rhs) {
+    	return static_cast<bool>(lhs.ADMInvoke(StrIDRegistry::MetaID::operator_ne, rhs))
+		|| static_cast<bool>(rhs.ADMInvoke(StrIDRegistry::MetaID::operator_ne, lhs));
+	}
+
+	template<NonObjectAndPtr T>
 	bool operator==(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) == Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator!=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) != Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator<(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) < Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator>(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) > Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator<=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) <= Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator>=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) >= Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator==(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) == ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator!=(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
+	template<NonObjectAndPtr T>
+	bool operator!=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) != ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
+	bool operator==(Ubpa::UDRefl::ConstObjectPtr ptr, const T& rhs) {
+		return ptr == Ubpa::UDRefl::Ptr(rhs);
+	}
+
+	template<NonObjectAndPtr T>
+	bool operator!=(Ubpa::UDRefl::ConstObjectPtr ptr, const T& rhs) {
+		return ptr == Ubpa::UDRefl::Ptr(rhs);
+	}
+
+	template<NonObjectAndPtr T>
+	bool operator<(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+		return Ubpa::UDRefl::Ptr(lhs) < ptr;
+	}
+
+	template<NonObjectAndPtr T>
+	bool operator>(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+		return Ubpa::UDRefl::Ptr(lhs) > ptr;
+	}
+
+	template<NonObjectAndPtr T>
+	bool operator<=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+		return Ubpa::UDRefl::Ptr(lhs) <= ptr;
+	}
+
+	template<NonObjectAndPtr T>
+	bool operator>=(const T& lhs, Ubpa::UDRefl::ConstObjectPtr ptr) {
+		return Ubpa::UDRefl::Ptr(lhs) >= ptr;
+	}
+
+	template<NonObjectAndPtr T>
 	bool operator<(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) < ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator>(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) > ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator<=(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) <= ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator>=(const T& lhs, Ubpa::UDRefl::ObjectPtr ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) >= ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator==(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) == Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator!=(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) != Ubpa::UDRefl::ConstCast(ptr);
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator<(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) < Ubpa::UDRefl::ConstCast(ptr);
+		return Ubpa::UDRefl::Ptr(lhs) < ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator>(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) > Ubpa::UDRefl::ConstCast(ptr);
+		return Ubpa::UDRefl::Ptr(lhs) > ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator<=(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) <= Ubpa::UDRefl::ConstCast(ptr);
+		return Ubpa::UDRefl::Ptr(lhs) <= ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator>=(const T& lhs, const Ubpa::UDRefl::SharedConstObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) >= Ubpa::UDRefl::ConstCast(ptr);
+		return Ubpa::UDRefl::Ptr(lhs) >= ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator==(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) == ptr;
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
-	bool operator!=(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
-		return Ubpa::UDRefl::Ptr(lhs) != ptr;
-	}
-
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator<(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) < ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator>(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) > ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator<=(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) <= ptr;
 	}
 
-	template<typename T, std::enable_if_t<!Ubpa::UDRefl::IsObjectOrPtr_v<T>, int> = 0>
+	template<NonObjectAndPtr T>
 	bool operator>=(const T& lhs, const Ubpa::UDRefl::SharedObject& ptr) {
 		return Ubpa::UDRefl::Ptr(lhs) >= ptr;
 	}
