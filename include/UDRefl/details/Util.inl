@@ -94,7 +94,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using FuncPtr = decltype(func_ptr);
 	static_assert(std::is_member_function_pointer_v<FuncPtr>);
 	using Traits = FuncTraits<FuncPtr>;
-	static_assert(Traits::ref != ReferenceMode::RIGHT);
+	static_assert(Traits::ref != ReferenceMode::Right);
 	using Obj = typename Traits::Object;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
