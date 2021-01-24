@@ -186,6 +186,12 @@ namespace Ubpa::UDRefl::details {
 	// TODO : list
 
 	template<typename T, typename = void>
+	struct IsList : std::false_type {};
+
+	template<typename T, typename = void>
+	struct IsForwardList : std::false_type {};
+
+	template<typename T, typename = void>
 	struct IsSet : std::false_type {};
 	template<typename T>
 	struct IsSet < T, std::enable_if_t <
@@ -364,6 +370,14 @@ namespace Ubpa::UDRefl::details {
 		&& is_valid_v<container_insert_or_assign_7, T>
 
 		>> : std::true_type{};
+
+	// TODO : Stack, Queue
+
+	template<typename T, typename = void>
+	struct IsStack : std::false_type {};
+
+	template<typename T, typename = void>
+	struct IsQueue : std::false_type {};
 }
 
 template<typename T>
@@ -373,6 +387,10 @@ struct Ubpa::UDRefl::IsVector : Ubpa::UDRefl::details::IsVector<T> {};
 template<typename T>
 struct Ubpa::UDRefl::IsDeque : Ubpa::UDRefl::details::IsDeque<T> {};
 template<typename T>
+struct Ubpa::UDRefl::IsForwardList : Ubpa::UDRefl::details::IsForwardList<T> {};
+template<typename T>
+struct Ubpa::UDRefl::IsList : Ubpa::UDRefl::details::IsList<T> {};
+template<typename T>
 struct Ubpa::UDRefl::IsSet : Ubpa::UDRefl::details::IsSet<T> {};
 template<typename T>
 struct Ubpa::UDRefl::IsMap : Ubpa::UDRefl::details::IsMap<T> {};
@@ -380,14 +398,22 @@ template<typename T>
 struct Ubpa::UDRefl::IsUnorderedSet : Ubpa::UDRefl::details::IsUnorderedSet<T> {};
 template<typename T>
 struct Ubpa::UDRefl::IsUnorderedMap : Ubpa::UDRefl::details::IsUnorderedMap<T> {};
+template<typename T>
+struct Ubpa::UDRefl::IsStack : Ubpa::UDRefl::details::IsStack<T> {};
+template<typename T>
+struct Ubpa::UDRefl::IsQueue : Ubpa::UDRefl::details::IsQueue<T> {};
 
 template<typename T>
 struct Ubpa::UDRefl::IsContainer : std::bool_constant<
 	Ubpa::UDRefl::IsArray_v<T>
 	|| Ubpa::UDRefl::IsVector_v<T>
 	|| Ubpa::UDRefl::IsDeque_v<T>
+	|| Ubpa::UDRefl::IsForwardList_v<T>
+	|| Ubpa::UDRefl::IsList_v<T>
 	|| Ubpa::UDRefl::IsSet_v<T>
 	|| Ubpa::UDRefl::IsMap_v<T>
 	|| Ubpa::UDRefl::IsUnorderedSet_v<T>
 	|| Ubpa::UDRefl::IsUnorderedMap_v<T>
+	|| Ubpa::UDRefl::IsStack_v<T>
+	|| Ubpa::UDRefl::IsQueue_v<T>
 > {};
