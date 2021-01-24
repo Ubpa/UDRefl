@@ -62,6 +62,8 @@ namespace Ubpa::UDRefl {
 			static constexpr char ctor[] = "UDRefl::ctor";
 			static constexpr char dtor[] = "UDRefl::dtor";
 
+			static constexpr char operator_bool[] = "UDRefl::operator_bool";
+
 			static constexpr char operator_plus[] = "UDRefl::operator+";
 			static constexpr char operator_minus[] = "UDRefl::operator-";
 
@@ -182,6 +184,8 @@ namespace Ubpa::UDRefl {
 
 			static constexpr StrID ctor{ Meta::ctor };
 			static constexpr StrID dtor{ Meta::dtor };
+
+			static constexpr StrID operator_bool{ Meta::operator_bool };
 
 			static constexpr StrID operator_plus{ Meta::operator_plus };
 			static constexpr StrID operator_minus{ Meta::operator_minus };

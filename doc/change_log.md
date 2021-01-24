@@ -4,6 +4,9 @@
 
 ## 0.7
 
+- 0.7.1
+  - cast APIs with `ConstObjectPtr` support reference
+  - improve `ObjectPtrBase::operator bool` (as a meta function)
 - 0.7.0
   - use C++20
   - use `std::span` 

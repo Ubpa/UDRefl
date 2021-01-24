@@ -20,6 +20,8 @@ StrIDRegistry::StrIDRegistry() {
 	RegisterUnmanaged(Meta::ctor);
 	RegisterUnmanaged(Meta::dtor);
 
+	RegisterUnmanaged(Meta::operator_bool);
+
 	RegisterUnmanaged(Meta::operator_plus);
 	RegisterUnmanaged(Meta::operator_minus);
 

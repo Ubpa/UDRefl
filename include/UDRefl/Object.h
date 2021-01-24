@@ -76,7 +76,7 @@ namespace Ubpa::UDRefl {
 		constexpr void Clear() noexcept { *this = ObjectPtrBase{}; }
 
 		constexpr bool Valid() const noexcept { return ID.Valid() && ptr; }
-		explicit operator bool() const noexcept { return ptr != nullptr ? (Is<bool>() ? *reinterpret_cast<bool*>(ptr) : true) : false; }
+		explicit operator bool() const noexcept;
 
 		//////////////
 		// ReflMngr //
@@ -127,14 +127,18 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectPtr/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, [Const]ObjectPtr/Shared[Const]Object will be transformed as ID + ptr
+		template<typename T, typename... Args>
+		T AInvoke(StrID methodID, Args&&... args) const;
+
+		// 'A' means auto, [Const]ObjectPtr/Shared[Const]Object will be transformed as ID + ptr
 		template<typename... Args>
 		SharedObject AMInvoke(
 			StrID methodID,
 			std::pmr::memory_resource* rst_rsrc,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectPtr/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, [Const]ObjectPtr/Shared[Const]Object will be transformed as ID + ptr
 		template<typename... Args>
 		SharedObject ADMInvoke(
 			StrID methodID,
@@ -415,18 +419,18 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args&&... args) const;
 
-		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		// A means auto, [Const]ObjectPtr/Shared[Const]Object will be transform as ID + ptr
 		template<typename T, typename... Args>
 		T AInvoke(StrID methodID, Args&&... args) const;
 
-		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		// A means auto, [Const]ObjectPtr/Shared[Const]Object will be transform as ID + ptr
 		template<typename... Args>
 		SharedObject AMInvoke(
 			StrID methodID,
 			std::pmr::memory_resource* rst_rsrc,
 			Args&&... args) const;
 
-		// A means auto, ObjectPtr/SharedObject will be transform as ID + ptr
+		// A means auto, [Const]ObjectPtr/Shared[Const]Object will be transform as ID + ptr
 		template<typename... Args>
 		SharedObject ADMInvoke(
 			StrID methodID,

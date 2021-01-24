@@ -28,26 +28,28 @@ namespace Ubpa::UDRefl {
 
 		template<typename T>
 		T Move(void* result_buffer) noexcept(std::is_reference_v<T> || std::is_nothrow_destructible_v<T> && std::is_nothrow_move_constructible_v<T>) {
-			assert(result_buffer);
+			if constexpr (!std::is_void_v<T>) {
+				assert(result_buffer);
 
-			if constexpr (!std::is_reference_v<T> && std::is_default_constructible_v<T>) {
-				if (!success)
-					return {};
-			}
-			else
-				assert(success);
+				if constexpr (!std::is_reference_v<T> && std::is_default_constructible_v<T>) {
+					if (!success)
+						return {};
+				}
+				else
+					assert(success);
 
-			assert(resultID = TypeID_of<T>);
+				assert(resultID = TypeID_of<T>);
 
-			if constexpr (std::is_reference_v<T>) {
-				assert(!destructor);
-				return std::forward<T>(*buffer_as<std::add_pointer_t<T>>(result_buffer));
-			}
-			else {
-				T rst = std::move(buffer_as<T>(result_buffer));
-				if (destructor)
-					destructor(result_buffer);
-				return rst;
+				if constexpr (std::is_reference_v<T>) {
+					assert(!destructor);
+					return std::forward<T>(*buffer_as<std::add_pointer_t<T>>(result_buffer));
+				}
+				else {
+					T rst = std::move(buffer_as<T>(result_buffer));
+					if (destructor)
+						destructor(result_buffer);
+					return rst;
+				}
 			}
 		}
 
@@ -98,4 +100,8 @@ namespace Ubpa::UDRefl {
 		Variable,
 		Const,
 	};
+
+	constexpr bool DereferenceProperty_IsReference(DereferenceProperty prop) noexcept {
+		return prop != DereferenceProperty::NotReference;
+	}
 }

@@ -216,6 +216,9 @@ namespace Ubpa::UDRefl {
 	///////////
 
 	template<typename T>
+	using operator_bool = decltype(static_cast<bool>(std::declval<const T&>()));
+
+	template<typename T>
 	using operator_plus = decltype(+std::declval<const T&>());
 	template<typename T>
 	using operator_minus = std::enable_if_t<!std::is_unsigned_v<T>, decltype(-std::declval<const T&>())>;

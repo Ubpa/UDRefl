@@ -300,7 +300,7 @@ namespace Ubpa::UDRefl {
 		// Cast
 		/////////
 		//
-		// - non reference
+		// - cast APIs with ObjectPtr don't support reference
 		//
 
 		ObjectPtr StaticCast_DerivedToBase (ObjectPtr obj, TypeID typeID) const;
@@ -309,20 +309,11 @@ namespace Ubpa::UDRefl {
 		ObjectPtr StaticCast               (ObjectPtr obj, TypeID typeID) const;
 		ObjectPtr DynamicCast              (ObjectPtr obj, TypeID typeID) const;
 		
-		ConstObjectPtr StaticCast_DerivedToBase (ConstObjectPtr obj, TypeID typeID) const
-		{ return StaticCast_DerivedToBase (reinterpret_cast<ObjectPtr&>(obj), typeID); }
-
-		ConstObjectPtr StaticCast_BaseToDerived (ConstObjectPtr obj, TypeID typeID) const
-		{ return StaticCast_BaseToDerived (reinterpret_cast<ObjectPtr&>(obj), typeID); }
-
-		ConstObjectPtr DynamicCast_BaseToDerived(ConstObjectPtr obj, TypeID typeID) const
-		{ return DynamicCast_BaseToDerived(reinterpret_cast<ObjectPtr&>(obj), typeID); }
-
-		ConstObjectPtr StaticCast               (ConstObjectPtr obj, TypeID typeID) const
-		{ return StaticCast               (reinterpret_cast<ObjectPtr&>(obj), typeID); }
-
-		ConstObjectPtr DynamicCast              (ConstObjectPtr obj, TypeID typeID) const
-		{ return DynamicCast              (reinterpret_cast<ObjectPtr&>(obj), typeID); }
+		ConstObjectPtr StaticCast_DerivedToBase (ConstObjectPtr obj, TypeID typeID) const;
+		ConstObjectPtr StaticCast_BaseToDerived (ConstObjectPtr obj, TypeID typeID) const;
+		ConstObjectPtr DynamicCast_BaseToDerived(ConstObjectPtr obj, TypeID typeID) const;
+		ConstObjectPtr StaticCast               (ConstObjectPtr obj, TypeID typeID) const;
+		ConstObjectPtr DynamicCast              (ConstObjectPtr obj, TypeID typeID) const;
 
 		//
 		// Field
