@@ -72,7 +72,9 @@ namespace Ubpa::UDRefl {
 		template<typename T>
 		constexpr bool Is() const noexcept { return ID == TypeID_of<T>; }
 
+		// set pointer to nullptr
 		constexpr void Reset() noexcept { ptr = nullptr; }
+		// Reset and set ID to invalid
 		constexpr void Clear() noexcept { *this = ObjectPtrBase{}; }
 
 		constexpr bool Valid() const noexcept { return ID.Valid() && ptr; }
@@ -563,10 +565,11 @@ namespace Ubpa::UDRefl {
 		template<typename U, typename Deleter, typename Alloc>
 		SharedObjectBase(ObjectPtr obj, Deleter d, Alloc alloc) noexcept : ID{ obj.GetID() }, buffer{ obj.GetPtr(), std::move(d), alloc } {}
 
-		void Reset() noexcept {
-			buffer.reset();
-			ID.Reset();
-		}
+		// set pointer to nullptr
+		void Reset() noexcept { buffer.reset(); }
+
+		// Reset and set ID to invalid
+		void Clear() noexcept { *this = SharedObjectBase{}; }
 
 		TypeID GetID() const noexcept { return ID; }
 
