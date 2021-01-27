@@ -7,6 +7,14 @@
 - 0.7.1
   - cast APIs with `ConstObjectPtr` support reference
   - improve `ObjectPtrBase::operator bool` (as a meta function)
+  - **refactor compatible, invokable and invoke** 
+  - add `IsNonArgCopyConstructible` 
+  - add more type compuations
+    - `AddLValueReference` 
+    - `AddRValueReference` 
+  - fix bugs
+    - `TypeID_of<Args>...` -> `TypeID_of<decltype(args)>...` 
+    - `AInvoke`: `ObjectPtr `-> `&{T}` 
 - 0.7.0
   - use C++20
   - use `std::span` 

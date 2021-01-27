@@ -117,8 +117,24 @@ ConstObjectPtr ObjectPtrBase::ObjectPtrBase::DereferenceAsConst() const {
 	return ReflMngr::Instance().DereferenceAsConst({ ID, ptr });
 }
 
-TypeID ObjectPtrBase::AddConstLValueReferenceID() const {
+TypeID ObjectPtrBase::AddLValueReferenceID() const{
+	return ReflMngr::Instance().AddLValueReference(ID);
+}
+
+TypeID ObjectPtrBase::AddRValueReferenceID() const{
+	return ReflMngr::Instance().AddRValueReference(ID);
+}
+
+TypeID ObjectPtrBase::AddConstLValueReferenceID() const{
 	return ReflMngr::Instance().AddConstLValueReference(ID);
+}
+
+ConstObjectPtr ObjectPtrBase::AddLValueReference() const{
+	return ReflMngr::Instance().AddLValueReference(ConstObjectPtr{ ID, ptr });
+}
+
+ConstObjectPtr ObjectPtrBase::AddRValueReference() const{
+	return ReflMngr::Instance().AddRValueReference(ConstObjectPtr{ ID, ptr });
 }
 
 ConstObjectPtr ObjectPtrBase::AddConstLValueReference() const {
@@ -363,6 +379,14 @@ ObjectPtr ObjectPtr::FindRWVar(const std::function<bool(ObjectPtr)>& func) const
 
 ObjectPtr ObjectPtr::FindRWOwnedVar(const std::function<bool(ObjectPtr)>& func) const {
 	return ReflMngr::Instance().FindRWOwnedVar(*this, func);
+}
+
+ObjectPtr ObjectPtr::AddLValueReference() const {
+	return ReflMngr::Instance().AddLValueReference(*this);
+}
+
+ObjectPtr ObjectPtr::AddRValueReference() const {
+	return ReflMngr::Instance().AddRValueReference(*this);
 }
 
 SharedObject ObjectPtr::operator++() const {

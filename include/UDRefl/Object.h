@@ -184,12 +184,21 @@ namespace Ubpa::UDRefl {
 		ConstObjectPtr           FindRVar     (const std::function<bool(ConstObjectPtr)>& func) const;
 		ConstObjectPtr           FindROwnedVar(const std::function<bool(ConstObjectPtr)>& func) const;
 
+		//
+		// Type
+		/////////
+
 		DereferenceProperty GetDereferenceProperty() const;
 		TypeID              DereferenceID() const;
 		ObjectPtr           Dereference() const;
 		ConstObjectPtr      DereferenceAsConst() const;
-		TypeID              AddConstLValueReferenceID() const;
-		ConstObjectPtr      AddConstLValueReference() const;
+		
+		TypeID         AddLValueReferenceID     () const;
+		TypeID         AddRValueReferenceID     () const;
+		TypeID         AddConstLValueReferenceID() const;
+		ConstObjectPtr AddLValueReference       () const;
+		ConstObjectPtr AddRValueReference       () const;
+		ConstObjectPtr AddConstLValueReference  () const;
 
 		//
 		// Meta
@@ -438,6 +447,10 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args&&... args) const;
 
+		//
+		// Algorithm
+		//////////////
+
 		// self [r/w] vars and all bases' [r/w] vars
 		void ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
@@ -452,6 +465,13 @@ namespace Ubpa::UDRefl {
 
 		ObjectPtr FindRWVar     (const std::function<bool(ObjectPtr)>& func) const;
 		ObjectPtr FindRWOwnedVar(const std::function<bool(ObjectPtr)>& func) const;
+
+		//
+		// Type
+		/////////
+
+		ObjectPtr AddLValueReference() const;
+		ObjectPtr AddRValueReference() const;
 
 		//
 		// Meta
