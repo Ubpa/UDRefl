@@ -18,6 +18,6 @@ Ubpa_AddTarget(
     ${c_options}
   LIB
     Ubpa::UTemplate_core
+  PCH
+    "${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.h"
 )
-
-target_precompile_headers(${tname} PRIVATE "${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.h")

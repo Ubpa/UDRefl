@@ -9,6 +9,5 @@ Ubpa_AddTarget(
   RET_TARGET_NAME tname
   LIB
     Ubpa::UDRefl_core
+  PCH_REUSE_FROM UDRefl_core
 )
-
-target_precompile_headers(${tname} REUSE_FROM UDRefl_core)
