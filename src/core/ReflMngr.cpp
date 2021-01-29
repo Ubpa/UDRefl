@@ -20,8 +20,11 @@ namespace Ubpa::UDRefl::details {
 				result_rsrc->deallocate(ptr, size, alignment);
 			};
 		}
-		else // !dtor
-			return [](void* ptr) { assert(ptr); };
+		else { // !dtor
+			return [result_rsrc, size, alignment](void* ptr) {
+				result_rsrc->deallocate(ptr, size, alignment);
+			};
+		}
 	}
 
 	// parameter <- argument
@@ -190,7 +193,7 @@ namespace Ubpa::UDRefl::details {
 			std::span<const TypeID> argTypeIDs,
 			ArgsBuffer orig_args_buffer) :
 			rsrc{ rsrc },
-			num_args{argTypeIDs.size()}
+			num_args{ argTypeIDs.size() }
 		{
 			NonPtrArgInfo nonptrargs_stack[MaxArgNum];
 			PtrArgInfo ptrargs_stack[MaxArgNum];
@@ -253,10 +256,10 @@ namespace Ubpa::UDRefl::details {
 				args_buffer = orig_args_buffer;
 			else {
 				// buffer = constructed_args_buffer + nonptrargs
-				buffer_size = argTypeIDs.size() * sizeof(void*) + num_nonptrargs * sizeof(NonPtrArgInfo);
+				buffer_size = num_args * sizeof(void*) + num_nonptrargs * sizeof(NonPtrArgInfo);
 				buffer = rsrc->allocate(buffer_size);
 				constructed_args_buffer = reinterpret_cast<void**>(forward_offset(buffer, 0));
-				nonptrargs = reinterpret_cast<NonPtrArgInfo*>(forward_offset(buffer, argTypeIDs.size() * sizeof(void*)));
+				nonptrargs = reinterpret_cast<NonPtrArgInfo*>(forward_offset(buffer, num_args * sizeof(void*)));
 
 				std::memcpy(constructed_args_buffer, orig_args_buffer, num_args * sizeof(void*));
 				std::memcpy(nonptrargs, nonptrargs_stack, num_nonptrargs * sizeof(NonPtrArgInfo));
@@ -273,6 +276,8 @@ namespace Ubpa::UDRefl::details {
 
 				for (std::size_t i = 0; i < num_ptrargs; i++)
 					constructed_args_buffer[ptrargs_stack[i].idx] = ptrargs_stack[i].ptr;
+
+				args_buffer = constructed_args_buffer;
 			}
 		}
 

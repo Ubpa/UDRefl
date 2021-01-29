@@ -112,7 +112,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	Destructor destructor() {
-		if constexpr (std::is_fundamental_v<T> || std::is_compound_v<T>)
+		if constexpr (std::is_fundamental_v<T>)
 			return {};
 		else {
 			static_assert(std::is_destructible_v<T>);
