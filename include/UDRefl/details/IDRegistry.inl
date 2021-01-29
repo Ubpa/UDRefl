@@ -103,16 +103,15 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	bool IDRegistry<T>::IsRegistered(T ID) const {
-		return id2name.find(ID) != id2name.end();
+		return id2name.contains(ID);
 	}
 
 	template<typename T>
 	std::string_view IDRegistry<T>::Nameof(T ID) const {
-		auto target = id2name.find(ID);
-		if (target != id2name.end())
+		if(auto target = id2name.find(ID); target != id2name.end())
 			return target->second;
-		else
-			return {};
+		
+		return {};
 	}
 
 	template<typename T>

@@ -1,5 +1,7 @@
 #include <UDRefl/ReflMngr.h>
 
+#include <UDRefl/config.h>
+
 #include <set>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -51,8 +53,6 @@ namespace Ubpa::UDRefl::details {
 
 			const std::size_t rhs_hash = argTypeIDs[i].GetValue();
 
-			assert(!type_name_is_const(lhs) && !type_name_is_volatile(lhs));
-
 			if (type_name_is_rvalue_reference(lhs)) { // &&{T} | &&{const{T}}
 				auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
 				assert(!type_name_is_volatile(unref_lhs));
@@ -99,7 +99,6 @@ namespace Ubpa::UDRefl::details {
 #endif // !NDEBUG
 			const std::size_t rhs_hash = argTypeIDs[i].GetValue();
 
-			assert(!type_name_is_const(lhs) && !type_name_is_volatile(lhs));
 			if (type_name_is_lvalue_reference(lhs)) { // &{T} | &{const{T}}
 				auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
 				if (type_name_is_const(unref_lhs)) { // &{const{T}}
@@ -176,18 +175,13 @@ namespace Ubpa::UDRefl::details {
 	}
 
 	class ConstructedArgumentsGuard {
-		struct ArgInfo {
-			ArgInfo(size_t idx, TypeID ID)
-				: idx{ static_cast<std::uint16_t>(idx) }, isPtr{ false }, ID{ ID }{}
-			ArgInfo(size_t idx, void* ptr)
-				: idx{ static_cast<std::uint16_t>(idx) }, isPtr{ true }, ptr{ ptr }{}
-
-			std::uint16_t idx;
-			bool isPtr;
-			union {
-				void* ptr;
-				TypeID ID;
-			};
+		struct NonPtrArgInfo {
+			std::size_t idx;
+			std::size_t typeID; // doesn't use TypeID to avoid init on stack
+		};
+		struct PtrArgInfo {
+			std::size_t idx;
+			void* ptr;
 		};
 	public:
 		ConstructedArgumentsGuard(
@@ -196,11 +190,12 @@ namespace Ubpa::UDRefl::details {
 			std::span<const TypeID> argTypeIDs,
 			ArgsBuffer orig_args_buffer) :
 			rsrc{ rsrc },
-			params_size{ paramTypeIDs.size() },
-			infos{ rsrc }
+			num_args{argTypeIDs.size()}
 		{
-			assert(Mngr->IsCompatible(paramTypeIDs, argTypeIDs));
-			void** constructed_args_buffer = nullptr;
+			NonPtrArgInfo nonptrargs_stack[MaxArgNum];
+			PtrArgInfo ptrargs_stack[MaxArgNum];
+			std::size_t num_ptrargs = 0;
+
 			for (std::size_t i = 0; i < argTypeIDs.size(); i++) {
 				if (paramTypeIDs[i] == argTypeIDs[i])
 					continue;
@@ -241,58 +236,69 @@ namespace Ubpa::UDRefl::details {
 					if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
 						continue;
 				}
-				
-				if (!constructed_args_buffer) {
-					constructed_args_buffer = static_cast<void**>(rsrc->allocate(argTypeIDs.size() * sizeof(void*), alignof(ArgsBuffer)));
-					assert(constructed_args_buffer);
-					std::memcpy(constructed_args_buffer, argTypeIDs.data(), argTypeIDs.size() * sizeof(void*));
-				}
 
 				std::string_view name = Mngr->tregistry.Nameof(paramTypeIDs[i]);
 				if (type_name_is_pointer(name)) {
-					infos.emplace_back(i, orig_args_buffer[i]);
-					constructed_args_buffer[i] = &infos.back().ptr;
+					ptrargs_stack[num_ptrargs++] = { i, orig_args_buffer[i] }; // copy ptr
+					assert(num_ptrargs <= MaxArgNum);
 				}
 				else {
 					TypeID raw_param_ID = TypeID{ type_name_remove_cvref(lhs) };
+					nonptrargs_stack[num_nonptrargs++] = { i, raw_param_ID.GetValue() };
+					assert(num_nonptrargs <= MaxArgNum);
+				}
+			}
+
+			if (num_nonptrargs + num_ptrargs == 0)
+				args_buffer = orig_args_buffer;
+			else {
+				// buffer = constructed_args_buffer + nonptrargs
+				buffer_size = argTypeIDs.size() * sizeof(void*) + num_nonptrargs * sizeof(NonPtrArgInfo);
+				buffer = rsrc->allocate(buffer_size);
+				constructed_args_buffer = reinterpret_cast<void**>(forward_offset(buffer, 0));
+				nonptrargs = reinterpret_cast<NonPtrArgInfo*>(forward_offset(buffer, argTypeIDs.size() * sizeof(void*)));
+
+				std::memcpy(constructed_args_buffer, orig_args_buffer, num_args * sizeof(void*));
+				std::memcpy(nonptrargs, nonptrargs_stack, num_nonptrargs * sizeof(NonPtrArgInfo));
+
+				for (std::size_t i = 0; i < num_nonptrargs; i++) {
 					ObjectPtr constructedArg = Mngr->NonArgCopyMNew(
-						raw_param_ID,
+						TypeID{ nonptrargs_stack[i].typeID },
 						rsrc,
 						std::span<const TypeID>{&argTypeIDs[i], 1},
 						static_cast<ArgsBuffer>(&orig_args_buffer[i])
 					);
-					constructed_args_buffer[i] = constructedArg.GetPtr();
-					infos.emplace_back(i, raw_param_ID);
+					constructed_args_buffer[nonptrargs_stack[i].idx] = constructedArg.GetPtr();
 				}
-			}
 
-			if (constructed_args_buffer)
-				args_buffer = constructed_args_buffer;
-			else
-				args_buffer = orig_args_buffer;
+				for (std::size_t i = 0; i < num_ptrargs; i++)
+					constructed_args_buffer[ptrargs_stack[i].idx] = ptrargs_stack[i].ptr;
+			}
 		}
 
 		~ConstructedArgumentsGuard() {
-			if (infos.empty())
-				return;
-
-			for (const auto& info : infos) {
-				if (info.isPtr)
-					continue;
-
-				bool success = Mngr->MDelete({ info.ID, args_buffer[info.idx] }, rsrc);
-				assert(success);
+			if (buffer) {
+				for (const auto& arg : std::span<NonPtrArgInfo>{ nonptrargs, num_nonptrargs }) {
+					bool success = Mngr->MDelete({ TypeID{ arg.typeID }, constructed_args_buffer[arg.idx] }, rsrc);
+					assert(success);
+				}
+				rsrc->deallocate(buffer, buffer_size);
 			}
-
-			rsrc->deallocate(const_cast<void**>(args_buffer), params_size * sizeof(void*), alignof(ArgsBuffer));
 		}
+
+		ConstructedArgumentsGuard(const ConstructedArgumentsGuard&) = delete;
+		ConstructedArgumentsGuard& operator=(ConstructedArgumentsGuard&) = delete;
 
 		ArgsBuffer GetArgsBuffer() const noexcept { return args_buffer; }
 	private:
 		std::pmr::memory_resource* rsrc;
-		std::size_t params_size;
+		std::size_t buffer_size{ 0 };
+		void* buffer{ nullptr };
+		void** constructed_args_buffer{ nullptr };
+		NonPtrArgInfo* nonptrargs{ nullptr };
+		std::size_t num_args;
+		std::size_t num_nonptrargs{ 0 };
 		ArgsBuffer args_buffer{ nullptr };
-		std::pmr::list<ArgInfo> infos;
 	};
 
 	static InvocableResult IsStaticInvocable(
@@ -601,10 +607,10 @@ namespace Ubpa::UDRefl::details {
 					};
 				}
 				else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
-					std::uint8_t buffer[sizeof(void*)];
-					mtarget->second.methodptr.Invoke(buffer, guard.GetArgsBuffer());
+					std::aligned_storage_t<sizeof(void*)> buffer;
+					mtarget->second.methodptr.Invoke(&buffer, guard.GetArgsBuffer());
 					return {
-						{rst_desc.typeID, buffer_as<void*>(buffer)},
+						{rst_desc.typeID, buffer_as<void*>(&buffer)},
 						[](void* ptr) { assert(ptr); }
 					};
 				}
@@ -665,10 +671,10 @@ namespace Ubpa::UDRefl::details {
 					};
 				}
 				else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
-					std::uint8_t buffer[sizeof(void*)];
-					mtarget->second.methodptr.Invoke(obj.GetPtr(), buffer, guard.GetArgsBuffer());
+					std::aligned_storage_t<sizeof(void*)> buffer;
+					mtarget->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsBuffer());
 					return {
-						{rst_desc.typeID, buffer_as<void*>(buffer)},
+						{rst_desc.typeID, buffer_as<void*>(&buffer)},
 						[](void* ptr) { assert(ptr); }
 					};
 				}
@@ -737,10 +743,10 @@ namespace Ubpa::UDRefl::details {
 						};
 					}
 					else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
-						std::uint8_t buffer[sizeof(void*)];
-						iter->second.methodptr.Invoke(obj.GetPtr(), buffer, guard.GetArgsBuffer());
+						std::aligned_storage_t<sizeof(void*)> buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsBuffer());
 						return {
-							{rst_desc.typeID, buffer_as<void*>(buffer)},
+							{rst_desc.typeID, buffer_as<void*>(&buffer)},
 							[](void* ptr) { assert(ptr); }
 						};
 					}
@@ -774,10 +780,10 @@ namespace Ubpa::UDRefl::details {
 						};
 					}
 					else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
-						std::uint8_t buffer[sizeof(void*)];
-						iter->second.methodptr.Invoke(obj.GetPtr(), buffer, guard.GetArgsBuffer());
+						std::aligned_storage_t<sizeof(void*)> buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsBuffer());
 						return {
-							{rst_desc.typeID, buffer_as<void*>(buffer)},
+							{rst_desc.typeID, buffer_as<void*>(&buffer)},
 							[](void* ptr) { assert(ptr); }
 						};
 					}
@@ -1530,7 +1536,6 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 #endif // !NDEBUG
 		const std::size_t rhs_hash = argTypeIDs[i].GetValue();
 
-		assert(!type_name_is_const(lhs) && !type_name_is_volatile(lhs));
 		if (type_name_is_lvalue_reference(lhs)) { // &{T} | &{const{T}}
 			auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
 			if (type_name_is_const(unref_lhs)) { // &{const{T}}
@@ -1551,7 +1556,6 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 		}
 		else if (type_name_is_rvalue_reference(lhs)) { // &&{T} | &&{const{T}}
 			auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
-			assert(!type_name_is_volatile(unref_lhs));
 
 			if (type_name_is_const(unref_lhs)) { // &&{const{T}}
 				auto raw_lhs = type_name_remove_const(unref_lhs); // T
