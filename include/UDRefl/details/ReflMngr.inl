@@ -746,9 +746,12 @@ namespace Ubpa::UDRefl {
 			else if constexpr (std::is_pointer_v<T>)
 				RegisterType<std::remove_cv_t<std::remove_pointer_t<T>>>();
 			else {
-				if (IsRegistered(TypeID_of<T>))
+				auto target = typeinfos.find(TypeID_of<T>);
+				if (target != typeinfos.end())
 					return;
-				RegisterType(type_name<T>(), sizeof(T), alignof(T));
+
+				tregistry.Register<T>();
+				typeinfos.emplace_hint(target, TypeID_of<T>, TypeInfo{ sizeof(T),alignof(T) });
 
 				if constexpr (std::is_default_constructible_v<T>)
 					AddConstructor<T>();

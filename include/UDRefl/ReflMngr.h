@@ -35,12 +35,6 @@ namespace Ubpa::UDRefl {
 		void Clear() noexcept;
 
 		//
-		// Lookup
-		///////////
-
-		bool IsRegistered(TypeID typeID) const noexcept { return typeinfos.find(typeID) != typeinfos.end(); }
-
-		//
 		// Factory
 		////////////
 
@@ -417,15 +411,15 @@ namespace Ubpa::UDRefl {
 		// Meta
 		/////////
 
-		// No argument copying is required
 		bool IsNonArgCopyConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const;
 		bool IsConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const;
 		bool IsDestructible (TypeID typeID) const;
 		bool IsCopyConstructible(TypeID typeID) const;
 		bool IsMoveConstructible(TypeID typeID) const;
 
-		bool Construct(ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
-		bool Destruct (ConstObjectPtr obj) const;
+		bool NonArgCopyConstruct(ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
+		bool Construct          (ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
+		bool Destruct           (ConstObjectPtr obj) const;
 
 		void* Malloc(size_t size) const;
 		bool  Free  (void* ptr) const;
@@ -433,8 +427,9 @@ namespace Ubpa::UDRefl {
 		void* AlignedMalloc(size_t size, size_t alignment) const;
 		bool  AlignedFree  (void* ptr) const;
 
-		ObjectPtr New   (TypeID typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
-		bool      Delete(ConstObjectPtr obj) const;
+		ObjectPtr NonArgCopyNew(TypeID      typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
+		ObjectPtr New          (TypeID      typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
+		bool      Delete       (ConstObjectPtr obj) const;
 
 		SharedObject MakeShared(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
 
@@ -554,6 +549,16 @@ namespace Ubpa::UDRefl {
 		ObjectPtr                FindRWOwnedVar(ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
 		ConstObjectPtr           FindROwnedVar (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
 
+		// Contains (DFS)
+
+		bool ContainsBase          (TypeID typeID, TypeID baseID  ) const;
+		bool ContainsField         (TypeID typeID, StrID  fieldID ) const;
+		bool ContainsRWField       (TypeID typeID, StrID  fieldID ) const;
+		bool ContainsMethod        (TypeID typeID, StrID  methodID) const;
+		bool ContainsVariableMethod(TypeID typeID, StrID  methodID) const;
+		bool ContainsConstMethod   (TypeID typeID, StrID  methodID) const;
+		bool ContainsStaticMethod  (TypeID typeID, StrID  methodID) const;
+
 		//
 		// Memory
 		///////////
@@ -563,6 +568,8 @@ namespace Ubpa::UDRefl {
 		// - DMInvoke's 'D' means 'default' (use the default memory resource)
 		//
 
+		std::pmr::synchronized_pool_resource* GetTemporaryResource() const{ return &temporary_resource; }
+
 		SharedObject MInvoke(
 			TypeID typeID,
 			StrID methodID,
@@ -623,8 +630,9 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args&&... args) const;
 
-		ObjectPtr MNew   (TypeID typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
-		bool      MDelete(ConstObjectPtr obj, std::pmr::memory_resource* rsrc) const;
+		ObjectPtr NonArgCopyMNew(TypeID      typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
+		ObjectPtr MNew          (TypeID      typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const;
+		bool      MDelete       (ConstObjectPtr obj, std::pmr::memory_resource* rsrc) const;
 
 		template<typename... Args>
 		ObjectPtr MNew(TypeID typeID, std::pmr::memory_resource* rsrc, Args&&... args) const;
@@ -646,11 +654,11 @@ namespace Ubpa::UDRefl {
 		TypeID         AddLValueReference     (TypeID         ID );
 		TypeID         AddRValueReference     (TypeID         ID );
 		TypeID         AddConstLValueReference(TypeID         ID );
+		TypeID         AddConstRValueReference(TypeID         ID );
 		ObjectPtr      AddLValueReference     (ObjectPtr      obj);
-		ConstObjectPtr AddLValueReference     (ConstObjectPtr obj);
 		ObjectPtr      AddRValueReference     (ObjectPtr      obj);
-		ConstObjectPtr AddRValueReference     (ConstObjectPtr obj);
 		ConstObjectPtr AddConstLValueReference(ConstObjectPtr obj);
+		ConstObjectPtr AddConstRValueReference(ConstObjectPtr obj);
 
 	private:
 		ReflMngr();
@@ -658,6 +666,7 @@ namespace Ubpa::UDRefl {
 
 		// for
 		// - argument copy
+		// - user argument buffer
 		mutable std::pmr::synchronized_pool_resource temporary_resource;
 	};
 

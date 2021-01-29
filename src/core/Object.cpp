@@ -101,6 +101,34 @@ ConstObjectPtr ObjectPtrBase::FindROwnedVar(const std::function<bool(ConstObject
 	return ReflMngr::Instance().FindROwnedVar({ ID, ptr }, func);
 }
 
+bool ObjectPtrBase::ContainsBase(TypeID baseID) const {
+	return ReflMngr::Instance().ContainsBase(ID, baseID);
+}
+
+bool ObjectPtrBase::ContainsField(StrID fieldID) const {
+	return ReflMngr::Instance().ContainsField(ID, fieldID);
+}
+
+bool ObjectPtrBase::ContainsRWField(StrID fieldID) const {
+	return ReflMngr::Instance().ContainsRWField(ID, fieldID);
+}
+
+bool ObjectPtrBase::ContainsMethod(StrID methodID) const {
+	return ReflMngr::Instance().ContainsMethod(ID, methodID);
+}
+
+bool ObjectPtrBase::ContainsVariableMethod(StrID methodID) const {
+	return ReflMngr::Instance().ContainsVariableMethod(ID, methodID);
+}
+
+bool ObjectPtrBase::ContainsConstMethod(StrID methodID) const {
+	return ReflMngr::Instance().ContainsConstMethod(ID, methodID);
+}
+
+bool ObjectPtrBase::ContainsStaticMethod(StrID methodID) const {
+	return ReflMngr::Instance().ContainsStaticMethod(ID, methodID);
+}
+
 DereferenceProperty ObjectPtrBase::GetDereferenceProperty() const {
 	return ReflMngr::Instance().GetDereferenceProperty(ID);
 }
@@ -117,28 +145,12 @@ ConstObjectPtr ObjectPtrBase::ObjectPtrBase::DereferenceAsConst() const {
 	return ReflMngr::Instance().DereferenceAsConst({ ID, ptr });
 }
 
-TypeID ObjectPtrBase::AddLValueReferenceID() const{
-	return ReflMngr::Instance().AddLValueReference(ID);
-}
-
-TypeID ObjectPtrBase::AddRValueReferenceID() const{
-	return ReflMngr::Instance().AddRValueReference(ID);
-}
-
-TypeID ObjectPtrBase::AddConstLValueReferenceID() const{
-	return ReflMngr::Instance().AddConstLValueReference(ID);
-}
-
-ConstObjectPtr ObjectPtrBase::AddLValueReference() const{
-	return ReflMngr::Instance().AddLValueReference(ConstObjectPtr{ ID, ptr });
-}
-
-ConstObjectPtr ObjectPtrBase::AddRValueReference() const{
-	return ReflMngr::Instance().AddRValueReference(ConstObjectPtr{ ID, ptr });
-}
-
 ConstObjectPtr ObjectPtrBase::AddConstLValueReference() const {
 	return ReflMngr::Instance().AddConstLValueReference({ ID, ptr });
+}
+
+ConstObjectPtr ObjectPtrBase::AddConstRValueReference() const {
+	return ReflMngr::Instance().AddConstRValueReference({ ID, ptr });
 }
 
 SharedObject ObjectPtrBase::cbegin() const {

@@ -176,19 +176,27 @@ namespace Ubpa::UDRefl::details {
 	}
 
 	class ConstructedArgumentsGuard {
-		struct CopyInfo {
-			size_t idx;
+		struct ArgInfo {
+			ArgInfo(size_t idx, TypeID ID)
+				: idx{ static_cast<std::uint16_t>(idx) }, isPtr{ false }, ID{ ID }{}
+			ArgInfo(size_t idx, void* ptr)
+				: idx{ static_cast<std::uint16_t>(idx) }, isPtr{ true }, ptr{ ptr }{}
+
+			std::uint16_t idx;
 			bool isPtr;
+			union {
+				void* ptr;
+				TypeID ID;
+			};
 		};
 	public:
 		ConstructedArgumentsGuard(
 			std::pmr::memory_resource* rsrc,
 			std::span<const TypeID> paramTypeIDs,
 			std::span<const TypeID> argTypeIDs,
-			ArgsBuffer orig_args_buffer)
-			:
+			ArgsBuffer orig_args_buffer) :
 			rsrc{ rsrc },
-			paramTypeIDs{ paramTypeIDs },
+			params_size{ paramTypeIDs.size() },
 			infos{ rsrc }
 		{
 			assert(Mngr->IsCompatible(paramTypeIDs, argTypeIDs));
@@ -237,23 +245,24 @@ namespace Ubpa::UDRefl::details {
 				if (!constructed_args_buffer) {
 					constructed_args_buffer = static_cast<void**>(rsrc->allocate(argTypeIDs.size() * sizeof(void*), alignof(ArgsBuffer)));
 					assert(constructed_args_buffer);
-					for (size_t j = 0; j < argTypeIDs.size(); j++)
-						constructed_args_buffer[j] = orig_args_buffer[j];
+					std::memcpy(constructed_args_buffer, argTypeIDs.data(), argTypeIDs.size() * sizeof(void*));
 				}
 
 				std::string_view name = Mngr->tregistry.Nameof(paramTypeIDs[i]);
 				if (type_name_is_pointer(name)) {
-					void** ptr_buffer = static_cast<void**>(rsrc->allocate(sizeof(void*), alignof(void*)));
-					*ptr_buffer = *reinterpret_cast<void**>(orig_args_buffer[i]);
-					constructed_args_buffer[i] = ptr_buffer;
-					infos.push_back({ i, true});
+					infos.emplace_back(i, orig_args_buffer[i]);
+					constructed_args_buffer[i] = &infos.back().ptr;
 				}
 				else {
-					std::array<TypeID, 1> tmp_argTypeIDs = { TypeID{type_name_add_const_lvalue_reference_hash(lhs)} };
-					std::array<void*, 1> tmp_args_buffer = { orig_args_buffer[i] };
-					ObjectPtr constructedArg = Mngr->MNew(paramTypeIDs[i], rsrc, std::span<const TypeID>{tmp_argTypeIDs}, static_cast<ArgsBuffer>(tmp_args_buffer.data()));
+					TypeID raw_param_ID = TypeID{ type_name_remove_cvref(lhs) };
+					ObjectPtr constructedArg = Mngr->NonArgCopyMNew(
+						raw_param_ID,
+						rsrc,
+						std::span<const TypeID>{&argTypeIDs[i], 1},
+						static_cast<ArgsBuffer>(&orig_args_buffer[i])
+					);
 					constructed_args_buffer[i] = constructedArg.GetPtr();
-					infos.push_back({ i, false });
+					infos.emplace_back(i, raw_param_ID);
 				}
 			}
 
@@ -267,24 +276,23 @@ namespace Ubpa::UDRefl::details {
 			if (infos.empty())
 				return;
 
-			for (const auto& [idx, isPtr] : infos) {
-				if (isPtr)
-					rsrc->deallocate(args_buffer[idx], sizeof(void*), alignof(void*));
-				else {
-					bool success = Mngr->MDelete({ paramTypeIDs[idx], args_buffer[idx] }, rsrc);
-					assert(success);
-				}
+			for (const auto& info : infos) {
+				if (info.isPtr)
+					continue;
+
+				bool success = Mngr->MDelete({ info.ID, args_buffer[info.idx] }, rsrc);
+				assert(success);
 			}
 
-			rsrc->deallocate(const_cast<void**>(args_buffer), paramTypeIDs.size() * sizeof(void*), alignof(ArgsBuffer));
+			rsrc->deallocate(const_cast<void**>(args_buffer), params_size * sizeof(void*), alignof(ArgsBuffer));
 		}
 
 		ArgsBuffer GetArgsBuffer() const noexcept { return args_buffer; }
 	private:
 		std::pmr::memory_resource* rsrc;
-		std::span<const TypeID> paramTypeIDs;
+		std::size_t params_size;
 		ArgsBuffer args_buffer{ nullptr };
-		std::pmr::vector<CopyInfo> infos;
+		std::pmr::list<ArgInfo> infos;
 	};
 
 	static InvocableResult IsStaticInvocable(
@@ -1188,6 +1196,26 @@ bool ReflMngr::AlignedFree(void* ptr) const {
 	return InvokeArgs(GlobalID, StrIDRegistry::MetaID::aligned_free, nullptr, std::move(ptr));
 }
 
+ObjectPtr ReflMngr::NonArgCopyNew(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
+	if (!IsNonArgCopyConstructible(typeID, argTypeIDs))
+		return nullptr;
+
+	const auto& typeinfo = typeinfos.at(typeID);
+
+	void* buffer = typeinfo.alignment <= std::alignment_of_v<std::max_align_t> ?
+		Malloc(typeinfo.size)
+		: AlignedMalloc(typeinfo.size, typeinfo.alignment);
+
+	if (!buffer)
+		return nullptr;
+
+	ObjectPtr obj{ typeID, buffer };
+	bool success = NonArgCopyConstruct(obj, argTypeIDs, args_buffer);
+	assert(success);
+
+	return obj;
+}
+
 ObjectPtr ReflMngr::New(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
 	if (!IsConstructible(typeID, argTypeIDs))
 		return nullptr;
@@ -1203,11 +1231,9 @@ ObjectPtr ReflMngr::New(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgsB
 
 	ObjectPtr obj{ typeID, buffer };
 	bool success = Construct(obj, argTypeIDs, args_buffer);
+	assert(success);
 	
-	if (success)
-		return obj;
-	else
-		return nullptr;
+	return obj;
 }
 
 bool ReflMngr::Delete(ConstObjectPtr obj) const {
@@ -1228,10 +1254,14 @@ bool ReflMngr::Delete(ConstObjectPtr obj) const {
 
 SharedObject ReflMngr::MakeShared(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
 	ObjectPtr obj = New(typeID, argTypeIDs, args_buffer);
+
+	if (!obj.Valid())
+		return { obj, [](void*) {} };
+
 	return { obj, [typeID](void* ptr) {
 		bool success = ReflMngr::Instance().Delete({typeID, ptr});
 		assert(success);
-	}};
+	} };
 }
 
 ObjectPtr ReflMngr::StaticCast_DerivedToBase(ObjectPtr obj, TypeID typeID) const {
@@ -1740,6 +1770,26 @@ SharedObject ReflMngr::MInvoke(
 	return details::MInvoke(false, &temporary_resource, obj, methodID, argTypeIDs, args_buffer, rst_rsrc);
 }
 
+ObjectPtr ReflMngr::NonArgCopyMNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
+	assert(rsrc);
+
+	if (!IsConstructible(typeID, argTypeIDs))
+		return nullptr;
+
+	const auto& typeinfo = typeinfos.at(typeID);
+
+	void* buffer = rsrc->allocate(typeinfo.size, typeinfo.alignment);
+
+	if (!buffer)
+		return nullptr;
+
+	ObjectPtr obj{ typeID, buffer };
+	bool success = NonArgCopyConstruct(obj, argTypeIDs, args_buffer);
+	assert(success);
+
+	return obj;
+}
+
 ObjectPtr ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
 	assert(rsrc);
 
@@ -1755,11 +1805,9 @@ ObjectPtr ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::sp
 
 	ObjectPtr obj{ typeID, buffer };
 	bool success = Construct(obj, argTypeIDs, args_buffer);
+	assert(success);
 
-	if (success)
-		return obj;
-	else
-		return nullptr;
+	return obj;
 }
 
 bool ReflMngr::MDelete(ConstObjectPtr obj, std::pmr::memory_resource* rsrc) const {
@@ -1835,6 +1883,30 @@ bool ReflMngr::IsDestructible(TypeID typeID) const {
 		if (!mtarget->second.methodptr.IsMemberVariable()
 			&& IsCompatible(mtarget->second.methodptr.GetParamList(), {}))
 			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::NonArgCopyConstruct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
+	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+
+	if (!obj.Valid())
+		return false;
+
+	auto target = typeinfos.find(obj.GetID());
+	if (target == typeinfos.end())
+		return false;
+	const auto& typeinfo = target->second;
+	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
+	auto mtarget = typeinfo.methodinfos.find(ctorID);
+	size_t num = typeinfo.methodinfos.count(ctorID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (mtarget->second.methodptr.IsMemberVariable()
+			&& details::IsNonArgCopyConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
+		{
+			mtarget->second.methodptr.Invoke(obj.GetPtr(), nullptr, args_buffer);
+			return true;
+		}
 	}
 	return false;
 }
@@ -2340,7 +2412,7 @@ ConstObjectPtr ReflMngr::DereferenceAsConst(ConstObjectPtr ref_obj) const {
 	auto name = tregistry.Nameof(ref_obj.GetID());
 
 	if (!type_name_is_reference(name))
-		return nullptr;
+		return ref_obj;
 
 	std::string_view ele_name = type_name_remove_reference(name);
 
@@ -2362,16 +2434,16 @@ TypeID ReflMngr::AddConstLValueReference(TypeID ID) {
 	return tregistry.RegisterAddConstLValueReference(ID);
 }
 
+TypeID ReflMngr::AddConstRValueReference(TypeID ID) {
+	return tregistry.RegisterAddConstRValueReference(ID);
+}
+
 ObjectPtr ReflMngr::AddLValueReference(ObjectPtr obj) {
 	TypeID newID = tregistry.RegisterAddLValueReference(obj.GetID());
 	if (!newID.Valid())
 		return {};
 
 	return { newID, obj.GetPtr() };
-}
-
-ConstObjectPtr ReflMngr::AddLValueReference(ConstObjectPtr obj) {
-	return AddLValueReference(ConstCast(obj));
 }
 
 ObjectPtr ReflMngr::AddRValueReference(ObjectPtr obj) {
@@ -2382,14 +2454,147 @@ ObjectPtr ReflMngr::AddRValueReference(ObjectPtr obj) {
 	return { newID, obj.GetPtr() };
 }
 
-ConstObjectPtr ReflMngr::AddRValueReference(ConstObjectPtr obj) {
-	return AddRValueReference(ConstCast(obj));
-}
-
 ConstObjectPtr ReflMngr::AddConstLValueReference(ConstObjectPtr obj) {
 	TypeID newID = tregistry.RegisterAddConstLValueReference(obj.GetID());
 	if (!newID.Valid())
 		return {};
 
 	return { newID, const_cast<void*>(obj.GetPtr()) };
+}
+
+ConstObjectPtr ReflMngr::AddConstRValueReference(ConstObjectPtr obj) {
+	TypeID newID = tregistry.RegisterAddConstRValueReference(obj.GetID());
+	if (!newID.Valid())
+		return {};
+
+	return { newID, const_cast<void*>(obj.GetPtr()) };
+}
+
+bool ReflMngr::ContainsBase(TypeID typeID, TypeID baseID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	if (info.baseinfos.contains(baseID))
+		return true;
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsBase(ID, baseID);
+		if (found)
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::ContainsField(TypeID typeID, StrID fieldID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	if (info.fieldinfos.contains(fieldID))
+		return true;
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsField(ID, fieldID);
+		if (found)
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::ContainsRWField(TypeID typeID, StrID fieldID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	auto ftarget = info.fieldinfos.find(fieldID);
+	if (ftarget != info.fieldinfos.end() && ftarget->second.fieldptr.IsVariable())
+		return true;
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsField(ID, fieldID);
+		if (found)
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::ContainsMethod(TypeID typeID, StrID methodID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	if (info.methodinfos.contains(methodID))
+		return true;
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsMethod(ID, methodID);
+		if (found)
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::ContainsVariableMethod(TypeID typeID, StrID methodID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	auto begin_end = info.methodinfos.equal_range(methodID);
+	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
+		if (iter->second.methodptr.IsMemberVariable())
+			return true;
+	}
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsMethod(ID, methodID);
+		if (found)
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::ContainsConstMethod(TypeID typeID, StrID methodID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	auto begin_end = info.methodinfos.equal_range(methodID);
+	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
+		if (iter->second.methodptr.IsMemberConst())
+			return true;
+	}
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsMethod(ID, methodID);
+		if (found)
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::ContainsStaticMethod(TypeID typeID, StrID methodID) const {
+	auto target = typeinfos.find(typeID);
+	if (target == typeinfos.end())
+		return false;
+
+	const auto& info = target->second;
+	auto begin_end = info.methodinfos.equal_range(methodID);
+	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
+		if (iter->second.methodptr.IsStatic())
+			return true;
+	}
+
+	for (const auto& [ID, baseinfo] : info.baseinfos) {
+		bool found = ContainsMethod(ID, methodID);
+		if (found)
+			return true;
+	}
+	return false;
 }

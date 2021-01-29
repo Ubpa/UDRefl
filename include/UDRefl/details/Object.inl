@@ -43,9 +43,9 @@ namespace Ubpa::UDRefl::details {
 		using U = std::remove_const_t<std::remove_reference_t<T>>;
 		static_assert(!std::is_volatile_v<U>);
 		if constexpr (std::is_same_v<U, ObjectPtr> || std::is_same_v<U, SharedObject>)
-			return ObjectPtr{ arg }.AddLValueReferenceID();
+			return ObjectPtr{ arg }.AddLValueReference().GetID();
 		else if constexpr (std::is_same_v<U, ConstObjectPtr> || std::is_same_v<U, SharedConstObject>)
-			return ConstObjectPtr{ arg }.AddConstLValueReferenceID();
+			return ConstObjectPtr{ arg }.AddConstLValueReference().GetID();
 		else
 			return TypeID_of<T>;
 	}
@@ -320,10 +320,10 @@ namespace Ubpa::UDRefl {
 		return AMInvoke(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
-	template<typename Arg,
-		std::enable_if_t<!std::is_same_v<std::remove_cv_t<std::remove_reference_t<Arg>>, ObjectPtr>, int>>
-	SharedObject ObjectPtr::operator=(Arg&& rhs) const {
-		return ADMInvoke(StrIDRegistry::MetaID::operator_assign, std::forward<Arg>(rhs));
+	template<typename Arg> requires NonObjectAndPtr<std::decay_t<Arg>>
+	const ObjectPtr& ObjectPtr::operator=(Arg&& rhs) const {
+		AInvoke<void>(StrIDRegistry::MetaID::operator_assign, std::forward<Arg>(rhs));
+		return *this;
 	}
 
 	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, [], subscript)

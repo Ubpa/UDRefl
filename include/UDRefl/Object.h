@@ -18,7 +18,7 @@ bool operator op (const Arg& rhs) const {                                       
 
 #define OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(op, name)                             \
 template<typename Arg>                                                             \
-ObjectPtr operator op (Arg&& rhs) const {                                          \
+const ObjectPtr& operator op (Arg&& rhs) const {                                   \
 	AInvoke<void>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
 	return *this;                                                                  \
 }
@@ -58,6 +58,13 @@ namespace Ubpa::UDRefl {
 	class SharedConstObject;
 	class ObjectPtr;
 	class ConstObjectPtr;
+
+	template<typename T>
+	struct IsObjectOrPtr;
+	template<typename T>
+	constexpr bool IsObjectOrPtr_v = IsObjectOrPtr<T>::value;
+	template<typename T>
+	concept NonObjectAndPtr = !IsObjectOrPtr<T>::value;
 
 	class ObjectPtrBase {
 	public:
@@ -184,6 +191,14 @@ namespace Ubpa::UDRefl {
 		ConstObjectPtr           FindRVar     (const std::function<bool(ConstObjectPtr)>& func) const;
 		ConstObjectPtr           FindROwnedVar(const std::function<bool(ConstObjectPtr)>& func) const;
 
+		bool ContainsBase          (TypeID baseID  ) const;
+		bool ContainsField         (StrID  fieldID ) const;
+		bool ContainsRWField       (StrID  fieldID ) const;
+		bool ContainsMethod        (StrID  methodID) const;
+		bool ContainsVariableMethod(StrID  methodID) const;
+		bool ContainsConstMethod   (StrID  methodID) const;
+		bool ContainsStaticMethod  (StrID  methodID) const;
+
 		//
 		// Type
 		/////////
@@ -193,12 +208,8 @@ namespace Ubpa::UDRefl {
 		ObjectPtr           Dereference() const;
 		ConstObjectPtr      DereferenceAsConst() const;
 		
-		TypeID         AddLValueReferenceID     () const;
-		TypeID         AddRValueReferenceID     () const;
-		TypeID         AddConstLValueReferenceID() const;
-		ConstObjectPtr AddLValueReference       () const;
-		ConstObjectPtr AddRValueReference       () const;
-		ConstObjectPtr AddConstLValueReference  () const;
+		ConstObjectPtr AddConstLValueReference() const;
+		ConstObjectPtr AddConstRValueReference() const;
 
 		//
 		// Meta
@@ -479,9 +490,8 @@ namespace Ubpa::UDRefl {
 
 		using ObjectPtrBase::operator*;
 
-		template<typename Arg,
-			std::enable_if_t<!std::is_same_v<std::remove_cv_t<std::remove_reference_t<Arg>>, ObjectPtr>, int> = 0>
-		SharedObject operator=(Arg&& rhs) const;
+		template<typename Arg> requires NonObjectAndPtr<std::decay_t<Arg>>
+		const ObjectPtr& operator=(Arg&& rhs) const;
 
 		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(+=, assign_add);
 		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(-=, assign_sub);
@@ -806,8 +816,7 @@ namespace Ubpa::UDRefl {
 
 		using SharedObjectBase::operator*;
 		
-		template<typename Arg,
-			std::enable_if_t<!std::is_same_v<std::remove_cv_t<std::remove_reference_t<Arg>>, ObjectPtr>, int> = 0 >
+		template<typename Arg> requires NonObjectAndPtr<std::decay_t<Arg>>
 		SharedObject operator=(Arg&& rhs) const {
 			return AsObjectPtr()->operator=(std::forward<Arg>(rhs));
 		}
@@ -858,13 +867,6 @@ namespace Ubpa::UDRefl {
 	// generate ObjectPtr/ConstObjectPtr
 	template<typename T>
 	constexpr auto Ptr(T&& p) noexcept;
-
-	template<typename T>
-	struct IsObjectOrPtr;
-	template<typename T>
-	constexpr bool IsObjectOrPtr_v = IsObjectOrPtr<T>::value;
-	template<typename T>
-	concept NonObjectAndPtr = !IsObjectOrPtr<T>::value;
 }
 
 #undef OBJECT_PTR_DECLARE_OPERATOR

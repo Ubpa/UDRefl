@@ -4,6 +4,10 @@
 
 ## 0.7
 
+- 0.7.2
+  - add algorithm `Contains*` 
+  - `GetTemporaryResource` for user arguments buffer
+  - fix bugs for `ConstructedArgumentsGuard` 
 - 0.7.1
   - cast APIs with `ConstObjectPtr` support reference
   - improve `ObjectPtrBase::operator bool` (as a meta function)
