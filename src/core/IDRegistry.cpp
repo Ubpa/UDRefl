@@ -177,10 +177,11 @@ TypeID TypeIDRegistry::RegisterAddLValueReference(TypeID ID) {
 	if (name.empty())
 		return {};
 
-	auto rst_name = type_name_add_lvalue_reference(name, get_allocator());
+	TypeID ref_ID{ type_name_add_lvalue_reference_hash(name) };
+	if (IsRegistered(ref_ID))
+		return ref_ID;
 
-	if (rst_name.data() == name.data())
-		return ID;
+	auto rst_name = type_name_add_lvalue_reference(name, get_allocator());
 
 	return RegisterUnmanaged(rst_name);
 }
@@ -190,10 +191,11 @@ TypeID TypeIDRegistry::RegisterAddConstLValueReference(TypeID ID) {
 	if (name.empty())
 		return {};
 
-	auto rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
+	TypeID ref_ID{ type_name_add_const_lvalue_reference_hash(name) };
+	if (IsRegistered(ref_ID))
+		return ref_ID;
 
-	if (rst_name.data() == name.data())
-		return ID;
+	auto rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
 
 	return RegisterUnmanaged(rst_name);
 }
@@ -203,10 +205,11 @@ TypeID TypeIDRegistry::RegisterAddRValueReference(TypeID ID) {
 	if (name.empty())
 		return {};
 
-	auto rst_name = type_name_add_rvalue_reference(name, get_allocator());
+	TypeID ref_ID{ type_name_add_rvalue_reference_hash(name) };
+	if (IsRegistered(ref_ID))
+		return ref_ID;
 
-	if (rst_name.data() == name.data())
-		return ID;
+	auto rst_name = type_name_add_rvalue_reference(name, get_allocator());
 
 	return RegisterUnmanaged(rst_name);
 }
@@ -216,10 +219,11 @@ TypeID TypeIDRegistry::RegisterAddConstRValueReference(TypeID ID) {
 	if (name.empty())
 		return {};
 
-	auto rst_name = type_name_add_const_rvalue_reference(name, get_allocator());
+	TypeID ref_ID{ type_name_add_const_rvalue_reference_hash(name) };
+	if (IsRegistered(ref_ID))
+		return ref_ID;
 
-	if (rst_name.data() == name.data())
-		return ID;
+	auto rst_name = type_name_add_const_rvalue_reference(name, get_allocator());
 
 	return RegisterUnmanaged(rst_name);
 }
