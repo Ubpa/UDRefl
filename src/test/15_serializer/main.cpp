@@ -40,15 +40,17 @@ void Serializer(ConstObjectPtr obj) {
 int main() {
 	RegisterVector();
 
-	Vector a;
+	auto a = Mngr->MakeShared(TypeID_of<Vector>);
 
 	for (size_t i = 0; i < 10; i++) {
 		std::vector<size_t> row;
 		for (size_t j = 0; j < 10; j++)
 			row.push_back(j);
-		a.data.push_back(std::move(row));
+		a->RWVar("data").push_back(std::move(row));
 	}
 
-	Serializer(Ptr(a));
+	Serializer(a);
+
+	return 0;
 }
 

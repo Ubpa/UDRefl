@@ -105,13 +105,13 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			void* result_buffer = nullptr,
 			std::span<const TypeID> argTypeIDs = {},
-			ArgsBuffer args_buffer = nullptr) const;
+			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvocableResult IsInvocable(StrID methodID) const;
 
 		template<typename T>
-		T InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgsBuffer args_buffer = nullptr) const;
+		T InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const;
@@ -122,7 +122,7 @@ namespace Ubpa::UDRefl {
 		SharedObject MInvoke(
 			StrID methodID,
 			std::span<const TypeID> argTypeIDs = {},
-			ArgsBuffer args_buffer = nullptr,
+			ArgPtrBuffer argptr_buffer = nullptr,
 			std::pmr::memory_resource* rst_rsrc = std::pmr::get_default_resource()) const;
 
 		template<typename... Args>
@@ -410,19 +410,19 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			void* result_buffer = nullptr,
 			std::span<const TypeID> argTypeIDs = {},
-			ArgsBuffer args_buffer = nullptr) const;
+			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		SharedObject MInvoke(
 			StrID methodID,
 			std::span<const TypeID> argTypeIDs = {},
-			ArgsBuffer args_buffer = nullptr,
+			ArgPtrBuffer argptr_buffer = nullptr,
 			std::pmr::memory_resource* rst_rsrc = std::pmr::get_default_resource()) const;
 
 		template<typename... Args>
 		InvocableResult IsInvocable(StrID methodID) const;
 
 		template<typename T>
-		T InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgsBuffer args_buffer = nullptr) const;
+		T InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const;

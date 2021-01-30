@@ -107,10 +107,10 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ObjectPtrBase::InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {
+	T ObjectPtrBase::InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
 		using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 		std::uint8_t result_buffer[sizeof(U)];
-		InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
+		InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, argptr_buffer);
 		assert(result.resultID == TypeID_of<T>);
 		return result.Move<T>(result_buffer);
 	}
@@ -119,8 +119,8 @@ namespace Ubpa::UDRefl {
 	InvokeResult ObjectPtrBase::InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(methodID, result_buffer, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Invoke(methodID, result_buffer, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
 			return Invoke(methodID, result_buffer);
@@ -130,8 +130,8 @@ namespace Ubpa::UDRefl {
 	T ObjectPtrBase::Invoke(StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(methodID);
@@ -145,11 +145,11 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr), rst_rsrc);
+			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgPtrBuffer>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
@@ -164,8 +164,8 @@ namespace Ubpa::UDRefl {
 	T ObjectPtrBase::AInvoke(StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { details::ArgID<decltype(args)>(args)... };
-			const std::array args_buffer{ details::ArgPtr(args)... };
-			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+			const std::array argptr_buffer{ details::ArgPtr(args)... };
+			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(methodID);
@@ -179,11 +179,11 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { details::ArgID<decltype(args)>(args)... };
-			const std::array args_buffer{ details::ArgPtr(args)... };
-			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
+			const std::array argptr_buffer{ details::ArgPtr(args)... };
+			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr), rst_rsrc);
+			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgPtrBuffer>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
@@ -234,24 +234,24 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ObjectPtr::InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs, ArgsBuffer args_buffer) const {\
+	T ObjectPtr::InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {\
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
-			InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, args_buffer);
+			InvokeResult result = Invoke(methodID, result_buffer, argTypeIDs, argptr_buffer);
 			assert(result.resultID == TypeID_of<T>);
 			return result.Move<T>(result_buffer);
 		}
 		else
-			Invoke(methodID, nullptr, argTypeIDs, args_buffer);
+			Invoke(methodID, nullptr, argTypeIDs, argptr_buffer);
 	}
 
 	template<typename... Args>
 	InvokeResult ObjectPtr::InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(methodID, result_buffer, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Invoke(methodID, result_buffer, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
 			return Invoke(methodID, result_buffer);
@@ -261,8 +261,8 @@ namespace Ubpa::UDRefl {
 	T ObjectPtr::Invoke(StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(methodID);
@@ -276,11 +276,11 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array args_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr), rst_rsrc);
+			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgPtrBuffer>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>
@@ -293,8 +293,8 @@ namespace Ubpa::UDRefl {
 	T ObjectPtr::AInvoke(StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { details::ArgID<decltype(args)>(args)... };
-			const std::array args_buffer{ details::ArgPtr(args)... };
-			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()));
+			const std::array argptr_buffer{ details::ArgPtr(args)... };
+			return InvokeRet<T>(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
 			return InvokeRet<T>(methodID);
@@ -308,11 +308,11 @@ namespace Ubpa::UDRefl {
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { details::ArgID<decltype(args)>(args)... };
-			const std::array args_buffer{ details::ArgPtr(args)... };
-			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgsBuffer>(args_buffer.data()), rst_rsrc);
+			const std::array argptr_buffer{ details::ArgPtr(args)... };
+			return MInvoke(methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), rst_rsrc);
 		}
 		else
-			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgsBuffer>(nullptr), rst_rsrc);
+			return MInvoke(methodID, std::span<const TypeID>{}, static_cast<ArgPtrBuffer>(nullptr), rst_rsrc);
 	}
 
 	template<typename... Args>

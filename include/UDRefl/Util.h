@@ -172,13 +172,13 @@ namespace Ubpa::UDRefl {
 	// 
 
 	// pointer const array type (pointer is const, and pointer to non - const / referenced object)
-	using ArgsBuffer = void* const*;
+	using ArgPtrBuffer = void* const*;
 
 	// [func_ptr]
 	// - Func Obj::* : Func isn't && (const && is ok)
 	// - Func*
 	// [result]
-	// - type : ({const?} void* obj, void* result_buffer, ArgsBuffer args_buffer) -> Destructor
+	// - type : ({const?} void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor
 	// - size : 1
 	template<auto func_ptr>
 	constexpr auto wrap_member_function() noexcept;
@@ -186,7 +186,7 @@ namespace Ubpa::UDRefl {
 	// [func_ptr]
 	// - Func*
 	// [result]
-	// - type : (void* result_buffer, ArgsBuffer args_buffer) -> Destructor
+	// - type : (void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor
 	// - size : 1
 	template<auto func_ptr>
 	constexpr auto wrap_static_function() noexcept;
@@ -199,14 +199,14 @@ namespace Ubpa::UDRefl {
 
 	// Func: Ret(const? volatile? Object&, Args...)
 	// [result]
-	// - type : ({const?} void* obj, void* result_buffer, ArgsBuffer args_buffer) -> Destructor
+	// - type : ({const?} void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor
 	// - size : sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_member_function(Func&& func) noexcept;
 
 	// Func: Ret(Args...)
 	// [result]
-	// - type : (void* result_buffer, ArgsBuffer args_buffer) -> Destructor
+	// - type : (void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor
 	// - size : sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_static_function(Func&& func) noexcept;

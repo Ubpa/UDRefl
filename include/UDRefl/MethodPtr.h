@@ -10,8 +10,8 @@ namespace Ubpa::UDRefl {
 	
 	class ArgsView {
 	public:
-		ArgsView(ArgsBuffer buffer, const ParamList& paramList) : buffer{ buffer }, paramList{ paramList }{}
-		ArgsBuffer GetBuffer() const noexcept { return buffer; }
+		ArgsView(ArgPtrBuffer buffer, const ParamList& paramList) : buffer{ buffer }, paramList{ paramList }{}
+		ArgPtrBuffer GetBuffer() const noexcept { return buffer; }
 		const ParamList& GetParamList() const noexcept { return paramList; }
 
 		// pointer to
@@ -22,7 +22,7 @@ namespace Ubpa::UDRefl {
 			return { paramList[idx], buffer[idx] };
 		}
 	private:
-		ArgsBuffer buffer;
+		ArgPtrBuffer buffer;
 		const ParamList& paramList;
 	};
 
@@ -74,9 +74,9 @@ namespace Ubpa::UDRefl {
 				paramList != rhs.paramList;
 		}
 
-		Destructor Invoke(      void* obj, void* result_buffer, ArgsBuffer args_buffer) const;
-		Destructor Invoke(const void* obj, void* result_buffer, ArgsBuffer args_buffer) const;
-		Destructor Invoke(                 void* result_buffer, ArgsBuffer args_buffer) const;
+		Destructor Invoke(      void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
+		Destructor Invoke(const void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
+		Destructor Invoke(                 void* result_buffer, ArgPtrBuffer argptr_buffer) const;
 
 	private:
 		std::variant<

@@ -217,18 +217,18 @@ InvokeResult ObjectPtrBase::Invoke(
 	StrID methodID,
 	void* result_buffer,
 	std::span<const TypeID> argTypeIDs,
-	ArgsBuffer args_buffer) const
+	ArgPtrBuffer argptr_buffer) const
 {
-	return ReflMngr::Instance().Invoke(ConstObjectPtr{ ID, ptr }, methodID, result_buffer, argTypeIDs, args_buffer);
+	return ReflMngr::Instance().Invoke(ConstObjectPtr{ ID, ptr }, methodID, result_buffer, argTypeIDs, argptr_buffer);
 }
 
 SharedObject ObjectPtrBase::MInvoke(
 	StrID methodID,
 	std::span<const TypeID> argTypeIDs,
-	ArgsBuffer args_buffer,
+	ArgPtrBuffer argptr_buffer,
 	std::pmr::memory_resource* rst_rsrc) const
 {
-	return ReflMngr::Instance().MInvoke(ConstObjectPtr{ ID, ptr }, methodID, argTypeIDs, args_buffer, rst_rsrc);
+	return ReflMngr::Instance().MInvoke(ConstObjectPtr{ ID, ptr }, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
 }
 
 
@@ -347,18 +347,18 @@ InvokeResult ObjectPtr::Invoke(
 	StrID methodID,
 	void* result_buffer,
 	std::span<const TypeID> argTypeIDs,
-	ArgsBuffer args_buffer) const
+	ArgPtrBuffer argptr_buffer) const
 {
-	return ReflMngr::Instance().Invoke(*this, methodID, result_buffer, argTypeIDs, args_buffer);
+	return ReflMngr::Instance().Invoke(*this, methodID, result_buffer, argTypeIDs, argptr_buffer);
 }
 
 SharedObject ObjectPtr::MInvoke(
 	StrID methodID,
 	std::span<const TypeID> argTypeIDs,
-	ArgsBuffer args_buffer,
+	ArgPtrBuffer argptr_buffer,
 	std::pmr::memory_resource* rst_rsrc) const
 {
-	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, args_buffer, rst_rsrc);
+	return ReflMngr::Instance().MInvoke(*this, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
 }
 
 void ObjectPtr::ForEachRWVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const {
