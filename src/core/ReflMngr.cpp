@@ -193,8 +193,7 @@ namespace Ubpa::UDRefl::details {
 			std::span<const TypeID> paramTypeIDs,
 			std::span<const TypeID> argTypeIDs,
 			ArgPtrBuffer orig_argptr_buffer) :
-			rsrc{ rsrc },
-			num_args{ static_cast<std::uint16_t>(argTypeIDs.size()) }
+			rsrc{ rsrc }
 		{
 			if (argTypeIDs.size() != paramTypeIDs.size())
 				return;
@@ -204,6 +203,10 @@ namespace Ubpa::UDRefl::details {
 				argptr_buffer = orig_argptr_buffer;
 				return;
 			}
+
+			// 1. is compatible ? (collect infos)
+
+			const std::uint16_t num_args = static_cast<std::uint16_t>(argTypeIDs.size());
 
 			ArgInfo info_copiedargs[MaxArgNum + 1];
 			std::uint16_t num_copiedargs = 0;
@@ -319,25 +322,30 @@ namespace Ubpa::UDRefl::details {
 				return;
 			}
 
+			// 2. compute offset and alignment
+
 			for (std::uint16_t k = 0; k < num_copiedargs; ++k) {
+				std::uint32_t size, alignment;
 				if (info_copiedargs[k].is_ptr) {
-					constexpr std::uint32_t alignment = static_cast<std::uint32_t>(alignof(void*));
-					std::uint32_t offset = (size_copiedargs + (alignment - 1)) / alignment * alignment;
-					info_copiedargs[k].offset = offset;
-					size_copiedargs = offset + static_cast<std::uint32_t>(sizeof(void*));
-					assert(max_alignment >= alignment);
+					size = static_cast<std::uint32_t>(sizeof(void*));
+					alignment = static_cast<std::uint32_t>(alignof(void*));
 				}
 				else {
 					++num_copied_nonptr_args;
 					const auto& typeinfo = Mngr->typeinfos.at(TypeID{ info_copiedargs[k].typeID });
-					const std::uint32_t alignment = static_cast<std::uint32_t>(typeinfo.alignment);
-					std::uint32_t offset = (size_copiedargs + (alignment - 1)) / alignment * alignment;
-					info_copiedargs[k].offset = offset;
-					size_copiedargs = offset + static_cast<std::uint32_t>(typeinfo.size);
-					if (alignment > max_alignment)
-						max_alignment = alignment;
+					size = static_cast<std::uint32_t>(typeinfo.size);
+					alignment = static_cast<std::uint32_t>(typeinfo.alignment);
 				}
+
+				std::uint32_t offset = (size_copiedargs + (alignment - 1)) / alignment * alignment;
+				info_copiedargs[k].offset = offset;
+				size_copiedargs = offset + size;
+
+				if (alignment > max_alignment)
+					max_alignment = alignment;
 			}
+
+			// 3. fill buffer
 
 			// buffer = copied args buffer + argptr buffer + non-ptr arg info buffer
 
@@ -349,7 +357,7 @@ namespace Ubpa::UDRefl::details {
 
 			buffer = rsrc->allocate(buffer_size, max_alignment);
 
-			new_arg_buffer = forward_offset(buffer, offset_new_arg_buffer);
+			auto new_arg_buffer = forward_offset(buffer, offset_new_arg_buffer);
 			auto new_argptr_buffer = reinterpret_cast<void**>(forward_offset(buffer, offset_new_argptr_buffer));
 			new_nonptr_arg_info_buffer = reinterpret_cast<ArgInfo*>(forward_offset(buffer, offset_new_nonptr_arg_info_buffer));
 
@@ -407,15 +415,12 @@ namespace Ubpa::UDRefl::details {
 		}
 
 	private:
-		bool is_compatible{ false };
 		std::pmr::memory_resource* rsrc;
+		bool is_compatible{ false };
 		std::uint32_t buffer_size{ 0 };
 		std::uint32_t max_alignment{ alignof(std::max_align_t) };
 		void* buffer{ nullptr };
-		void* new_arg_buffer;
-		ArgInfo* new_nonptr_arg_info_buffer;
-		std::uint16_t num_args;
-		std::uint16_t num_copiedargs{ 0 };
+		ArgInfo* new_nonptr_arg_info_buffer{ nullptr };
 		std::uint16_t num_copied_nonptr_args{ 0 };
 		ArgPtrBuffer argptr_buffer{ nullptr };
 	};
