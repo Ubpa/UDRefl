@@ -7,7 +7,7 @@
 - 0.7.2
   - add algorithm `Contains*` 
   - `GetTemporaryResource` for user arguments buffer
-  - fix bugs for `ConstructedArgumentsGuard` 
+  - fix bugs for `NewArgsGuard` 
   - `ArgsBuffer` -> `ArgPtrBuffer` 
 - 0.7.1
   - cast APIs with `ConstObjectPtr` support reference

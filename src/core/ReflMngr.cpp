@@ -86,7 +86,7 @@ namespace Ubpa::UDRefl::details {
 	//     |const T & | 1 |  1  |     -     |  1  |     1     |
 	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
 	//     |const T&& | 1 |  0  |     0     |  1  |     -     |
-	bool IsNonArgCopyConstructCompatible(std::span<const TypeID> params, std::span<const TypeID> argTypeIDs) {
+	bool IsNonArgConstructCompatible(std::span<const TypeID> params, std::span<const TypeID> argTypeIDs) {
 		if (params.size() != argTypeIDs.size())
 			return false;
 
@@ -177,25 +177,24 @@ namespace Ubpa::UDRefl::details {
 		AddConvertCtor<T, double>(mngr);
 	}
 
-	class ConstructedArgumentsGuard {
-		struct NonPtrArgInfo {
-			std::size_t idx;
-			std::size_t typeID; // doesn't use TypeID to avoid init on stack
-		};
-		static_assert(alignof(NonPtrArgInfo) == alignof(void*));
-		struct PtrArgInfo {
-			std::size_t idx;
-			void* ptr;
-		};
+	class NewArgsGuard {
+		struct ArgInfo {
+			std::size_t typeID;
+			std::uint32_t offset;
+			std::uint16_t idx;
+			bool is_ptr;
+		}; // 16 bytes
+		// MaxArgNum <= 2^8
+		static_assert(sizeof(ArgInfo) * MaxArgNum < 16384);
 	public:
-		ConstructedArgumentsGuard(
+		NewArgsGuard(
 			bool is_priority,
 			std::pmr::memory_resource* rsrc,
 			std::span<const TypeID> paramTypeIDs,
 			std::span<const TypeID> argTypeIDs,
 			ArgPtrBuffer orig_argptr_buffer) :
 			rsrc{ rsrc },
-			num_args{ argTypeIDs.size() }
+			num_args{ static_cast<std::uint16_t>(argTypeIDs.size()) }
 		{
 			if (argTypeIDs.size() != paramTypeIDs.size())
 				return;
@@ -206,15 +205,11 @@ namespace Ubpa::UDRefl::details {
 				return;
 			}
 
-			std::size_t cnt_copiedargs = 0;
-			std::pair<std::size_t, std::string_view> info_copiedargs[MaxArgNum];
-			NonPtrArgInfo nonptrargs_stack[MaxArgNum];
-			std::size_t offset_nonptrargs[MaxArgNum];
-			PtrArgInfo ptrargs_stack[MaxArgNum];
-			std::size_t num_ptrargs = 0;
-			std::size_t size_nonptrargs = 0;
+			ArgInfo info_copiedargs[MaxArgNum + 1];
+			std::uint16_t num_copiedargs = 0;
+			std::uint32_t size_copiedargs = 0;
 
-			for (std::size_t i = 0; i < argTypeIDs.size(); i++) {
+			for (std::uint16_t i = 0; i < argTypeIDs.size(); i++) {
 				if (paramTypeIDs[i] == argTypeIDs[i])
 					continue;
 
@@ -237,9 +232,16 @@ namespace Ubpa::UDRefl::details {
 							|| type_name_add_const_rvalue_reference_hash(raw_lhs) == rhs_hash)
 							continue; // &{const{T}} <- T | &{T} | &&{T}
 
-						if (Mngr->IsNonArgCopyConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1})) {
-							info_copiedargs[cnt_copiedargs++] = { i, lhs };
-							assert(cnt_copiedargs <= MaxArgNum);
+						assert(!type_name_is_pointer(raw_lhs));
+
+						if (Mngr->IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1})) {
+							auto& info = info_copiedargs[num_copiedargs++];
+							assert(num_copiedargs <= MaxArgNum);
+
+							info.idx = i;
+							info.is_ptr = false;
+							info.typeID = raw_lhs_ID.GetValue();
+
 							continue; // &{const{T}} <- T{arg}
 						}
 					}
@@ -256,9 +258,16 @@ namespace Ubpa::UDRefl::details {
 						if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
 							continue; // &&{const{T}} <- &&{T}
 
-						if (Mngr->IsNonArgCopyConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1})) {
-							info_copiedargs[cnt_copiedargs++] = { i, lhs };
-							assert(cnt_copiedargs <= MaxArgNum);
+						assert(!type_name_is_pointer(raw_lhs));
+
+						if (Mngr->IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1})) {
+							auto& info = info_copiedargs[num_copiedargs++];
+							assert(num_copiedargs <= MaxArgNum);
+
+							info.idx = i;
+							info.is_ptr = false;
+							info.typeID = raw_lhs_ID.GetValue();
+
 							continue; // &&{const{T}} <- T{arg}
 						}
 					}
@@ -271,20 +280,31 @@ namespace Ubpa::UDRefl::details {
 					if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
 						continue; // T <- &&{T}
 
-					if (type_name_is_pointer(lhs) || Mngr->IsCopyConstructible(lhs)) {
-						if (type_name_add_lvalue_reference_hash(lhs) == rhs_hash
+					if ((type_name_is_pointer(lhs) || Mngr->IsCopyConstructible(lhs))
+						&& (
+							type_name_add_lvalue_reference_hash(lhs) == rhs_hash
 							|| type_name_add_const_lvalue_reference_hash(lhs) == rhs_hash
-							|| type_name_add_const_rvalue_reference_hash(lhs) == rhs_hash)
-						{
-							info_copiedargs[cnt_copiedargs++] = { i, lhs };
-							assert(cnt_copiedargs <= MaxArgNum);
-							continue; // T <- T{arg} [copy]
-						}
+							|| type_name_add_const_rvalue_reference_hash(lhs) == rhs_hash
+						))
+					{
+						auto& info = info_copiedargs[num_copiedargs++];
+						assert(num_copiedargs <= MaxArgNum);
+
+						info.idx = i;
+						info.is_ptr = type_name_is_pointer(lhs);
+						info.typeID = paramTypeIDs[i].GetValue();
+
+						continue; // T <- T{arg} [copy]
 					}
 
-					if (Mngr->IsNonArgCopyConstructible(paramTypeIDs[i], std::span<const TypeID>{&argTypeIDs[i], 1})) {
-						info_copiedargs[cnt_copiedargs++] = { i, lhs };
-						assert(cnt_copiedargs <= MaxArgNum);
+					if (Mngr->IsNonArgConstructible(paramTypeIDs[i], std::span<const TypeID>{&argTypeIDs[i], 1})) {
+						auto& info = info_copiedargs[num_copiedargs++];
+						assert(num_copiedargs <= MaxArgNum);
+
+						info.idx = i;
+						info.is_ptr = false;
+						info.typeID = paramTypeIDs[i].GetValue();
+
 						continue; // T <- T{arg}
 					}
 				}
@@ -292,76 +312,92 @@ namespace Ubpa::UDRefl::details {
 				return; // not compatible
 			}
 
-			for (std::size_t k = 0; k < cnt_copiedargs; ++k) {
-				auto [i, name] = info_copiedargs[k];
-
-				if (type_name_is_pointer(name))
-					ptrargs_stack[num_ptrargs++] = { i, orig_argptr_buffer[i] }; // copy ptr
-				else {
-					TypeID raw_param_ID = TypeID{ type_name_remove_cvref(name) };
-					const auto& typeinfo = Mngr->typeinfos.at(raw_param_ID);
-					std::size_t offset = (size_nonptrargs + (typeinfo.alignment - 1)) / typeinfo.alignment * typeinfo.alignment;
-					nonptrargs_stack[num_nonptrargs] = { i, raw_param_ID.GetValue() };
-					offset_nonptrargs[num_nonptrargs] = offset;
-					size_nonptrargs = offset + typeinfo.size;
-					if (typeinfo.alignment > max_alignment)
-						max_alignment = typeinfo.alignment;
-					num_nonptrargs++;
-				}
-			}
-
 			is_compatible = true;
 
-			if (num_nonptrargs + num_ptrargs == 0) {
+			if (num_copiedargs == 0) {
 				argptr_buffer = orig_argptr_buffer;
 				return;
 			}
 
-			// buffer = constructed argptr buffer + nonptrarginfos + copied args
-
-			std::size_t offset_constructed_argptr_buffer = 0;
-			std::size_t offset_nonptrarginfos = num_args * sizeof(void*);
-			std::size_t offset_nonptrargs_buffer =
-				(offset_nonptrarginfos + num_nonptrargs * sizeof(NonPtrArgInfo) + max_alignment - 1) / max_alignment * max_alignment;
-			buffer_size = offset_nonptrargs_buffer + size_nonptrargs;
-
-			buffer = rsrc->allocate(buffer_size, max_alignment);
-			constructed_argptr_buffer = reinterpret_cast<void**>(forward_offset(buffer, offset_constructed_argptr_buffer));
-			nonptrarginfos = reinterpret_cast<NonPtrArgInfo*>(forward_offset(buffer, offset_nonptrarginfos));
-			void* nonptrargs_buffer = forward_offset(buffer, offset_nonptrargs_buffer);
-
-			std::memcpy(constructed_argptr_buffer, orig_argptr_buffer, num_args * sizeof(void*));
-			std::memcpy(nonptrarginfos, nonptrargs_stack, num_nonptrargs * sizeof(NonPtrArgInfo));
-
-			for (std::size_t i = 0; i < num_nonptrargs; i++) {
-				void* ptr = forward_offset(nonptrargs_buffer, offset_nonptrargs[i]);
-				bool success = Mngr->NonArgCopyConstruct(
-					ObjectPtr{ TypeID{ nonptrargs_stack[i].typeID }, ptr },
-					std::span<const TypeID>{&argTypeIDs[i], 1},
-					static_cast<ArgPtrBuffer>(&orig_argptr_buffer[i])
-				);
-				assert(success);
-				constructed_argptr_buffer[nonptrargs_stack[i].idx] = ptr;
+			for (std::uint16_t k = 0; k < num_copiedargs; ++k) {
+				if (info_copiedargs[k].is_ptr) {
+					constexpr std::uint32_t alignment = static_cast<std::uint32_t>(alignof(void*));
+					std::uint32_t offset = (size_copiedargs + (alignment - 1)) / alignment * alignment;
+					info_copiedargs[k].offset = offset;
+					size_copiedargs = offset + static_cast<std::uint32_t>(sizeof(void*));
+					assert(max_alignment >= alignment);
+				}
+				else {
+					++num_copied_nonptr_args;
+					const auto& typeinfo = Mngr->typeinfos.at(TypeID{ info_copiedargs[k].typeID });
+					const std::uint32_t alignment = static_cast<std::uint32_t>(typeinfo.alignment);
+					std::uint32_t offset = (size_copiedargs + (alignment - 1)) / alignment * alignment;
+					info_copiedargs[k].offset = offset;
+					size_copiedargs = offset + static_cast<std::uint32_t>(typeinfo.size);
+					if (alignment > max_alignment)
+						max_alignment = alignment;
+				}
 			}
 
-			for (std::size_t i = 0; i < num_ptrargs; i++)
-				constructed_argptr_buffer[ptrargs_stack[i].idx] = ptrargs_stack[i].ptr;
+			// buffer = copied args buffer + argptr buffer + non-ptr arg info buffer
 
-			argptr_buffer = constructed_argptr_buffer;
+			std::uint32_t offset_new_arg_buffer = 0;
+			std::uint32_t offset_new_argptr_buffer = (size_copiedargs + alignof(void*) - 1) / alignof(void*) * alignof(void*);
+			std::uint32_t offset_new_nonptr_arg_info_buffer = offset_new_argptr_buffer + num_args * sizeof(void*);
+
+			buffer_size = offset_new_nonptr_arg_info_buffer + num_copied_nonptr_args * sizeof(ArgInfo);
+
+			buffer = rsrc->allocate(buffer_size, max_alignment);
+
+			new_arg_buffer = forward_offset(buffer, offset_new_arg_buffer);
+			auto new_argptr_buffer = reinterpret_cast<void**>(forward_offset(buffer, offset_new_argptr_buffer));
+			new_nonptr_arg_info_buffer = reinterpret_cast<ArgInfo*>(forward_offset(buffer, offset_new_nonptr_arg_info_buffer));
+
+			info_copiedargs[num_copiedargs].idx = static_cast<std::uint16_t>(-1); // guard
+			std::uint16_t idx_copiedargs = 0, idx_nonptr_args = 0;
+			for (std::uint16_t i = 0; i < num_args; i++) {
+				if (i < info_copiedargs[idx_copiedargs].idx) {
+					new_argptr_buffer[i] = orig_argptr_buffer[i];
+					continue;
+				}
+				assert(i == info_copiedargs[idx_copiedargs].idx);
+
+				void* arg_buffer = forward_offset(new_arg_buffer, info_copiedargs[idx_copiedargs].offset);
+				new_argptr_buffer[i] = arg_buffer;
+
+				// copy
+				if (info_copiedargs[idx_copiedargs].is_ptr)
+					buffer_as<void*>(arg_buffer) = orig_argptr_buffer[i];
+				else {
+					bool success = Mngr->NonArgConstruct(
+						ObjectPtr{ TypeID{ info_copiedargs[idx_copiedargs].typeID }, arg_buffer },
+						std::span<const TypeID>{&argTypeIDs[i], 1},
+						static_cast<ArgPtrBuffer>(&orig_argptr_buffer[i])
+					);
+					assert(success);
+					new_nonptr_arg_info_buffer[idx_nonptr_args++] = info_copiedargs[idx_copiedargs];
+				}
+
+				++idx_copiedargs;
+			}
+			assert(idx_copiedargs == num_copiedargs);
+			assert(idx_nonptr_args == num_copied_nonptr_args);
+
+			argptr_buffer = new_argptr_buffer;
 		}
 
-		~ConstructedArgumentsGuard() {
+		~NewArgsGuard() {
 			if (buffer) {
-				for (const auto& arg : std::span<NonPtrArgInfo>{ nonptrarginfos, num_nonptrargs }) {
-					bool success = Mngr->Destruct({ TypeID{ arg.typeID }, constructed_argptr_buffer[arg.idx] });
+				for (const auto& info : std::span<const ArgInfo>{ new_nonptr_arg_info_buffer, num_copied_nonptr_args }) {
+					bool success = Mngr->Destruct({ TypeID{ info.typeID }, argptr_buffer[info.idx] });
 					assert(success);
 				}
 				rsrc->deallocate(buffer, buffer_size, max_alignment);
 			}
 		}
 
-		ConstructedArgumentsGuard(const ConstructedArgumentsGuard&) = delete;
-		ConstructedArgumentsGuard& operator=(ConstructedArgumentsGuard&) = delete;
+		NewArgsGuard(const NewArgsGuard&) = delete;
+		NewArgsGuard& operator=(NewArgsGuard&) = delete;
 
 		bool IsCompatible() const noexcept { return is_compatible; }
 
@@ -373,13 +409,14 @@ namespace Ubpa::UDRefl::details {
 	private:
 		bool is_compatible{ false };
 		std::pmr::memory_resource* rsrc;
-		std::size_t buffer_size{ 0 };
-		std::size_t max_alignment{ alignof(std::max_align_t) };
+		std::uint32_t buffer_size{ 0 };
+		std::uint32_t max_alignment{ alignof(std::max_align_t) };
 		void* buffer{ nullptr };
-		void** constructed_argptr_buffer{ nullptr };
-		NonPtrArgInfo* nonptrarginfos{ nullptr };
-		std::size_t num_args;
-		std::size_t num_nonptrargs{ 0 };
+		void* new_arg_buffer;
+		ArgInfo* new_nonptr_arg_info_buffer;
+		std::uint16_t num_args;
+		std::uint16_t num_copiedargs{ 0 };
+		std::uint16_t num_copied_nonptr_args{ 0 };
 		ArgPtrBuffer argptr_buffer{ nullptr };
 	};
 
@@ -512,7 +549,7 @@ namespace Ubpa::UDRefl::details {
 		
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsStatic()) {
-				ConstructedArgumentsGuard guard{
+				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
@@ -557,7 +594,7 @@ namespace Ubpa::UDRefl::details {
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsMemberVariable()) {
-				ConstructedArgumentsGuard guard{
+				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
@@ -608,7 +645,7 @@ namespace Ubpa::UDRefl::details {
 		// 1. object variable and static
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (!iter->second.methodptr.IsMemberConst()) {
-				ConstructedArgumentsGuard guard{
+				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
@@ -626,7 +663,7 @@ namespace Ubpa::UDRefl::details {
 		// 2. object const
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsMemberConst()) {
-				ConstructedArgumentsGuard guard{
+				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
@@ -676,7 +713,7 @@ namespace Ubpa::UDRefl::details {
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsStatic()) {
-				ConstructedArgumentsGuard guard{
+				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
@@ -744,11 +781,8 @@ namespace Ubpa::UDRefl::details {
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (!iter->second.methodptr.IsMemberVariable()
-				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)
-					: Mngr->IsCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)))
-			{
-				ConstructedArgumentsGuard guard{
+			if (!iter->second.methodptr.IsMemberVariable()) {
+				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
@@ -822,7 +856,7 @@ namespace Ubpa::UDRefl::details {
 		{ // 1. object variable and static
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (!iter->second.methodptr.IsMemberConst()) {
-					ConstructedArgumentsGuard guard{
+					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 					};
@@ -863,7 +897,7 @@ namespace Ubpa::UDRefl::details {
 		{ // 2. object const
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberConst()) {
-					ConstructedArgumentsGuard guard{
+					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 					};
@@ -1305,7 +1339,7 @@ bool ReflMngr::AlignedFree(void* ptr) const {
 }
 
 ObjectPtr ReflMngr::NonArgCopyNew(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	if (!IsNonArgCopyConstructible(typeID, argTypeIDs))
+	if (!IsNonArgConstructible(typeID, argTypeIDs))
 		return nullptr;
 
 	const auto& typeinfo = typeinfos.at(typeID);
@@ -1318,7 +1352,7 @@ ObjectPtr ReflMngr::NonArgCopyNew(TypeID typeID, std::span<const TypeID> argType
 		return nullptr;
 
 	ObjectPtr obj{ typeID, buffer };
-	bool success = NonArgCopyConstruct(obj, argTypeIDs, argptr_buffer);
+	bool success = NonArgConstruct(obj, argTypeIDs, argptr_buffer);
 	assert(success);
 
 	return obj;
@@ -1652,7 +1686,7 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 					|| type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash)
 					continue; // &{const{T}} <- T | &{T} | &&{T}
 
-				if (IsNonArgCopyConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
+				if (IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
 					continue; // &{const{T}} <- T{arg}
 			}
 		}
@@ -1669,7 +1703,7 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 				if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
 					continue; // &&{const{T}} <- &&{T}
 
-				if (IsNonArgCopyConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
+				if (IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
 					continue; // &&{const{T}} <- T{arg}
 			}
 			else {
@@ -1678,7 +1712,7 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 				if (unref_lhs_ID.GetValue() == rhs_hash)
 					continue; // &&{T} <- T
 
-				if (IsNonArgCopyConstructible(unref_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
+				if (IsNonArgConstructible(unref_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
 					continue; // &&{T} <- T{arg}
 			}
 		}
@@ -1686,14 +1720,17 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 			if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
 				continue; // T <- &&{T}
 
-			if (type_name_is_pointer(lhs) || IsCopyConstructible(lhs)) {
-				if (type_name_add_lvalue_reference_hash(lhs) == rhs_hash
+			if ((type_name_is_pointer(lhs) || IsCopyConstructible(lhs))
+				&& (
+					type_name_add_lvalue_reference_hash(lhs) == rhs_hash
 					|| type_name_add_const_lvalue_reference_hash(lhs) == rhs_hash
-					|| type_name_add_const_rvalue_reference_hash(lhs) == rhs_hash)
-					continue; // T <- T{arg} [copy]
+					|| type_name_add_const_rvalue_reference_hash(lhs) == rhs_hash
+				))
+			{
+				continue; // T <- T{arg} [copy]
 			}
 
-			if (IsNonArgCopyConstructible(params[i], std::span<const TypeID>{&argTypeIDs[i], 1}))
+			if (IsNonArgConstructible(params[i], std::span<const TypeID>{&argTypeIDs[i], 1}))
 				continue; // T <- T{arg}
 		}
 
@@ -1890,7 +1927,7 @@ ObjectPtr ReflMngr::NonArgCopyMNew(TypeID typeID, std::pmr::memory_resource* rsr
 		return nullptr;
 
 	ObjectPtr obj{ typeID, buffer };
-	bool success = NonArgCopyConstruct(obj, argTypeIDs, argptr_buffer);
+	bool success = NonArgConstruct(obj, argTypeIDs, argptr_buffer);
 	assert(success);
 
 	return obj;
@@ -1930,7 +1967,7 @@ bool ReflMngr::MDelete(ConstObjectPtr obj, std::pmr::memory_resource* rsrc) cons
 	return true;
 }
 
-bool ReflMngr::IsNonArgCopyConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const {
+bool ReflMngr::IsNonArgConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const {
 	assert(GetDereferenceProperty(typeID) == DereferenceProperty::NotReference);
 
 	auto target = typeinfos.find(typeID);
@@ -1941,7 +1978,7 @@ bool ReflMngr::IsNonArgCopyConstructible(TypeID typeID, std::span<const TypeID> 
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
-		if (details::IsNonArgCopyConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
+		if (details::IsNonArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
 			return true;
 	}
 	return false;
@@ -1966,12 +2003,12 @@ bool ReflMngr::IsConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs
 
 bool ReflMngr::IsCopyConstructible(TypeID typeID) const {
 	std::array argTypeIDs = { TypeID{ type_name_add_const_lvalue_reference_hash(tregistry.Nameof(typeID)) } };
-	return IsNonArgCopyConstructible(typeID, argTypeIDs);
+	return IsNonArgConstructible(typeID, argTypeIDs);
 }
 
 bool ReflMngr::IsMoveConstructible(TypeID typeID) const {
 	std::array argTypeIDs = { TypeID{ type_name_add_rvalue_reference_hash(tregistry.Nameof(typeID)) } };
-	return IsNonArgCopyConstructible(typeID, argTypeIDs);
+	return IsNonArgConstructible(typeID, argTypeIDs);
 }
 
 bool ReflMngr::IsDestructible(TypeID typeID) const {
@@ -1993,7 +2030,7 @@ bool ReflMngr::IsDestructible(TypeID typeID) const {
 	return false;
 }
 
-bool ReflMngr::NonArgCopyConstruct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
+bool ReflMngr::NonArgConstruct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
 	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
 
 	if (!obj.Valid())
@@ -2008,7 +2045,7 @@ bool ReflMngr::NonArgCopyConstruct(ObjectPtr obj, std::span<const TypeID> argTyp
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
 		if (mtarget->second.methodptr.IsMemberVariable()
-			&& details::IsNonArgCopyConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
+			&& details::IsNonArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
 		{
 			mtarget->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
 			return true;
@@ -2032,7 +2069,7 @@ bool ReflMngr::Construct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgP
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
 		if (mtarget->second.methodptr.IsMemberVariable()) {
-			details::ConstructedArgumentsGuard guard{
+			details::NewArgsGuard guard{
 				false, &temporary_resource,
 				mtarget->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 			};
