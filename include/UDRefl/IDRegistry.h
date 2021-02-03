@@ -117,6 +117,11 @@ namespace Ubpa::UDRefl {
 			static constexpr char operator_call[] = "UDRefl::operator()";
 			static constexpr char operator_comma[] = "UDRefl::operator,";
 
+			// tuple
+
+			static constexpr char tuple_size[] = "UDRefl::tuple_size";
+			static constexpr char tuple_get[] = "UDRefl::tuple_get";
+
 			// container
 
 			static constexpr char container_assign[] = "UDRefl::container_assign";
@@ -239,6 +244,11 @@ namespace Ubpa::UDRefl {
 
 			static constexpr StrID operator_call{ Meta::operator_call };
 			static constexpr StrID operator_comma{ Meta::operator_comma };
+
+			// tuple
+
+			static constexpr StrID tuple_size = Meta::tuple_size;
+			static constexpr StrID tuple_get = Meta::tuple_get;
 
 			// container
 

@@ -345,6 +345,13 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	using pair_second = decltype(std::declval<const T&>().second);
 
+	// - tuple
+
+	template<typename T>
+	using tuple_size = decltype(std::tuple_size<T>{});
+	template<typename T, std::size_t Idx>
+	using tuple_element = typename std::tuple_element<Idx, T>::type;
+
 	// container
 
 	template<typename T, typename U = typename T::size_type, typename V = const typename T::value_type&>

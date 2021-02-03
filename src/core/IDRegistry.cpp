@@ -75,6 +75,11 @@ StrIDRegistry::StrIDRegistry() {
 	RegisterUnmanaged(Meta::operator_call);
 	RegisterUnmanaged(Meta::operator_comma);
 
+	// tuple
+
+	RegisterUnmanaged(Meta::tuple_size);
+	RegisterUnmanaged(Meta::tuple_get);
+
 	// container
 
 	RegisterUnmanaged(Meta::container_assign);

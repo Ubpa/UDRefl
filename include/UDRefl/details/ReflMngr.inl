@@ -69,6 +69,32 @@ namespace Ubpa::UDRefl::details {
 		}
 	};
 
+	template<typename Rst, std::size_t TargetIdx, typename T>
+	Rst runtime_get_impl(T&& obj, std::size_t i) {
+		using U = std::remove_cvref_t<T>;
+		if constexpr (TargetIdx == std::tuple_size_v<U>)
+			return nullptr;
+		else {
+			if (i == TargetIdx)
+				return Ptr(std::get<TargetIdx>(std::forward<T>(obj)));
+			else
+				return runtime_get_impl<Rst, TargetIdx + 1>(std::forward<T>(obj), i);
+		}
+	}
+
+	template<typename Rst, typename T>
+	Rst runtime_get(T&& obj, std::size_t i) {
+		using U = std::remove_cvref_t<T>;
+		assert(i < std::tuple_size_v<U>);
+		return runtime_get_impl<Rst, 0>(std::forward<T>(obj), i);
+	}
+
+	template<typename T, std::size_t... Ns>
+	void register_tuple_elements(ReflMngr& mngr, std::index_sequence<Ns...>) {
+		(mngr.RegisterType<std::tuple_element_t<Ns, T>>(), ...);
+		(mngr.AddField(concat(TSTR("__"), constexpr_value_name<Ns>()).View(), [](T* obj) { return &std::get<Ns>(*obj); }), ...);
+	}
+
 	template<typename T>
 	struct TypeAutoRegister_Default {
 		static void run(ReflMngr& mngr) {
@@ -103,9 +129,9 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<operator_bxor, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_bxor, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs & rhs; });
 			if constexpr (is_valid_v<operator_lshift, T, std::size_t>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs << rhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs << rhs; });
 			if constexpr (is_valid_v<operator_rshift, T, std::size_t>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs >> rhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_rshift, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs >> rhs; });
 
 			if constexpr (is_valid_v<operator_lshift, T, std::istream&>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_lshift, [](T& lhs, std::istream& rhs) -> decltype(auto) { return rhs >> lhs; });
@@ -163,9 +189,9 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<operator_assign_bxor, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_bxor, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs ^= rhs; });
 			if constexpr (is_valid_v<operator_assign_lshift, T, std::size_t>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_lshift, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs <<= rhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_lshift, [](T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs <<= rhs; });
 			if constexpr (is_valid_v<operator_assign_rshift, T, std::size_t>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_rshift, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs >>= rhs; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_assign_rshift, [](T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs >>= rhs; });
 
 			if constexpr (is_valid_v<operator_eq, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs == rhs; });
@@ -181,9 +207,9 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) -> decltype(auto) { return lhs >= rhs; });
 
 			if constexpr (is_valid_v<operator_subscript, T>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs[rhs]; });
 			if constexpr (is_valid_v<operator_subscript_const, T>)
-				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs[rhs]; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_subscript, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs[rhs]; });
 			if constexpr (is_valid_v<operator_deref, T>)
 				mngr.AddMemberMethod(StrIDRegistry::Meta::operator_deref, [](T& lhs) -> decltype(auto) { return *lhs; });
 			if constexpr (is_valid_v<operator_deref_const, T>)
@@ -201,10 +227,12 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (is_iterator_v<T>) {
 				if constexpr (is_valid_v<operator_add, T, std::size_t>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::operator_add, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs + rhs; });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::operator_add, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs + rhs; });
 				if constexpr (is_valid_v<operator_sub, T, std::size_t>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::operator_sub, [](const T& lhs, std::size_t rhs) -> decltype(auto) { return lhs - rhs; });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::operator_sub, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs - rhs; });
 			}
+
+			// pair
 
 			if constexpr (is_valid_v<pair_first_type, T>)
 				mngr.RegisterType<pair_first_type<T>>();
@@ -215,9 +243,15 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<pair_second, T>)
 				mngr.AddField<&T::second>("second");
 
-			// pair
+			// tuple
 
-
+			if constexpr (is_valid_v<tuple_size, T>) {
+				mngr.AddStaticMethod(TypeID_of<T>, StrIDRegistry::Meta::tuple_size, []() { return std::tuple_size_v<T>; });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get<ObjectPtr>(t, i); });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<ConstObjectPtr>(t, i); });
+				if constexpr (!IsArray_v<T>)
+					register_tuple_elements<T>(mngr, std::make_index_sequence<std::tuple_size_v<T>>{});
+			}
 
 			// container
 
@@ -254,9 +288,9 @@ namespace Ubpa::UDRefl::details {
 				// - element access
 
 				if constexpr (is_valid_v<container_at, T>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](T& lhs, std::size_t n) -> decltype(auto) { return lhs.at(n); });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](T& lhs, const std::size_t& n) -> decltype(auto) { return lhs.at(n); });
 				if constexpr (is_valid_v<container_at_const, T>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](const T& lhs, std::size_t n) -> decltype(auto) { return lhs.at(n); });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](const T& lhs, const std::size_t& n) -> decltype(auto) { return lhs.at(n); });
 
 				if constexpr (is_valid_v<container_at_key, T>)
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_at, [](T& lhs, const typename T::key_type& key) -> decltype(auto) { return lhs.at(key); });
@@ -293,10 +327,10 @@ namespace Ubpa::UDRefl::details {
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_max_size, [](const T& lhs) -> decltype(auto) { return lhs.max_size(); });*/
 
 				if constexpr (is_valid_v<container_resize_0, T>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::container_resize, [](T& lhs, std::size_t n) -> decltype(auto) { return lhs.resize(n); });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::container_resize, [](T& lhs, const std::size_t& n) -> decltype(auto) { return lhs.resize(n); });
 
 				if constexpr (is_valid_v<container_resize_1, T>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::container_resize, [](T& lhs, std::size_t n, const typename T::value_type& value) -> decltype(auto) { return lhs.resize(n, value); });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::container_resize, [](T& lhs, const std::size_t& n, const typename T::value_type& value) -> decltype(auto) { return lhs.resize(n, value); });
 
 				if constexpr (is_valid_v<container_capacity, T>)
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_capacity, [](const T& lhs) -> decltype(auto) { return lhs.capacity(); });
@@ -305,7 +339,7 @@ namespace Ubpa::UDRefl::details {
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_bucket_count, [](const T& lhs) -> decltype(auto) { return lhs.bucket_count(); });
 
 				if constexpr (is_valid_v<container_reserve, T>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::container_reserve, [](T& lhs, std::size_t n) -> decltype(auto) { return lhs.reserve(n); });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::container_reserve, [](T& lhs, const std::size_t& n) -> decltype(auto) { return lhs.reserve(n); });
 
 				if constexpr (is_valid_v<container_shrink_to_fit, T>)
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_shrink_to_fit, [](T& lhs) -> decltype(auto) { return lhs.shrink_to_fit(); });
@@ -322,7 +356,7 @@ namespace Ubpa::UDRefl::details {
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter, typename T::value_type&& value) -> decltype(auto) { return lhs.insert(iter, std::move(value)); });
 
 				if constexpr (is_valid_v<container_insert_2, T>)
-					mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter, std::size_t n, const typename T::value_type& value) -> decltype(auto) { return lhs.insert(iter, n, std::move(value)); });
+					mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::const_iterator iter, const std::size_t& n, const typename T::value_type& value) -> decltype(auto) { return lhs.insert(iter, n, std::move(value)); });
 
 				if constexpr (is_valid_v<container_insert_3, T>)
 					mngr.AddMemberMethod(StrIDRegistry::Meta::container_insert, [](T& lhs, typename T::node_type&& value) -> decltype(auto) { return lhs.insert(std::move(value)); });
@@ -454,8 +488,8 @@ namespace Ubpa::UDRefl::details {
 				if constexpr (is_valid_v<container_allocator_type, T>) {
 					using Allocator = typename T::allocator_type;
 					mngr.RegisterType<Allocator>();
-					mngr.AddMemberMethod("allocate", [](Allocator& lhs, std::size_t rhs) -> decltype(auto) { return lhs.allocate(rhs); });
-					mngr.AddMemberMethod("deallocate", [](Allocator& lhs, typename T::value_type* ptr, std::size_t num) -> decltype(auto) { return lhs.deallocate(ptr, num); });
+					mngr.AddMemberMethod("allocate", [](Allocator& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs.allocate(rhs); });
+					mngr.AddMemberMethod("deallocate", [](Allocator& lhs, typename T::value_type* ptr, const std::size_t& num) -> decltype(auto) { return lhs.deallocate(ptr, num); });
 				}
 				if constexpr (is_valid_v<container_size_type, T>)
 					mngr.RegisterType<typename T::size_type>();
@@ -514,14 +548,14 @@ namespace Ubpa::UDRefl {
 		}
 		else if constexpr (std::is_member_object_pointer_v<FieldData>) {
 			using Traits = member_pointer_traits<FieldData>;
-			using Object = typename Traits::object;
+			using Obj = typename Traits::object;
 			using Value = typename Traits::value;
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			static_assert(!std::is_function_v<Value> && !std::is_volatile_v<Value>);
 
 			tregistry.Register<Value>();
 			RegisterType<std::remove_const_t<Value>>();
-			if constexpr (has_virtual_base_v<Object>) {
+			if constexpr (has_virtual_base_v<Obj>) {
 				return {
 					TypeID_of<std::remove_const_t<Value>>,
 					field_offsetor<field_data>(),
@@ -557,13 +591,13 @@ namespace Ubpa::UDRefl {
 		static_assert(!std::is_same_v<RawT, size_t>);
 		if constexpr (std::is_member_object_pointer_v<RawT>) {
 			using Traits = member_pointer_traits<RawT>;
-			using Object = typename Traits::object;
+			using Obj = typename Traits::object;
 			using Value = typename Traits::value;
 			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			static_assert(!std::is_reference_v<Value> && !std::is_volatile_v<Value>);
 			tregistry.Register<Value>();
 			RegisterType<std::remove_const_t<Value>>();
-			if constexpr (has_virtual_base_v<Object>) {
+			if constexpr (has_virtual_base_v<Obj>) {
 				return {
 					TypeID_of<std::remove_const_t<Value>>,
 					field_offsetor(data),
@@ -602,9 +636,9 @@ namespace Ubpa::UDRefl {
 
 			using ArgList = typename Traits::ArgList;
 			static_assert(Length_v<ArgList> == 1);
-			using ObjectPtr = Front_t<ArgList>;
-			static_assert(std::is_pointer_v<ObjectPtr>);
-			using Obj = std::remove_pointer_t<ObjectPtr>;
+			using ObjPtr = Front_t<ArgList>;
+			static_assert(std::is_pointer_v<ObjPtr>);
+			using Obj = std::remove_pointer_t<ObjPtr>;
 			static_assert(!std::is_const_v<Obj>);
 
 			using ValuePtr = typename Traits::Return;
@@ -815,9 +849,9 @@ namespace Ubpa::UDRefl {
 
 			using ArgList = typename Traits::ArgList;
 			static_assert(Length_v<ArgList> == 1);
-			using ObjectPtr = Front_t<ArgList>;
-			static_assert(std::is_pointer_v<ObjectPtr>);
-			using Obj = std::remove_pointer_t<ObjectPtr>;
+			using ObjPtr = Front_t<ArgList>;
+			static_assert(std::is_pointer_v<ObjPtr>);
+			using Obj = std::remove_pointer_t<ObjPtr>;
 			static_assert(!std::is_const_v<Obj> && !std::is_volatile_v<Obj>);
 
 			return AddField(TypeID_of<Obj>, name, std::forward<T>(data), std::move(attrs));

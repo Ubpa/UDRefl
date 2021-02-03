@@ -153,6 +153,10 @@ ConstObjectPtr ObjectPtrBase::AddConstRValueReference() const {
 	return ReflMngr::Instance().AddConstRValueReference({ ID, ptr });
 }
 
+std::size_t ObjectPtrBase::tuple_size() const {
+	return ReflMngr::Instance().Invoke<std::size_t>(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::tuple_size);
+}
+
 SharedObject ObjectPtrBase::cbegin() const {
 	return ReflMngr::Instance().DMInvoke(ConstObjectPtr{ ID, ptr }, StrIDRegistry::MetaID::container_cbegin);
 }
@@ -272,11 +276,15 @@ SharedObject ConstObjectPtr::operator~() const {
 }
 
 SharedObject ConstObjectPtr::operator[](std::size_t n) const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_subscript, n);
+	return DMInvoke(StrIDRegistry::MetaID::operator_subscript, std::move(n));
 }
 
 SharedObject ConstObjectPtr::operator*() const {
 	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
+}
+
+ConstObjectPtr ConstObjectPtr::tuple_get(std::size_t i) const {
+	return ReflMngr::Instance().Invoke<ConstObjectPtr>(*this, StrIDRegistry::MetaID::tuple_get, std::move(i));
 }
 
 SharedObject ConstObjectPtr::begin() const {
@@ -418,11 +426,15 @@ SharedObject ObjectPtr::operator--(int) const {
 }
 
 SharedObject ObjectPtr::operator[](std::size_t n) const {
-	return DMInvoke(StrIDRegistry::MetaID::operator_subscript, n);
+	return DMInvoke(StrIDRegistry::MetaID::operator_subscript, std::move(n));
 }
 
 SharedObject ObjectPtr::operator*() const {
 	return DMInvoke(StrIDRegistry::MetaID::operator_deref);
+}
+
+ObjectPtr ObjectPtr::tuple_get(std::size_t i) const {
+	return ReflMngr::Instance().Invoke<ObjectPtr>(*this, StrIDRegistry::MetaID::tuple_get, std::move(i));
 }
 
 // - iterator
@@ -458,7 +470,7 @@ SharedObject ObjectPtr::back() const {
 }
 
 void ObjectPtr::reserve(std::size_t n) const {
-	ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_reserve);
+	ReflMngr::Instance().DMInvoke(*this, StrIDRegistry::MetaID::container_reserve, std::move(n));
 }
 
 void ObjectPtr::shrink_to_fit() const {
@@ -509,7 +521,7 @@ SharedObject SharedObjectBase::end() const {
 //////////////////////
 
 SharedObject SharedConstObject::operator[](std::size_t n) const {
-	return AsObjectPtr()[n];
+	return AsObjectPtr()[std::move(n)];
 }
 
 SharedObject SharedConstObject::operator*() const {

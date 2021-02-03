@@ -412,14 +412,14 @@ namespace Ubpa::UDRefl {
 		/////////
 
 		bool IsNonArgConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const;
-		bool IsConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const;
-		bool IsDestructible (TypeID typeID) const;
-		bool IsCopyConstructible(TypeID typeID) const;
-		bool IsMoveConstructible(TypeID typeID) const;
+		bool IsConstructible      (TypeID typeID, std::span<const TypeID> argTypeIDs) const;
+		bool IsDestructible       (TypeID typeID) const;
+		bool IsCopyConstructible  (TypeID typeID) const;
+		bool IsMoveConstructible  (TypeID typeID) const;
 
 		bool NonArgConstruct(ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool Construct          (ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool Destruct           (ConstObjectPtr obj) const;
+		bool Construct      (ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
+		bool Destruct       (ConstObjectPtr obj) const;
 
 		void* Malloc(size_t size) const;
 		bool  Free  (void* ptr) const;

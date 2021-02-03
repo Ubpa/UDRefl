@@ -32,13 +32,11 @@ namespace Ubpa::UDRefl {
 				assert(result_buffer);
 
 				if constexpr (!std::is_reference_v<T> && std::is_default_constructible_v<T>) {
-					if (!success)
+					if (!success || resultID != TypeID_of<T>)
 						return {};
 				}
 				else
-					assert(success);
-
-				assert(resultID = TypeID_of<T>);
+					assert(success && resultID == TypeID_of<T>);
 
 				if constexpr (std::is_reference_v<T>) {
 					assert(!destructor);

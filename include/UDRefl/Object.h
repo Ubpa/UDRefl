@@ -239,6 +239,12 @@ namespace Ubpa::UDRefl {
 		}
 
 		//
+		// Tuple
+		//////////
+
+		std::size_t tuple_size() const;
+
+		//
 		// container
 		//////////////
 
@@ -342,6 +348,12 @@ namespace Ubpa::UDRefl {
 
 		template<typename... Args>
 		SharedObject operator()(Args&&... args) const;
+
+		//
+		// Tuple
+		//////////
+
+		ConstObjectPtr tuple_get(std::size_t i) const;
 
 		//
 		// container
@@ -519,6 +531,12 @@ namespace Ubpa::UDRefl {
 
 		template<typename T>
 		SharedObject operator<<(T&& in) const;
+
+		//
+		// Tuple
+		//////////
+
+		ObjectPtr tuple_get(std::size_t i) const;
 
 		//
 		// container
