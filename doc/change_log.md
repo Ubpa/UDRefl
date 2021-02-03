@@ -4,6 +4,8 @@
 
 ## 0.7
 
+- 0.7.3
+  - support `std::pair` (first, second)
 - 0.7.2
   - add algorithm `Contains*` 
   - `GetTemporaryResource` for user arguments buffer
