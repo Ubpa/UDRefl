@@ -1611,7 +1611,6 @@ ObjectPtr ReflMngr::RWVar(ObjectPtr obj, StrID fieldID) {
 
 	auto& typeinfo = ttarget->second;
 
-
 	auto ftarget = typeinfo.fieldinfos.find(fieldID);
 	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsVariable())
 		return ftarget->second.fieldptr.RWVar(obj.GetPtr());

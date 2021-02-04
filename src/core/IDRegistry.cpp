@@ -8,128 +8,128 @@ StrIDRegistry::StrIDRegistry() {
 	// Global
 	///////////
 
-	RegisterUnmanaged(Meta::malloc);
-	RegisterUnmanaged(Meta::free);
-	RegisterUnmanaged(Meta::aligned_malloc);
-	RegisterUnmanaged(Meta::aligned_free);
+	RegisterUnmanaged(MetaID::malloc, Meta::malloc);
+	RegisterUnmanaged(MetaID::free, Meta::free);
+	RegisterUnmanaged(MetaID::aligned_malloc, Meta::aligned_malloc);
+	RegisterUnmanaged(MetaID::aligned_free, Meta::aligned_free);
 
 	//
 	// Member
 	///////////
 
-	RegisterUnmanaged(Meta::ctor);
-	RegisterUnmanaged(Meta::dtor);
+	RegisterUnmanaged(MetaID::ctor, Meta::ctor);
+	RegisterUnmanaged(MetaID::dtor, Meta::dtor);
 
-	RegisterUnmanaged(Meta::operator_bool);
+	RegisterUnmanaged(MetaID::operator_bool, Meta::operator_bool);
 
-	RegisterUnmanaged(Meta::operator_plus);
-	RegisterUnmanaged(Meta::operator_minus);
+	RegisterUnmanaged(MetaID::operator_plus, Meta::operator_plus);
+	RegisterUnmanaged(MetaID::operator_minus, Meta::operator_minus);
 
-	RegisterUnmanaged(Meta::operator_add);
-	RegisterUnmanaged(Meta::operator_sub);
-	RegisterUnmanaged(Meta::operator_mul);
-	RegisterUnmanaged(Meta::operator_div);
-	RegisterUnmanaged(Meta::operator_mod);
+	RegisterUnmanaged(MetaID::operator_add, Meta::operator_add);
+	RegisterUnmanaged(MetaID::operator_sub, Meta::operator_sub);
+	RegisterUnmanaged(MetaID::operator_mul, Meta::operator_mul);
+	RegisterUnmanaged(MetaID::operator_div, Meta::operator_div);
+	RegisterUnmanaged(MetaID::operator_mod, Meta::operator_mod);
 
-	RegisterUnmanaged(Meta::operator_bnot);
-	RegisterUnmanaged(Meta::operator_band);
-	RegisterUnmanaged(Meta::operator_bor);
-	RegisterUnmanaged(Meta::operator_bxor);
-	RegisterUnmanaged(Meta::operator_lshift);
-	RegisterUnmanaged(Meta::operator_rshift);
+	RegisterUnmanaged(MetaID::operator_bnot, Meta::operator_bnot);
+	RegisterUnmanaged(MetaID::operator_band, Meta::operator_band);
+	RegisterUnmanaged(MetaID::operator_bor, Meta::operator_bor);
+	RegisterUnmanaged(MetaID::operator_bxor, Meta::operator_bxor);
+	RegisterUnmanaged(MetaID::operator_lshift, Meta::operator_lshift);
+	RegisterUnmanaged(MetaID::operator_rshift, Meta::operator_rshift);
 
-	RegisterUnmanaged(Meta::operator_pre_inc);
-	RegisterUnmanaged(Meta::operator_pre_dec);
-	RegisterUnmanaged(Meta::operator_post_inc);
-	RegisterUnmanaged(Meta::operator_post_dec);
+	RegisterUnmanaged(MetaID::operator_pre_inc, Meta::operator_pre_inc);
+	RegisterUnmanaged(MetaID::operator_pre_dec, Meta::operator_pre_dec);
+	RegisterUnmanaged(MetaID::operator_post_inc, Meta::operator_post_inc);
+	RegisterUnmanaged(MetaID::operator_post_dec, Meta::operator_post_dec);
 
-	RegisterUnmanaged(Meta::operator_assign);
-	RegisterUnmanaged(Meta::operator_assign_add);
-	RegisterUnmanaged(Meta::operator_assign_sub);
-	RegisterUnmanaged(Meta::operator_assign_mul);
-	RegisterUnmanaged(Meta::operator_assign_div);
-	RegisterUnmanaged(Meta::operator_assign_mod);
-	RegisterUnmanaged(Meta::operator_assign_band);
-	RegisterUnmanaged(Meta::operator_assign_bor);
-	RegisterUnmanaged(Meta::operator_assign_bxor);
-	RegisterUnmanaged(Meta::operator_assign_lshift);
-	RegisterUnmanaged(Meta::operator_assign_rshift);
+	RegisterUnmanaged(MetaID::operator_assign, Meta::operator_assign);
+	RegisterUnmanaged(MetaID::operator_assign_add, Meta::operator_assign_add);
+	RegisterUnmanaged(MetaID::operator_assign_sub, Meta::operator_assign_sub);
+	RegisterUnmanaged(MetaID::operator_assign_mul, Meta::operator_assign_mul);
+	RegisterUnmanaged(MetaID::operator_assign_div, Meta::operator_assign_div);
+	RegisterUnmanaged(MetaID::operator_assign_mod, Meta::operator_assign_mod);
+	RegisterUnmanaged(MetaID::operator_assign_band, Meta::operator_assign_band);
+	RegisterUnmanaged(MetaID::operator_assign_bor, Meta::operator_assign_bor);
+	RegisterUnmanaged(MetaID::operator_assign_bxor, Meta::operator_assign_bxor);
+	RegisterUnmanaged(MetaID::operator_assign_lshift, Meta::operator_assign_lshift);
+	RegisterUnmanaged(MetaID::operator_assign_rshift, Meta::operator_assign_rshift);
 
-	RegisterUnmanaged(Meta::operator_eq);
-	RegisterUnmanaged(Meta::operator_ne);
-	RegisterUnmanaged(Meta::operator_lt);
-	RegisterUnmanaged(Meta::operator_le);
-	RegisterUnmanaged(Meta::operator_gt);
-	RegisterUnmanaged(Meta::operator_ge);
+	RegisterUnmanaged(MetaID::operator_eq, Meta::operator_eq);
+	RegisterUnmanaged(MetaID::operator_ne, Meta::operator_ne);
+	RegisterUnmanaged(MetaID::operator_lt, Meta::operator_lt);
+	RegisterUnmanaged(MetaID::operator_le, Meta::operator_le);
+	RegisterUnmanaged(MetaID::operator_gt, Meta::operator_gt);
+	RegisterUnmanaged(MetaID::operator_ge, Meta::operator_ge);
 
-	RegisterUnmanaged(Meta::operator_and);
-	RegisterUnmanaged(Meta::operator_or);
-	RegisterUnmanaged(Meta::operator_not);
+	RegisterUnmanaged(MetaID::operator_and, Meta::operator_and);
+	RegisterUnmanaged(MetaID::operator_or, Meta::operator_or);
+	RegisterUnmanaged(MetaID::operator_not, Meta::operator_not);
 
-	RegisterUnmanaged(Meta::operator_subscript);
-	RegisterUnmanaged(Meta::operator_deref);
-	RegisterUnmanaged(Meta::operator_ref);
-	RegisterUnmanaged(Meta::operator_member);
-	RegisterUnmanaged(Meta::operator_member_of_pointer);
+	RegisterUnmanaged(MetaID::operator_subscript, Meta::operator_subscript);
+	RegisterUnmanaged(MetaID::operator_deref, Meta::operator_deref);
+	RegisterUnmanaged(MetaID::operator_ref, Meta::operator_ref);
+	RegisterUnmanaged(MetaID::operator_member, Meta::operator_member);
+	RegisterUnmanaged(MetaID::operator_member_of_pointer, Meta::operator_member_of_pointer);
 
-	RegisterUnmanaged(Meta::operator_call);
-	RegisterUnmanaged(Meta::operator_comma);
+	RegisterUnmanaged(MetaID::operator_call, Meta::operator_call);
+	RegisterUnmanaged(MetaID::operator_comma, Meta::operator_comma);
 
 	// tuple
 
-	RegisterUnmanaged(Meta::tuple_size);
-	RegisterUnmanaged(Meta::tuple_get);
+	RegisterUnmanaged(MetaID::tuple_size, Meta::tuple_size);
+	RegisterUnmanaged(MetaID::tuple_get, Meta::tuple_get);
 
 	// container
 
-	RegisterUnmanaged(Meta::container_assign);
+	RegisterUnmanaged(MetaID::container_assign, Meta::container_assign);
 
-	RegisterUnmanaged(Meta::container_begin);
-	RegisterUnmanaged(Meta::container_cbegin);
-	RegisterUnmanaged(Meta::container_end);
-	RegisterUnmanaged(Meta::container_cend);
-	RegisterUnmanaged(Meta::container_rbegin);
-	RegisterUnmanaged(Meta::container_crbegin);
-	RegisterUnmanaged(Meta::container_rend);
-	RegisterUnmanaged(Meta::container_crend);
+	RegisterUnmanaged(MetaID::container_begin, Meta::container_begin);
+	RegisterUnmanaged(MetaID::container_cbegin, Meta::container_cbegin);
+	RegisterUnmanaged(MetaID::container_end, Meta::container_end);
+	RegisterUnmanaged(MetaID::container_cend, Meta::container_cend);
+	RegisterUnmanaged(MetaID::container_rbegin, Meta::container_rbegin);
+	RegisterUnmanaged(MetaID::container_crbegin, Meta::container_crbegin);
+	RegisterUnmanaged(MetaID::container_rend, Meta::container_rend);
+	RegisterUnmanaged(MetaID::container_crend, Meta::container_crend);
 
-	RegisterUnmanaged(Meta::container_at);
-	RegisterUnmanaged(Meta::container_data);
-	RegisterUnmanaged(Meta::container_front);
-	RegisterUnmanaged(Meta::container_back);
+	RegisterUnmanaged(MetaID::container_at, Meta::container_at);
+	RegisterUnmanaged(MetaID::container_data, Meta::container_data);
+	RegisterUnmanaged(MetaID::container_front, Meta::container_front);
+	RegisterUnmanaged(MetaID::container_back, Meta::container_back);
 
-	RegisterUnmanaged(Meta::container_empty);
-	RegisterUnmanaged(Meta::container_size);
-	RegisterUnmanaged(Meta::container_max_size);
-	RegisterUnmanaged(Meta::container_resize);
-	RegisterUnmanaged(Meta::container_capacity);
-	RegisterUnmanaged(Meta::container_bucket_count);
-	RegisterUnmanaged(Meta::container_reserve);
-	RegisterUnmanaged(Meta::container_shrink_to_fit);
+	RegisterUnmanaged(MetaID::container_empty, Meta::container_empty);
+	RegisterUnmanaged(MetaID::container_size, Meta::container_size);
+	RegisterUnmanaged(MetaID::container_max_size, Meta::container_max_size);
+	RegisterUnmanaged(MetaID::container_resize, Meta::container_resize);
+	RegisterUnmanaged(MetaID::container_capacity, Meta::container_capacity);
+	RegisterUnmanaged(MetaID::container_bucket_count, Meta::container_bucket_count);
+	RegisterUnmanaged(MetaID::container_reserve, Meta::container_reserve);
+	RegisterUnmanaged(MetaID::container_shrink_to_fit, Meta::container_shrink_to_fit);
 
-	RegisterUnmanaged(Meta::container_clear);
-	RegisterUnmanaged(Meta::container_insert);
-	RegisterUnmanaged(Meta::container_insert_or_assign);
-	RegisterUnmanaged(Meta::container_erase);
-	RegisterUnmanaged(Meta::container_push_front);
-	RegisterUnmanaged(Meta::container_pop_front);
-	RegisterUnmanaged(Meta::container_push_back);
-	RegisterUnmanaged(Meta::container_pop_back);
-	RegisterUnmanaged(Meta::container_swap);
-	RegisterUnmanaged(Meta::container_merge);
-	RegisterUnmanaged(Meta::container_extract);
+	RegisterUnmanaged(MetaID::container_clear, Meta::container_clear);
+	RegisterUnmanaged(MetaID::container_insert, Meta::container_insert);
+	RegisterUnmanaged(MetaID::container_insert_or_assign, Meta::container_insert_or_assign);
+	RegisterUnmanaged(MetaID::container_erase, Meta::container_erase);
+	RegisterUnmanaged(MetaID::container_push_front, Meta::container_push_front);
+	RegisterUnmanaged(MetaID::container_pop_front, Meta::container_pop_front);
+	RegisterUnmanaged(MetaID::container_push_back, Meta::container_push_back);
+	RegisterUnmanaged(MetaID::container_pop_back, Meta::container_pop_back);
+	RegisterUnmanaged(MetaID::container_swap, Meta::container_swap);
+	RegisterUnmanaged(MetaID::container_merge, Meta::container_merge);
+	RegisterUnmanaged(MetaID::container_extract, Meta::container_extract);
 
-	RegisterUnmanaged(Meta::container_count);
-	RegisterUnmanaged(Meta::container_find);
-	RegisterUnmanaged(Meta::container_lower_bound);
-	RegisterUnmanaged(Meta::container_upper_bound);
-	RegisterUnmanaged(Meta::container_equal_range);
+	RegisterUnmanaged(MetaID::container_count, Meta::container_count);
+	RegisterUnmanaged(MetaID::container_find, Meta::container_find);
+	RegisterUnmanaged(MetaID::container_lower_bound, Meta::container_lower_bound);
+	RegisterUnmanaged(MetaID::container_upper_bound, Meta::container_upper_bound);
+	RegisterUnmanaged(MetaID::container_equal_range, Meta::container_equal_range);
 
-	RegisterUnmanaged(Meta::container_key_comp);
-	RegisterUnmanaged(Meta::container_value_comp);
-	RegisterUnmanaged(Meta::container_hash_function);
-	RegisterUnmanaged(Meta::container_key_eq);
-	RegisterUnmanaged(Meta::container_get_allocator);
+	RegisterUnmanaged(MetaID::container_key_comp, Meta::container_key_comp);
+	RegisterUnmanaged(MetaID::container_value_comp, Meta::container_value_comp);
+	RegisterUnmanaged(MetaID::container_hash_function, Meta::container_hash_function);
+	RegisterUnmanaged(MetaID::container_key_eq, Meta::container_key_eq);
+	RegisterUnmanaged(MetaID::container_get_allocator, Meta::container_get_allocator);
 }
 
 TypeIDRegistry::TypeIDRegistry() {
@@ -138,20 +138,12 @@ TypeIDRegistry::TypeIDRegistry() {
 }
 
 void TypeIDRegistry::RegisterUnmanaged(TypeID ID, std::string_view name) {
-	if (type_name_is_const(name) || type_name_is_volatile(name)) {
-		assert(false);
-		return;
-	}
-
+	assert(!type_name_is_const(name) && !type_name_is_volatile(name));
 	IDRegistry<TypeID>::RegisterUnmanaged(ID, name);
 }
 
 TypeID TypeIDRegistry::RegisterUnmanaged(std::string_view name) {
-	if (type_name_is_const(name) || type_name_is_volatile(name)) {
-		assert(false);
-		return {};
-	}
-
+	assert(!type_name_is_const(name) && !type_name_is_volatile(name));
 	return IDRegistry<TypeID>::RegisterUnmanaged(name);
 }
 
