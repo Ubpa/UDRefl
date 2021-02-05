@@ -58,9 +58,9 @@ int main() {
 	Mngr.AddConstructor<Vec, float, float>();
 	Mngr.AddField<&Vec::x>("x");
 	Mngr.AddField<&Vec::y>("y");
-	Mngr.AddMethod<MemFuncOf<Vec(float)const noexcept>::get(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	Mngr.AddMethod<MemFuncOf<Vec(float)const noexcept>::get(&Vec::operator+)>(NameIDRegistry::Meta::operator_add);
 
-	SharedObject v = Mngr.MakeShared(TypeID_of<Vec>, 3.f, 4.f);
+	SharedObject v = Mngr.MakeShared(Type_of<Vec>, 3.f, 4.f);
 
 	ObjectView pv = v;
 	SharedObject w0 = v + v;
@@ -74,7 +74,7 @@ int main() {
 	for (const auto& w : std::array{ w0,w1,w2,w3,w4,w5,w6 }) {
 		for (const auto& [type, field, var] : w.GetTypeFieldVars()) {
 			std::cout
-				<< Mngr.nregistry.Nameof(field.ID)
+				<< field.name.GetView()
 				<< ": " << var
 				<< std::endl;
 		}

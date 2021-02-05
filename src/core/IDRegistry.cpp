@@ -3,138 +3,138 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-StrIDRegistry::StrIDRegistry() {
+NameIDRegistry::NameIDRegistry() {
 	//
 	// Global
 	///////////
 
-	RegisterUnmanaged(MetaID::malloc, Meta::malloc);
-	RegisterUnmanaged(MetaID::free, Meta::free);
-	RegisterUnmanaged(MetaID::aligned_malloc, Meta::aligned_malloc);
-	RegisterUnmanaged(MetaID::aligned_free, Meta::aligned_free);
+	RegisterUnmanaged(Meta::malloc.GetID(), Meta::malloc.GetView());
+	RegisterUnmanaged(Meta::free.GetID(), Meta::free.GetView());
+	RegisterUnmanaged(Meta::aligned_malloc.GetID(), Meta::aligned_malloc.GetView());
+	RegisterUnmanaged(Meta::aligned_free.GetID(), Meta::aligned_free.GetView());
 
 	//
 	// Member
 	///////////
 
-	RegisterUnmanaged(MetaID::ctor, Meta::ctor);
-	RegisterUnmanaged(MetaID::dtor, Meta::dtor);
+	RegisterUnmanaged(Meta::ctor.GetID(), Meta::ctor.GetView());
+	RegisterUnmanaged(Meta::dtor.GetID(), Meta::dtor.GetView());
 
-	RegisterUnmanaged(MetaID::operator_bool, Meta::operator_bool);
+	RegisterUnmanaged(Meta::operator_bool.GetID(), Meta::operator_bool.GetView());
 
-	RegisterUnmanaged(MetaID::operator_plus, Meta::operator_plus);
-	RegisterUnmanaged(MetaID::operator_minus, Meta::operator_minus);
+	RegisterUnmanaged(Meta::operator_plus.GetID(), Meta::operator_plus.GetView());
+	RegisterUnmanaged(Meta::operator_minus.GetID(), Meta::operator_minus.GetView());
 
-	RegisterUnmanaged(MetaID::operator_add, Meta::operator_add);
-	RegisterUnmanaged(MetaID::operator_sub, Meta::operator_sub);
-	RegisterUnmanaged(MetaID::operator_mul, Meta::operator_mul);
-	RegisterUnmanaged(MetaID::operator_div, Meta::operator_div);
-	RegisterUnmanaged(MetaID::operator_mod, Meta::operator_mod);
+	RegisterUnmanaged(Meta::operator_add.GetID(), Meta::operator_add.GetView());
+	RegisterUnmanaged(Meta::operator_sub.GetID(), Meta::operator_sub.GetView());
+	RegisterUnmanaged(Meta::operator_mul.GetID(), Meta::operator_mul.GetView());
+	RegisterUnmanaged(Meta::operator_div.GetID(), Meta::operator_div.GetView());
+	RegisterUnmanaged(Meta::operator_mod.GetID(), Meta::operator_mod.GetView());
 
-	RegisterUnmanaged(MetaID::operator_bnot, Meta::operator_bnot);
-	RegisterUnmanaged(MetaID::operator_band, Meta::operator_band);
-	RegisterUnmanaged(MetaID::operator_bor, Meta::operator_bor);
-	RegisterUnmanaged(MetaID::operator_bxor, Meta::operator_bxor);
-	RegisterUnmanaged(MetaID::operator_lshift, Meta::operator_lshift);
-	RegisterUnmanaged(MetaID::operator_rshift, Meta::operator_rshift);
+	RegisterUnmanaged(Meta::operator_bnot.GetID(), Meta::operator_bnot.GetView());
+	RegisterUnmanaged(Meta::operator_band.GetID(), Meta::operator_band.GetView());
+	RegisterUnmanaged(Meta::operator_bor.GetID(), Meta::operator_bor.GetView());
+	RegisterUnmanaged(Meta::operator_bxor.GetID(), Meta::operator_bxor.GetView());
+	RegisterUnmanaged(Meta::operator_lshift.GetID(), Meta::operator_lshift.GetView());
+	RegisterUnmanaged(Meta::operator_rshift.GetID(), Meta::operator_rshift.GetView());
 
-	RegisterUnmanaged(MetaID::operator_pre_inc, Meta::operator_pre_inc);
-	RegisterUnmanaged(MetaID::operator_pre_dec, Meta::operator_pre_dec);
-	RegisterUnmanaged(MetaID::operator_post_inc, Meta::operator_post_inc);
-	RegisterUnmanaged(MetaID::operator_post_dec, Meta::operator_post_dec);
+	RegisterUnmanaged(Meta::operator_pre_inc.GetID(), Meta::operator_pre_inc.GetView());
+	RegisterUnmanaged(Meta::operator_pre_dec.GetID(), Meta::operator_pre_dec.GetView());
+	RegisterUnmanaged(Meta::operator_post_inc.GetID(), Meta::operator_post_inc.GetView());
+	RegisterUnmanaged(Meta::operator_post_dec.GetID(), Meta::operator_post_dec.GetView());
 
-	RegisterUnmanaged(MetaID::operator_assign, Meta::operator_assign);
-	RegisterUnmanaged(MetaID::operator_assign_add, Meta::operator_assign_add);
-	RegisterUnmanaged(MetaID::operator_assign_sub, Meta::operator_assign_sub);
-	RegisterUnmanaged(MetaID::operator_assign_mul, Meta::operator_assign_mul);
-	RegisterUnmanaged(MetaID::operator_assign_div, Meta::operator_assign_div);
-	RegisterUnmanaged(MetaID::operator_assign_mod, Meta::operator_assign_mod);
-	RegisterUnmanaged(MetaID::operator_assign_band, Meta::operator_assign_band);
-	RegisterUnmanaged(MetaID::operator_assign_bor, Meta::operator_assign_bor);
-	RegisterUnmanaged(MetaID::operator_assign_bxor, Meta::operator_assign_bxor);
-	RegisterUnmanaged(MetaID::operator_assign_lshift, Meta::operator_assign_lshift);
-	RegisterUnmanaged(MetaID::operator_assign_rshift, Meta::operator_assign_rshift);
+	RegisterUnmanaged(Meta::operator_assign.GetID(), Meta::operator_assign.GetView());
+	RegisterUnmanaged(Meta::operator_assign_add.GetID(), Meta::operator_assign_add.GetView());
+	RegisterUnmanaged(Meta::operator_assign_sub.GetID(), Meta::operator_assign_sub.GetView());
+	RegisterUnmanaged(Meta::operator_assign_mul.GetID(), Meta::operator_assign_mul.GetView());
+	RegisterUnmanaged(Meta::operator_assign_div.GetID(), Meta::operator_assign_div.GetView());
+	RegisterUnmanaged(Meta::operator_assign_mod.GetID(), Meta::operator_assign_mod.GetView());
+	RegisterUnmanaged(Meta::operator_assign_band.GetID(), Meta::operator_assign_band.GetView());
+	RegisterUnmanaged(Meta::operator_assign_bor.GetID(), Meta::operator_assign_bor.GetView());
+	RegisterUnmanaged(Meta::operator_assign_bxor.GetID(), Meta::operator_assign_bxor.GetView());
+	RegisterUnmanaged(Meta::operator_assign_lshift.GetID(), Meta::operator_assign_lshift.GetView());
+	RegisterUnmanaged(Meta::operator_assign_rshift.GetID(), Meta::operator_assign_rshift.GetView());
 
-	RegisterUnmanaged(MetaID::operator_eq, Meta::operator_eq);
-	RegisterUnmanaged(MetaID::operator_ne, Meta::operator_ne);
-	RegisterUnmanaged(MetaID::operator_lt, Meta::operator_lt);
-	RegisterUnmanaged(MetaID::operator_le, Meta::operator_le);
-	RegisterUnmanaged(MetaID::operator_gt, Meta::operator_gt);
-	RegisterUnmanaged(MetaID::operator_ge, Meta::operator_ge);
+	RegisterUnmanaged(Meta::operator_eq.GetID(), Meta::operator_eq.GetView());
+	RegisterUnmanaged(Meta::operator_ne.GetID(), Meta::operator_ne.GetView());
+	RegisterUnmanaged(Meta::operator_lt.GetID(), Meta::operator_lt.GetView());
+	RegisterUnmanaged(Meta::operator_le.GetID(), Meta::operator_le.GetView());
+	RegisterUnmanaged(Meta::operator_gt.GetID(), Meta::operator_gt.GetView());
+	RegisterUnmanaged(Meta::operator_ge.GetID(), Meta::operator_ge.GetView());
 
-	RegisterUnmanaged(MetaID::operator_and, Meta::operator_and);
-	RegisterUnmanaged(MetaID::operator_or, Meta::operator_or);
-	RegisterUnmanaged(MetaID::operator_not, Meta::operator_not);
+	RegisterUnmanaged(Meta::operator_and.GetID(), Meta::operator_and.GetView());
+	RegisterUnmanaged(Meta::operator_or.GetID(), Meta::operator_or.GetView());
+	RegisterUnmanaged(Meta::operator_not.GetID(), Meta::operator_not.GetView());
 
-	RegisterUnmanaged(MetaID::operator_subscript, Meta::operator_subscript);
-	RegisterUnmanaged(MetaID::operator_deref, Meta::operator_deref);
-	RegisterUnmanaged(MetaID::operator_ref, Meta::operator_ref);
-	RegisterUnmanaged(MetaID::operator_member, Meta::operator_member);
-	RegisterUnmanaged(MetaID::operator_member_of_pointer, Meta::operator_member_of_pointer);
+	RegisterUnmanaged(Meta::operator_subscript.GetID(), Meta::operator_subscript.GetView());
+	RegisterUnmanaged(Meta::operator_deref.GetID(), Meta::operator_deref.GetView());
+	RegisterUnmanaged(Meta::operator_ref.GetID(), Meta::operator_ref.GetView());
+	RegisterUnmanaged(Meta::operator_member.GetID(), Meta::operator_member.GetView());
+	RegisterUnmanaged(Meta::operator_member_of_pointer.GetID(), Meta::operator_member_of_pointer.GetView());
 
-	RegisterUnmanaged(MetaID::operator_call, Meta::operator_call);
-	RegisterUnmanaged(MetaID::operator_comma, Meta::operator_comma);
+	RegisterUnmanaged(Meta::operator_call.GetID(), Meta::operator_call.GetView());
+	RegisterUnmanaged(Meta::operator_comma.GetID(), Meta::operator_comma.GetView());
 
 	// tuple
 
-	RegisterUnmanaged(MetaID::tuple_size, Meta::tuple_size);
-	RegisterUnmanaged(MetaID::tuple_get, Meta::tuple_get);
+	RegisterUnmanaged(Meta::tuple_size.GetID(), Meta::tuple_size.GetView());
+	RegisterUnmanaged(Meta::tuple_get.GetID(), Meta::tuple_get.GetView());
 
 	// container
 
-	RegisterUnmanaged(MetaID::container_assign, Meta::container_assign);
+	RegisterUnmanaged(Meta::container_assign.GetID(), Meta::container_assign.GetView());
 
-	RegisterUnmanaged(MetaID::container_begin, Meta::container_begin);
-	RegisterUnmanaged(MetaID::container_cbegin, Meta::container_cbegin);
-	RegisterUnmanaged(MetaID::container_end, Meta::container_end);
-	RegisterUnmanaged(MetaID::container_cend, Meta::container_cend);
-	RegisterUnmanaged(MetaID::container_rbegin, Meta::container_rbegin);
-	RegisterUnmanaged(MetaID::container_crbegin, Meta::container_crbegin);
-	RegisterUnmanaged(MetaID::container_rend, Meta::container_rend);
-	RegisterUnmanaged(MetaID::container_crend, Meta::container_crend);
+	RegisterUnmanaged(Meta::container_begin.GetID(), Meta::container_begin.GetView());
+	RegisterUnmanaged(Meta::container_cbegin.GetID(), Meta::container_cbegin.GetView());
+	RegisterUnmanaged(Meta::container_end.GetID(), Meta::container_end.GetView());
+	RegisterUnmanaged(Meta::container_cend.GetID(), Meta::container_cend.GetView());
+	RegisterUnmanaged(Meta::container_rbegin.GetID(), Meta::container_rbegin.GetView());
+	RegisterUnmanaged(Meta::container_crbegin.GetID(), Meta::container_crbegin.GetView());
+	RegisterUnmanaged(Meta::container_rend.GetID(), Meta::container_rend.GetView());
+	RegisterUnmanaged(Meta::container_crend.GetID(), Meta::container_crend.GetView());
 
-	RegisterUnmanaged(MetaID::container_at, Meta::container_at);
-	RegisterUnmanaged(MetaID::container_data, Meta::container_data);
-	RegisterUnmanaged(MetaID::container_front, Meta::container_front);
-	RegisterUnmanaged(MetaID::container_back, Meta::container_back);
+	RegisterUnmanaged(Meta::container_at.GetID(), Meta::container_at.GetView());
+	RegisterUnmanaged(Meta::container_data.GetID(), Meta::container_data.GetView());
+	RegisterUnmanaged(Meta::container_front.GetID(), Meta::container_front.GetView());
+	RegisterUnmanaged(Meta::container_back.GetID(), Meta::container_back.GetView());
 
-	RegisterUnmanaged(MetaID::container_empty, Meta::container_empty);
-	RegisterUnmanaged(MetaID::container_size, Meta::container_size);
-	RegisterUnmanaged(MetaID::container_max_size, Meta::container_max_size);
-	RegisterUnmanaged(MetaID::container_resize, Meta::container_resize);
-	RegisterUnmanaged(MetaID::container_capacity, Meta::container_capacity);
-	RegisterUnmanaged(MetaID::container_bucket_count, Meta::container_bucket_count);
-	RegisterUnmanaged(MetaID::container_reserve, Meta::container_reserve);
-	RegisterUnmanaged(MetaID::container_shrink_to_fit, Meta::container_shrink_to_fit);
+	RegisterUnmanaged(Meta::container_empty.GetID(), Meta::container_empty.GetView());
+	RegisterUnmanaged(Meta::container_size.GetID(), Meta::container_size.GetView());
+	RegisterUnmanaged(Meta::container_max_size.GetID(), Meta::container_max_size.GetView());
+	RegisterUnmanaged(Meta::container_resize.GetID(), Meta::container_resize.GetView());
+	RegisterUnmanaged(Meta::container_capacity.GetID(), Meta::container_capacity.GetView());
+	RegisterUnmanaged(Meta::container_bucket_count.GetID(), Meta::container_bucket_count.GetView());
+	RegisterUnmanaged(Meta::container_reserve.GetID(), Meta::container_reserve.GetView());
+	RegisterUnmanaged(Meta::container_shrink_to_fit.GetID(), Meta::container_shrink_to_fit.GetView());
 
-	RegisterUnmanaged(MetaID::container_clear, Meta::container_clear);
-	RegisterUnmanaged(MetaID::container_insert, Meta::container_insert);
-	RegisterUnmanaged(MetaID::container_insert_or_assign, Meta::container_insert_or_assign);
-	RegisterUnmanaged(MetaID::container_erase, Meta::container_erase);
-	RegisterUnmanaged(MetaID::container_push_front, Meta::container_push_front);
-	RegisterUnmanaged(MetaID::container_pop_front, Meta::container_pop_front);
-	RegisterUnmanaged(MetaID::container_push_back, Meta::container_push_back);
-	RegisterUnmanaged(MetaID::container_pop_back, Meta::container_pop_back);
-	RegisterUnmanaged(MetaID::container_swap, Meta::container_swap);
-	RegisterUnmanaged(MetaID::container_merge, Meta::container_merge);
-	RegisterUnmanaged(MetaID::container_extract, Meta::container_extract);
+	RegisterUnmanaged(Meta::container_clear.GetID(), Meta::container_clear.GetView());
+	RegisterUnmanaged(Meta::container_insert.GetID(), Meta::container_insert.GetView());
+	RegisterUnmanaged(Meta::container_insert_or_assign.GetID(), Meta::container_insert_or_assign.GetView());
+	RegisterUnmanaged(Meta::container_erase.GetID(), Meta::container_erase.GetView());
+	RegisterUnmanaged(Meta::container_push_front.GetID(), Meta::container_push_front.GetView());
+	RegisterUnmanaged(Meta::container_pop_front.GetID(), Meta::container_pop_front.GetView());
+	RegisterUnmanaged(Meta::container_push_back.GetID(), Meta::container_push_back.GetView());
+	RegisterUnmanaged(Meta::container_pop_back.GetID(), Meta::container_pop_back.GetView());
+	RegisterUnmanaged(Meta::container_swap.GetID(), Meta::container_swap.GetView());
+	RegisterUnmanaged(Meta::container_merge.GetID(), Meta::container_merge.GetView());
+	RegisterUnmanaged(Meta::container_extract.GetID(), Meta::container_extract.GetView());
 
-	RegisterUnmanaged(MetaID::container_count, Meta::container_count);
-	RegisterUnmanaged(MetaID::container_find, Meta::container_find);
-	RegisterUnmanaged(MetaID::container_lower_bound, Meta::container_lower_bound);
-	RegisterUnmanaged(MetaID::container_upper_bound, Meta::container_upper_bound);
-	RegisterUnmanaged(MetaID::container_equal_range, Meta::container_equal_range);
+	RegisterUnmanaged(Meta::container_count.GetID(), Meta::container_count.GetView());
+	RegisterUnmanaged(Meta::container_find.GetID(), Meta::container_find.GetView());
+	RegisterUnmanaged(Meta::container_lower_bound.GetID(), Meta::container_lower_bound.GetView());
+	RegisterUnmanaged(Meta::container_upper_bound.GetID(), Meta::container_upper_bound.GetView());
+	RegisterUnmanaged(Meta::container_equal_range.GetID(), Meta::container_equal_range.GetView());
 
-	RegisterUnmanaged(MetaID::container_key_comp, Meta::container_key_comp);
-	RegisterUnmanaged(MetaID::container_value_comp, Meta::container_value_comp);
-	RegisterUnmanaged(MetaID::container_hash_function, Meta::container_hash_function);
-	RegisterUnmanaged(MetaID::container_key_eq, Meta::container_key_eq);
-	RegisterUnmanaged(MetaID::container_get_allocator, Meta::container_get_allocator);
+	RegisterUnmanaged(Meta::container_key_comp.GetID(), Meta::container_key_comp.GetView());
+	RegisterUnmanaged(Meta::container_value_comp.GetID(), Meta::container_value_comp.GetView());
+	RegisterUnmanaged(Meta::container_hash_function.GetID(), Meta::container_hash_function.GetView());
+	RegisterUnmanaged(Meta::container_key_eq.GetID(), Meta::container_key_eq.GetView());
+	RegisterUnmanaged(Meta::container_get_allocator.GetID(), Meta::container_get_allocator.GetView());
 }
 
 TypeIDRegistry::TypeIDRegistry() {
-	RegisterUnmanaged(Meta::global);
-	RegisterUnmanaged(Meta::t_void);
+	RegisterUnmanaged(Meta::global.GetID(), Meta::global.GetName());
+	RegisterUnmanaged(Meta::t_void.GetID(), Meta::t_void.GetName());
 }
 
 void TypeIDRegistry::RegisterUnmanaged(TypeID ID, std::string_view name) {
@@ -169,95 +169,95 @@ TypeID TypeIDRegistry::Register(std::string_view name) {
 // Type Computation
 /////////////////////
 
-TypeID TypeIDRegistry::RegisterAddConst(TypeID ID) {
-	std::string_view name = Nameof(ID);
+Type TypeIDRegistry::RegisterAddConst(Type type) {
+	std::string_view name = type.GetName();
 	if (name.empty())
 		return {};
 
 	TypeID ref_ID{ type_name_add_const_hash(name) };
-	if (IsRegistered(ref_ID))
-		return ref_ID;
+	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+		return { ref_name, ref_ID };
 
 	auto rst_name = type_name_add_const(name, get_allocator());
 
 	RegisterUnmanaged(ref_ID, rst_name);
-	return ref_ID;
+	return { rst_name, ref_ID };
 }
 
-TypeID TypeIDRegistry::RegisterAddLValueReference(TypeID ID) {
-	std::string_view name = Nameof(ID);
+Type TypeIDRegistry::RegisterAddLValueReference(Type type) {
+	std::string_view name = type.GetName();
 	if (name.empty())
 		return {};
 
 	TypeID ref_ID{ type_name_add_lvalue_reference_hash(name) };
-	if (IsRegistered(ref_ID))
-		return ref_ID;
+	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+		return { ref_name, ref_ID };
 
 	auto rst_name = type_name_add_lvalue_reference(name, get_allocator());
 
 	RegisterUnmanaged(ref_ID, rst_name);
-	return ref_ID;
+	return { rst_name, ref_ID };
 }
 
-TypeID TypeIDRegistry::RegisterAddLValueReferenceWeak(TypeID ID) {
-	std::string_view name = Nameof(ID);
+Type TypeIDRegistry::RegisterAddLValueReferenceWeak(Type type) {
+	std::string_view name = type.GetName();
 	if (name.empty())
 		return {};
 
 	TypeID ref_ID{ type_name_add_lvalue_reference_weak_hash(name) };
-	if (IsRegistered(ref_ID))
-		return ref_ID;
+	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+		return { ref_name, ref_ID };
 
 	auto rst_name = type_name_add_lvalue_reference_weak(name, get_allocator());
 
 	RegisterUnmanaged(ref_ID, rst_name);
 
-	return ref_ID;
+	return { rst_name, ref_ID };
 }
 
-TypeID TypeIDRegistry::RegisterAddConstLValueReference(TypeID ID) {
-	std::string_view name = Nameof(ID);
-	if (name.empty())
-		return {};
-
-	TypeID ref_ID{ type_name_add_const_lvalue_reference_hash(name) };
-	if (IsRegistered(ref_ID))
-		return ref_ID;
-
-	auto rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
-
-	RegisterUnmanaged(ref_ID, rst_name);
-
-	return ref_ID;
-}
-
-TypeID TypeIDRegistry::RegisterAddRValueReference(TypeID ID) {
-	std::string_view name = Nameof(ID);
+Type TypeIDRegistry::RegisterAddRValueReference(Type type) {
+	std::string_view name = type.GetName();
 	if (name.empty())
 		return {};
 
 	TypeID ref_ID{ type_name_add_rvalue_reference_hash(name) };
-	if (IsRegistered(ref_ID))
-		return ref_ID;
+	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+		return { ref_name, ref_ID };
 
 	auto rst_name = type_name_add_rvalue_reference(name, get_allocator());
 
 	RegisterUnmanaged(ref_ID, rst_name);
 
-	return ref_ID;
+	return { rst_name, ref_ID };
 }
 
-TypeID TypeIDRegistry::RegisterAddConstRValueReference(TypeID ID) {
-	std::string_view name = Nameof(ID);
+Type TypeIDRegistry::RegisterAddConstLValueReference(Type type) {
+	std::string_view name = type.GetName();
+	if (name.empty())
+		return {};
+
+	TypeID ref_ID{ type_name_add_const_lvalue_reference_hash(name) };
+	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+		return { ref_name, ref_ID };
+
+	auto rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
+
+	RegisterUnmanaged(ref_ID, rst_name);
+
+	return { rst_name, ref_ID };
+}
+
+Type TypeIDRegistry::RegisterAddConstRValueReference(Type type) {
+	std::string_view name = type.GetName();
 	if (name.empty())
 		return {};
 
 	TypeID ref_ID{ type_name_add_const_rvalue_reference_hash(name) };
-	if (IsRegistered(ref_ID))
-		return ref_ID;
+	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+		return { ref_name, ref_ID };
 
 	auto rst_name = type_name_add_const_rvalue_reference(name, get_allocator());
 
 	RegisterUnmanaged(ref_ID, rst_name);
-	return ref_ID;
+	return { rst_name, ref_ID };
 }

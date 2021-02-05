@@ -30,30 +30,30 @@ int main() {
 	Mngr.AddMethod<&Vec::norm>("norm");
 	Mngr.AddMethod<&Vec::copy>("copy");
 
-	SharedObject v = Mngr.MakeShared(TypeID_of<Vec>);
+	SharedObject v = Mngr.MakeShared(Type_of<Vec>);
 
 	v.Var("x") = 3.f;
 	v.Var("y") = 4.f;
 
-	for (auto method : Mngr.GetMethods(TypeID_of<Vec>))
-		std::cout << Mngr.nregistry.Nameof(method.ID) << std::endl;
+	for (const auto& method : Mngr.GetMethods(Type_of<Vec>))
+		std::cout << method.name.GetView() << std::endl;
 
 	for (const auto& [type, field, var] : v.GetTypeFieldVars()) {
 		std::cout
-			<< Mngr.nregistry.Nameof(field.ID)
+			<< field.name.GetView()
 			<< ": " << var
 			<< std::endl;
 	}
 
-	auto w0 = v.MInvoke(StrIDRegistry::MetaID::operator_add, std::pmr::get_default_resource(), v.As<Vec>());
-	auto w1 = v.DMInvoke(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
-	auto w2 = v.ADMInvoke(StrIDRegistry::MetaID::operator_add, v);
+	auto w0 = v.MInvoke(NameIDRegistry::Meta::operator_add, std::pmr::get_default_resource(), v.As<Vec>());
+	auto w1 = v.DMInvoke(NameIDRegistry::Meta::operator_add, v.As<Vec>());
+	auto w2 = v.ADMInvoke(NameIDRegistry::Meta::operator_add, v);
 
 	std::array arr_w = { w0,w1,w2 };
 	for (auto w : arr_w) {
 		for (const auto& [type, field, var] : w.GetTypeFieldVars()) {
 			std::cout
-				<< Mngr.nregistry.Nameof(field.ID)
+				<< field.name.GetView()
 				<< ": " << var
 				<< std::endl;
 		}

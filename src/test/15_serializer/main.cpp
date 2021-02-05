@@ -7,11 +7,11 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 void Serializer(ObjectView obj) {
-	if (type_name_is_arithmetic(obj.TypeName()))
+	if (type_name_is_arithmetic(obj.GetType().GetName()))
 		std::cout << obj;
 	else {
-		std::cout << "{" << "\"TYPE\":\"" << obj.TypeName() << "\",";
-		auto iter = obj.GetTypeInfo()->attrs.find(TypeID_of<ContainerType>);
+		std::cout << "{" << "\"TYPE\":\"" << obj.GetType().GetName() << "\",";
+		auto iter = obj.GetTypeInfo()->attrs.find(Type_of<ContainerType>);
 		if (iter != obj.GetTypeInfo()->attrs.end()) {
 			if (*iter == ContainerType::Vector) {
 				std::cout << "\"Vector\":[";
@@ -27,7 +27,7 @@ void Serializer(ObjectView obj) {
 			size_t N = obj.GetVars().size();
 			size_t i = 0;
 			for (const auto& [type, field, var] : obj.GetTypeFieldVars()) {
-				std::cout << "\"" << Mngr.nregistry.Nameof(field.ID) << "\":";
+				std::cout << "\"" << field.name.GetView() << "\":";
 				Serializer(var);
 				if (++i != N)
 					std::cout << ",";
@@ -40,7 +40,7 @@ void Serializer(ObjectView obj) {
 int main() {
 	RegisterVector();
 
-	auto a = Mngr.MakeShared(TypeID_of<Vector>);
+	auto a = Mngr.MakeShared(Type_of<Vector>);
 
 	for (size_t i = 0; i < 10; i++) {
 		std::vector<size_t> row;

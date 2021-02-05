@@ -44,36 +44,36 @@ namespace Ubpa::UDRefl {
 
 		constexpr FieldPtr() noexcept = default;
 
-		constexpr FieldPtr(TypeID valueID, std::size_t forward_offset_value) noexcept :
-			valueID{ valueID },
+		constexpr FieldPtr(Type type, std::size_t forward_offset_value) noexcept :
+			type{ type },
 			data{ forward_offset_value }
-		{ assert(valueID); }
+		{ assert(type); }
 
-		FieldPtr(TypeID valueID, Offsetor offsetor) noexcept :
-			valueID{ valueID },
+		FieldPtr(Type type, Offsetor offsetor) noexcept :
+			type{ type },
 			data{ std::move(offsetor) }
 		{
-			assert(valueID&& std::get<1>(data));
+			assert(type&& std::get<1>(data));
 		}
 
-		constexpr FieldPtr(TypeID valueID, void* ptr) noexcept :
-			valueID{ valueID },
+		constexpr FieldPtr(Type type, void* ptr) noexcept :
+			type{ type },
 			data{ ptr }
-		{ assert(valueID && ptr); }
+		{ assert(type && ptr); }
 
-		explicit constexpr FieldPtr(ObjectView static_obj) noexcept : FieldPtr{ static_obj.GetTypeID(), static_obj.GetPtr() } {}
+		explicit constexpr FieldPtr(ObjectView static_obj) noexcept : FieldPtr{ static_obj.GetType(), static_obj.GetPtr() } {}
 
 		explicit FieldPtr(SharedObject obj) noexcept :
-			valueID{ obj.GetTypeID() },
+			type{ obj.GetType() },
 			data{ std::move(obj.GetBuffer()) }
-		{ assert(valueID && std::get<3>(data)); }
+		{ assert(type && std::get<3>(data)); }
 
-		FieldPtr(TypeID valueID, const Buffer& buffer) noexcept :
-			valueID{ valueID },
+		FieldPtr(Type type, const Buffer& buffer) noexcept :
+			type{ type },
 			data{ buffer }
-		{ assert(valueID); }
+		{ assert(type); }
 
-		constexpr TypeID GetValueID() const noexcept { return valueID; }
+		constexpr Type GetType() const noexcept { return type; }
 
 		constexpr bool IsBasic()         const noexcept { return data.index() == 0; }
 		constexpr bool IsVirtual()       const noexcept { return data.index() == 1; }
@@ -91,7 +91,7 @@ namespace Ubpa::UDRefl {
 		ObjectView Var(void* obj);
 
 	private:
-		TypeID valueID;
+		Type type;
 		Data data;
 	};
 }

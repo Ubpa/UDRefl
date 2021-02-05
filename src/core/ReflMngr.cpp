@@ -38,33 +38,28 @@ namespace Ubpa::UDRefl::details {
 	//     |const T & | 0 |  0  |     -     |  0  |     0     |
 	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
 	//     |const T&& | 0 |  0  |     0     |  0  |     -     |
-	bool IsPriorityCompatible(std::span<const TypeID> params, std::span<const TypeID> argTypeIDs) {
-		if (params.size() != argTypeIDs.size())
+	bool IsPriorityCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
+		if (params.size() != argTypes.size())
 			return false;
 
 		for (size_t i = 0; i < params.size(); i++) {
-			if (params[i] == argTypeIDs[i])
+			if (params[i] == argTypes[i])
 				continue;
 
-			auto lhs = Mngr.tregistry.Nameof(params[i]);
+			const auto& lhs = params[i];
+			const auto& rhs = argTypes[i];
 
-#ifndef NDEBUG
-			// because rhs(arg)'s ID maybe have no name in the registry
-			// so we use type_name_add_*_hash(...) to avoid it
-			auto rhs = Mngr.tregistry.Nameof(argTypeIDs[i]);
-#endif // !NDEBUG
-
-			const std::size_t rhs_hash = argTypeIDs[i].GetValue();
-
-			if (type_name_is_rvalue_reference(lhs)) { // &&{T} | &&{const{T}}
-				auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+			if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
+				const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
 				assert(!type_name_is_volatile(unref_lhs));
-				if (TypeID{ unref_lhs }.GetValue() == rhs_hash)
-					continue; // &&{T} <- T
+				if (!type_name_is_const(unref_lhs)) {
+					if (rhs.Is(unref_lhs))
+						continue; // &&{T} <- T
+				}
 			}
 			else {
-				if (!type_name_is_lvalue_reference(lhs)) { // T
-					if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
+				if (!lhs.IsLValueReference()) { // T
+					if (lhs.Is(rhs.Name_RemoveRValueReference()))
 						continue; // T <- &&{T}
 				}
 			}
@@ -86,7 +81,70 @@ namespace Ubpa::UDRefl::details {
 	//     |const T & | 1 |  1  |     -     |  1  |     1     |
 	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
 	//     |const T&& | 1 |  0  |     0     |  1  |     -     |
-	bool IsNonArgConstructCompatible(std::span<const TypeID> params, std::span<const TypeID> argTypeIDs) {
+	bool IsNonCopiedArgConstructCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
+		if (params.size() != argTypes.size())
+			return false;
+
+		for (size_t i = 0; i < params.size(); i++) {
+			if (params[i] == argTypes[i])
+				continue;
+
+			const auto& lhs = params[i];
+			const auto& rhs = argTypes[i];
+
+			if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
+				const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
+				if (type_name_is_const(unref_lhs)) { // &{const{T}}
+					if (unref_lhs == rhs.Name_RemoveRValueReference())
+						continue; // &{const{T}} <- &&{const{T}}
+
+					const auto raw_lhs = type_name_remove_const(unref_lhs); // T
+
+					if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
+						continue; // &{const{T}} <- T | &{T} | &&{T}
+				}
+			}
+			else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
+				const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
+				assert(!type_name_is_volatile(unref_lhs));
+
+				if (type_name_is_const(unref_lhs)) { // &&{const{T}}
+					const auto raw_lhs = type_name_remove_const(unref_lhs); // T
+
+					if (rhs.Is(raw_lhs))
+						continue; // &&{const{T}} <- T
+
+					if (raw_lhs == rhs.Name_RemoveRValueReference()) // &&{const{T}}
+						continue; // &&{const{T}} <- &&{T}
+				}
+				else {
+					if (rhs.Is(unref_lhs))
+						continue; // &&{T} <- T
+				}
+			}
+			else { // T
+				if (lhs.Is(rhs.Name_RemoveRValueReference()))
+					continue; // T <- &&{T}
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	// parameter <- argument
+	// - same
+	// - reference
+	// > - 0 (invalid), 1 (convertible), 2 (copy)
+	// > - table
+	//     |    -     | T | T & | const T & | T&& | const T&& |
+	//     |      T   | - |  0  |     0     |  1  |     0     |
+	//     |      T & | 0 |  -  |     0     |  0  |     0     |
+	//     |const T & | 1 |  1  |     -     |  1  |     1     |
+	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
+	//     |const T&& | 1 |  0  |     0     |  1  |     -     |
+	bool IsNonCopiedArgConstructCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs) {
 		if (params.size() != argTypeIDs.size())
 			return false;
 
@@ -94,7 +152,7 @@ namespace Ubpa::UDRefl::details {
 			if (params[i] == argTypeIDs[i])
 				continue;
 
-			auto lhs = Mngr.tregistry.Nameof(params[i]);
+			auto lhs = params[i];
 #ifndef NDEBUG
 			// because rhs(arg)'s ID maybe have no name in the registry
 			// so we use type_name_add_*_hash(...) to avoid it
@@ -102,39 +160,35 @@ namespace Ubpa::UDRefl::details {
 #endif // !NDEBUG
 			const std::size_t rhs_hash = argTypeIDs[i].GetValue();
 
-			if (type_name_is_lvalue_reference(lhs)) { // &{T} | &{const{T}}
-				auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+			if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
+				auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
 				if (type_name_is_const(unref_lhs)) { // &{const{T}}
 					if (type_name_add_rvalue_reference_hash(unref_lhs) == rhs_hash)
 						continue; // &{const{T}} <- &&{const{T}}
 
 					auto raw_lhs = type_name_remove_const(unref_lhs); // T
-					TypeID raw_lhs_ID{ raw_lhs };
 
-					if (raw_lhs_ID.GetValue() == rhs_hash
+					if (TypeID{ raw_lhs }.GetValue() == rhs_hash
 						|| type_name_add_lvalue_reference_hash(raw_lhs) == rhs_hash
 						|| type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash)
 						continue; // &{const{T}} <- T | &{T} | &&{T}
 				}
 			}
-			else if (type_name_is_rvalue_reference(lhs)) { // &&{T} | &&{const{T}}
-				auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+			else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
+				auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
 				assert(!type_name_is_volatile(unref_lhs));
 
 				if (type_name_is_const(unref_lhs)) { // &&{const{T}}
 					auto raw_lhs = type_name_remove_const(unref_lhs); // T
-					TypeID raw_lhs_ID{ raw_lhs };
 
-					if (raw_lhs_ID.GetValue() == rhs_hash)
+					if (TypeID{ raw_lhs }.GetValue() == rhs_hash)
 						continue; // &&{const{T}} <- T
 
 					if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
 						continue; // &&{const{T}} <- &&{T}
 				}
 				else {
-					TypeID unref_lhs_ID{ unref_lhs };
-
-					if (unref_lhs_ID.GetValue() == rhs_hash)
+					if (TypeID{ unref_lhs }.GetValue() == rhs_hash)
 						continue; // &&{T} <- T
 				}
 			}
@@ -154,7 +208,7 @@ namespace Ubpa::UDRefl::details {
 		static_assert(std::is_convertible_v<From, To>);
 		if constexpr (!std::is_same_v<To, From>) {
 			mngr.AddMemberMethod(
-				StrIDRegistry::Meta::ctor,
+				NameIDRegistry::Meta::ctor,
 				[](To& obj, const From& value) {
 					new(&obj)To{ static_cast<To>(value) };
 				}
@@ -179,115 +233,118 @@ namespace Ubpa::UDRefl::details {
 
 	class NewArgsGuard {
 		struct ArgInfo {
-			std::size_t typeID;
+			const char* name;
+			std::size_t name_hash;
 			std::uint32_t offset;
-			std::uint16_t idx;
+			std::uint16_t name_size;
+			std::uint8_t idx;
 			bool is_ptr;
-		}; // 16 bytes
+			Type GetType() const {
+				return { std::string_view{name,name_size}, TypeID{name_hash} };
+			}
+		}; // 24 bytes
 		// MaxArgNum <= 2^8
 		static_assert(sizeof(ArgInfo) * MaxArgNum < 16384);
 	public:
 		NewArgsGuard(
 			bool is_priority,
 			std::pmr::memory_resource* rsrc,
-			std::span<const TypeID> paramTypeIDs,
-			std::span<const TypeID> argTypeIDs,
+			std::span<const Type> paramTypeIDs,
+			std::span<const Type> argTypes,
 			ArgPtrBuffer orig_argptr_buffer) :
 			rsrc{ rsrc }
 		{
-			if (argTypeIDs.size() != paramTypeIDs.size())
+			if (argTypes.size() != paramTypeIDs.size())
 				return;
 
 			if (is_priority) {
-				is_compatible = IsPriorityCompatible(paramTypeIDs, argTypeIDs);
+				is_compatible = IsPriorityCompatible(paramTypeIDs, argTypes);
 				argptr_buffer = orig_argptr_buffer;
 				return;
 			}
 
 			// 1. is compatible ? (collect infos)
 
-			const std::uint16_t num_args = static_cast<std::uint16_t>(argTypeIDs.size());
+			const std::uint8_t num_args = static_cast<std::uint8_t>(argTypes.size());
 
 			ArgInfo info_copiedargs[MaxArgNum + 1];
-			std::uint16_t num_copiedargs = 0;
+			std::uint8_t num_copiedargs = 0;
 			std::uint32_t size_copiedargs = 0;
 
-			for (std::uint16_t i = 0; i < argTypeIDs.size(); i++) {
-				if (paramTypeIDs[i] == argTypeIDs[i])
+			for (std::uint8_t i = 0; i < argTypes.size(); i++) {
+				if (paramTypeIDs[i] == argTypes[i])
 					continue;
 
-				auto lhs = Mngr.tregistry.Nameof(paramTypeIDs[i]);
-#ifndef NDEBUG
-				auto rhs = Mngr.tregistry.Nameof(argTypeIDs[i]);
-#endif // NDEBUG
-				const std::size_t rhs_hash = argTypeIDs[i].GetValue();
+				const auto& lhs = paramTypeIDs[i];
+				const auto& rhs = argTypes[i];
 
-				if (type_name_is_lvalue_reference(lhs)) { // &{T} | &{const{T}}
-					auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+				if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
+					const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
 					if (type_name_is_const(unref_lhs)) { // &{const{T}}
-						if (type_name_add_rvalue_reference_hash(unref_lhs) == rhs_hash)
+						if (unref_lhs == rhs.Name_RemoveRValueReference())
 							continue; // &{const{T}} <- &&{const{T}}
 
-						auto raw_lhs = type_name_remove_const(unref_lhs); // T
-						TypeID raw_lhs_ID{ raw_lhs };
-						if (raw_lhs_ID.GetValue() == rhs_hash
-							|| type_name_add_lvalue_reference_hash(raw_lhs) == rhs_hash
-							|| type_name_add_const_rvalue_reference_hash(raw_lhs) == rhs_hash)
+						const auto raw_lhs = type_name_remove_const(unref_lhs); // T
+						if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
 							continue; // &{const{T}} <- T | &{T} | &&{T}
 
 						assert(!type_name_is_pointer(raw_lhs));
 
-						if (Mngr.IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1})) {
+						Type raw_lhs_type{ raw_lhs };
+						if (Mngr.IsNonCopiedArgConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
 							auto& info = info_copiedargs[num_copiedargs++];
 							assert(num_copiedargs <= MaxArgNum);
 
 							info.idx = i;
 							info.is_ptr = false;
-							info.typeID = raw_lhs_ID.GetValue();
+							info.name = raw_lhs_type.GetName().data();
+							info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
+							info.name_hash = raw_lhs_type.GetID().GetValue();
 
 							continue; // &{const{T}} <- T{arg}
 						}
 					}
 				}
-				else if (type_name_is_rvalue_reference(lhs)) { // &&{T} | &&{const{T}}
-					auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+				else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
+					const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
 					if (type_name_is_const(unref_lhs)) { // &&{const{T}}
-						auto raw_lhs = type_name_remove_const(unref_lhs); // T
-						TypeID raw_lhs_ID{ raw_lhs };
+						const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
-						if (raw_lhs_ID.GetValue() == rhs_hash)
+						if (rhs.Is(raw_lhs))
 							continue; // &&{const{T}} <- T
 
-						if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
+						if (raw_lhs == rhs.Name_RemoveRValueReference()) // &&{const{T}}
 							continue; // &&{const{T}} <- &&{T}
 
 						assert(!type_name_is_pointer(raw_lhs));
 
-						if (Mngr.IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1})) {
+						Type raw_lhs_type{ raw_lhs };
+						if (Mngr.IsNonCopiedArgConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
 							auto& info = info_copiedargs[num_copiedargs++];
 							assert(num_copiedargs <= MaxArgNum);
 
 							info.idx = i;
 							info.is_ptr = false;
-							info.typeID = raw_lhs_ID.GetValue();
+							info.name = raw_lhs_type.GetName().data();
+							info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
+							info.name_hash = raw_lhs_type.GetID().GetValue();
 
 							continue; // &&{const{T}} <- T{arg}
 						}
 					}
 					else { // &&{T}
-						if (string_hash(unref_lhs) == rhs_hash)
+						if (rhs.Is(unref_lhs))
 							continue;
 					}
 				}
 				else { // T
-					if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
+					if (lhs.Is(rhs.Name_RemoveRValueReference()))
 						continue; // T <- &&{T}
 
-					if ((type_name_is_pointer(lhs) || Mngr.IsCopyConstructible(lhs))
+					if ((lhs.IsPointer() || Mngr.IsCopyConstructible(lhs))
 						&& (
-							type_name_add_lvalue_reference_hash(lhs) == rhs_hash
-							|| type_name_add_const_lvalue_reference_hash(lhs) == rhs_hash
-							|| type_name_add_const_rvalue_reference_hash(lhs) == rhs_hash
+							lhs.Is(rhs.Name_RemoveLValueReference())
+							|| lhs.Is(rhs.Name_RemoveCVRef())
 						))
 					{
 						auto& info = info_copiedargs[num_copiedargs++];
@@ -295,18 +352,22 @@ namespace Ubpa::UDRefl::details {
 
 						info.idx = i;
 						info.is_ptr = type_name_is_pointer(lhs);
-						info.typeID = paramTypeIDs[i].GetValue();
+						info.name = lhs.GetName().data();
+						info.name_size = static_cast<std::uint16_t>(lhs.GetName().size());
+						info.name_hash = lhs.GetID().GetValue();
 
 						continue; // T <- T{arg} [copy]
 					}
 
-					if (Mngr.IsNonArgConstructible(paramTypeIDs[i], std::span<const TypeID>{&argTypeIDs[i], 1})) {
+					if (Mngr.IsNonCopiedArgConstructible(lhs, std::span<const Type>{&rhs, 1})) {
 						auto& info = info_copiedargs[num_copiedargs++];
 						assert(num_copiedargs <= MaxArgNum);
 
 						info.idx = i;
 						info.is_ptr = false;
-						info.typeID = paramTypeIDs[i].GetValue();
+						info.name = lhs.GetName().data();
+						info.name_size = static_cast<std::uint16_t>(lhs.GetName().size());
+						info.name_hash = lhs.GetID().GetValue();
 
 						continue; // T <- T{arg}
 					}
@@ -324,7 +385,7 @@ namespace Ubpa::UDRefl::details {
 
 			// 2. compute offset and alignment
 
-			for (std::uint16_t k = 0; k < num_copiedargs; ++k) {
+			for (std::uint8_t k = 0; k < num_copiedargs; ++k) {
 				std::uint32_t size, alignment;
 				if (info_copiedargs[k].is_ptr) {
 					size = static_cast<std::uint32_t>(sizeof(void*));
@@ -332,7 +393,7 @@ namespace Ubpa::UDRefl::details {
 				}
 				else {
 					++num_copied_nonptr_args;
-					const auto& typeinfo = Mngr.typeinfos.at(TypeID{ info_copiedargs[k].typeID });
+					const auto& typeinfo = Mngr.typeinfos.at(info_copiedargs[k].GetType());
 					size = static_cast<std::uint32_t>(typeinfo.size);
 					alignment = static_cast<std::uint32_t>(typeinfo.alignment);
 				}
@@ -361,29 +422,30 @@ namespace Ubpa::UDRefl::details {
 			auto new_argptr_buffer = reinterpret_cast<void**>(forward_offset(buffer, offset_new_argptr_buffer));
 			new_nonptr_arg_info_buffer = reinterpret_cast<ArgInfo*>(forward_offset(buffer, offset_new_nonptr_arg_info_buffer));
 
-			info_copiedargs[num_copiedargs].idx = static_cast<std::uint16_t>(-1); // guard
-			std::uint16_t idx_copiedargs = 0, idx_nonptr_args = 0;
-			for (std::uint16_t i = 0; i < num_args; i++) {
-				if (i < info_copiedargs[idx_copiedargs].idx) {
+			info_copiedargs[num_copiedargs].idx = static_cast<std::uint8_t>(-1); // guard
+			std::uint8_t idx_copiedargs = 0, idx_nonptr_args = 0;
+			for (std::uint8_t i = 0; i < num_args; i++) {
+				const auto& info = info_copiedargs[idx_copiedargs];
+				if (i < info.idx) {
 					new_argptr_buffer[i] = orig_argptr_buffer[i];
 					continue;
 				}
-				assert(i == info_copiedargs[idx_copiedargs].idx);
+				assert(i == info.idx);
 
-				void* arg_buffer = forward_offset(new_arg_buffer, info_copiedargs[idx_copiedargs].offset);
+				void* arg_buffer = forward_offset(new_arg_buffer, info.offset);
 				new_argptr_buffer[i] = arg_buffer;
 
 				// copy
-				if (info_copiedargs[idx_copiedargs].is_ptr)
+				if (info.is_ptr)
 					buffer_as<void*>(arg_buffer) = orig_argptr_buffer[i];
 				else {
-					bool success = Mngr.NonArgConstruct(
-						ObjectView{ TypeID{ info_copiedargs[idx_copiedargs].typeID }, arg_buffer },
-						std::span<const TypeID>{&argTypeIDs[i], 1},
+					bool success = Mngr.NonCopiedArgConstruct(
+						ObjectView{ info.GetType(), arg_buffer },
+						std::span<const Type>{&argTypes[i], 1},
 						static_cast<ArgPtrBuffer>(&orig_argptr_buffer[i])
 					);
 					assert(success);
-					new_nonptr_arg_info_buffer[idx_nonptr_args++] = info_copiedargs[idx_copiedargs];
+					new_nonptr_arg_info_buffer[idx_nonptr_args++] = info;
 				}
 
 				++idx_copiedargs;
@@ -397,7 +459,7 @@ namespace Ubpa::UDRefl::details {
 		~NewArgsGuard() {
 			if (buffer) {
 				for (const auto& info : std::span<const ArgInfo>{ new_nonptr_arg_info_buffer, num_copied_nonptr_args }) {
-					bool success = Mngr.Destruct({ TypeID{ info.typeID }, argptr_buffer[info.idx] });
+					bool success = Mngr.Destruct({ info.GetType(), argptr_buffer[info.idx] });
 					assert(success);
 				}
 				rsrc->deallocate(buffer, buffer_size, max_alignment);
@@ -421,35 +483,35 @@ namespace Ubpa::UDRefl::details {
 		std::uint32_t max_alignment{ alignof(std::max_align_t) };
 		void* buffer{ nullptr };
 		ArgInfo* new_nonptr_arg_info_buffer{ nullptr };
-		std::uint16_t num_copied_nonptr_args{ 0 };
+		std::uint8_t num_copied_nonptr_args{ 0 };
 		ArgPtrBuffer argptr_buffer{ nullptr };
 	};
 
 	static InvocableResult IsStaticInvocable(
 		bool is_priority,
-		TypeID typeID,
-		StrID methodID,
-		std::span<const TypeID> argTypeIDs)
+		Type type,
+		Name method_name,
+		std::span<const Type> argTypes)
 	{
-		assert(Mngr.GetConstReferenceMode(typeID) == ConstReferenceMode::None);
-		auto typetarget = Mngr.typeinfos.find(typeID);
+		assert(type.CVRefMode() == CVRefMode::None);
+		auto typetarget = Mngr.typeinfos.find(type);
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
 
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsStatic()
-				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)
-					: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)))
+				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
+					: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				return { true, iter->second.methodptr.GetResultDesc() };
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = IsStaticInvocable(is_priority, baseID, methodID, argTypeIDs);
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto rst = IsStaticInvocable(is_priority, base, method_name, argTypes);
 			if (rst)
 				return rst;
 		}
@@ -459,29 +521,29 @@ namespace Ubpa::UDRefl::details {
 
 	static InvocableResult IsConstInvocable(
 		bool is_priority,
-		TypeID typeID,
-		StrID methodID,
-		std::span<const TypeID> argTypeIDs)
+		Type type,
+		Name method_name,
+		std::span<const Type> argTypes)
 	{
-		assert(Mngr.GetConstReferenceMode(typeID) == ConstReferenceMode::None);
-		auto typetarget = Mngr.typeinfos.find(typeID);
+		assert(type.CVRefMode() == CVRefMode::None);
+		auto typetarget = Mngr.typeinfos.find(type);
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
 
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (!iter->second.methodptr.IsMemberVariable()
-				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)
-					: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)))
+				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
+					: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				return { true, iter->second.methodptr.GetResultDesc() };
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = IsConstInvocable(is_priority, baseID, methodID, argTypeIDs);
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto rst = IsConstInvocable(is_priority, base, method_name, argTypes);
 			if (rst)
 				return rst;
 		}
@@ -491,24 +553,24 @@ namespace Ubpa::UDRefl::details {
 
 	static InvocableResult IsInvocable(
 		bool is_priority,
-		TypeID typeID,
-		StrID methodID,
-		std::span<const TypeID> argTypeIDs)
+		Type type,
+		Name method_name,
+		std::span<const Type> argTypes)
 	{
-		assert(Mngr.GetConstReferenceMode(typeID) == ConstReferenceMode::None);
-		auto typetarget = Mngr.typeinfos.find(typeID);
+		assert(type.CVRefMode() == CVRefMode::None);
+		auto typetarget = Mngr.typeinfos.find(type);
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		{ // 1. object variable and static
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (!iter->second.methodptr.IsMemberConst()
-					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)
-						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)))
+					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
+						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
 					return { true, iter->second.methodptr.GetResultDesc() };
 				}
@@ -518,16 +580,16 @@ namespace Ubpa::UDRefl::details {
 		{ // 2. object const
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberConst()
-					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)
-						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypeIDs)))
+					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
+						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
 					return { true, iter->second.methodptr.GetResultDesc() };
 				}
 			}
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = IsInvocable(is_priority, baseID, methodID, argTypeIDs);
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto rst = IsInvocable(is_priority, base, method_name, argTypes);
 			if (rst)
 				return rst;
 		}
@@ -538,42 +600,42 @@ namespace Ubpa::UDRefl::details {
 	static InvokeResult Invoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
-		TypeID typeID,
-		StrID methodID,
+		Type type,
+		Name method_name,
 		void* result_buffer,
-		std::span<const TypeID> argTypeIDs,
+		std::span<const Type> argTypes,
 		ArgPtrBuffer argptr_buffer)
 	{
-		assert(Mngr.GetConstReferenceMode(typeID) == ConstReferenceMode::None);
+		assert(type.CVRefMode() == CVRefMode::None);
 
-		auto typetarget = Mngr.typeinfos.find(typeID);
+		auto typetarget = Mngr.typeinfos.find(type);
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
 
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 		
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsStatic()) {
 				NewArgsGuard guard{
 					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 				};
 				if (!guard.IsCompatible())
 					continue;
 
 				return {
 					true,
-					iter->second.methodptr.GetResultDesc().typeID,
+					iter->second.methodptr.GetResultDesc().type,
 					std::move(iter->second.methodptr.Invoke(result_buffer, guard.GetArgPtrBuffer()))
 				};
 			}
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = Invoke(is_priority, args_rsrc, baseID, methodID, result_buffer, argTypeIDs, argptr_buffer);
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto rst = Invoke(is_priority, args_rsrc, base, method_name, result_buffer, argTypes, argptr_buffer);
 			if (rst.success)
 				return rst;
 		}
@@ -586,34 +648,34 @@ namespace Ubpa::UDRefl::details {
 		std::pmr::memory_resource* args_rsrc,
 		ObjectView obj,
 		bool is_const,
-		StrID methodID,
+		Name method_name,
 		void* result_buffer,
-		std::span<const TypeID> argTypeIDs,
+		std::span<const Type> argTypes,
 		ArgPtrBuffer argptr_buffer)
 	{
-		assert(Mngr.GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+		assert(obj.GetType().CVRefMode() == CVRefMode::None);
 
-		auto typetarget = Mngr.typeinfos.find(obj.GetTypeID());
+		auto typetarget = Mngr.typeinfos.find(obj.GetType());
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
 
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		if (!is_const) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 					};
 					if (!guard.IsCompatible())
 						continue;
 					return {
 						true,
-						iter->second.methodptr.GetResultDesc().typeID,
+						iter->second.methodptr.GetResultDesc().type,
 						iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer())
 					};
 				}
@@ -623,24 +685,24 @@ namespace Ubpa::UDRefl::details {
 			if (!iter->second.methodptr.IsMemberVariable()) {
 				NewArgsGuard guard{
 					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 				};
 				if (!guard.IsCompatible())
 					continue;
 				return {
 					true,
-					iter->second.methodptr.GetResultDesc().typeID,
+					iter->second.methodptr.GetResultDesc().type,
 					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer())
 				};
 			}
 		}
 
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
 			auto rst = Invoke(
 				is_priority, args_rsrc,
-				ObjectView{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
-				methodID, result_buffer, argTypeIDs, argptr_buffer
+				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
+				method_name, result_buffer, argTypes, argptr_buffer
 			);
 			if (rst.success)
 				return rst;
@@ -652,28 +714,28 @@ namespace Ubpa::UDRefl::details {
 	static SharedObject MInvoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
-		TypeID typeID,
-		StrID methodID,
-		std::span<const TypeID> argTypeIDs,
+		Type type,
+		Name method_name,
+		std::span<const Type> argTypes,
 		ArgPtrBuffer argptr_buffer,
 		std::pmr::memory_resource* rst_rsrc)
 	{
-		assert(Mngr.GetConstReferenceMode(typeID) == ConstReferenceMode::None);
+		assert(type.CVRefMode() == CVRefMode::None);
 
-		auto typetarget = Mngr.typeinfos.find(typeID);
+		auto typetarget = Mngr.typeinfos.find(type);
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
 
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (iter->second.methodptr.IsStatic()) {
 				NewArgsGuard guard{
 					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 				};
 
 				if (!guard.IsCompatible())
@@ -682,29 +744,29 @@ namespace Ubpa::UDRefl::details {
 				const auto& methodptr = iter->second.methodptr;
 				const auto& rst_desc = methodptr.GetResultDesc();
 
-				if (rst_desc.IsVoid()) {
+				if (rst_desc.type.Is<void>()) {
 					iter->second.methodptr.Invoke(nullptr, guard.GetArgPtrBuffer());
-					return SharedObject{ rst_desc.typeID };
+					return SharedObject{ rst_desc.type };
 				}
-				else if (type_name_is_reference(Mngr.tregistry.Nameof(rst_desc.typeID))) {
+				else if (rst_desc.type.IsReference()) {
 					std::aligned_storage_t<sizeof(void*)> buffer;
 					iter->second.methodptr.Invoke(&buffer, guard.GetArgPtrBuffer());
-					return { rst_desc.typeID, buffer_as<void*>(&buffer) };
+					return { rst_desc.type, buffer_as<void*>(&buffer) };
 				}
 				else {
 					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 					auto dtor = iter->second.methodptr.Invoke(result_buffer, guard.GetArgPtrBuffer());
 					return {
-						{rst_desc.typeID, result_buffer},
+						{rst_desc.type, result_buffer},
 						GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 					};
 				}
 			}
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = MInvoke(is_priority, args_rsrc, baseID, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
-			if (rst.GetTypeID())
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto rst = MInvoke(is_priority, args_rsrc, base, method_name, argTypes, argptr_buffer, rst_rsrc);
+			if (rst.GetType())
 				return rst;
 		}
 
@@ -716,28 +778,28 @@ namespace Ubpa::UDRefl::details {
 		std::pmr::memory_resource* args_rsrc,
 		ObjectView obj,
 		bool is_const,
-		StrID methodID,
-		std::span<const TypeID> argTypeIDs,
+		Name method_name,
+		std::span<const Type> argTypes,
 		ArgPtrBuffer argptr_buffer,
 		std::pmr::memory_resource* rst_rsrc)
 	{
 		assert(rst_rsrc);
-		assert(Mngr.GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
-		auto typetarget = Mngr.typeinfos.find(obj.GetTypeID());
+		assert(obj.GetType().CVRefMode() == CVRefMode::None);
+		auto typetarget = Mngr.typeinfos.find(obj.GetType());
 
 		if (typetarget == Mngr.typeinfos.end())
 			return {};
 
 		const auto& typeinfo = typetarget->second;
 
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		if (!is_const) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 					};
 
 					if (!guard.IsCompatible())
@@ -746,20 +808,20 @@ namespace Ubpa::UDRefl::details {
 					const auto& methodptr = iter->second.methodptr;
 					const auto& rst_desc = methodptr.GetResultDesc();
 
-					if (rst_desc.IsVoid()) {
+					if (rst_desc.type.Is<void>()) {
 						iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
-						return SharedObject{ rst_desc.typeID };
+						return SharedObject{ rst_desc.type };
 					}
-					else if (type_name_is_reference(Mngr.tregistry.Nameof(rst_desc.typeID))) {
+					else if (rst_desc.type.IsReference()) {
 						std::aligned_storage_t<sizeof(void*)> buffer;
 						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgPtrBuffer());
-						return { rst_desc.typeID, buffer_as<void*>(&buffer) };
+						return { rst_desc.type, buffer_as<void*>(&buffer) };
 					}
 					else {
 						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
 						return {
-							{rst_desc.typeID, result_buffer},
+							{rst_desc.type, result_buffer},
 							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 						};
 					}
@@ -771,7 +833,7 @@ namespace Ubpa::UDRefl::details {
 			if (!iter->second.methodptr.IsMemberVariable()) {
 				NewArgsGuard guard{
 					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 				};
 
 				if (!guard.IsCompatible())
@@ -780,90 +842,62 @@ namespace Ubpa::UDRefl::details {
 				const auto& methodptr = iter->second.methodptr;
 				const auto& rst_desc = methodptr.GetResultDesc();
 
-				if (rst_desc.IsVoid()) {
+				if (rst_desc.type.Is<void>()) {
 					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), nullptr, argptr_buffer);
-					return SharedObject{ rst_desc.typeID };
+					return SharedObject{ rst_desc.type };
 				}
-				else if (type_name_is_reference(Mngr.tregistry.Nameof(rst_desc.typeID))) {
+				else if (rst_desc.type.IsReference()) {
 					std::aligned_storage_t<sizeof(void*)> buffer;
 					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), &buffer, guard.GetArgPtrBuffer());
-					return { rst_desc.typeID, buffer_as<void*>(&buffer) };
+					return { rst_desc.type, buffer_as<void*>(&buffer) };
 				}
 				else {
 					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
 					auto dtor = iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
 					return {
-						{rst_desc.typeID, result_buffer},
+						{rst_desc.type, result_buffer},
 						GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
 					};
 				}
 			}
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
 			auto rst = MInvoke(
 				is_priority, args_rsrc,
-				ObjectView{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
-				methodID, argTypeIDs, argptr_buffer, rst_rsrc
+				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
+				method_name, argTypes, argptr_buffer, rst_rsrc
 			);
-			if (rst.GetTypeID())
+			if (rst.GetType())
 				return rst;
 		}
 
 		return nullptr;
 	}
 
-	static bool ForEachTypeID(
-		TypeID typeID,
-		const std::function<bool(TypeID)>& func,
-		std::set<TypeID>& visitedVBs)
-	{
-		if (!func(typeID))
-			return false;
-
-		auto target = Mngr.typeinfos.find(typeID);
-
-		if (target == Mngr.typeinfos.end())
-			return true;
-
-		const auto& typeinfo = target->second;
-
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
-					continue;
-				visitedVBs.insert(baseID);
-			}
-
-			if (!ForEachTypeID(baseID, func, visitedVBs))
-				return false;
-		}
-		return true;
-	}
-
 	static bool ForEachTypeInfo(
-		TypeID typeID,
+		Type type,
 		const std::function<bool(TypeRef)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
-		auto target = Mngr.typeinfos.find(typeID);
+		auto target = Mngr.typeinfos.find(type);
 
 		if (target == Mngr.typeinfos.end())
 			return true;
 
 		auto& typeinfo = target->second;
 
-		if (!func({ typeID, typeinfo }))
+		if (!func({ type, typeinfo }))
 			return false;
 
-		for (auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		for (auto& [base, baseinfo] : typeinfo.baseinfos) {
 			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
+				if (visitedVBs.find(base) != visitedVBs.end())
 					continue;
-				visitedVBs.insert(baseID);
+				visitedVBs.insert(base);
 			}
 
-			if (!ForEachTypeInfo(baseID, func, visitedVBs))
+			if (!ForEachTypeInfo(base, func, visitedVBs))
 				return false;
 		}
 
@@ -871,32 +905,32 @@ namespace Ubpa::UDRefl::details {
 	}
 
 	static bool ForEachVar(
-		TypeID typeID,
+		Type type,
 		const std::function<bool(TypeRef, FieldRef, ObjectView)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
-		auto target = Mngr.typeinfos.find(typeID);
+		auto target = Mngr.typeinfos.find(type);
 
 		if (target == Mngr.typeinfos.end())
 			return true;
 
 		auto& typeinfo = target->second;
 
-		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
+		for (auto& [field, fieldInfo] : typeinfo.fieldinfos) {
 			if (fieldInfo.fieldptr.IsUnowned()) {
-				if (!func({ typeID, typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Var()))
+				if (!func({ type, typeinfo }, { field, fieldInfo }, fieldInfo.fieldptr.Var()))
 					return false;
 			}
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
 			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
+				if (visitedVBs.find(base) != visitedVBs.end())
 					continue;
-				visitedVBs.insert(baseID);
+				visitedVBs.insert(base);
 			}
 
-			if (!ForEachVar(baseID, func, visitedVBs))
+			if (!ForEachVar(base, func, visitedVBs))
 				return false;
 		}
 
@@ -908,28 +942,28 @@ namespace Ubpa::UDRefl::details {
 		const std::function<bool(TypeRef, FieldRef, ObjectView)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
-		assert(Mngr.GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+		assert(obj.GetType().CVRefMode() == CVRefMode::None);
 
-		auto target = Mngr.typeinfos.find(obj.GetTypeID());
+		auto target = Mngr.typeinfos.find(obj.GetType());
 
 		if (target == Mngr.typeinfos.end())
 			return true;
 
 		auto& typeinfo = target->second;
 
-		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
-			if (!func({ obj.GetTypeID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Var(obj.GetPtr())))
+		for (auto& [field, fieldInfo] : typeinfo.fieldinfos) {
+			if (!func({ obj.GetType(), typeinfo }, { field, fieldInfo }, fieldInfo.fieldptr.Var(obj.GetPtr())))
 				return false;
 		}
 
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
 			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
+				if (visitedVBs.find(base) != visitedVBs.end())
 					continue;
-				visitedVBs.insert(baseID);
+				visitedVBs.insert(base);
 			}
 
-			if (!ForEachVar(ObjectView{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, func, visitedVBs))
+			if (!ForEachVar(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, func, visitedVBs))
 				return false;
 		}
 
@@ -938,38 +972,23 @@ namespace Ubpa::UDRefl::details {
 }
 
 ReflMngr::ReflMngr() {
-	MethodInfo methodinfo_malloc{ GenerateMethodPtr<&malloc>() };
-	MethodInfo methodinfo_free{ GenerateMethodPtr<&free>() };
-
 #if defined(_WIN32) || defined(_WIN64)
 	#define UBPA_UDREFL_ALIGN_MALLOC _aligned_malloc
 #else
 	#define UBPA_UDREFL_ALIGN_MALLOC aligned_alloc
 #endif // defined(_WIN32) || defined(_WIN64)
-	MethodInfo methodinfo_aligned_malloc{ GenerateMethodPtr<&UBPA_UDREFL_ALIGN_MALLOC>() };
-#undef UBPA_UDREFL_ALIGN_MALLOC
-
 #if defined(_WIN32) || defined(_WIN64)
 #define UBPA_UDREFL_ALIGN_FREE _aligned_free
 #else
 #define UBPA_UDREFL_ALIGN_FREE free
 #endif // defined(_WIN32) || defined(_WIN64)
-	MethodInfo methodinfo_aligned_free{ GenerateMethodPtr<&UBPA_UDREFL_ALIGN_FREE>() };
+	RegisterType(Global, 0, 0);
+	AddMethod<&malloc>(Global, NameIDRegistry::Meta::malloc);
+	AddMethod<&UBPA_UDREFL_ALIGN_MALLOC>(Global, NameIDRegistry::Meta::aligned_malloc);
+	AddMethod<&free>(Global, NameIDRegistry::Meta::free);
+	AddMethod<&UBPA_UDREFL_ALIGN_FREE>(Global, NameIDRegistry::Meta::aligned_free);
+#undef UBPA_UDREFL_ALIGN_MALLOC
 #undef UBPA_UDREFL_ALIGN_FREE
-
-	TypeInfo global{
-		0,
-		0,
-		{}, // fieldinfos
-		{ // methodinfos
-			{StrIDRegistry::MetaID::malloc, std::move(methodinfo_malloc)},
-			{StrIDRegistry::MetaID::free, std::move(methodinfo_free)},
-			{StrIDRegistry::MetaID::aligned_malloc, std::move(methodinfo_aligned_malloc)},
-			{StrIDRegistry::MetaID::aligned_free, std::move(methodinfo_aligned_free)},
-		},
-	};
-
-	typeinfos.emplace(tregistry.Register(TypeIDRegistry::Meta::global), std::move(global));
 
 	RegisterType<ContainerType>();
 	AddField<ContainerType::Unknown>("Unknown");
@@ -1010,11 +1029,8 @@ ReflMngr::ReflMngr() {
 	details::RegisterArithmeticConvertion<double>(*this);
 }
 
-TypeInfo* ReflMngr::GetTypeInfo(TypeID ID) {
-	auto name = tregistry.Nameof(ID);
-	auto raw_name = type_name_remove_cvref(name);
-	TypeID rawID{ raw_name };
-	auto target = typeinfos.find(rawID);
+TypeInfo* ReflMngr::GetTypeInfo(Type type) {
+	auto target = typeinfos.find(type.RemoveCVRef());
 	if (target == typeinfos.end())
 		return nullptr;
 	return &target->second;
@@ -1022,8 +1038,8 @@ TypeInfo* ReflMngr::GetTypeInfo(TypeID ID) {
 
 void ReflMngr::Clear() noexcept {
 	// field attrs
-	for (auto& [typeID, typeinfo] : typeinfos) {
-		for (auto& [fieldID, fieldinfo] : typeinfo.fieldinfos)
+	for (auto& [type, typeinfo] : typeinfos) {
+		for (auto& [field, fieldinfo] : typeinfo.fieldinfos)
 			fieldinfo.attrs.clear();
 	}
 
@@ -1032,7 +1048,7 @@ void ReflMngr::Clear() noexcept {
 		typeinfo.attrs.clear();
 
 	// type dynamic field
-	for (auto& [typeID, typeinfo] : typeinfos) {
+	for (auto& [type, typeinfo] : typeinfos) {
 		auto iter = typeinfo.fieldinfos.begin();
 		while (iter != typeinfo.fieldinfos.end()) {
 			auto cur = iter;
@@ -1051,67 +1067,56 @@ ReflMngr::~ReflMngr() {
 	Clear();
 }
 
-TypeID ReflMngr::RegisterType(std::string_view name, size_t size, size_t alignment) {
-	TypeID ID{ name };
+void ReflMngr::RegisterType(Type type, size_t size, size_t alignment) {
+	assert(type.CVRefMode() == CVRefMode::None);
 
-	auto target = typeinfos.find(ID);
+	auto target = typeinfos.find(type);
 	if (target != typeinfos.end())
-		return ID;
+		return;
 
-	tregistry.Register(ID, name);
-	typeinfos.emplace_hint(target, ID, TypeInfo{ size,alignment });
-
-	return ID;
+	typeinfos.emplace_hint(target, type, TypeInfo{ size,alignment });
 }
 
-StrID ReflMngr::AddField(TypeID typeID, std::string_view name, FieldInfo fieldinfo) {
-	auto ttarget = typeinfos.find(typeID);
+bool ReflMngr::AddField(Type type, Name field_name, FieldInfo fieldinfo) {
+	auto ttarget = typeinfos.find(type);
 	if (ttarget == typeinfos.end())
-		return {};
+		return false;
 	auto& typeinfo = ttarget->second;
-	StrID fieldID = nregistry.Register(name);
-	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	auto ftarget = typeinfo.fieldinfos.find(field_name);
 	if (ftarget != typeinfo.fieldinfos.end())
-		return {};
-	typeinfo.fieldinfos.emplace_hint(ftarget, fieldID, std::move(fieldinfo));
-	return fieldID;
-}
-
-StrID ReflMngr::AddMethod(TypeID typeID, std::string_view name, MethodInfo methodinfo) {
-	auto ttarget = typeinfos.find(typeID);
-	if (ttarget == typeinfos.end())
-		return {};
-	auto& typeinfo = ttarget->second;
-	StrID methodID = nregistry.Register(name);
-	size_t mcnt = typeinfo.methodinfos.count(methodID);
-	auto miter = typeinfo.methodinfos.find(methodID);
-	bool flag = true;
-	for (size_t i = 0; i < mcnt; ++i, ++miter) {
-		if (!miter->second.methodptr.IsDistinguishableWith(methodinfo.methodptr)) {
-			flag = false;
-			break;
-		}
-	}
-	if (!flag)
-		return {};
-	typeinfo.methodinfos.emplace(methodID, std::move(methodinfo));
-	return methodID;
-}
-
-bool ReflMngr::AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo) {
-	auto ttarget = typeinfos.find(derivedID);
-	if (ttarget == typeinfos.end())
-		return false;
-	auto& typeinfo = ttarget->second;
-	auto btarget = typeinfo.baseinfos.find(baseID);
-	if (btarget != typeinfo.baseinfos.end())
-		return false;
-	typeinfo.baseinfos.emplace_hint(btarget, baseID, std::move(baseinfo));
+		return false; // same name
+	typeinfo.fieldinfos.emplace_hint(ftarget, field_name, std::move(fieldinfo));
 	return true;
 }
 
-bool ReflMngr::AddAttr(TypeID typeID, const Attr& attr) {
-	auto ttarget = typeinfos.find(typeID);
+bool ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
+	auto ttarget = typeinfos.find(type);
+	if (ttarget == typeinfos.end())
+		return false;
+	auto& typeinfo = ttarget->second;
+	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
+	for (auto iter = begin_iter; iter != end_iter; ++iter) {
+		if (!iter->second.methodptr.IsDistinguishableWith(methodinfo.methodptr))
+			return false;
+	}
+	typeinfo.methodinfos.emplace(method_name, std::move(methodinfo));
+	return true;
+}
+
+bool ReflMngr::AddBase(Type derived, Type base, BaseInfo baseinfo) {
+	auto ttarget = typeinfos.find(derived);
+	if (ttarget == typeinfos.end())
+		return false;
+	auto& typeinfo = ttarget->second;
+	auto btarget = typeinfo.baseinfos.find(base);
+	if (btarget != typeinfo.baseinfos.end())
+		return false;
+	typeinfo.baseinfos.emplace_hint(btarget, base, std::move(baseinfo));
+	return true;
+}
+
+bool ReflMngr::AddAttr(Type type, const Attr& attr) {
+	auto ttarget = typeinfos.find(type);
 	if (ttarget == typeinfos.end())
 		return false;
 	auto& typeinfo = ttarget->second;
@@ -1123,26 +1128,26 @@ bool ReflMngr::AddAttr(TypeID typeID, const Attr& attr) {
 }
 
 void* ReflMngr::Malloc(size_t size) const {
-	return Invoke<void*>(GlobalID, StrIDRegistry::MetaID::malloc, std::move(size));
+	return Invoke<void*>(Global, NameIDRegistry::Meta::malloc, std::move(size));
 }
 
 bool ReflMngr::Free(void* ptr) const {
-	return InvokeArgs(GlobalID, StrIDRegistry::MetaID::free, nullptr, std::move(ptr));
+	return InvokeArgs(Global, NameIDRegistry::Meta::free, nullptr, std::move(ptr));
 }
 
 void* ReflMngr::AlignedMalloc(size_t size, size_t alignment) const {
-	return Invoke<void*>(GlobalID, StrIDRegistry::MetaID::aligned_malloc, std::move(size), std::move(alignment));
+	return Invoke<void*>(Global, NameIDRegistry::Meta::aligned_malloc, std::move(size), std::move(alignment));
 }
 
 bool ReflMngr::AlignedFree(void* ptr) const {
-	return InvokeArgs(GlobalID, StrIDRegistry::MetaID::aligned_free, nullptr, std::move(ptr));
+	return InvokeArgs(Global, NameIDRegistry::Meta::aligned_free, nullptr, std::move(ptr));
 }
 
-ObjectView ReflMngr::NonArgCopyNew(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	if (!IsNonArgConstructible(typeID, argTypeIDs))
+ObjectView ReflMngr::NonArgCopyNew(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	if (!IsNonCopiedArgConstructible(type, argTypes))
 		return nullptr;
 
-	const auto& typeinfo = typeinfos.at(typeID);
+	const auto& typeinfo = typeinfos.at(type);
 
 	void* buffer = typeinfo.alignment <= std::alignment_of_v<std::max_align_t> ?
 		Malloc(typeinfo.size)
@@ -1151,18 +1156,18 @@ ObjectView ReflMngr::NonArgCopyNew(TypeID typeID, std::span<const TypeID> argTyp
 	if (!buffer)
 		return nullptr;
 
-	ObjectView obj{ typeID, buffer };
-	bool success = NonArgConstruct(obj, argTypeIDs, argptr_buffer);
+	ObjectView obj{ type, buffer };
+	bool success = NonCopiedArgConstruct(obj, argTypes, argptr_buffer);
 	assert(success);
 
 	return obj;
 }
 
-ObjectView ReflMngr::New(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	if (!IsConstructible(typeID, argTypeIDs))
+ObjectView ReflMngr::New(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	if (!IsConstructible(type, argTypes))
 		return nullptr;
 
-	const auto& typeinfo = typeinfos.at(typeID);
+	const auto& typeinfo = typeinfos.at(type);
 
 	void* buffer = typeinfo.alignment <= std::alignment_of_v<std::max_align_t> ?
 		Malloc(typeinfo.size)
@@ -1171,8 +1176,8 @@ ObjectView ReflMngr::New(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgP
 	if (!buffer)
 		return nullptr;
 
-	ObjectView obj{ typeID, buffer };
-	bool success = Construct(obj, argTypeIDs, argptr_buffer);
+	ObjectView obj{ type, buffer };
+	bool success = Construct(obj, argTypes, argptr_buffer);
 	assert(success);
 	
 	return obj;
@@ -1183,7 +1188,7 @@ bool ReflMngr::Delete(ObjectView obj) const {
 	if (!dtor_success)
 		return false;
 
-	const auto& typeinfo = typeinfos.at(obj.GetTypeID());
+	const auto& typeinfo = typeinfos.at(obj.GetType());
 
 	bool free_success;
 	if (typeinfo.alignment <= std::alignment_of_v<std::max_align_t>)
@@ -1194,324 +1199,314 @@ bool ReflMngr::Delete(ObjectView obj) const {
 	return free_success;
 }
 
-SharedObject ReflMngr::MakeShared(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	ObjectView obj = New(typeID, argTypeIDs, argptr_buffer);
+SharedObject ReflMngr::MakeShared(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	ObjectView obj = New(type, argTypes, argptr_buffer);
 
-	if (!obj.Valid())
+	if (!obj.GetType().Valid())
 		return nullptr;
 
-	return { obj, [typeID](void* ptr) {
-		bool success = Mngr.Delete({typeID, ptr});
+	return { obj, [type](void* ptr) {
+		bool success = Mngr.Delete({type, ptr});
 		assert(success);
 	} };
 }
 
-ObjectView ReflMngr::StaticCast_DerivedToBase(ObjectView obj, TypeID typeID) const {
-	assert(typeID);
+ObjectView ReflMngr::StaticCast_DerivedToBase(ObjectView obj, Type type) const {
+	assert(type);
 
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return StaticCast_DerivedToBase(obj.RemoveReference(), typeID).AddLValueReference();
-	case ConstReferenceMode::Right:
-		return StaticCast_DerivedToBase(obj.RemoveReference(), typeID).AddRValueReference();
-	case ConstReferenceMode::Const:
-		return StaticCast_DerivedToBase(obj.RemoveConst(), typeID).AddConst();
-	case ConstReferenceMode::ConstLeft:
-		return StaticCast_DerivedToBase(obj.RemoveConstReference(), typeID).AddConstLValueReference();
-	case ConstReferenceMode::ConstRight:
-		return StaticCast_DerivedToBase(obj.RemoveConstReference(), typeID).AddConstRValueReference();
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return StaticCast_DerivedToBase(obj.RemoveReference(), type).AddLValueReference();
+	case CVRefMode::Right:
+		return StaticCast_DerivedToBase(obj.RemoveReference(), type).AddRValueReference();
+	case CVRefMode::Const:
+		return StaticCast_DerivedToBase(obj.RemoveConst(), type).AddConst();
+	case CVRefMode::ConstLeft:
+		return StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstLValueReference();
+	case CVRefMode::ConstRight:
+		return StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
 		break;
 	}
 
-	if (obj.GetTypeID() == typeID)
+	if (obj.GetType() == type)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
-		return { typeID, nullptr };
+		return { type, nullptr };
 
-	auto target = typeinfos.find(obj.GetTypeID());
+	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
 		return nullptr;
 
 	const auto& typeinfo = target->second;
 
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto ptr = StaticCast_DerivedToBase(ObjectView{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, typeID);
-		if (ptr.GetTypeID())
+	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+		auto ptr = StaticCast_DerivedToBase(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, type);
+		if (ptr.GetType())
 			return ptr;
 	}
 
 	return nullptr;
 }
 
-ObjectView ReflMngr::StaticCast_BaseToDerived(ObjectView obj, TypeID typeID) const {
-	assert(typeID);
+ObjectView ReflMngr::StaticCast_BaseToDerived(ObjectView obj, Type type) const {
+	assert(type);
 	
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return StaticCast_BaseToDerived(obj.RemoveReference(), typeID).AddLValueReference();
-	case ConstReferenceMode::Right:
-		return StaticCast_BaseToDerived(obj.RemoveReference(), typeID).AddRValueReference();
-	case ConstReferenceMode::Const:
-		return StaticCast_BaseToDerived(obj.RemoveConst(), typeID).AddConst();
-	case ConstReferenceMode::ConstLeft:
-		return StaticCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstLValueReference();
-	case ConstReferenceMode::ConstRight:
-		return StaticCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstRValueReference();
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return StaticCast_BaseToDerived(obj.RemoveReference(), type).AddLValueReference();
+	case CVRefMode::Right:
+		return StaticCast_BaseToDerived(obj.RemoveReference(), type).AddRValueReference();
+	case CVRefMode::Const:
+		return StaticCast_BaseToDerived(obj.RemoveConst(), type).AddConst();
+	case CVRefMode::ConstLeft:
+		return StaticCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstLValueReference();
+	case CVRefMode::ConstRight:
+		return StaticCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
 		break;
 	}
 
-	if (obj.GetTypeID() == typeID)
+	if (obj.GetType() == type)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
-		return { typeID, nullptr };
+		return { type, nullptr };
 
-	auto target = typeinfos.find(typeID);
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return nullptr;
 
 	const auto& typeinfo = target->second;
 
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto ptr = StaticCast_BaseToDerived(obj, baseID);
-		if (ptr.GetTypeID())
-			return { baseID, baseinfo.IsVirtual() ? nullptr : baseinfo.StaticCast_BaseToDerived(obj.GetPtr()) };
+	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+		auto ptr = StaticCast_BaseToDerived(obj, base);
+		if (ptr.GetType())
+			return { base, baseinfo.IsVirtual() ? nullptr : baseinfo.StaticCast_BaseToDerived(obj.GetPtr()) };
 	}
 	
 	return nullptr;
 }
 
-ObjectView ReflMngr::DynamicCast_BaseToDerived(ObjectView obj, TypeID typeID) const {
-	assert(typeID);
+ObjectView ReflMngr::DynamicCast_BaseToDerived(ObjectView obj, Type type) const {
+	assert(type);
 	
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return DynamicCast_BaseToDerived(obj.RemoveReference(), typeID).AddLValueReference();
-	case ConstReferenceMode::Right:
-		return DynamicCast_BaseToDerived(obj.RemoveReference(), typeID).AddRValueReference();
-	case ConstReferenceMode::Const:
-		return DynamicCast_BaseToDerived(obj.RemoveConst(), typeID).AddConst();
-	case ConstReferenceMode::ConstLeft:
-		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstLValueReference();
-	case ConstReferenceMode::ConstRight:
-		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstRValueReference();
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return DynamicCast_BaseToDerived(obj.RemoveReference(), type).AddLValueReference();
+	case CVRefMode::Right:
+		return DynamicCast_BaseToDerived(obj.RemoveReference(), type).AddRValueReference();
+	case CVRefMode::Const:
+		return DynamicCast_BaseToDerived(obj.RemoveConst(), type).AddConst();
+	case CVRefMode::ConstLeft:
+		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstLValueReference();
+	case CVRefMode::ConstRight:
+		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
 		break;
 	}
 
-	if (IsConst(obj.GetTypeID()))
-		return StaticCast_DerivedToBase(obj.RemoveReference(), typeID).AddConstLValueReference();
-
-	if (obj.GetTypeID() == typeID)
+	if (obj.GetType() == type)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
-		return { typeID, nullptr };
+		return { type, nullptr };
 
-	auto target = typeinfos.find(obj.GetTypeID());
+	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
 		return nullptr;
 
 	const auto& typeinfo = target->second;
 
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto ptr = DynamicCast_BaseToDerived(ObjectView{ baseID, baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) }, typeID);
-		if (ptr.GetTypeID())
-			return { baseID, baseinfo.IsPolymorphic() ? baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) : nullptr };
+	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+		auto ptr = DynamicCast_BaseToDerived(ObjectView{ base, baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) }, type);
+		if (ptr.GetType())
+			return { base, baseinfo.IsPolymorphic() ? baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) : nullptr };
 	}
 
 	return nullptr;
 }
 
-ObjectView ReflMngr::StaticCast(ObjectView obj, TypeID typeID) const {
-	auto ptr_d2b = StaticCast_DerivedToBase(obj, typeID);
-	if (ptr_d2b.GetTypeID())
+ObjectView ReflMngr::StaticCast(ObjectView obj, Type type) const {
+	auto ptr_d2b = StaticCast_DerivedToBase(obj, type);
+	if (ptr_d2b.GetType())
 		return ptr_d2b;
 
-	auto ptr_b2d = StaticCast_BaseToDerived(obj, typeID);
-	if (ptr_b2d.GetTypeID())
+	auto ptr_b2d = StaticCast_BaseToDerived(obj, type);
+	if (ptr_b2d.GetType())
 		return ptr_b2d;
 
 	return nullptr;
 }
 
-ObjectView ReflMngr::DynamicCast(ObjectView obj, TypeID typeID) const {
-	auto ptr_b2d = DynamicCast_BaseToDerived(obj, typeID);
-	if (ptr_b2d.GetTypeID())
+ObjectView ReflMngr::DynamicCast(ObjectView obj, Type type) const {
+	auto ptr_b2d = DynamicCast_BaseToDerived(obj, type);
+	if (ptr_b2d.GetType())
 		return ptr_b2d;
 
-	auto ptr_d2b = StaticCast_DerivedToBase(obj, typeID);
-	if (ptr_d2b.GetTypeID())
+	auto ptr_d2b = StaticCast_DerivedToBase(obj, type);
+	if (ptr_d2b.GetType())
 		return ptr_d2b;
 
 	return nullptr;
 }
 
-ObjectView ReflMngr::Var(TypeID typeID, StrID fieldID) {
-	switch (GetConstReferenceMode(typeID))
+ObjectView ReflMngr::Var(Type type, Name field_name) {
+	const CVRefMode cvref_mode = type.CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return Var(RemoveReference(typeID), fieldID).AddLValueReference();
-	case ConstReferenceMode::Right:
-		return Var(RemoveReference(typeID), fieldID).AddRValueReference();
-	case ConstReferenceMode::Const:
-		return Var(RemoveConst(typeID), fieldID).AddConst();
-	case ConstReferenceMode::ConstLeft:
-		return Var(RemoveConstReference(typeID), fieldID).AddConstLValueReference();
-	case ConstReferenceMode::ConstRight:
-		return Var(RemoveConstReference(typeID), fieldID).AddConstRValueReference();
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return Var(type.RemoveReference(), field_name).AddLValueReference();
+	case CVRefMode::Right:
+		return Var(type.RemoveReference(), field_name).AddRValueReference();
+	case CVRefMode::Const:
+		return Var(type.RemoveConst(), field_name).AddConst();
+	case CVRefMode::ConstLeft:
+		return Var(type.RemoveCVRef(), field_name).AddConstLValueReference();
+	case CVRefMode::ConstRight:
+		return Var(type.RemoveCVRef(), field_name).AddConstRValueReference();
 	default:
 		break;
 	}
 
-	auto ttarget = typeinfos.find(typeID);
+	auto ttarget = typeinfos.find(type);
 	if (ttarget == typeinfos.end())
 		return nullptr;
 
 	auto& typeinfo = ttarget->second;
 
-	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	auto ftarget = typeinfo.fieldinfos.find(field_name);
 	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsUnowned())
 		return ftarget->second.fieldptr.Var();
 
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = Var(baseID, fieldID);
-		if (bptr.GetTypeID())
+	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+		auto bptr = Var(base, field_name);
+		if (bptr.GetType())
 			return bptr;
 	}
 
 	return nullptr;
 }
 
-ObjectView ReflMngr::Var(ObjectView obj, StrID fieldID) {
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+ObjectView ReflMngr::Var(ObjectView obj, Name field_name) {
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return Var(obj.RemoveReference(), fieldID).AddLValueReference();
-	case ConstReferenceMode::Right:
-		return Var(obj.RemoveReference(), fieldID).AddRValueReference();
-	case ConstReferenceMode::Const:
-		return Var(obj.RemoveConst(), fieldID).AddConst();
-	case ConstReferenceMode::ConstLeft:
-		return Var(obj.RemoveConstReference(), fieldID).AddConstLValueReference();
-	case ConstReferenceMode::ConstRight:
-		return Var(obj.RemoveConstReference(), fieldID).AddConstRValueReference();
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return Var(obj.RemoveReference(), field_name).AddLValueReference();
+	case CVRefMode::Right:
+		return Var(obj.RemoveReference(), field_name).AddRValueReference();
+	case CVRefMode::Const:
+		return Var(obj.RemoveConst(), field_name).AddConst();
+	case CVRefMode::ConstLeft:
+		return Var(obj.RemoveConstReference(), field_name).AddConstLValueReference();
+	case CVRefMode::ConstRight:
+		return Var(obj.RemoveConstReference(), field_name).AddConstRValueReference();
 	default:
 		break;
 	}
 
-	auto ttarget = typeinfos.find(obj.GetTypeID());
+	auto ttarget = typeinfos.find(obj.GetType());
 	if (ttarget == typeinfos.end())
 		return nullptr;
 
 	auto& typeinfo = ttarget->second;
 
-	auto ftarget = typeinfo.fieldinfos.find(fieldID);
+	auto ftarget = typeinfo.fieldinfos.find(field_name);
 	if (ftarget != typeinfo.fieldinfos.end())
 		return ftarget->second.fieldptr.Var(obj.GetPtr());
 
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = Var(ObjectView{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, fieldID);
-		if (bptr.GetTypeID())
+	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+		auto bptr = Var(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, field_name);
+		if (bptr.GetType())
 			return bptr;
 	}
 
 	return nullptr;
 }
 
-ObjectView ReflMngr::Var(ObjectView obj, TypeID baseID, StrID fieldID) {
-	auto base = StaticCast_DerivedToBase(obj, baseID);
-	if (!base.GetTypeID())
+ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name) {
+	auto base_obj = StaticCast_DerivedToBase(obj, base);
+	if (!base_obj.GetType())
 		return nullptr;
-	return Var(base, fieldID);
+	return Var(base_obj, field_name);
 }
 
-bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const TypeID> argTypeIDs) const {
-	if (params.size() != argTypeIDs.size())
+bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> argTypes) const {
+	if (params.size() != argTypes.size())
 		return false;
 
 	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i] == argTypeIDs[i])
+		if (params[i] == argTypes[i])
 			continue;
 
-		auto lhs = tregistry.Nameof(params[i]);
-#ifndef NDEBUG
-		// because rhs(arg)'s ID maybe have no name in the registry
-		// so we use type_name_add_*_hash(...) to avoid it
-		auto rhs = tregistry.Nameof(argTypeIDs[i]);
-#endif // !NDEBUG
-		const std::size_t rhs_hash = argTypeIDs[i].GetValue();
+		const auto& lhs = params[i];
+		const auto& rhs = argTypes[i];
 
-		if (type_name_is_lvalue_reference(lhs)) { // &{T} | &{const{T}}
-			auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+		if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
+			const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
 			if (type_name_is_const(unref_lhs)) { // &{const{T}}
-				if (type_name_add_rvalue_reference_hash(unref_lhs) == rhs_hash)
+				if (unref_lhs == rhs.Name_RemoveRValueReference())
 					continue; // &{const{T}} <- &&{const{T}}
 
-				auto raw_lhs = type_name_remove_const(unref_lhs); // T
-				TypeID raw_lhs_ID{ raw_lhs };
+				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
-				if (raw_lhs_ID.GetValue() == rhs_hash
-					|| type_name_add_lvalue_reference_hash(raw_lhs) == rhs_hash
-					|| type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash)
+				if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
 					continue; // &{const{T}} <- T | &{T} | &&{T}
 
-				if (IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
+				if (IsNonCopiedArgConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &{const{T}} <- T{arg}
 			}
 		}
-		else if (type_name_is_rvalue_reference(lhs)) { // &&{T} | &&{const{T}}
-			auto unref_lhs = type_name_remove_reference(lhs); // T | const{T}
+		else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
+			const auto unref_lhs = lhs.RemoveRValueReference(); // T | const{T}
 
 			if (type_name_is_const(unref_lhs)) { // &&{const{T}}
-				auto raw_lhs = type_name_remove_const(unref_lhs); // T
-				TypeID raw_lhs_ID{ raw_lhs };
+				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
-				if (raw_lhs_ID.GetValue() == rhs_hash)
+				if (rhs.Is(raw_lhs))
 					continue; // &&{const{T}} <- T
 
-				if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
+				if (raw_lhs == rhs.Name_RemoveRValueReference()) // &&{const{T}}
 					continue; // &&{const{T}} <- &&{T}
 
-				if (IsNonArgConstructible(raw_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
+				if (IsNonCopiedArgConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &&{const{T}} <- T{arg}
 			}
 			else {
-				TypeID unref_lhs_ID{ unref_lhs };
-
-				if (unref_lhs_ID.GetValue() == rhs_hash)
+				if (rhs.Is(unref_lhs))
 					continue; // &&{T} <- T
 
-				if (IsNonArgConstructible(unref_lhs_ID, std::span<const TypeID>{&argTypeIDs[i], 1}))
+				if (IsNonCopiedArgConstructible(unref_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &&{T} <- T{arg}
 			}
 		}
 		else { // T
-			if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
+			if (lhs.Is(rhs.Name_RemoveRValueReference()))
 				continue; // T <- &&{T}
 
-			if ((type_name_is_pointer(lhs) || IsCopyConstructible(lhs))
+			if ((lhs.IsPointer() || IsCopyConstructible(lhs))
 				&& (
-					type_name_add_lvalue_reference_hash(lhs) == rhs_hash
-					|| type_name_add_const_lvalue_reference_hash(lhs) == rhs_hash
-					|| type_name_add_const_rvalue_reference_hash(lhs) == rhs_hash
+					lhs.Is(rhs.Name_RemoveLValueReference())
+					|| lhs.Is(rhs.Name_RemoveCVRef())
 				))
 			{
 				continue; // T <- T{arg} [copy]
 			}
 
-			if (IsNonArgConstructible(params[i], std::span<const TypeID>{&argTypeIDs[i], 1}))
+			if (IsNonCopiedArgConstructible(lhs, std::span<const Type>{&rhs, 1}))
 				continue; // T <- T{arg}
 		}
 
@@ -1522,199 +1517,205 @@ bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const Type
 }
 
 InvocableResult ReflMngr::IsStaticInvocable(
-	TypeID typeID,
-	StrID methodID,
-	std::span<const TypeID> argTypeIDs) const
+	Type type,
+	Name method_name,
+	std::span<const Type> argTypes) const
 {
-	switch (GetConstReferenceMode(typeID))
+	const CVRefMode cvref_mode = type.CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return IsStaticInvocable(RemoveReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::Right:
-		return IsStaticInvocable(RemoveReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::Const:
-		return IsStaticInvocable(RemoveConst(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::ConstLeft:
-		return IsStaticInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::ConstRight:
-		return IsStaticInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return IsStaticInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Right:
+		return IsStaticInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Const:
+		return IsStaticInvocable(type.RemoveConst(), method_name, argTypes);
+	case CVRefMode::ConstLeft:
+		return IsStaticInvocable(type.RemoveCVRef(), method_name, argTypes);
+	case CVRefMode::ConstRight:
+		return IsStaticInvocable(type.RemoveCVRef(), method_name, argTypes);
 	default:
 		break;
 	}
 
-	if (auto priority_rst = details::IsStaticInvocable(true, typeID, methodID, argTypeIDs))
+	if (auto priority_rst = details::IsStaticInvocable(true, type, method_name, argTypes))
 		return priority_rst;
 
-	return details::IsStaticInvocable(false, typeID, methodID, argTypeIDs);
+	return details::IsStaticInvocable(false, type, method_name, argTypes);
 }
 
 InvocableResult ReflMngr::IsConstInvocable(
-	TypeID typeID,
-	StrID methodID,
-	std::span<const TypeID> argTypeIDs) const
+	Type type,
+	Name method_name,
+	std::span<const Type> argTypes) const
 {
-	switch (GetConstReferenceMode(typeID))
+	const CVRefMode cvref_mode = type.CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return IsConstInvocable(RemoveReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::Right:
-		return IsConstInvocable(RemoveReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::Const:
-		return IsConstInvocable(RemoveConst(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::ConstLeft:
-		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::ConstRight:
-		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return IsConstInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Right:
+		return IsConstInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Const:
+		return IsConstInvocable(type.RemoveConst(), method_name, argTypes);
+	case CVRefMode::ConstLeft:
+		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
+	case CVRefMode::ConstRight:
+		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
 	default:
 		break;
 	}
 
-	if (auto priority_rst = details::IsConstInvocable(true, typeID, methodID, argTypeIDs))
+	if (auto priority_rst = details::IsConstInvocable(true, type, method_name, argTypes))
 		return priority_rst;
 
-	return details::IsConstInvocable(false, typeID, methodID, argTypeIDs);
+	return details::IsConstInvocable(false, type, method_name, argTypes);
 }
 
 InvocableResult ReflMngr::IsInvocable(
-	TypeID typeID,
-	StrID methodID,
-	std::span<const TypeID> argTypeIDs) const
+	Type type,
+	Name method_name,
+	std::span<const Type> argTypes) const
 {
-	switch (GetConstReferenceMode(typeID))
+	const CVRefMode cvref_mode = type.CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left:
-		return IsInvocable(RemoveReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::Right:
-		return IsInvocable(RemoveReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::Const:
-		return IsConstInvocable(RemoveConst(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::ConstLeft:
-		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::ConstRight:
-		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
-	case ConstReferenceMode::None:
+	case CVRefMode::Left:
+		return IsInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Right:
+		return IsInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Const:
+		return IsConstInvocable(type.RemoveConst(), method_name, argTypes);
+	case CVRefMode::ConstLeft:
+		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
+	case CVRefMode::ConstRight:
+		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
 	default:
 		break;
 	}
 
-	if (auto priority_rst = details::IsInvocable(true, typeID, methodID, argTypeIDs))
+	if (auto priority_rst = details::IsInvocable(true, type, method_name, argTypes))
 		return priority_rst;
 
-	return details::IsInvocable(false, typeID, methodID, argTypeIDs);
+	return details::IsInvocable(false, type, method_name, argTypes);
 }
 
 InvokeResult ReflMngr::Invoke(
-	TypeID typeID,
-	StrID methodID,
+	Type type,
+	Name method_name,
 	void* result_buffer,
-	std::span<const TypeID> argTypeIDs,
+	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer) const
 {
-	TypeID rawTypeID;
-	switch (GetConstReferenceMode(typeID))
+	Type rawType;
+	const CVRefMode cvref_mode = type.CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left: [[fallthrough]];
-	case ConstReferenceMode::Right:
-		rawTypeID = RemoveReference(typeID);
+	case CVRefMode::Left: [[fallthrough]];
+	case CVRefMode::Right:
+		rawType = type.RemoveReference();
 		break;
-	case ConstReferenceMode::Const:
-		rawTypeID = RemoveConst(typeID);
+	case CVRefMode::Const:
+		rawType = type.RemoveConst();
 		break;
-	case ConstReferenceMode::ConstLeft: [[fallthrough]];
-	case ConstReferenceMode::ConstRight:
-		rawTypeID = RemoveConstReference(typeID);
+	case CVRefMode::ConstLeft: [[fallthrough]];
+	case CVRefMode::ConstRight:
+		rawType = type.RemoveCVRef();
 		break;
-	case ConstReferenceMode::None:
 	default:
-		rawTypeID = typeID;
+		rawType = type;
 		break;
 	}
 
-	if(auto priority_rst = details::Invoke(true, &temporary_resource, rawTypeID, methodID, result_buffer, argTypeIDs, argptr_buffer))
+	if(auto priority_rst = details::Invoke(true, &temporary_resource, rawType, method_name, result_buffer, argTypes, argptr_buffer))
 		return priority_rst;
 
-	return details::Invoke(false, &temporary_resource, rawTypeID, methodID, result_buffer, argTypeIDs, argptr_buffer);
+	return details::Invoke(false, &temporary_resource, rawType, method_name, result_buffer, argTypes, argptr_buffer);
 }
 
 InvokeResult ReflMngr::Invoke(
 	ObjectView obj,
-	StrID methodID,
+	Name method_name,
 	void* result_buffer,
-	std::span<const TypeID> argTypeIDs,
+	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer) const
 {
 	ObjectView rawObj;
 	bool is_const;
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left: [[fallthrough]];
-	case ConstReferenceMode::Right:
+	case CVRefMode::Left: [[fallthrough]];
+	case CVRefMode::Right:
 		rawObj = obj.RemoveReference();
 		is_const = false;
 		break;
-	case ConstReferenceMode::Const:
+	case CVRefMode::Const:
 		rawObj = obj.RemoveConst();
 		is_const = true;
 		break;
-	case ConstReferenceMode::ConstLeft: [[fallthrough]];
-	case ConstReferenceMode::ConstRight:
+	case CVRefMode::ConstLeft: [[fallthrough]];
+	case CVRefMode::ConstRight:
 		rawObj = obj.RemoveConstReference();
 		is_const = true;
 		break;
-	case ConstReferenceMode::None:
 	default:
 		rawObj = obj;
 		is_const = false;
 		break;
 	}
 
-	if (auto priority_rst = details::Invoke(true, &temporary_resource, rawObj, is_const, methodID, result_buffer, argTypeIDs, argptr_buffer))
+	if (auto priority_rst = details::Invoke(true, &temporary_resource, rawObj, is_const, method_name, result_buffer, argTypes, argptr_buffer))
 		return priority_rst;
 
-	return details::Invoke(false, &temporary_resource, rawObj, is_const, methodID, result_buffer, argTypeIDs, argptr_buffer);
+	return details::Invoke(false, &temporary_resource, rawObj, is_const, method_name, result_buffer, argTypes, argptr_buffer);
 }
 
 SharedObject ReflMngr::MInvoke(
-	TypeID typeID,
-	StrID methodID,
-	std::span<const TypeID> argTypeIDs,
+	Type type,
+	Name method_name,
+	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
 	std::pmr::memory_resource* rst_rsrc) const
 {
 	assert(rst_rsrc);
 
-	TypeID rawTypeID;
-	switch (GetConstReferenceMode(typeID))
+	Type rawType;
+	const CVRefMode cvref_mode = type.CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left: [[fallthrough]];
-	case ConstReferenceMode::Right:
-		rawTypeID = RemoveReference(typeID);
+	case CVRefMode::Left: [[fallthrough]];
+	case CVRefMode::Right:
+		rawType = type.RemoveReference();
 		break;
-	case ConstReferenceMode::Const:
-		rawTypeID = RemoveConst(typeID);
+	case CVRefMode::Const:
+		rawType = type.RemoveConst();
 		break;
-	case ConstReferenceMode::ConstLeft: [[fallthrough]];
-	case ConstReferenceMode::ConstRight:
-		rawTypeID = RemoveConstReference(typeID);
+	case CVRefMode::ConstLeft: [[fallthrough]];
+	case CVRefMode::ConstRight:
+		rawType = type.RemoveCVRef();
 		break;
-	case ConstReferenceMode::None:
 	default:
-		rawTypeID = typeID;
+		rawType = type;
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawTypeID, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawType, method_name, argTypes, argptr_buffer, rst_rsrc); priority_rst.GetType().Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, rawTypeID, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
+	return details::MInvoke(false, &temporary_resource, rawType, method_name, argTypes, argptr_buffer, rst_rsrc);
 }
 
 SharedObject ReflMngr::MInvoke(
 	ObjectView obj,
-	StrID methodID,
-	std::span<const TypeID> argTypeIDs,
+	Name method_name,
+	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
 	std::pmr::memory_resource* rst_rsrc) const
 {
@@ -1722,70 +1723,71 @@ SharedObject ReflMngr::MInvoke(
 
 	ObjectView rawObj;
 	bool is_const;
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left: [[fallthrough]];
-	case ConstReferenceMode::Right:
+	case CVRefMode::Left: [[fallthrough]];
+	case CVRefMode::Right:
 		rawObj = obj.RemoveReference();
 		is_const = false;
 		break;
-	case ConstReferenceMode::Const:
+	case CVRefMode::Const:
 		rawObj = obj.RemoveConst();
 		is_const = true;
 		break;
-	case ConstReferenceMode::ConstLeft: [[fallthrough]];
-	case ConstReferenceMode::ConstRight:
+	case CVRefMode::ConstLeft: [[fallthrough]];
+	case CVRefMode::ConstRight:
 		rawObj = obj.RemoveConstReference();
 		is_const = true;
 		break;
-	case ConstReferenceMode::None:
 	default:
 		rawObj = obj;
 		is_const = false;
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, is_const, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, is_const, method_name, argTypes, argptr_buffer, rst_rsrc); priority_rst.GetType().Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, rawObj, is_const, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
+	return details::MInvoke(false, &temporary_resource, rawObj, is_const, method_name, argTypes, argptr_buffer, rst_rsrc);
 }
 
-ObjectView ReflMngr::NonArgCopyMNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
+ObjectView ReflMngr::NonArgCopyMNew(Type type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
 	assert(rsrc);
 
-	if (!IsConstructible(typeID, argTypeIDs))
+	if (!IsConstructible(type, argTypes))
 		return nullptr;
 
-	const auto& typeinfo = typeinfos.at(typeID);
+	const auto& typeinfo = typeinfos.at(type);
 
 	void* buffer = rsrc->allocate(typeinfo.size, typeinfo.alignment);
 
 	if (!buffer)
 		return nullptr;
 
-	ObjectView obj{ typeID, buffer };
-	bool success = NonArgConstruct(obj, argTypeIDs, argptr_buffer);
+	ObjectView obj{ type, buffer };
+	bool success = NonCopiedArgConstruct(obj, argTypes, argptr_buffer);
 	assert(success);
 
 	return obj;
 }
 
-ObjectView ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
+ObjectView ReflMngr::MNew(Type type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
 	assert(rsrc);
 
-	if (!IsConstructible(typeID, argTypeIDs))
+	if (!IsConstructible(type, argTypes))
 		return nullptr;
 
-	const auto& typeinfo = typeinfos.at(typeID);
+	const auto& typeinfo = typeinfos.at(type);
 
 	void* buffer = rsrc->allocate(typeinfo.size, typeinfo.alignment);
 
 	if (!buffer)
 		return nullptr;
 
-	ObjectView obj{ typeID, buffer };
-	bool success = Construct(obj, argTypeIDs, argptr_buffer);
+	ObjectView obj{ type, buffer };
+	bool success = Construct(obj, argTypes, argptr_buffer);
 	assert(success);
 
 	return obj;
@@ -1798,65 +1800,84 @@ bool ReflMngr::MDelete(ObjectView obj, std::pmr::memory_resource* rsrc) const {
 	if (!dtor_success)
 		return false;
 
-	const auto& typeinfo = typeinfos.at(obj.GetTypeID());
+	const auto& typeinfo = typeinfos.at(obj.GetType());
 
 	rsrc->deallocate(obj.GetPtr(), typeinfo.size, typeinfo.alignment);
 
 	return true;
 }
 
-bool ReflMngr::IsNonArgConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const {
-	assert(GetConstReferenceMode(typeID) == ConstReferenceMode::None);
+bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const Type> argTypes) const {
+	assert(type.CVRefMode() == CVRefMode::None);
 
-	auto target = typeinfos.find(typeID);
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
+	constexpr auto ctorID = NameIDRegistry::Meta::ctor;
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
-		if (details::IsNonArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
+		if (details::IsNonCopiedArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypes))
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::IsConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const {
-	assert(GetConstReferenceMode(typeID) == ConstReferenceMode::None);
+bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const TypeID> argTypeIDs) const {
+	assert(type.CVRefMode() == CVRefMode::None);
 
-	auto target = typeinfos.find(typeID);
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
+	constexpr auto ctorID = NameIDRegistry::Meta::ctor;
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
-		if (IsCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
+		if (details::IsNonCopiedArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::IsCopyConstructible(TypeID typeID) const {
-	std::array argTypeIDs = { TypeID{ type_name_add_const_lvalue_reference_hash(tregistry.Nameof(typeID)) } };
-	return IsNonArgConstructible(typeID, argTypeIDs);
-}
+bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const {
+	assert(type.CVRefMode() == CVRefMode::None);
 
-bool ReflMngr::IsMoveConstructible(TypeID typeID) const {
-	std::array argTypeIDs = { TypeID{ type_name_add_rvalue_reference_hash(tregistry.Nameof(typeID)) } };
-	return IsNonArgConstructible(typeID, argTypeIDs);
-}
-
-bool ReflMngr::IsDestructible(TypeID typeID) const {
-	assert(GetConstReferenceMode(typeID) == ConstReferenceMode::None);
-
-	auto target = typeinfos.find(typeID);
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto dtorID = StrIDRegistry::MetaID::dtor;
+	constexpr auto ctorID = NameIDRegistry::Meta::ctor;
+	auto mtarget = typeinfo.methodinfos.find(ctorID);
+	size_t num = typeinfo.methodinfos.count(ctorID);
+	for (size_t i = 0; i < num; ++i, ++mtarget) {
+		if (IsCompatible(mtarget->second.methodptr.GetParamList(), argTypes))
+			return true;
+	}
+	return false;
+}
+
+bool ReflMngr::IsCopyConstructible(Type type) const {
+	assert(type.CVRefMode() == CVRefMode::None);
+	const TypeID clref_typeID = type.ID_AddConstLValueReference();
+	return IsNonCopiedArgConstructible(type, std::span<const TypeID>{&clref_typeID, 1});
+}
+
+bool ReflMngr::IsMoveConstructible(Type type) const {
+	assert(type.CVRefMode() == CVRefMode::None);
+	const TypeID rref_typeID = type.ID_AddRValueReference();
+	return IsNonCopiedArgConstructible(type, std::span<const TypeID>{&rref_typeID, 1});
+}
+
+bool ReflMngr::IsDestructible(Type type) const {
+	assert(type.CVRefMode() == CVRefMode::None);
+
+	auto target = typeinfos.find(type);
+	if (target == typeinfos.end())
+		return false;
+	const auto& typeinfo = target->second;
+	constexpr auto dtorID = NameIDRegistry::Meta::dtor;
 
 	auto mtarget = typeinfo.methodinfos.find(dtorID);
 	size_t num = typeinfo.methodinfos.count(dtorID);
@@ -1868,22 +1889,22 @@ bool ReflMngr::IsDestructible(TypeID typeID) const {
 	return false;
 }
 
-bool ReflMngr::NonArgConstruct(ObjectView obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	assert(GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	assert(obj.GetType().CVRefMode() == CVRefMode::None);
 
-	if (!obj.Valid())
+	if (!obj.GetType().Valid())
 		return false;
 
-	auto target = typeinfos.find(obj.GetTypeID());
+	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
+	constexpr auto ctorID = NameIDRegistry::Meta::ctor;
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
 		if (mtarget->second.methodptr.IsMemberVariable()
-			&& details::IsNonArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypeIDs))
+			&& details::IsNonCopiedArgConstructCompatible(mtarget->second.methodptr.GetParamList(), argTypes))
 		{
 			mtarget->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
 			return true;
@@ -1892,24 +1913,24 @@ bool ReflMngr::NonArgConstruct(ObjectView obj, std::span<const TypeID> argTypeID
 	return false;
 }
 
-bool ReflMngr::Construct(ObjectView obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	assert(GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+bool ReflMngr::Construct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	assert(obj.GetType().CVRefMode() == CVRefMode::None);
 
-	if (!obj.Valid())
+	if (!obj.GetType().Valid())
 		return false;
 
-	auto target = typeinfos.find(obj.GetTypeID());
+	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto ctorID = StrIDRegistry::MetaID::ctor;
+	constexpr auto ctorID = NameIDRegistry::Meta::ctor;
 	auto mtarget = typeinfo.methodinfos.find(ctorID);
 	size_t num = typeinfo.methodinfos.count(ctorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
 		if (mtarget->second.methodptr.IsMemberVariable()) {
 			details::NewArgsGuard guard{
 				false, &temporary_resource,
-				mtarget->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+				mtarget->second.methodptr.GetParamList(), argTypes, argptr_buffer
 			};
 			if (!guard.IsCompatible())
 				continue;
@@ -1921,16 +1942,16 @@ bool ReflMngr::Construct(ObjectView obj, std::span<const TypeID> argTypeIDs, Arg
 }
 
 bool ReflMngr::Destruct(ObjectView obj) const {
-	assert(GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+	assert(obj.GetType().CVRefMode() == CVRefMode::None);
 
-	if (!obj.Valid())
+	if (!obj.GetType().Valid())
 		return false;
 
-	auto target = typeinfos.find(obj.GetTypeID());
+	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	constexpr auto dtorID = StrIDRegistry::MetaID::dtor;
+	constexpr auto dtorID = NameIDRegistry::Meta::dtor;
 	auto mtarget = typeinfo.methodinfos.find(dtorID);
 	size_t num = typeinfo.methodinfos.count(dtorID);
 	for (size_t i = 0; i < num; ++i, ++mtarget) {
@@ -1944,23 +1965,18 @@ bool ReflMngr::Destruct(ObjectView obj) const {
 	return false;
 }
 
-void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<bool(TypeID)>& func) const {
+void ReflMngr::ForEachTypeInfo(Type type, const std::function<bool(TypeRef)>& func) const {
 	std::set<TypeID> visitedVBs;
-	details::ForEachTypeID(RemoveReference(typeID), func, visitedVBs);
-}
-
-void ReflMngr::ForEachType(TypeID typeID, const std::function<bool(TypeRef)>& func) const {
-	std::set<TypeID> visitedVBs;
-	details::ForEachTypeInfo(RemoveReference(typeID), func, visitedVBs);
+	details::ForEachTypeInfo(type.RemoveReference(), func, visitedVBs);
 }
 
 void ReflMngr::ForEachField(
-	TypeID typeID,
+	Type type,
 	const std::function<bool(TypeRef, FieldRef)>& func) const
 {
-	ForEachType(typeID, [&func](TypeRef type) {
-		for (auto& [fieldID, fieldInfo] : type.info.fieldinfos) {
-			if (!func(type, { fieldID, fieldInfo }))
+	ForEachTypeInfo(type, [&func](TypeRef type) {
+		for (auto& [field, fieldInfo] : type.info.fieldinfos) {
+			if (!func(type, { field, fieldInfo }))
 				return false;
 		}
 		return true;
@@ -1968,12 +1984,12 @@ void ReflMngr::ForEachField(
 }
 
 void ReflMngr::ForEachMethod(
-	TypeID typeID,
+	Type type,
 	const std::function<bool(TypeRef, MethodRef)>& func) const
 {
-	ForEachType(typeID, [&func](TypeRef type) {
-		for (auto& [methodID, methodInfo] : type.info.methodinfos) {
-			if (!func(type, { methodID, methodInfo }))
+	ForEachTypeInfo(type, [&func](TypeRef type) {
+		for (auto& [method_name, methodInfo] : type.info.methodinfos) {
+			if (!func(type, { method_name, methodInfo }))
 				return false;
 		}
 		return true;
@@ -1981,11 +1997,11 @@ void ReflMngr::ForEachMethod(
 }
 
 void ReflMngr::ForEachVar(
-	TypeID typeID,
+	Type type,
 	const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	details::ForEachVar(RemoveConstReference(typeID), func, visitedVBs);
+	details::ForEachVar(type.RemoveCVRef(), func, visitedVBs);
 }
 
 void ReflMngr::ForEachVar(
@@ -1993,30 +2009,31 @@ void ReflMngr::ForEachVar(
 	const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	switch (GetConstReferenceMode(obj.GetTypeID()))
+	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
 	{
-	case ConstReferenceMode::Left: [[fallthrough]];
-	case ConstReferenceMode::Right:
+	case CVRefMode::Left: [[fallthrough]];
+	case CVRefMode::Right:
 		details::ForEachVar(obj.RemoveReference(), [&func](TypeRef t, FieldRef f, ObjectView o) {
 			return func(t, f, o.AddRValueReference());
 		}, visitedVBs);
 		break;
-	case ConstReferenceMode::Const:
+	case CVRefMode::Const:
 		details::ForEachVar(obj.RemoveConst(), [&func](TypeRef t, FieldRef f, ObjectView o) {
 			return func(t, f, o.AddConst());
 		}, visitedVBs);
 		break;
-	case ConstReferenceMode::ConstLeft:
+	case CVRefMode::ConstLeft:
 		details::ForEachVar(obj.RemoveConstReference(), [&func](TypeRef t, FieldRef f, ObjectView o) {
 			return func(t, f, o.AddConstLValueReference());
 		}, visitedVBs);
 		break;
-	case ConstReferenceMode::ConstRight:
+	case CVRefMode::ConstRight:
 		details::ForEachVar(obj.RemoveConstReference(), [&func](TypeRef t, FieldRef f, ObjectView o) {
 			return func(t, f, o.AddConstRValueReference());
 		}, visitedVBs);
 		break;
-	case ConstReferenceMode::None:
 	default:
 		details::ForEachVar(obj, func, visitedVBs);
 		break;
@@ -2035,72 +2052,63 @@ void ReflMngr::ForEachOwnedVar(
 	});
 }
 
-std::vector<TypeID> ReflMngr::GetTypeIDs(TypeID typeID) {
-	std::vector<TypeID> rst;
-	ForEachTypeID(typeID, [&rst](TypeID typeID) {
-		rst.push_back(typeID);
-		return true;
-	});
-	return rst;
-}
-
-std::vector<TypeRef> ReflMngr::GetTypes(TypeID typeID) {
+std::vector<TypeRef> ReflMngr::GetTypes(Type type) {
 	std::vector<TypeRef> rst;
-	ForEachType(typeID, [&rst](TypeRef type) {
+	ForEachTypeInfo(type, [&rst](TypeRef type) {
 		rst.push_back(type);
 		return true;
 	});
 	return rst;
 }
 
-std::vector<TypeFieldRef> ReflMngr::GetTypeFields(TypeID typeID) {
+std::vector<TypeFieldRef> ReflMngr::GetTypeFields(Type type) {
 	std::vector<TypeFieldRef> rst;
-	ForEachField(typeID, [&rst](TypeRef type, FieldRef field) {
+	ForEachField(type, [&rst](TypeRef type, FieldRef field) {
 		rst.emplace_back(TypeFieldRef{ type, field });
 		return true;
 	});
 	return rst;
 }
 
-std::vector<FieldRef> ReflMngr::GetFields(TypeID typeID) {
+std::vector<FieldRef> ReflMngr::GetFields(Type type) {
 	std::vector<FieldRef> rst;
-	ForEachField(typeID, [&rst](TypeRef type, FieldRef field) {
+	ForEachField(type, [&rst](TypeRef type, FieldRef field) {
 		rst.push_back(field);
 		return true;
 	});
 	return rst;
 }
 
-std::vector<TypeMethodRef> ReflMngr::GetTypeMethods(TypeID typeID) {
+std::vector<TypeMethodRef> ReflMngr::GetTypeMethods(Type type) {
 	std::vector<TypeMethodRef> rst;
-	ForEachMethod(typeID, [&rst](TypeRef type, MethodRef field) {
+	ForEachMethod(type, [&rst](TypeRef type, MethodRef field) {
 		rst.emplace_back(TypeMethodRef{ type, field });
 		return true;
 	});
 	return rst;
 }
 
-std::vector<MethodRef> ReflMngr::GetMethods(TypeID typeID) {
+std::vector<MethodRef> ReflMngr::GetMethods(Type type) {
 	std::vector<MethodRef> rst;
-	ForEachMethod(typeID, [&rst](TypeRef type, MethodRef field) {
+	ForEachMethod(type, [&rst](TypeRef type, MethodRef field) {
 		rst.push_back(field);
 		return true;
 	});
 	return rst;
 }
 
-std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> ReflMngr::GetTypeFieldVars(TypeID typeID) {
+std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> ReflMngr::GetTypeFieldVars(Type type) {
 	std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> rst;
-	ForEachVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectView var) {
+	ForEachVar(type, [&rst](TypeRef type, FieldRef field, ObjectView var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
 	});
 	return rst;
 }
 
-std::vector<ObjectView> ReflMngr::GetVars(TypeID typeID) {
+std::vector<ObjectView> ReflMngr::GetVars(Type type) {
 	std::vector<ObjectView> rst;
-	ForEachVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectView var) {
+	ForEachVar(type, [&rst](TypeRef type, FieldRef field, ObjectView var) {
 		rst.push_back(var);
 		return true;
 	});
@@ -2146,21 +2154,9 @@ std::vector<ObjectView> ReflMngr::GetOwnedVars(ObjectView obj) {
 	return rst;
 }
 
-std::optional<TypeID> ReflMngr::FindTypeID(TypeID typeID, const std::function<bool(TypeID)>& func) const {
-	std::optional<TypeID> rst;
-	ForEachTypeID(typeID, [&rst, func](TypeID typeID) {
-		if (!func(typeID))
-			return true;
-
-		rst.emplace(typeID);
-		return false; // stop
-	});
-	return rst;
-}
-
-std::optional<TypeRef> ReflMngr::FindType(TypeID typeID, const std::function<bool(TypeRef)>& func) const {
+std::optional<TypeRef> ReflMngr::FindType(Type type, const std::function<bool(TypeRef)>& func) const {
 	std::optional<TypeRef> rst;
-	ForEachType(typeID, [&rst, func](TypeRef type) {
+	ForEachTypeInfo(type, [&rst, func](TypeRef type) {
 		if (!func(type))
 			return true;
 
@@ -2170,9 +2166,9 @@ std::optional<TypeRef> ReflMngr::FindType(TypeID typeID, const std::function<boo
 	return rst;
 }
 
-std::optional<FieldRef> ReflMngr::FindField(TypeID typeID, const std::function<bool(FieldRef)>& func) const {
+std::optional<FieldRef> ReflMngr::FindField(Type type, const std::function<bool(FieldRef)>& func) const {
 	std::optional<FieldRef> rst;
-	ForEachField(typeID, [&rst, func](TypeRef type, FieldRef field) {
+	ForEachField(type, [&rst, func](TypeRef type, FieldRef field) {
 		if (!func(field))
 			return true;
 
@@ -2182,9 +2178,9 @@ std::optional<FieldRef> ReflMngr::FindField(TypeID typeID, const std::function<b
 	return rst;
 }
 
-std::optional<MethodRef> ReflMngr::FindMethod(TypeID typeID, const std::function<bool(MethodRef)>& func) const {
+std::optional<MethodRef> ReflMngr::FindMethod(Type type, const std::function<bool(MethodRef)>& func) const {
 	std::optional<MethodRef> rst;
-	ForEachMethod(typeID, [&rst, func](TypeRef type, MethodRef method) {
+	ForEachMethod(type, [&rst, func](TypeRef type, MethodRef method) {
 		if (!func(method))
 			return true;
 
@@ -2194,9 +2190,9 @@ std::optional<MethodRef> ReflMngr::FindMethod(TypeID typeID, const std::function
 	return rst;
 }
 
-ObjectView ReflMngr::FindVar(TypeID typeID, const std::function<bool(ObjectView)>& func) const {
+ObjectView ReflMngr::FindVar(Type type, const std::function<bool(ObjectView)>& func) const {
 	ObjectView rst;
-	ForEachVar(typeID, [&rst, func](TypeRef type, FieldRef field, ObjectView obj) {
+	ForEachVar(type, [&rst, func](TypeRef type, FieldRef field, ObjectView obj) {
 		if (!func(obj))
 			return true;
 
@@ -2230,199 +2226,135 @@ ObjectView ReflMngr::FindOwnedVar(ObjectView obj, const std::function<bool(Objec
 	return rst;
 }
 
-bool ReflMngr::IsConst(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-	return type_name_is_const(name);
+Type ReflMngr::AddConst(Type type) {
+	return tregistry.RegisterAddConst(type);
 }
 
-bool ReflMngr::IsReadOnly(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-	return type_name_is_const(type_name_remove_reference(name));
+Type ReflMngr::AddLValueReference(Type type) {
+	return tregistry.RegisterAddLValueReference(type);
 }
 
-ConstReferenceMode ReflMngr::GetConstReferenceMode(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-	if (type_name_is_lvalue_reference(name)) {
-		if (type_name_is_const(type_name_remove_reference(name)))
-			return ConstReferenceMode::ConstLeft;
-		else
-			return ConstReferenceMode::Left;
-	}
-	else if (type_name_is_rvalue_reference(name)) {
-		if (type_name_is_const(type_name_remove_reference(name)))
-			return ConstReferenceMode::ConstRight;
-		else
-			return ConstReferenceMode::Right;
-	}
-	else {
-		if (type_name_is_const(name))
-			return ConstReferenceMode::Const;
-		else
-			return ConstReferenceMode::None;
-	}
+Type ReflMngr::AddLValueReferenceWeak(Type type) {
+	return tregistry.RegisterAddLValueReferenceWeak(type);
 }
 
-bool ReflMngr::IsReference(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-	return type_name_is_reference(name);
+Type ReflMngr::AddRValueReference(Type type) {
+	return tregistry.RegisterAddRValueReference(type);
 }
 
-TypeID ReflMngr::RemoveConst(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-
-	if (!type_name_is_const(name))
-		return ID;
-
-	return type_name_remove_const(name);
+Type ReflMngr::AddConstLValueReference(Type type) {
+	return tregistry.RegisterAddConstLValueReference(type);
 }
 
-TypeID ReflMngr::RemoveReference(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-
-	if (!type_name_is_reference(name))
-		return ID;
-
-	return type_name_remove_reference(name);
+Type ReflMngr::AddConstRValueReference(Type type) {
+	return tregistry.RegisterAddConstRValueReference(type);
 }
 
-TypeID ReflMngr::RemoveConstReference(TypeID ID) const {
-	auto name = tregistry.Nameof(ID);
-
-	if (!type_name_is_reference(name) && !type_name_is_const(name))
-		return ID;
-
-	return type_name_remove_cvref(name);
-}
-
-TypeID ReflMngr::AddConst(TypeID ID) {
-	return tregistry.RegisterAddConst(ID);
-}
-
-TypeID ReflMngr::AddLValueReference(TypeID ID) {
-	return tregistry.RegisterAddLValueReference(ID);
-}
-
-TypeID ReflMngr::AddLValueReferenceWeak(TypeID ID) {
-	return tregistry.RegisterAddLValueReferenceWeak(ID);
-}
-
-TypeID ReflMngr::AddRValueReference(TypeID ID) {
-	return tregistry.RegisterAddRValueReference(ID);
-}
-
-TypeID ReflMngr::AddConstLValueReference(TypeID ID) {
-	return tregistry.RegisterAddConstLValueReference(ID);
-}
-
-TypeID ReflMngr::AddConstRValueReference(TypeID ID) {
-	return tregistry.RegisterAddConstRValueReference(ID);
-}
-
-bool ReflMngr::ContainsBase(TypeID typeID, TypeID baseID) const {
-	auto target = typeinfos.find(typeID);
+bool ReflMngr::ContainsBase(Type type, Type base) const {
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	if (info.baseinfos.contains(baseID))
+	if (info.baseinfos.contains(base))
 		return true;
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsBase(ID, baseID);
+		bool found = ContainsBase(type, base);
 		if (found)
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::ContainsField(TypeID typeID, StrID fieldID) const {
-	auto target = typeinfos.find(typeID);
+bool ReflMngr::ContainsField(Type type, Name field_name) const {
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	if (info.fieldinfos.contains(fieldID))
+	if (info.fieldinfos.contains(field_name))
 		return true;
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsField(ID, fieldID);
+		bool found = ContainsField(type, field_name);
 		if (found)
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::ContainsMethod(TypeID typeID, StrID methodID) const {
-	auto target = typeinfos.find(typeID);
+bool ReflMngr::ContainsMethod(Type type, Name method_name) const {
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	if (info.methodinfos.contains(methodID))
+	if (info.methodinfos.contains(method_name))
 		return true;
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(ID, methodID);
+		bool found = ContainsMethod(type, method_name);
 		if (found)
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::ContainsVariableMethod(TypeID typeID, StrID methodID) const {
-	auto target = typeinfos.find(typeID);
+bool ReflMngr::ContainsVariableMethod(Type type, Name method_name) const {
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	auto begin_end = info.methodinfos.equal_range(methodID);
+	auto begin_end = info.methodinfos.equal_range(method_name);
 	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
 		if (iter->second.methodptr.IsMemberVariable())
 			return true;
 	}
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(ID, methodID);
+		bool found = ContainsMethod(type, method_name);
 		if (found)
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::ContainsConstMethod(TypeID typeID, StrID methodID) const {
-	auto target = typeinfos.find(typeID);
+bool ReflMngr::ContainsConstMethod(Type type, Name method_name) const {
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	auto begin_end = info.methodinfos.equal_range(methodID);
+	auto begin_end = info.methodinfos.equal_range(method_name);
 	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
 		if (iter->second.methodptr.IsMemberConst())
 			return true;
 	}
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(ID, methodID);
+		bool found = ContainsMethod(type, method_name);
 		if (found)
 			return true;
 	}
 	return false;
 }
 
-bool ReflMngr::ContainsStaticMethod(TypeID typeID, StrID methodID) const {
-	auto target = typeinfos.find(typeID);
+bool ReflMngr::ContainsStaticMethod(Type type, Name method_name) const {
+	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	auto begin_end = info.methodinfos.equal_range(methodID);
+	auto begin_end = info.methodinfos.equal_range(method_name);
 	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
 		if (iter->second.methodptr.IsStatic())
 			return true;
 	}
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(ID, methodID);
+		bool found = ContainsMethod(type, method_name);
 		if (found)
 			return true;
 	}

@@ -29,16 +29,16 @@ int main() {
 		Mngr.AddField<&D::d>("d");
 	}
 
-	auto d = Mngr.MakeShared(TypeID_of<D>);
-	d.Var(TypeID_of<B>, "a") = 1.f;
-	d.Var(TypeID_of<C>, "a") = 2.f;
+	auto d = Mngr.MakeShared(Type_of<D>);
+	d.Var(Type_of<B>, "a") = 1.f;
+	d.Var(Type_of<C>, "a") = 2.f;
 	d.Var("b") = 3.f;
 	d.Var("c") = 4.f;
 	d.Var("d") = 5.f;
 
 	for (const auto& [type, field, var] : d.GetTypeFieldVars()) {
 		std::cout
-			<< Mngr.nregistry.Nameof(field.ID)
+			<< field.name.GetView()
 			<< ": " << var
 			<< std::endl;
 	}

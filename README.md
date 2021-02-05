@@ -44,7 +44,7 @@ struct Vec {
 ### Manual registration
 
 ```c++
-Mngr.RegisterTypePro<Vec>();
+Mngr.RegisterType<Vec>();
 Mngr.AddField<&Vec::x>("x");
 Mngr.AddField<&Vec::y>("y");
 Mngr.AddMethod<&Vec::norm>("norm");
@@ -53,18 +53,18 @@ Mngr.AddMethod<&Vec::norm>("norm");
 ### Iterate over members
 
 ```c++
-for (auto field : Mngr.GetFields(TypeID_of<Vec>))
-  std::cout << Mngr.nregistry.Nameof(field.ID) << std::endl;
+for (auto&& field : Mngr.GetFields(Type_of<Vec>))
+  std::cout << field.name.GetView() << std::endl;
 
-for (auto method : Mngr.GetMethods(TypeID_of<Vec>))
-  std::cout << Mngr.nregistry.Nameof(method.ID) << std::endl;
+for (auto&& method : Mngr.GetMethods(Type_of<Vec>))
+  std::cout << method.name.GetView() << std::endl;
 ```
 
 ### Constructing types
 
 ```c++
-SharedObject v = Mngr.MakeShared(TypeID_of<Vec>);
-std::cout << v.TypeName() << std::endl; // prints "Vec"
+SharedObject v = Mngr.MakeShared(Type_of<Vec>);
+std::cout << v.GetType().GetName() << std::endl; // prints "Vec"
 ```
 
 ### Set/get variables
@@ -84,12 +84,8 @@ std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
 ### Iterate over variables
 
 ```c++
-for (const auto& [type, field, var] : v.GetTypeFieldRVars()) {
-  std::cout
-    << Mngr.nregistry.Nameof(field.ID)
-    << ": " << var
-    << std::endl;
-}
+for (auto&& [type, field, var] : v.GetTypeFieldVars())
+  std::cout << field.name.View() << ": " << var << std::endl;
 ```
 
 ### other example

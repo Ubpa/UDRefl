@@ -6,7 +6,7 @@
 #include <variant>
 
 namespace Ubpa::UDRefl {
-	using ParamList = std::vector<TypeID>;
+	using ParamList = std::vector<Type>;
 	
 	class ArgsView {
 	public:
@@ -67,8 +67,8 @@ namespace Ubpa::UDRefl {
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
 
 		bool IsDistinguishableWith(const MethodPtr& rhs) const noexcept {
-			return func.index() != rhs.func.index() ||
-				paramList != rhs.paramList;
+			return func.index() != rhs.func.index()
+				|| paramList != rhs.paramList;
 		}
 
 		Destructor Invoke(      void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;

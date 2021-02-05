@@ -6,6 +6,7 @@
 
 - 0.8.0
   - remove `ConstObjectPtr` and `SharedConstObject` 
+  - `TypeID` -> `Type`, `StrID` -> `Name` 
 
 ## 0.7
 

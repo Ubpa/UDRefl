@@ -8,7 +8,7 @@ Ubpa_InitUCMake(VERSION 0.6.4)
 
 Ubpa_InitProject()
 
-Ubpa_AddDep(UTemplate 0.6.0)
+Ubpa_AddDep(UTemplate 0.7.0)
 
 include(cmake/Platform.cmake)
 

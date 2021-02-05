@@ -10,9 +10,9 @@ namespace Ubpa::UDRefl {
 	struct AttrLess {
 		using is_transparent = int;
 
-		bool operator()(const Attr&   lhs, const Attr&   rhs) const noexcept { return lhs.GetTypeID() < rhs.GetTypeID(); }
-		bool operator()(const Attr&   lhs, const TypeID& rhs) const noexcept { return lhs.GetTypeID() < rhs;             }
-		bool operator()(const TypeID& lhs, const Attr&   rhs) const noexcept { return lhs             < rhs.GetTypeID(); }
+		bool operator()(const Attr& lhs, const Attr& rhs) const noexcept { return lhs.GetType() < rhs.GetType(); }
+		bool operator()(const Attr& lhs, const Type& rhs) const noexcept { return lhs.GetType() < rhs;           }
+		bool operator()(const Type& lhs, const Attr& rhs) const noexcept { return lhs           < rhs.GetType(); }
 	};
 
 	using AttrSet = std::set<Attr, AttrLess>;

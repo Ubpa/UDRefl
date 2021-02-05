@@ -20,6 +20,6 @@
 - [ ] improve return type
   - [ ] `size()` -> `std::size_t` 
 - [x] `ObjectPtr` -> `ObjectView` and let `SharedObject : public ObjectView` 
-- [ ] `TypeID` -> `TypeName` 
+- [x] `TypeID` -> `Type` 
 - [ ] rename invoke
 

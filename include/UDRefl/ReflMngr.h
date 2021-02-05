@@ -5,7 +5,7 @@
 #include "TypeInfo.h"
 
 namespace Ubpa::UDRefl {
-	constexpr TypeID GlobalID = TypeIDRegistry::MetaID::global;
+	constexpr Type Global = TypeIDRegistry::Meta::global;
 
 	class ReflMngr {
 	public:
@@ -22,13 +22,13 @@ namespace Ubpa::UDRefl {
 		// enum is a special type (all member is static)
 		//
 
-		StrIDRegistry  nregistry;
+		NameIDRegistry  nregistry;
 		TypeIDRegistry tregistry;
 
-		std::unordered_map<TypeID, TypeInfo> typeinfos;
+		std::unordered_map<Type, TypeInfo> typeinfos;
 
 		// remove cvref
-		TypeInfo* GetTypeInfo(TypeID ID);
+		TypeInfo* GetTypeInfo(Type type);
 
 		// clear order
 		// - field attrs
@@ -68,138 +68,31 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename Alloc, typename... Args>
 		FieldPtr GenerateDynamicFieldPtrByAlloc(const Alloc& alloc, Args&&... args);
 
-		std::pair<StrID, FieldInfo> GenerateField(
-			std::string_view name,
-			FieldPtr fieldptr,
-			AttrSet attrs = {})
-		{ return { nregistry.Register(name), { std::move(fieldptr), std::move(attrs) } }; }
-
-		// field_data can be:
-		// - static field: pointer to **non-void** type
-		// - member object pointer: pointer to **non-void** type
-		// - enumerator
-		template<auto field_data>
-		std::pair<StrID, FieldInfo> GenerateField(
-			std::string_view name,
-			AttrSet attrs = {})
-		{ return GenerateField(name, GenerateFieldPtr<field_data>(), std::move(attrs)); }
-
-		// data can be:
-		// 1. member object pointer
-		// 2. pointer to **non-void** and **non-function** type
-		// 3. functor : Value*(Object*)
-		// > - result must be an pointer of **non-void** type
-		// 4. enumerator
-		template<typename T,
-			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldPtr>, int> = 0>
-		std::pair<StrID, FieldInfo> GenerateField(
-			std::string_view name,
-			T&& data,
-			AttrSet attrs = {})
-		{ return GenerateField(name, GenerateFieldPtr(std::forward<T>(data)), std::move(attrs)); }
-
-		// if T is bufferable, T will be stored as buffer,
-		// else we will use std::make_shared to store it
-		// require alignof(T) <= alignof(std::max_align_t)
-		template<typename T, typename... Args>
-		std::pair<StrID, FieldInfo> GenerateDynamicFieldWithAttrs(
-			std::string_view name,
-			AttrSet attrs,
-			Args&&... args)
-		{ return GenerateField(name, GenerateDynamicFieldPtr<T>(std::forward<Args>(args)...), std::move(attrs)); }
-
-		// if T is bufferable, T will be stored as buffer,
-		// else we will use std::make_shared to store it
-		// require alignof(T) <= alignof(std::max_align_t)
-		template<typename T, typename... Args>
-		std::pair<StrID, FieldInfo> GenerateDynamicField(
-			std::string_view name,
-			Args&&... args)
-		{ return GenerateDynamicFieldWithAttrs<T>(name, {}, std::forward<Args>(args)...); }
-
-		// if T is bufferable, T will be stored as buffer,
-		// else we will use std::make_shared to store it
-		template<typename T, typename Alloc, typename... Args>
-		std::pair<StrID, FieldInfo> GenerateDynamicFieldByAllocWithAttrs(
-			std::string_view name,
-			const Alloc& alloc,
-			AttrSet attrs,
-			Args&&... args)
-		{ return GenerateField(name, GenerateDynamicFieldPtrByAlloc<T>(alloc, std::forward<Args>(args)...), std::move(attrs)); }
-
-		// if T is bufferable, T will be stored as buffer,
-		// else we will use std::make_shared to store it
-		template<typename T, typename Alloc, typename... Args>
-		std::pair<StrID, FieldInfo> GenerateDynamicFieldByAlloc(
-			std::string_view name,
-			const Alloc& alloc,
-			Args&&... args)
-		{ return GenerateDynamicFieldByAllocWithAttrs<T>(name, alloc, {}, std::forward<Args>(args)...); }
-
 		template<typename Return>
-		ResultDesc GenerateResultDesc();
+		static ResultDesc GenerateResultDesc();
 
 		template<typename... Params>
-		ParamList GenerateParamList() noexcept(sizeof...(Params) == 0);
+		static ParamList GenerateParamList() noexcept(sizeof...(Params) == 0);
 
 		// funcptr can be
 		// 1. member method : member function pointer
 		// 2. static method : function pointer
 		template<auto funcptr>
-		MethodPtr GenerateMethodPtr();
+		static MethodPtr GenerateMethodPtr();
 
 		template<typename T, typename... Args>
-		MethodPtr GenerateConstructorPtr();
+		static MethodPtr GenerateConstructorPtr();
 
 		template<typename T>
-		MethodPtr GenerateDestructorPtr();
+		static MethodPtr GenerateDestructorPtr();
 
 		// Func: Ret(const? Object&, Args...)
 		template<typename Func>
-		MethodPtr GenerateMemberMethodPtr(Func&& func);
+		static MethodPtr GenerateMemberMethodPtr(Func&& func);
 
 		// Func: Ret(Args...)
 		template<typename Func>
-		MethodPtr GenerateStaticMethodPtr(Func&& func);
-
-		std::pair<StrID, MethodInfo> GenerateMethod(
-			std::string_view name,
-			MethodPtr methodptr,
-			AttrSet attrs = {})
-		{ return { nregistry.Register(name), { std::move(methodptr), std::move(attrs) } }; }
-
-		// funcptr can be
-		// 1. member method : member function pointer
-		// 2. static method : function pointer
-		template<auto funcptr>
-		std::pair<StrID, MethodInfo> GenerateMethod(
-			std::string_view name,
-			AttrSet attrs = {})
-		{ return GenerateMethod(name, GenerateMethodPtr<funcptr>(), std::move(attrs)); }
-
-		// Func: Ret(const? volatile? Object&, Args...)
-		template<typename Func>
-		std::pair<StrID, MethodInfo> GenerateMemberMethod(
-			std::string_view name,
-			Func&& func,
-			AttrSet attrs = {})
-		{ return GenerateMethod(name, GenerateMemberMethod(std::forward<Func>(func)), std::move(attrs)); }
-
-		// Func: Ret(Args...)
-		template<typename Func>
-		std::pair<StrID, MethodInfo> GenerateStaticMethod(
-			std::string_view name,
-			Func&& func,
-			AttrSet attrs = {})
-		{ return GenerateMethod(name, GenerateStaticMethod(std::forward<Func>(func)), std::move(attrs)); }
-
-		template<typename T, typename... Args>
-		std::pair<StrID, MethodInfo> GenerateConstructor(AttrSet attrs = {})
-		{ return { StrIDRegistry::MetaID::ctor, { GenerateConstructorPtr<T, Args...>(), std::move(attrs) } }; }
-
-		template<typename T>
-		std::pair<StrID, MethodInfo> GenerateDestructor(AttrSet attrs = {})
-		{ return { StrIDRegistry::MetaID::dtor, { GenerateDestructorPtr<T>(), std::move(attrs) } }; }
+		static MethodPtr GenerateStaticMethodPtr(Func&& func);
 
 		template<typename Derived, typename Base>
 		static BaseInfo GenerateBaseInfo();
@@ -208,11 +101,11 @@ namespace Ubpa::UDRefl {
 		// Modifier
 		/////////////
 
-		TypeID RegisterType(std::string_view name, size_t size, size_t alignment);
-		StrID AddField(TypeID typeID, std::string_view name, FieldInfo fieldinfo);
-		StrID AddMethod(TypeID typeID, std::string_view name, MethodInfo methodinfo);
-		bool AddBase(TypeID derivedID, TypeID baseID, BaseInfo baseinfo);
-		bool AddAttr(TypeID typeID, const Attr& attr);
+		void RegisterType(Type type, size_t size, size_t alignment);
+		bool AddField(Type type, Name field_name, FieldInfo fieldinfo);
+		bool AddMethod(Type type, Name method_name, MethodInfo methodinfo);
+		bool AddBase(Type derived, Type base, BaseInfo baseinfo);
+		bool AddAttr(Type type, const Attr& attr);
 
 		// -- template --
 
@@ -229,7 +122,7 @@ namespace Ubpa::UDRefl {
 		// 1. member object pointer
 		// 2. enumerator
 		template<auto field_data>
-		StrID AddField(std::string_view name, AttrSet attrs = {});
+		bool AddField(Name name, AttrSet attrs = {});
 
 		// data can be:
 		// 1. member object pointer
@@ -239,8 +132,8 @@ namespace Ubpa::UDRefl {
 		// > - result must be an pointer of **non-void** type
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int> = 0>
-		StrID AddField(TypeID typeID, std::string_view name, T&& data, AttrSet attrs = {})
-		{ return AddField(typeID, name, { GenerateFieldPtr(std::forward<T>(data)), std::move(attrs) }); }
+		bool AddField(Type type, Name name, T&& data, AttrSet attrs = {})
+		{ return AddField(type, name, { GenerateFieldPtr(std::forward<T>(data)), std::move(attrs) }); }
 
 		// data can be:
 		// 1. member object pointer
@@ -249,32 +142,32 @@ namespace Ubpa::UDRefl {
 		// 3. enumerator
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int> = 0>
-		StrID AddField(std::string_view name, T&& data, AttrSet attrs = {});
+		bool AddField(Name name, T&& data, AttrSet attrs = {});
 
 		template<typename T, typename... Args>
-		StrID AddDynamicFieldWithAttr(TypeID typeID, std::string_view name, AttrSet attrs, Args&&... args)
-		{ return AddField(typeID, name, { GenerateDynamicFieldPtr<T>(std::forward<Args>(args)...), std::move(attrs) }); }
+		bool AddDynamicFieldWithAttr(Type type, Name name, AttrSet attrs, Args&&... args)
+		{ return AddField(type, name, { GenerateDynamicFieldPtr<T>(std::forward<Args>(args)...), std::move(attrs) }); }
 
 		template<typename T, typename... Args>
-		StrID AddDynamicField(TypeID typeID, std::string_view name, Args&&... args)
-		{ return AddDynamicFieldWithAttr<T>(typeID, name, {}, std::forward<Args>(args)...); }
+		bool AddDynamicField(Type type, Name name, Args&&... args)
+		{ return AddDynamicFieldWithAttr<T>(type, name, {}, std::forward<Args>(args)...); }
 
 		template<typename T, typename Alloc, typename... Args>
-		StrID AddDynamicFieldByAllocWithAttr(TypeID typeID, std::string_view name, const Alloc& alloc, AttrSet attrs, Args&&... args)
-		{ return AddField(typeID, name, { GenerateDynamicFieldPtrByAlloc<T>(alloc, std::forward<Args>(args)...), std::move(attrs) }); }
+		bool AddDynamicFieldByAllocWithAttr(Type type, Name name, const Alloc& alloc, AttrSet attrs, Args&&... args)
+		{ return AddField(type, name, { GenerateDynamicFieldPtrByAlloc<T>(alloc, std::forward<Args>(args)...), std::move(attrs) }); }
 
 		template<typename T, typename Alloc, typename... Args>
-		StrID AddDynamicFieldByAlloc(TypeID typeID, std::string_view name, const Alloc& alloc, Args&&... args)
-		{ return AddDynamicFieldByAllocWithAttr<T>(typeID, name, alloc, {}, std::forward<Args>(args)...); }
+		bool AddDynamicFieldByAlloc(Type type, Name name, const Alloc& alloc, Args&&... args)
+		{ return AddDynamicFieldByAllocWithAttr<T>(type, name, alloc, {}, std::forward<Args>(args)...); }
 
 		// funcptr is member function pointer
 		// get TypeID from funcptr
 		template<auto member_func_ptr>
-		StrID AddMethod(std::string_view name, AttrSet attrs = {});
+		bool AddMethod(Name name, AttrSet attrs = {});
 
 		// funcptr is function pointer
 		template<auto func_ptr>
-		StrID AddMethod(TypeID typeID, std::string_view name, AttrSet attrs = {});
+		bool AddMethod(Type type, Name name, AttrSet attrs = {});
 
 		template<typename T, typename... Args>
 		bool AddConstructor(AttrSet attrs = {});
@@ -283,12 +176,12 @@ namespace Ubpa::UDRefl {
 
 		// Func: Ret(const? volatile? Object&, Args...)
 		template<typename Func>
-		StrID AddMemberMethod(std::string_view name, Func&& func, AttrSet attrs = {});
+		bool AddMemberMethod(Name name, Func&& func, AttrSet attrs = {});
 
 		// Func: Ret(Args...)
 		template<typename Func>
-		StrID AddStaticMethod(TypeID typeID, std::string_view name, Func&& func, AttrSet attrs = {})
-		{ return AddMethod(typeID, name, { GenerateStaticMethodPtr(std::forward<Func>(func)), std::move(attrs) }); }
+		bool AddStaticMethod(Type type, Name name, Func&& func, AttrSet attrs = {})
+		{ return AddMethod(type, name, { GenerateStaticMethodPtr(std::forward<Func>(func)), std::move(attrs) }); }
 
 		template<typename Derived, typename... Bases>
 		bool AddBases();
@@ -297,25 +190,25 @@ namespace Ubpa::UDRefl {
 		// Cast
 		/////////
 
-		ObjectView StaticCast_DerivedToBase (ObjectView obj, TypeID typeID) const;
-		ObjectView StaticCast_BaseToDerived (ObjectView obj, TypeID typeID) const;
-		ObjectView DynamicCast_BaseToDerived(ObjectView obj, TypeID typeID) const;
-		ObjectView StaticCast               (ObjectView obj, TypeID typeID) const;
-		ObjectView DynamicCast              (ObjectView obj, TypeID typeID) const;
+		ObjectView StaticCast_DerivedToBase (ObjectView obj, Type type) const;
+		ObjectView StaticCast_BaseToDerived (ObjectView obj, Type type) const;
+		ObjectView DynamicCast_BaseToDerived(ObjectView obj, Type type) const;
+		ObjectView StaticCast               (ObjectView obj, Type type) const;
+		ObjectView DynamicCast              (ObjectView obj, Type type) const;
 
 		//
 		// Field
 		//////////
 		//
-		// - result type of Var maintains the ConstReferenceMode of the input
+		// - result type of Var maintains the CVRefMode of the input
 		//
 
 		// object
-		ObjectView Var(TypeID typeID, StrID fieldID);
+		ObjectView Var(Type type, Name field_name);
 		// all
-		ObjectView Var(ObjectView obj, StrID fieldID);
+		ObjectView Var(ObjectView obj, Name field_name);
 		// all, for diamond inheritance
-		ObjectView Var(ObjectView obj, TypeID baseID, StrID fieldID);
+		ObjectView Var(ObjectView obj, Type base, Name field_name);
 
 		//
 		// Invoke
@@ -338,89 +231,90 @@ namespace Ubpa::UDRefl {
 		//     |      T&& | 1 |  0  |     0     |  -  |     0     |
 		//     |const T&& | 1 |  0  |     0     |  1  |     -     |
 		// - direct constructible
-		bool IsCompatible(std::span<const TypeID> paramTypeIDs, std::span<const TypeID> argTypeIDs) const;
+		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
-		InvocableResult IsStaticInvocable(TypeID typeID, StrID methodID, std::span<const TypeID> argTypeIDs = {}) const;
-		InvocableResult IsConstInvocable (TypeID typeID, StrID methodID, std::span<const TypeID> argTypeIDs = {}) const;
-		InvocableResult IsInvocable      (TypeID typeID, StrID methodID, std::span<const TypeID> argTypeIDs = {}) const;
+		InvocableResult IsStaticInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}) const;
+		InvocableResult IsConstInvocable (Type type, Name method_name, std::span<const Type> argTypes = {}) const;
+		InvocableResult IsInvocable      (Type type, Name method_name, std::span<const Type> argTypes = {}) const;
 
 		InvokeResult Invoke(
-			TypeID typeID,
-			StrID methodID,
+			Type type,
+			Name method_name,
 			void* result_buffer = nullptr,
-			std::span<const TypeID> argTypeIDs = {},
+			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		InvokeResult Invoke(
 			ObjectView obj,
-			StrID methodID,
+			Name method_name,
 			void* result_buffer = nullptr,
-			std::span<const TypeID> argTypeIDs = {},
+			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		// -- template --
 
 		template<typename... Args>
-		InvocableResult IsStaticInvocable(TypeID typeID, StrID methodID) const;
+		InvocableResult IsStaticInvocable(Type type, Name method_name) const;
 		template<typename... Args>
-		InvocableResult IsConstInvocable (TypeID typeID, StrID methodID) const;
+		InvocableResult IsConstInvocable (Type type, Name method_name) const;
 		template<typename... Args>
-		InvocableResult IsInvocable      (TypeID typeID, StrID methodID) const;
+		InvocableResult IsInvocable      (Type type, Name method_name) const;
 
 		template<typename T>
-		T InvokeRet(TypeID typeID, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(Type type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		template<typename T>
-		T InvokeRet(ObjectView obj, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(TypeID typeID, StrID methodID, void* result_buffer, Args&&... args) const;
+		InvokeResult InvokeArgs(Type type, Name method_name, void* result_buffer, Args&&... args) const;
 		template<typename... Args>
-		InvokeResult InvokeArgs(ObjectView obj, StrID methodID, void* result_buffer, Args&&... args) const;
+		InvokeResult InvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(TypeID typeID, StrID methodID, Args&&... args) const;
+		T Invoke(Type type, Name method_name, Args&&... args) const;
 		template<typename T, typename... Args>
-		T Invoke(ObjectView obj, StrID methodID, Args&&... args) const;
+		T Invoke(ObjectView obj, Name method_name, Args&&... args) const;
 
 		//
 		// Meta
 		/////////
 
-		bool IsNonArgConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const;
-		bool IsConstructible      (TypeID typeID, std::span<const TypeID> argTypeIDs) const;
-		bool IsDestructible       (TypeID typeID) const;
-		bool IsCopyConstructible  (TypeID typeID) const;
-		bool IsMoveConstructible  (TypeID typeID) const;
+		bool IsNonCopiedArgConstructible(Type type, std::span<const Type  > argTypes  ) const;
+		bool IsNonCopiedArgConstructible(Type type, std::span<const TypeID> argTypeIDs) const;
+		bool IsConstructible            (Type type, std::span<const Type  > argTypes  ) const;
+		bool IsCopyConstructible        (Type type) const;
+		bool IsMoveConstructible        (Type type) const;
+		bool IsDestructible             (Type type) const;
 
-		bool NonArgConstruct(ObjectView obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool Construct      (ObjectView obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool Destruct       (ObjectView obj) const;
+		bool NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		bool Construct            (ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		bool Destruct             (ObjectView obj) const;
 
 		void* Malloc(size_t size) const;
-		bool  Free  (void* ptr) const;
+		bool  Free  (void*  ptr ) const;
 
 		void* AlignedMalloc(size_t size, size_t alignment) const;
 		bool  AlignedFree  (void* ptr) const;
 
-		ObjectView NonArgCopyNew(TypeID      typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		ObjectView New          (TypeID      typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool      Delete       (ObjectView obj) const;
+		ObjectView NonArgCopyNew(Type      type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		ObjectView New          (Type      type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		bool       Delete       (ObjectView obj) const;
 
-		SharedObject MakeShared(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
+		SharedObject MakeShared(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
 
 		// -- template --
 
 		template<typename... Args>
-		bool IsConstructible(TypeID typeID) const;
+		bool IsConstructible(Type type) const;
 
 		template<typename... Args>
 		bool Construct(ObjectView obj, Args&&... args) const;
 		
 		template<typename... Args>
-		ObjectView New(TypeID typeID, Args&&... args) const;
+		ObjectView New(Type type, Args&&... args) const;
 
 		template<typename... Args>
-		SharedObject MakeShared(TypeID typeID, Args&&... args) const;
+		SharedObject MakeShared(Type type, Args&&... args) const;
 
 		// - if T is not register, call RegisterType<T>()
 		// - call AddConstructor<T, Args...>()
@@ -438,51 +332,33 @@ namespace Ubpa::UDRefl {
 
 		// ForEach (DFS)
 
-		// self typeID and all bases' typeID
-		void ForEachTypeID(
-			TypeID typeID,
-			const std::function<bool(TypeID)>& func) const;
-
-		// self type and all bases' type
-		void ForEachType(
-			TypeID typeID,
-			const std::function<bool(TypeRef)>& func) const;
+		// self typeinfo and all bases' typeinfo
+		void ForEachTypeInfo(Type type, const std::function<bool(TypeRef)>& func) const;
 
 		// self fields and all bases' fields
-		void ForEachField(
-			TypeID typeID,
-			const std::function<bool(TypeRef, FieldRef)>& func) const;
+		void ForEachField(Type type, const std::function<bool(TypeRef, FieldRef)>& func) const;
 
 		// self methods and all bases' methods
-		void ForEachMethod(
-			TypeID typeID,
-			const std::function<bool(TypeRef, MethodRef)>& func) const;
+		void ForEachMethod(Type type, const std::function<bool(TypeRef, MethodRef)>& func) const;
 
 		// self object vars and all bases' object vars
-		void ForEachVar(
-			TypeID typeID,
-			const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
+		void ForEachVar(Type type, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
 
 		// self vars and all bases' vars
-		void ForEachVar(
-			ObjectView obj,
-			const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
+		void ForEachVar(ObjectView obj, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
 
 		// self owned vars and all bases' owned vars
-		void ForEachOwnedVar(
-			ObjectView obj,
-			const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
+		void ForEachOwnedVar(ObjectView obj, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
 
 		// Gather (DFS)
 
-		std::vector<TypeID>                                   GetTypeIDs           (TypeID typeID);
-		std::vector<TypeRef>                                  GetTypes             (TypeID typeID);
-		std::vector<TypeFieldRef>                             GetTypeFields        (TypeID typeID);
-		std::vector<FieldRef>                                 GetFields            (TypeID typeID);
-		std::vector<TypeMethodRef>                            GetTypeMethods       (TypeID typeID);
-		std::vector<MethodRef>                                GetMethods           (TypeID typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars     (TypeID typeID);
-		std::vector<ObjectView>                                GetVars              (TypeID typeID);
+		std::vector<TypeRef>                                   GetTypes             (Type      type);
+		std::vector<TypeFieldRef>                              GetTypeFields        (Type      type);
+		std::vector<FieldRef>                                  GetFields            (Type      type);
+		std::vector<TypeMethodRef>                             GetTypeMethods       (Type      type);
+		std::vector<MethodRef>                                 GetMethods           (Type      type);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars     (Type      type);
+		std::vector<ObjectView>                                GetVars              (Type      type);
 		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars     (ObjectView obj);
 		std::vector<ObjectView>                                GetVars              (ObjectView obj);
 		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldOwnedVars(ObjectView obj);
@@ -490,22 +366,21 @@ namespace Ubpa::UDRefl {
 
 		// Find (DFS)
 
-		std::optional<TypeID   > FindTypeID  (TypeID typeID, const std::function<bool(TypeID   )>& func) const;
-		std::optional<TypeRef  > FindType    (TypeID typeID, const std::function<bool(TypeRef  )>& func) const;
-		std::optional<FieldRef > FindField   (TypeID typeID, const std::function<bool(FieldRef )>& func) const;
-		std::optional<MethodRef> FindMethod  (TypeID typeID, const std::function<bool(MethodRef)>& func) const;
-		ObjectView                FindVar     (TypeID typeID, const std::function<bool(ObjectView)>& func) const;
-		ObjectView                FindVar     (ObjectView obj, const std::function<bool(ObjectView)>& func) const;
-		ObjectView                FindOwnedVar(ObjectView obj, const std::function<bool(ObjectView)>& func) const;
+		std::optional<TypeRef  > FindType    (Type      type, const std::function<bool(TypeRef   )>& func) const;
+		std::optional<FieldRef > FindField   (Type      type, const std::function<bool(FieldRef  )>& func) const;
+		std::optional<MethodRef> FindMethod  (Type      type, const std::function<bool(MethodRef )>& func) const;
+		ObjectView               FindVar     (Type      type, const std::function<bool(ObjectView)>& func) const;
+		ObjectView               FindVar     (ObjectView obj, const std::function<bool(ObjectView)>& func) const;
+		ObjectView               FindOwnedVar(ObjectView obj, const std::function<bool(ObjectView)>& func) const;
 
 		// Contains (DFS)
 
-		bool ContainsBase          (TypeID typeID, TypeID baseID  ) const;
-		bool ContainsField         (TypeID typeID, StrID  fieldID ) const;
-		bool ContainsMethod        (TypeID typeID, StrID  methodID) const;
-		bool ContainsVariableMethod(TypeID typeID, StrID  methodID) const;
-		bool ContainsConstMethod   (TypeID typeID, StrID  methodID) const;
-		bool ContainsStaticMethod  (TypeID typeID, StrID  methodID) const;
+		bool ContainsBase          (Type type, Type base  ) const;
+		bool ContainsField         (Type type, Name field_name ) const;
+		bool ContainsMethod        (Type type, Name method_name) const;
+		bool ContainsVariableMethod(Type type, Name method_name) const;
+		bool ContainsConstMethod   (Type type, Name method_name) const;
+		bool ContainsStaticMethod  (Type type, Name method_name) const;
 
 		//
 		// Memory
@@ -519,51 +394,51 @@ namespace Ubpa::UDRefl {
 		std::pmr::synchronized_pool_resource* GetTemporaryResource() const{ return &temporary_resource; }
 
 		SharedObject MInvoke(
-			TypeID typeID,
-			StrID methodID,
-			std::span<const TypeID> argTypeIDs = {},
+			Type type,
+			Name method_name,
+			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
 			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource()) const;
 
 		SharedObject MInvoke(
 			ObjectView obj,
-			StrID methodID,
-			std::span<const TypeID> argTypeIDs = {},
+			Name method_name,
+			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
 			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource()) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
-			TypeID typeID,
-			StrID methodID,
+			Type type,
+			Name method_name,
 			std::pmr::memory_resource* result_rsrc,
 			Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			ObjectView obj,
-			StrID methodID,
+			Name method_name,
 			std::pmr::memory_resource* result_rsrc,
 			Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject DMInvoke(
-			TypeID typeID,
-			StrID methodID,
+			Type type,
+			Name method_name,
 			Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject DMInvoke(
 			ObjectView obj,
-			StrID methodID,
+			Name method_name,
 			Args&&... args) const;
 
-		ObjectView NonArgCopyMNew(TypeID      typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		ObjectView MNew          (TypeID      typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool      MDelete       (ObjectView obj, std::pmr::memory_resource* rsrc) const;
+		ObjectView NonArgCopyMNew(Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		ObjectView MNew          (Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		bool       MDelete       (ObjectView obj, std::pmr::memory_resource* rsrc) const;
 
 		template<typename... Args>
-		ObjectView MNew(TypeID typeID, std::pmr::memory_resource* rsrc, Args&&... args) const;
+		ObjectView MNew(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const;
 
 		//
 		// Type
@@ -572,22 +447,13 @@ namespace Ubpa::UDRefl {
 		// - 'reference' include lvalue reference and rvalue reference
 		//
 
-		bool IsConst(TypeID ID) const;
-		// const{T}, &/&&{const{T}}
-		bool IsReadOnly(TypeID ID) const;
-		bool IsReference(TypeID ID) const;
-		ConstReferenceMode GetConstReferenceMode(TypeID ID) const;
+		Type AddConst               (Type type);
+		Type AddLValueReference     (Type type);
+		Type AddLValueReferenceWeak (Type type);
+		Type AddRValueReference     (Type type);
+		Type AddConstLValueReference(Type type);
+		Type AddConstRValueReference(Type type);
 
-		TypeID RemoveConst(TypeID ID) const;
-		TypeID RemoveReference(TypeID ID) const;
-		TypeID RemoveConstReference(TypeID ID) const;
-
-		TypeID AddConst               (TypeID ID);
-		TypeID AddLValueReference     (TypeID ID);
-		TypeID AddLValueReferenceWeak (TypeID ID);
-		TypeID AddRValueReference     (TypeID ID);
-		TypeID AddConstLValueReference(TypeID ID);
-		TypeID AddConstRValueReference(TypeID ID);
 	private:
 		ReflMngr();
 		~ReflMngr();

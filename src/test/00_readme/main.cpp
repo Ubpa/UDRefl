@@ -19,25 +19,21 @@ int main() {
 	Mngr.AddField<&Vec::y>("y");
 	Mngr.AddMethod<&Vec::norm>("norm");
 
-	SharedObject v = Mngr.MakeShared(TypeID_of<Vec>);
-	std::cout << v.TypeName() << std::endl; // prints "Vec"
+	SharedObject v = Mngr.MakeShared(Type_of<Vec>);
+	std::cout << v.GetType().GetName() << std::endl; // prints "Vec"
 
 	v.Var("x") = 3;
 	v.Var("y") = 4;
 
 	std::cout << "x: " << v.Var("x") << std::endl;
 	std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
-	
-	for (auto field : Mngr.GetFields(TypeID_of<Vec>))
-		std::cout << Mngr.nregistry.Nameof(field.ID) << std::endl;
 
-	for (auto method : Mngr.GetMethods(TypeID_of<Vec>))
-		std::cout << Mngr.nregistry.Nameof(method.ID) << std::endl;
+	for (auto&& field : Mngr.GetFields(Type_of<Vec>))
+		std::cout << field.name.GetView() << std::endl;
 
-	for (const auto& [type, field, var] : v.GetTypeFieldVars()) {
-		std::cout
-			<< Mngr.nregistry.Nameof(field.ID)
-			<< ": " << var
-			<< std::endl;
-	}
+	for (auto&& method : Mngr.GetMethods(Type_of<Vec>))
+		std::cout << method.name.GetView() << std::endl;
+
+	for (auto&& [type, field, var] : v.GetTypeFieldVars())
+		std::cout << field.name.View() << ": " << var << std::endl;
 }

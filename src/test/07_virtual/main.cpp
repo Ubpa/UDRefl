@@ -29,7 +29,7 @@ int main() {
 		Mngr.AddField<&D::d>("d");
 	}
 
-	auto d = Mngr.MakeShared(TypeID_of<D>);
+	auto d = Mngr.MakeShared(Type_of<D>);
 
 	d.Var("a") = 1.f;
 	d.Var("b") = 3.f;
@@ -38,7 +38,7 @@ int main() {
 
 	for (const auto& [type, field, var] : d.GetTypeFieldVars()) {
 		std::cout
-			<< Mngr.nregistry.Nameof(field.ID)
+			<< field.name.GetView()
 			<< ": " << var
 			<< std::endl;
 	}

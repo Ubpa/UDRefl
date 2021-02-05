@@ -36,28 +36,28 @@ int main() {
 
 		Mngr.RegisterType<Point>();
 		Mngr.AddConstructor<Point, float, float>();
-		Mngr.AddField<&Point::x>("x", { Mngr.MakeShared(TypeID_of<UInspector::Range>, 1.f, 2.f) });
-		Mngr.AddField<&Point::y>("y", { Mngr.MakeShared(TypeID_of<UInspector::A>) });
+		Mngr.AddField<&Point::x>("x", { Mngr.MakeShared(Type_of<UInspector::Range>, 1.f, 2.f) });
+		Mngr.AddField<&Point::y>("y", { Mngr.MakeShared(Type_of<UInspector::A>) });
 	}
 
-	auto p = Mngr.MakeShared(TypeID_of<Point>, 1.f, 2.f);
+	auto p = Mngr.MakeShared(Type_of<Point>, 1.f, 2.f);
 
 	p.Var("x") += 1.f;
 	p.Var("y") += 2.f;
 
 	for (const auto& [type, field, var] : p.GetTypeFieldVars()) {
 		for (const auto& attr : field.info.attrs) {
-			std::cout << "[" << Mngr.tregistry.Nameof(attr.GetTypeID()) << "]" << std::endl;
+			std::cout << "[" << attr.GetType().GetName() << "]" << std::endl;
 			for (const auto& [type, field, var] :attr.GetTypeFieldVars()) {
 				std::cout
-					<< Mngr.nregistry.Nameof(field.ID)
+					<< field.name.GetView()
 					<< ": " << var
 					<< std::endl;
 			}
 			std::cout << "------" << std::endl;
 		}
 		std::cout
-			<< Mngr.nregistry.Nameof(field.ID)
+			<< field.name.GetView()
 			<< ": " << var
 			<< std::endl;
 	}
