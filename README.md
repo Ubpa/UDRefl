@@ -18,9 +18,9 @@
 
 > **U**bpa **D**ynamic **R**eflection
 
-Extremely **fast** C++20 dynamic reflection library
+Extremely **fast** and **powerful** C++20 dynamic reflection library
 
-## Documentaion [->](doc/)
+## Documentaion [->](doc/) 
 
 - [to-do](doc/todo.md) 
 - [change log](doc/change_log.md) 

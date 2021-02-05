@@ -8,7 +8,7 @@ using namespace Ubpa::UDRefl;
 struct Vec {
 	float x;
 	float y;
-	float norm() const noexcept {
+	float norm() const {
 		return std::sqrt(x * x + y * y);
 	}
 };
@@ -22,8 +22,8 @@ int main() {
 	SharedObject v = Mngr.MakeShared(TypeID_of<Vec>);
 	std::cout << v.TypeName() << std::endl; // prints "Vec"
 
-	v.Var("x") = 3.f;
-	v.Var("y") = 4.f;
+	v.Var("x") = 3;
+	v.Var("y") = 4;
 
 	std::cout << "x: " << v.Var("x") << std::endl;
 	std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
