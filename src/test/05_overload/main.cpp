@@ -37,12 +37,12 @@ int main() {
 
 	{
 		auto v = obj += Vec{ 10.f,10.f };
-		std::cout << v->RVar("x") << ", " << v->RVar("y") << std::endl;
+		std::cout << v->Var("x") << ", " << v->Var("y") << std::endl;
 	}
 
 	{
 		auto v = obj += 2.f;
-		std::cout << v->RVar("x") << ", " << v->RVar("y") << std::endl;
+		std::cout << v->Var("x") << ", " << v->Var("y") << std::endl;
 	}
 	
 	return 0;

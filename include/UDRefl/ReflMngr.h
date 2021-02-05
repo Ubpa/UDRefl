@@ -27,6 +27,9 @@ namespace Ubpa::UDRefl {
 
 		std::unordered_map<TypeID, TypeInfo> typeinfos;
 
+		// remove cvref
+		TypeInfo* GetTypeInfo(TypeID ID);
+
 		// clear order
 		// - field attrs
 		// - type attrs
@@ -293,41 +296,26 @@ namespace Ubpa::UDRefl {
 		//
 		// Cast
 		/////////
-		//
-		// - cast APIs with ObjectPtr don't support reference
-		//
 
 		ObjectPtr StaticCast_DerivedToBase (ObjectPtr obj, TypeID typeID) const;
 		ObjectPtr StaticCast_BaseToDerived (ObjectPtr obj, TypeID typeID) const;
 		ObjectPtr DynamicCast_BaseToDerived(ObjectPtr obj, TypeID typeID) const;
 		ObjectPtr StaticCast               (ObjectPtr obj, TypeID typeID) const;
 		ObjectPtr DynamicCast              (ObjectPtr obj, TypeID typeID) const;
-		
-		ConstObjectPtr StaticCast_DerivedToBase (ConstObjectPtr obj, TypeID typeID) const;
-		ConstObjectPtr StaticCast_BaseToDerived (ConstObjectPtr obj, TypeID typeID) const;
-		ConstObjectPtr DynamicCast_BaseToDerived(ConstObjectPtr obj, TypeID typeID) const;
-		ConstObjectPtr StaticCast               (ConstObjectPtr obj, TypeID typeID) const;
-		ConstObjectPtr DynamicCast              (ConstObjectPtr obj, TypeID typeID) const;
 
 		//
 		// Field
 		//////////
 		//
-		// - RWVar is not support const reference
+		// - result type of Var maintains the ConstReferenceMode of the input
 		//
 
-		// variable object
-		ObjectPtr      RWVar(TypeID      typeID, StrID fieldID);
 		// object
-		ConstObjectPtr RVar (TypeID      typeID, StrID fieldID) const;
-		// variable
-		ObjectPtr      RWVar(ObjectPtr      obj, StrID fieldID);
+		ObjectPtr Var(TypeID typeID, StrID fieldID);
 		// all
-		ConstObjectPtr RVar (ConstObjectPtr obj, StrID fieldID) const;
-		// variable, for diamond inheritance
-		ObjectPtr      RWVar(ObjectPtr      obj, TypeID baseID, StrID fieldID);
+		ObjectPtr Var(ObjectPtr obj, StrID fieldID);
 		// all, for diamond inheritance
-		ConstObjectPtr RVar (ConstObjectPtr obj, TypeID baseID, StrID fieldID) const;
+		ObjectPtr Var(ObjectPtr obj, TypeID baseID, StrID fieldID);
 
 		//
 		// Invoke
@@ -364,13 +352,6 @@ namespace Ubpa::UDRefl {
 			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		InvokeResult Invoke(
-			ConstObjectPtr obj,
-			StrID methodID,
-			void* result_buffer = nullptr,
-			std::span<const TypeID> argTypeIDs = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
-
-		InvokeResult Invoke(
 			ObjectPtr obj,
 			StrID methodID,
 			void* result_buffer = nullptr,
@@ -387,25 +368,19 @@ namespace Ubpa::UDRefl {
 		InvocableResult IsInvocable      (TypeID typeID, StrID methodID) const;
 
 		template<typename T>
-		T InvokeRet(TypeID      typeID, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(TypeID typeID, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		template<typename T>
-		T InvokeRet(ConstObjectPtr obj, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		template<typename T>
-		T InvokeRet(ObjectPtr      obj, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(ObjectPtr obj, StrID methodID, std::span<const TypeID> argTypeIDs = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(TypeID      typeID, StrID methodID, void* result_buffer, Args&&... args) const;
+		InvokeResult InvokeArgs(TypeID typeID, StrID methodID, void* result_buffer, Args&&... args) const;
 		template<typename... Args>
-		InvokeResult InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const;
-		template<typename... Args>
-		InvokeResult InvokeArgs(ObjectPtr      obj, StrID methodID, void* result_buffer, Args&&... args) const;
+		InvokeResult InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(TypeID      typeID, StrID methodID, Args&&... args) const;
+		T Invoke(TypeID typeID, StrID methodID, Args&&... args) const;
 		template<typename T, typename... Args>
-		T Invoke(ConstObjectPtr obj, StrID methodID, Args&&... args) const;
-		template<typename T, typename... Args>
-		T Invoke(ObjectPtr      obj, StrID methodID, Args&&... args) const;
+		T Invoke(ObjectPtr obj, StrID methodID, Args&&... args) const;
 
 		//
 		// Meta
@@ -417,9 +392,9 @@ namespace Ubpa::UDRefl {
 		bool IsCopyConstructible  (TypeID typeID) const;
 		bool IsMoveConstructible  (TypeID typeID) const;
 
-		bool NonArgConstruct(ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool Construct      (ObjectPtr      obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool Destruct       (ConstObjectPtr obj) const;
+		bool NonArgConstruct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
+		bool Construct      (ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
+		bool Destruct       (ObjectPtr obj) const;
 
 		void* Malloc(size_t size) const;
 		bool  Free  (void* ptr) const;
@@ -429,7 +404,7 @@ namespace Ubpa::UDRefl {
 
 		ObjectPtr NonArgCopyNew(TypeID      typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
 		ObjectPtr New          (TypeID      typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool      Delete       (ConstObjectPtr obj) const;
+		bool      Delete       (ObjectPtr obj) const;
 
 		SharedObject MakeShared(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
 
@@ -452,8 +427,8 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		ObjectPtr NewAuto(Args... args);
 
-		// if T is not register, call RegisterType
-		// else add ctor
+		// - if T is not register, call RegisterType<T>()
+		// - call AddConstructor<T, Args...>()
 		template<typename T, typename... Args>
 		SharedObject MakeSharedAuto(Args... args);
 
@@ -483,77 +458,50 @@ namespace Ubpa::UDRefl {
 			TypeID typeID,
 			const std::function<bool(TypeRef, MethodRef)>& func) const;
 
-		// self [r/w] object vars and all bases' [r/w] object vars
-		void ForEachRWVar(
+		// self object vars and all bases' object vars
+		void ForEachVar(
 			TypeID typeID,
 			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
-		// self [r] object vars and all bases' [r] object vars
-		void ForEachRVar(
-			TypeID typeID,
-			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
-
-		// self [r/w] vars and all bases' [r/w] vars
-		// if obj is &{const{T}}, then return directly
-		void ForEachRWVar(
+		// self vars and all bases' vars
+		void ForEachVar(
 			ObjectPtr obj,
 			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
 
-		// self [r] vars and all bases' [r] vars
-		void ForEachRVar(
-			ConstObjectPtr obj,
-			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
-
-		// self [r/w] owned vars and all bases' [r/w] owned vars
-		// if obj is &{const{T}}, then return directly
-		void ForEachRWOwnedVar(
+		// self owned vars and all bases' owned vars
+		void ForEachOwnedVar(
 			ObjectPtr obj,
 			const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
-
-		// self [r] owned vars and all bases' [r] owned vars
-		void ForEachROwnedVar(
-			ConstObjectPtr obj,
-			const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const;
 
 		// Gather (DFS)
 
-		std::vector<TypeID>                                        GetTypeIDs             (TypeID      typeID);
-		std::vector<TypeRef>                                       GetTypes               (TypeID      typeID);
-		std::vector<TypeFieldRef>                                  GetTypeFields          (TypeID      typeID);
-		std::vector<FieldRef>                                      GetFields              (TypeID      typeID);
-		std::vector<TypeMethodRef>                                 GetTypeMethods         (TypeID      typeID);
-		std::vector<MethodRef>                                     GetMethods             (TypeID      typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars     (TypeID      typeID);
-		std::vector<ObjectPtr>                                     GetRWVars              (TypeID      typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars      (TypeID      typeID);
-		std::vector<ConstObjectPtr>                                GetRVars               (TypeID      typeID);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWVars     (ObjectPtr      obj);
-		std::vector<ObjectPtr>                                     GetRWVars              (ObjectPtr      obj);
-		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldRVars      (ConstObjectPtr obj);
-		std::vector<ConstObjectPtr>                                GetRVars               (ConstObjectPtr obj);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>>      GetTypeFieldRWOwnedVars(ObjectPtr      obj);
-		std::vector<ObjectPtr>                                     GetRWOwnedVars         (ObjectPtr      obj);
-		std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> GetTypeFieldROwnedVars (ConstObjectPtr obj);
-		std::vector<ConstObjectPtr>                                GetROwnedVars          (ConstObjectPtr obj);
+		std::vector<TypeID>                                   GetTypeIDs           (TypeID typeID);
+		std::vector<TypeRef>                                  GetTypes             (TypeID typeID);
+		std::vector<TypeFieldRef>                             GetTypeFields        (TypeID typeID);
+		std::vector<FieldRef>                                 GetFields            (TypeID typeID);
+		std::vector<TypeMethodRef>                            GetTypeMethods       (TypeID typeID);
+		std::vector<MethodRef>                                GetMethods           (TypeID typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldVars     (TypeID typeID);
+		std::vector<ObjectPtr>                                GetVars              (TypeID typeID);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldVars     (ObjectPtr obj);
+		std::vector<ObjectPtr>                                GetVars              (ObjectPtr obj);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldOwnedVars(ObjectPtr obj);
+		std::vector<ObjectPtr>                                GetOwnedVars         (ObjectPtr obj);
 
 		// Find (DFS)
 
-		std::optional<TypeID   > FindTypeID    (TypeID      typeID, const std::function<bool(TypeID        )>& func) const;
-		std::optional<TypeRef  > FindType      (TypeID      typeID, const std::function<bool(TypeRef       )>& func) const;
-		std::optional<FieldRef > FindField     (TypeID      typeID, const std::function<bool(FieldRef      )>& func) const;
-		std::optional<MethodRef> FindMethod    (TypeID      typeID, const std::function<bool(MethodRef     )>& func) const;
-		ObjectPtr                FindRWVar     (TypeID      typeID, const std::function<bool(ObjectPtr     )>& func) const;
-		ConstObjectPtr           FindRVar      (TypeID      typeID, const std::function<bool(ConstObjectPtr)>& func) const;
-		ObjectPtr                FindRWVar     (ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
-		ConstObjectPtr           FindRVar      (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
-		ObjectPtr                FindRWOwnedVar(ObjectPtr      obj, const std::function<bool(ObjectPtr     )>& func) const;
-		ConstObjectPtr           FindROwnedVar (ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const;
+		std::optional<TypeID   > FindTypeID  (TypeID typeID, const std::function<bool(TypeID   )>& func) const;
+		std::optional<TypeRef  > FindType    (TypeID typeID, const std::function<bool(TypeRef  )>& func) const;
+		std::optional<FieldRef > FindField   (TypeID typeID, const std::function<bool(FieldRef )>& func) const;
+		std::optional<MethodRef> FindMethod  (TypeID typeID, const std::function<bool(MethodRef)>& func) const;
+		ObjectPtr                FindVar     (TypeID typeID, const std::function<bool(ObjectPtr)>& func) const;
+		ObjectPtr                FindVar     (ObjectPtr obj, const std::function<bool(ObjectPtr)>& func) const;
+		ObjectPtr                FindOwnedVar(ObjectPtr obj, const std::function<bool(ObjectPtr)>& func) const;
 
 		// Contains (DFS)
 
 		bool ContainsBase          (TypeID typeID, TypeID baseID  ) const;
 		bool ContainsField         (TypeID typeID, StrID  fieldID ) const;
-		bool ContainsRWField       (TypeID typeID, StrID  fieldID ) const;
 		bool ContainsMethod        (TypeID typeID, StrID  methodID) const;
 		bool ContainsVariableMethod(TypeID typeID, StrID  methodID) const;
 		bool ContainsConstMethod   (TypeID typeID, StrID  methodID) const;
@@ -578,13 +526,6 @@ namespace Ubpa::UDRefl {
 			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource()) const;
 
 		SharedObject MInvoke(
-			ConstObjectPtr obj,
-			StrID methodID,
-			std::span<const TypeID> argTypeIDs = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource()) const;
-
-		SharedObject MInvoke(
 			ObjectPtr obj,
 			StrID methodID,
 			std::span<const TypeID> argTypeIDs = {},
@@ -600,13 +541,6 @@ namespace Ubpa::UDRefl {
 
 		template<typename... Args>
 		SharedObject MInvoke(
-			ConstObjectPtr obj,
-			StrID methodID,
-			std::pmr::memory_resource* result_rsrc,
-			Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject MInvoke(
 			ObjectPtr obj,
 			StrID methodID,
 			std::pmr::memory_resource* result_rsrc,
@@ -615,12 +549,6 @@ namespace Ubpa::UDRefl {
 		template<typename... Args>
 		SharedObject DMInvoke(
 			TypeID typeID,
-			StrID methodID,
-			Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject DMInvoke(
-			ConstObjectPtr obj,
 			StrID methodID,
 			Args&&... args) const;
 
@@ -632,7 +560,7 @@ namespace Ubpa::UDRefl {
 
 		ObjectPtr NonArgCopyMNew(TypeID      typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
 		ObjectPtr MNew          (TypeID      typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const;
-		bool      MDelete       (ConstObjectPtr obj, std::pmr::memory_resource* rsrc) const;
+		bool      MDelete       (ObjectPtr obj, std::pmr::memory_resource* rsrc) const;
 
 		template<typename... Args>
 		ObjectPtr MNew(TypeID typeID, std::pmr::memory_resource* rsrc, Args&&... args) const;
@@ -644,22 +572,22 @@ namespace Ubpa::UDRefl {
 		// - 'reference' include lvalue reference and rvalue reference
 		//
 
-		DereferenceProperty GetDereferenceProperty(TypeID ID) const;
-		TypeID Dereference(TypeID ID) const;
-		// require: DereferenceProperty(ref_obj.GetID()) == DereferenceProperty::Variable
-		ObjectPtr Dereference(ConstObjectPtr ref_obj) const;
-		// require: DereferenceProperty(ref_obj.GetID()) != DereferenceProperty::NotReference
-		ConstObjectPtr DereferenceAsConst(ConstObjectPtr ref_obj) const;
+		bool IsConst(TypeID ID) const;
+		// const{T}, &/&&{const{T}}
+		bool IsReadOnly(TypeID ID) const;
+		bool IsReference(TypeID ID) const;
+		ConstReferenceMode GetConstReferenceMode(TypeID ID) const;
 
-		TypeID         AddLValueReference     (TypeID         ID );
-		TypeID         AddRValueReference     (TypeID         ID );
-		TypeID         AddConstLValueReference(TypeID         ID );
-		TypeID         AddConstRValueReference(TypeID         ID );
-		ObjectPtr      AddLValueReference     (ObjectPtr      obj);
-		ObjectPtr      AddRValueReference     (ObjectPtr      obj);
-		ConstObjectPtr AddConstLValueReference(ConstObjectPtr obj);
-		ConstObjectPtr AddConstRValueReference(ConstObjectPtr obj);
+		TypeID RemoveConst(TypeID ID) const;
+		TypeID RemoveReference(TypeID ID) const;
+		TypeID RemoveConstReference(TypeID ID) const;
 
+		TypeID AddConst               (TypeID ID);
+		TypeID AddLValueReference     (TypeID ID);
+		TypeID AddLValueReferenceWeak (TypeID ID);
+		TypeID AddRValueReference     (TypeID ID);
+		TypeID AddConstLValueReference(TypeID ID);
+		TypeID AddConstRValueReference(TypeID ID);
 	private:
 		ReflMngr();
 		~ReflMngr();

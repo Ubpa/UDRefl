@@ -6,7 +6,7 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void Serializer(ConstObjectPtr obj) {
+void Serializer(ObjectPtr obj) {
 	if (type_name_is_arithmetic(obj->TypeName()))
 		std::cout << obj;
 	else {
@@ -16,7 +16,7 @@ void Serializer(ConstObjectPtr obj) {
 			if (*iter == ContainerType::Vector) {
 				std::cout << "\"Vector\":[";
 				for (size_t i = 0; i < obj->size(); i++) {
-					Serializer(obj[i]->DereferenceAsConst());
+					Serializer(obj[i]->RemoveReference());
 					if (i + 1 != obj->size())
 						std::cout << ",";
 				}
@@ -24,9 +24,9 @@ void Serializer(ConstObjectPtr obj) {
 			}
 		}
 		else { // normal object
-			size_t N = obj->GetRVars().size();
+			size_t N = obj->GetVars().size();
 			size_t i = 0;
-			for (const auto& [type, field, var] : obj->GetTypeFieldRVars()) {
+			for (const auto& [type, field, var] : obj->GetTypeFieldVars()) {
 				std::cout << "\"" << Mngr->nregistry.Nameof(field.ID) << "\":";
 				Serializer(var);
 				if (++i != N)
@@ -46,7 +46,7 @@ int main() {
 		std::vector<size_t> row;
 		for (size_t j = 0; j < 10; j++)
 			row.push_back(j);
-		a->RWVar("data").push_back(std::move(row));
+		a->Var("data").push_back(std::move(row));
 	}
 
 	Serializer(a);

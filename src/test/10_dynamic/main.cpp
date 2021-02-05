@@ -17,8 +17,8 @@ int main() {
 	ReflMngr::Instance().RegisterType<int>();
 	ReflMngr::Instance().AddDynamicField<const size_t>(TypeID_of<int>, "bits", sizeof(int) * 8);
 
-	std::cout << ReflMngr::Instance().RVar(GlobalID, "author") << std::endl;
-	std::cout << (ReflMngr::Instance().RVar(GlobalID, "theme").As<Color>() == Color::Red) << std::endl;
+	std::cout << ReflMngr::Instance().Var(GlobalID, "author") << std::endl;
+	std::cout << (ReflMngr::Instance().Var(GlobalID, "theme") == Color::Red) << std::endl;
 
-	std::cout << ReflMngr::Instance().RVar(TypeID_of<int>, "bits") << std::endl;
+	std::cout << ReflMngr::Instance().Var(TypeID_of<int>, "bits") << std::endl;
 }

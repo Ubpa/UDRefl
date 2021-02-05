@@ -14,9 +14,6 @@ namespace Ubpa::UDRefl {
 		ArgPtrBuffer GetBuffer() const noexcept { return buffer; }
 		const ParamList& GetParamList() const noexcept { return paramList; }
 
-		// pointer to
-		// - non-const argument
-		// - referenced object : call Dereference / DereferenceAsConst later
 		ObjectPtr At(size_t idx) const noexcept {
 			assert(idx < paramList.size());
 			return { paramList[idx], buffer[idx] };

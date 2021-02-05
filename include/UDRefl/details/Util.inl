@@ -94,23 +94,23 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using FuncPtr = decltype(func_ptr);
 	static_assert(std::is_member_function_pointer_v<FuncPtr>);
 	using Traits = FuncTraits<FuncPtr>;
-	static_assert(Traits::ref != ReferenceMode::Right);
+	static_assert(!(Traits::ref == ReferenceMode::Right && !Traits::is_const));
 	using Obj = typename Traits::Object;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
-	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	constexpr auto wrapped_function = [](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
-			Return rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer);
+			using NonCVReturn = std::remove_cv_t<Return>;
+			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer);
 			if (result_buffer) {
 				if constexpr (std::is_reference_v<Return>) {
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-					return destructor<Return>();
+					return destructor<std::add_pointer_t<Return>>();
 				}
 				else {
-					buffer_as<Return>(result_buffer) = std::move(rst);
-					return destructor<Return>();
+					buffer_as<NonCVReturn>(result_buffer) = std::move(rst);
+					return destructor<NonCVReturn>();
 				}
 			}
 			else
@@ -131,30 +131,29 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 	using Obj = typename Traits::Object;
 	using ArgList = typename Traits::ArgList;
 	using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
-	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable -> Destructor {
-			if constexpr (!std::is_void_v<Return>) {
-				Return rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
-				if (result_buffer) {
-					if constexpr (std::is_reference_v<Return>) {
-						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-						return destructor<std::add_pointer_t<Return>>();
-					}
-					else {
-						static_assert(std::is_move_constructible_v<Return>);
-						new(result_buffer)Return{ std::move(rst) };
-						return destructor<Return>();
-					}
+		[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable->Destructor {
+		if constexpr (!std::is_void_v<Return>) {
+			using NonCVReturn = std::remove_cv_t<Return>;
+			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
+			if (result_buffer) {
+				if constexpr (std::is_reference_v<Return>) {
+					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
+					return destructor<std::add_pointer_t<Return>>();
 				}
-				else
-					return destructor<void>();
+				else {
+					new(result_buffer)NonCVReturn{ std::move(rst) };
+					return destructor<NonCVReturn>();
+				}
 			}
-			else {
-				details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
+			else
 				return destructor<void>();
-			}
-		};
+		}
+		else {
+			details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
+			return destructor<void>();
+		}
+	};
 	return wrapped_function;
 }
 
@@ -165,19 +164,18 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	using Traits = FuncTraits<FuncPtr>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
-	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	constexpr auto wrapped_function = [](void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor {
 		if constexpr (!std::is_void_v<Return>) {
-			Return rst = details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
+			using NonCVReturn = std::remove_cv_t<Return>;
+			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
 			if (result_buffer) {
 				if constexpr (std::is_reference_v<Return>) {
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
 					return destructor<std::add_pointer_t<Return>>();
 				}
 				else {
-					static_assert(std::is_move_constructible_v<Return>);
-					new(result_buffer)Return{ std::move(rst) };
-					return destructor<Return>();
+					new(result_buffer)NonCVReturn{ std::move(rst) };
+					return destructor<NonCVReturn>();
 				}
 			}
 			else
@@ -196,20 +194,19 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using Traits = FuncTraits<std::decay_t<Func>>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
-	static_assert(std::is_void_v<Return> || !std::is_const_v<Return> && !std::is_volatile_v<Return>);
 	/*constexpr*/ auto wrapped_function =
 		[f = std::forward<Func>(func)](void* result_buffer, ArgPtrBuffer argptr_buffer) mutable -> Destructor {
 			if constexpr (!std::is_void_v<Return>) {
-				Return rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
+				using NonCVReturn = std::remove_cv_t<Return>;
+				NonCVReturn rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
 				if (result_buffer) {
 					if constexpr (std::is_reference_v<Return>) {
 						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
 						return destructor<std::add_pointer_t<Return>>();
 					}
 					else {
-						static_assert(std::is_move_constructible_v<Return>);
-						new(result_buffer)Return{ std::move(rst) };
-						return destructor<Return>();
+						new(result_buffer)NonCVReturn{ std::move(rst) };
+						return destructor<NonCVReturn>();
 					}
 				}
 				else

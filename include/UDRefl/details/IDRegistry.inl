@@ -117,14 +117,19 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	void TypeIDRegistry::Register() {
-		static_assert(!std::is_const_v<T> || !std::is_volatile_v<T>);
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<T>, type_name<T>());
+		static_assert(!std::is_volatile_v<T>);
+		using U = std::remove_cvref_t<T>;
+		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<U>, type_name<U>());
+		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<const U>, type_name<const U>());
+		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<U&>, type_name<U&>());
+		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<U&&>, type_name<U&&>());
+		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<const U&>, type_name<const U&>());
+		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<const U&&>, type_name<const U&&>());
 	}
-
 
 	template<typename T>
 	bool TypeIDRegistry::IsRegistered() const {
-		static_assert(!std::is_const_v<T> || !std::is_volatile_v<T>);
+		static_assert(!std::is_volatile_v<T>);
 		return IDRegistry<TypeID>::IsRegistered(TypeID_of<T>);
 	}
 }

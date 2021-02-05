@@ -76,7 +76,7 @@ namespace Ubpa::UDRefl::details {
 			return nullptr;
 		else {
 			if (i == TargetIdx)
-				return Ptr(std::get<TargetIdx>(std::forward<T>(obj)));
+				return ObjectPtr{ std::get<TargetIdx>(std::forward<T>(obj)) };
 			else
 				return runtime_get_impl<Rst, TargetIdx + 1>(std::forward<T>(obj), i);
 		}
@@ -248,7 +248,7 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (is_valid_v<tuple_size, T>) {
 				mngr.AddStaticMethod(TypeID_of<T>, StrIDRegistry::Meta::tuple_size, []() { return std::tuple_size_v<T>; });
 				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get<ObjectPtr>(t, i); });
-				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<ConstObjectPtr>(t, i); });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<ObjectPtr>(t, i); });
 				if constexpr (!IsArray_v<T>)
 					register_tuple_elements<T>(mngr, std::make_index_sequence<std::tuple_size_v<T>>{});
 			}
@@ -537,48 +537,41 @@ namespace Ubpa::UDRefl {
 		using FieldData = decltype(field_data);
 		if constexpr (std::is_pointer_v<FieldData>) {
 			using Value = std::remove_pointer_t<FieldData>;
-			static_assert(!std::is_void_v<Value> && !std::is_function_v<Value> && !std::is_volatile_v<Value>);
-			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
 			tregistry.Register<Value>();
-			RegisterType<std::remove_const_t<Value>>();
+			RegisterType<Value>();
 			return {
-				TypeID_of<std::remove_const_t<Value>>,
-				field_data
+				TypeID_of<Value>,
+				ptr_const_cast(field_data)
 			};
 		}
 		else if constexpr (std::is_member_object_pointer_v<FieldData>) {
 			using Traits = member_pointer_traits<FieldData>;
 			using Obj = typename Traits::object;
 			using Value = typename Traits::value;
-			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
-			static_assert(!std::is_function_v<Value> && !std::is_volatile_v<Value>);
 
 			tregistry.Register<Value>();
-			RegisterType<std::remove_const_t<Value>>();
+			RegisterType<Value>();
 			if constexpr (has_virtual_base_v<Obj>) {
 				return {
-					TypeID_of<std::remove_const_t<Value>>,
-					field_offsetor<field_data>(),
-					ConstFlag{}
+					TypeID_of<Value>,
+					field_offsetor<field_data>()
 				};
 			}
 			else {
 				return {
-					TypeID_of<std::remove_const_t<Value>>,
-					field_forward_offset_value(field_data),
-					ConstFlag{}
+					TypeID_of<Value>,
+					field_forward_offset_value(field_data)
 				};
 			}
 		}
 		else if constexpr (std::is_enum_v<FieldData>) {
 			using Value = std::remove_pointer_t<FieldData>;
 			tregistry.Register<Value>();
-			RegisterType<std::remove_const_t<Value>>();
+			RegisterType<Value>();
 			auto buffer = FieldPtr::ConvertToBuffer(field_data);
 			return {
-				TypeID_of<std::remove_const_t<Value>>,
-				buffer,
-				std::true_type{}
+				TypeID_of<Value>,
+				buffer
 			};
 		}
 		else
@@ -588,46 +581,41 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	FieldPtr ReflMngr::GenerateFieldPtr(T&& data) {
 		using RawT = std::remove_cv_t<std::remove_reference_t<T>>;
-		static_assert(!std::is_same_v<RawT, size_t>);
+		static_assert(!std::is_same_v<RawT, std::size_t>);
 		if constexpr (std::is_member_object_pointer_v<RawT>) {
 			using Traits = member_pointer_traits<RawT>;
 			using Obj = typename Traits::object;
 			using Value = typename Traits::value;
-			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
-			static_assert(!std::is_reference_v<Value> && !std::is_volatile_v<Value>);
 			tregistry.Register<Value>();
-			RegisterType<std::remove_const_t<Value>>();
+			RegisterType<Value>();
 			if constexpr (has_virtual_base_v<Obj>) {
 				return {
-					TypeID_of<std::remove_const_t<Value>>,
-					field_offsetor(data),
-					ConstFlag{}
+					TypeID_of<Value>,
+					field_offsetor(data)
 				};
 			}
 			else {
 				return {
-					TypeID_of<std::remove_const_t<Value>>,
-					field_forward_offset_value(data),
-					ConstFlag{}
+					TypeID_of<Value>,
+					field_forward_offset_value(data)
 				};
 			}
 		}
 		else if constexpr (std::is_pointer_v<RawT> && !is_function_pointer_v<RawT> && !std::is_void_v<std::remove_pointer_t<RawT>>) {
 			using Value = std::remove_pointer_t<RawT>;
-			static_assert(!std::is_volatile_v<Value>);
 			tregistry.Register<Value>();
-			RegisterType<std::remove_const_t<Value>>();
+			RegisterType<Value>();
 			return {
-				TypeID_of<std::remove_const_t<Value>>,
-				data
+				TypeID_of<Value>,
+				ptr_const_cast(data)
 			};
 		}
 		else if constexpr (std::is_enum_v<RawT>) {
 			tregistry.Register<RawT>();
-			RegisterType<std::remove_const_t<RawT>>();
-			const auto buffer = FieldPtr::ConvertToBuffer(data);
+			RegisterType<RawT>();
+			auto buffer = FieldPtr::ConvertToBuffer(data);
 			return {
-				TypeID_of<std::remove_const_t<RawT>>,
+				TypeID_of<const RawT>,
 				buffer
 			};
 		}
@@ -647,17 +635,15 @@ namespace Ubpa::UDRefl {
 			static_assert(!std::is_void_v<Value> && !std::is_volatile_v<Value>);
 
 			tregistry.Register<Value>();
-			RegisterType<std::remove_const_t<Value>>();
-			using ConstFlag = std::bool_constant<std::is_const_v<Value>>;
+			RegisterType<Value>();
 
-			auto offsetor = [f=std::forward<T>(data)](const void* obj) -> const void* {
-				return f(const_cast<Obj*>(reinterpret_cast<const Obj*>(obj)));
+			auto offsetor = [f=std::forward<T>(data)](void* obj) -> void* {
+				return f(reinterpret_cast<Obj*>(obj));
 			};
 
 			return {
-				TypeID_of<std::remove_const_t<Value>>,
-				offsetor,
-				ConstFlag{}
+				TypeID_of<Value>,
+				offsetor
 			};
 		}
 	}
@@ -669,13 +655,12 @@ namespace Ubpa::UDRefl {
 		RegisterType<RawT>();
 		if constexpr (FieldPtr::IsBufferable<RawT>()) {
 			FieldPtr::Buffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
-			return FieldPtr{ TypeID_of<RawT>, buffer, std::bool_constant<std::is_const_v<T>>{} };
+			return FieldPtr{ TypeID_of<T>, buffer };
 		}
 		else {
 			static_assert(alignof(RawT) <= alignof(max_align_t));
-			using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, SharedConstObject, SharedObject>;
-			MaybeConstSharedObject obj{ TypeID_of<RawT>, std::make_shared<RawT>(std::forward<Args>(args)...) };
-			return FieldPtr{ obj };
+			SharedObject obj{ TypeID_of<T>, std::make_shared<RawT>(std::forward<Args>(args)...) };
+			return FieldPtr{ std::move(obj) };
 		}
 	}
 
@@ -685,19 +670,17 @@ namespace Ubpa::UDRefl {
 		using RawT = std::remove_const_t<T>;
 		if constexpr (FieldPtr::IsBufferable<RawT>()) {
 			FieldPtr::Buffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
-			return FieldPtr{ TypeID_of<RawT>, buffer, std::bool_constant<std::is_const_v<T>>{} };
+			return FieldPtr{ TypeID_of<T>, buffer };
 		}
 		else {
-			using MaybeConstSharedObject = std::conditional_t<std::is_const_v<T>, SharedConstObject, SharedObject>;
-			MaybeConstSharedObject obj = { TypeID_of<RawT>, std::allocate_shared<RawT>(alloc, std::forward<Args>(args)...) };
-			return FieldPtr{ obj };
+			SharedObject obj = { TypeID_of<T>, std::allocate_shared<RawT>(alloc, std::forward<Args>(args)...) };
+			return FieldPtr{ std::move(obj) };
 		}
 	}
 
 	template<typename Return>
 	ResultDesc ReflMngr::GenerateResultDesc() {
 		if constexpr (!std::is_void_v<Return>) {
-			static_assert(!std::is_const_v<Return> && !std::is_volatile_v<Return> && !std::is_volatile_v<std::remove_reference_t<Return>>);
 			using U = std::conditional_t<std::is_reference_v<Return>, std::add_pointer_t<Return>, Return>;
 			tregistry.Register<Return>();
 			return {
@@ -713,7 +696,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Params>
 	ParamList ReflMngr::GenerateParamList() noexcept(sizeof...(Params) == 0) {
 		if constexpr (sizeof...(Params) > 0) {
-			static_assert(((!std::is_const_v<Params> && !std::is_volatile_v<Params> && !std::is_volatile_v<std::remove_reference_t<Params>>)&&...));
+			static_assert(((!std::is_const_v<Params> && !std::is_volatile_v<Params>)&&...), "parameter type shouldn't be const.");
 			(tregistry.Register<Params>(), ...);
 			return { { TypeID_of<Params>... } };
 		}
@@ -791,7 +774,7 @@ namespace Ubpa::UDRefl {
 			else if constexpr (std::is_reference_v<T>)
 				RegisterType<std::remove_cvref_t<T>>();
 			else if constexpr (std::is_pointer_v<T>)
-				RegisterType<std::remove_cv_t<std::remove_pointer_t<T>>>();
+				RegisterType<std::remove_pointer_t<T>>();
 			else {
 				auto target = typeinfos.find(TypeID_of<T>);
 				if (target != typeinfos.end())
@@ -819,14 +802,14 @@ namespace Ubpa::UDRefl {
 		using FieldData = decltype(field_data);
 		if constexpr (std::is_enum_v<FieldData>) {
 			return AddField(
-				TypeID_of<std::remove_const_t<FieldData>>,
+				TypeID_of<std::remove_cv_t<FieldData>>,
 				name,
 				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
 			);
 		}
 		else if constexpr (std::is_member_object_pointer_v<FieldData>) {
 			return AddField(
-				TypeID_of<std::remove_const_t<member_pointer_traits_object<FieldData>>>,
+				TypeID_of<member_pointer_traits_object<FieldData>>,
 				name,
 				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
 			);
@@ -852,7 +835,6 @@ namespace Ubpa::UDRefl {
 			using ObjPtr = Front_t<ArgList>;
 			static_assert(std::is_pointer_v<ObjPtr>);
 			using Obj = std::remove_pointer_t<ObjPtr>;
-			static_assert(!std::is_const_v<Obj> && !std::is_volatile_v<Obj>);
 
 			return AddField(TypeID_of<Obj>, name, std::forward<T>(data), std::move(attrs));
 		}
@@ -873,7 +855,7 @@ namespace Ubpa::UDRefl {
 	template<auto func_ptr>
 	StrID ReflMngr::AddMethod(TypeID typeID, std::string_view name, AttrSet attrs) {
 		using FuncPtr = decltype(func_ptr);
-		static_assert(std::is_function_v<FuncPtr>);
+		static_assert(is_function_pointer_v<FuncPtr>);
 		return AddMethod(
 			typeID,
 			name,
@@ -957,19 +939,6 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ConstObjectPtr obj, StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-		if constexpr (!std::is_void_v<T>) {
-			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
-			std::uint8_t result_buffer[sizeof(U)];
-			InvokeResult result = Invoke(obj, methodID, result_buffer, argTypeIDs, argptr_buffer);
-			assert(result.resultID == TypeID_of<T>);
-			return result.Move<T>(result_buffer);
-		}
-		else
-			Invoke(obj, methodID, (void*)nullptr, argTypeIDs, argptr_buffer);
-	}
-
-	template<typename T>
 	T ReflMngr::InvokeRet(ObjectPtr obj, StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
@@ -994,17 +963,6 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(ConstObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(obj, methodID, result_buffer, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return Invoke(obj, methodID, result_buffer);
-	}
-
-	template<typename... Args>
 	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
@@ -1024,17 +982,6 @@ namespace Ubpa::UDRefl {
 		}
 		else
 			return InvokeRet<T>(typeID, methodID);
-	}
-
-	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ConstObjectPtr obj, StrID methodID, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return InvokeRet<T>(obj, methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return InvokeRet<T>(obj, methodID);
 	}
 
 	template<typename T, typename... Args>
@@ -1084,7 +1031,7 @@ namespace Ubpa::UDRefl {
 	ObjectPtr ReflMngr::NewAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		RegisterType<T>();
-		AddMethod(TypeID_of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
+		AddConstructor<T, Args...>();
 		return New(TypeID_of<T>, std::forward<Args>(args)...);
 	}
 
@@ -1103,7 +1050,7 @@ namespace Ubpa::UDRefl {
 	SharedObject ReflMngr::MakeSharedAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		RegisterType<T>();
-		AddMethod(TypeID_of<T>, StrIDRegistry::Meta::ctor, { GenerateConstructorPtr<T, Args...>() });
+		AddConstructor<T, Args...>();
 		return MakeShared(TypeID_of<T>, std::forward<Args>(args)...);
 	}
 
@@ -1129,7 +1076,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	SharedObject ReflMngr::MInvoke(
-		ConstObjectPtr obj,
+		ObjectPtr obj,
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
 		Args&&... args) const
@@ -1144,37 +1091,12 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ReflMngr::MInvoke(
-		ObjectPtr obj,
-		StrID methodID,
-		std::pmr::memory_resource* rst_rsrc,
-		Args&&... args) const
-	{
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MInvoke(obj, methodID, std::span<const TypeID>{ argTypeIDs }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), rst_rsrc);
-		}
-		else
-			return MInvoke(obj, methodID);
-	}
-
-	template<typename... Args>
 	SharedObject ReflMngr::DMInvoke(
 		TypeID typeID,
 		StrID methodID,
 		Args&&... args) const
 	{
 		return MInvoke(typeID, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
-	SharedObject ReflMngr::DMInvoke(
-		ConstObjectPtr obj,
-		StrID methodID,
-		Args&&... args) const
-	{
-		return MInvoke(obj, methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>

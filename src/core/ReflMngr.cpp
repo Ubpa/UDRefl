@@ -431,6 +431,7 @@ namespace Ubpa::UDRefl::details {
 		StrID methodID,
 		std::span<const TypeID> argTypeIDs)
 	{
+		assert(Mngr->GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 		auto typetarget = Mngr->typeinfos.find(typeID);
 
 		if (typetarget == Mngr->typeinfos.end())
@@ -462,6 +463,7 @@ namespace Ubpa::UDRefl::details {
 		StrID methodID,
 		std::span<const TypeID> argTypeIDs)
 	{
+		assert(Mngr->GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 		auto typetarget = Mngr->typeinfos.find(typeID);
 
 		if (typetarget == Mngr->typeinfos.end())
@@ -493,6 +495,7 @@ namespace Ubpa::UDRefl::details {
 		StrID methodID,
 		std::span<const TypeID> argTypeIDs)
 	{
+		assert(Mngr->GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 		auto typetarget = Mngr->typeinfos.find(typeID);
 
 		if (typetarget == Mngr->typeinfos.end())
@@ -541,7 +544,7 @@ namespace Ubpa::UDRefl::details {
 		std::span<const TypeID> argTypeIDs,
 		ArgPtrBuffer argptr_buffer)
 	{
-		assert(Mngr->GetDereferenceProperty(typeID) == DereferenceProperty::NotReference);
+		assert(Mngr->GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 
 		auto typetarget = Mngr->typeinfos.find(typeID);
 
@@ -581,15 +584,16 @@ namespace Ubpa::UDRefl::details {
 	static InvokeResult Invoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
-		ConstObjectPtr obj,
+		ObjectPtr obj,
+		bool is_const,
 		StrID methodID,
 		void* result_buffer,
 		std::span<const TypeID> argTypeIDs,
 		ArgPtrBuffer argptr_buffer)
 	{
-		assert(Mngr->GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+		assert(Mngr->GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
 
-		auto typetarget = Mngr->typeinfos.find(obj.GetID());
+		auto typetarget = Mngr->typeinfos.find(obj.GetTypeID());
 
 		if (typetarget == Mngr->typeinfos.end())
 			return {};
@@ -598,96 +602,44 @@ namespace Ubpa::UDRefl::details {
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
 
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (iter->second.methodptr.IsMemberVariable()) {
-				NewArgsGuard guard{
-					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
-				};
-				if (!guard.IsCompatible())
-					continue;
-				return {
+		if (!is_const) {
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (iter->second.methodptr.IsMemberVariable()) {
+					NewArgsGuard guard{
+						is_priority, args_rsrc,
+						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+					};
+					if (!guard.IsCompatible())
+						continue;
+					return {
 						true,
 						iter->second.methodptr.GetResultDesc().typeID,
-						std::move(iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer()))
-				};
+						iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer())
+					};
+				}
 			}
 		}
-
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = Invoke(
-				is_priority, args_rsrc,
-				ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
-				methodID, result_buffer, argTypeIDs, argptr_buffer
-			);
-			if (rst.success)
-				return rst;
-		}
-
-		return {};
-	}
-
-	static InvokeResult Invoke(
-		bool is_priority,
-		std::pmr::memory_resource* args_rsrc,
-		ObjectPtr obj,
-		StrID methodID,
-		void* result_buffer,
-		std::span<const TypeID> argTypeIDs,
-		ArgPtrBuffer argptr_buffer)
-	{
-		assert(Mngr->GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
-
-		auto typetarget = Mngr->typeinfos.find(obj.GetID());
-
-		if (typetarget == Mngr->typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
-
-		// 1. object variable and static
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (!iter->second.methodptr.IsMemberConst()) {
+			if (!iter->second.methodptr.IsMemberVariable()) {
 				NewArgsGuard guard{
 					is_priority, args_rsrc,
 					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
 				};
 				if (!guard.IsCompatible())
 					continue;
-
 				return {
 					true,
 					iter->second.methodptr.GetResultDesc().typeID,
-					std::move(iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer()))
+					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer())
 				};
 			}
 		}
 
-		// 2. object const
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (iter->second.methodptr.IsMemberConst()) {
-				NewArgsGuard guard{
-					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
-				};
-				if (!guard.IsCompatible())
-					continue;
-
-				return {
-					true,
-					iter->second.methodptr.GetResultDesc().typeID,
-					std::move(iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer()))
-				};
-			}
-		}
 
 		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 			auto rst = Invoke(
 				is_priority, args_rsrc,
-				ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
+				ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
 				methodID, result_buffer, argTypeIDs, argptr_buffer
 			);
 			if (rst.success)
@@ -706,7 +658,7 @@ namespace Ubpa::UDRefl::details {
 		ArgPtrBuffer argptr_buffer,
 		std::pmr::memory_resource* rst_rsrc)
 	{
-		assert(Mngr->GetDereferenceProperty(typeID) == DereferenceProperty::NotReference);
+		assert(Mngr->GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 
 		auto typetarget = Mngr->typeinfos.find(typeID);
 
@@ -758,7 +710,7 @@ namespace Ubpa::UDRefl::details {
 
 		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 			auto rst = MInvoke(is_priority, args_rsrc, baseID, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
-			if (rst.GetID())
+			if (rst.GetTypeID())
 				return rst;
 		}
 
@@ -768,16 +720,16 @@ namespace Ubpa::UDRefl::details {
 	static SharedObject MInvoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
-		ConstObjectPtr obj,
+		ObjectPtr obj,
+		bool is_const,
 		StrID methodID,
 		std::span<const TypeID> argTypeIDs,
 		ArgPtrBuffer argptr_buffer,
 		std::pmr::memory_resource* rst_rsrc)
 	{
 		assert(rst_rsrc);
-		assert(Mngr->GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
-
-		auto typetarget = Mngr->typeinfos.find(obj.GetID());
+		assert(Mngr->GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+		auto typetarget = Mngr->typeinfos.find(obj.GetTypeID());
 
 		if (typetarget == Mngr->typeinfos.end())
 			return {};
@@ -785,6 +737,47 @@ namespace Ubpa::UDRefl::details {
 		const auto& typeinfo = typetarget->second;
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
+
+		if (!is_const) {
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (iter->second.methodptr.IsMemberVariable()) {
+					NewArgsGuard guard{
+						is_priority, args_rsrc,
+						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
+					};
+
+					if (!guard.IsCompatible())
+						continue;
+
+					const auto& methodptr = iter->second.methodptr;
+					const auto& rst_desc = methodptr.GetResultDesc();
+
+					if (rst_desc.IsVoid()) {
+						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
+						return {
+							{rst_desc.typeID, nullptr},
+							[](void* ptr) { assert(!ptr); }
+						};
+					}
+					else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
+						std::aligned_storage_t<sizeof(void*)> buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgPtrBuffer());
+						return {
+							{rst_desc.typeID, buffer_as<void*>(&buffer)},
+							[](void* ptr) { assert(ptr); }
+						};
+					}
+					else {
+						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
+						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
+						return {
+							{rst_desc.typeID, result_buffer},
+							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
+						};
+					}
+				}
+			}
+		}
 
 		for (auto iter = begin_iter; iter != end_iter; ++iter) {
 			if (!iter->second.methodptr.IsMemberVariable()) {
@@ -800,7 +793,7 @@ namespace Ubpa::UDRefl::details {
 				const auto& rst_desc = methodptr.GetResultDesc();
 
 				if (rst_desc.IsVoid()) {
-					auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, guard.GetArgPtrBuffer());
+					auto dtor = iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), nullptr, argptr_buffer);
 					return {
 						{rst_desc.typeID, nullptr},
 						[](void* ptr) { assert(!ptr); }
@@ -808,7 +801,7 @@ namespace Ubpa::UDRefl::details {
 				}
 				else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
 					std::aligned_storage_t<sizeof(void*)> buffer;
-					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgPtrBuffer());
+					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), &buffer, guard.GetArgPtrBuffer());
 					return {
 						{rst_desc.typeID, buffer_as<void*>(&buffer)},
 						[](void* ptr) { assert(ptr); }
@@ -816,7 +809,7 @@ namespace Ubpa::UDRefl::details {
 				}
 				else {
 					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-					auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
+					auto dtor = iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
 					return {
 						{rst_desc.typeID, result_buffer},
 						GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
@@ -828,126 +821,10 @@ namespace Ubpa::UDRefl::details {
 		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 			auto rst = MInvoke(
 				is_priority, args_rsrc,
-				ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
+				ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
 				methodID, argTypeIDs, argptr_buffer, rst_rsrc
 			);
-			if (rst.GetID())
-				return rst;
-		}
-
-		return nullptr;
-	}
-
-	static SharedObject MInvoke(
-		bool is_priority,
-		std::pmr::memory_resource* args_rsrc,
-		ObjectPtr obj,
-		StrID methodID,
-		std::span<const TypeID> argTypeIDs,
-		ArgPtrBuffer argptr_buffer,
-		std::pmr::memory_resource* rst_rsrc)
-	{
-		assert(rst_rsrc);
-		assert(Mngr->GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
-
-		auto typetarget = Mngr->typeinfos.find(obj.GetID());
-
-		if (typetarget == Mngr->typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(methodID);
-
-		{ // 1. object variable and static
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberConst()) {
-					NewArgsGuard guard{
-						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
-					};
-
-					if (!guard.IsCompatible())
-						continue;
-
-					const auto& methodptr = iter->second.methodptr;
-					const auto& rst_desc = methodptr.GetResultDesc();
-
-					if (rst_desc.IsVoid()) {
-						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, guard.GetArgPtrBuffer());
-						return {
-							{rst_desc.typeID, nullptr},
-							[](void* ptr) { assert(!ptr); }
-						};
-					}
-					else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
-						std::aligned_storage_t<sizeof(void*)> buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgPtrBuffer());
-						return {
-							{rst_desc.typeID, buffer_as<void*>(&buffer)},
-							[](void* ptr) { assert(ptr); }
-						};
-					}
-					else {
-						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
-						return {
-							{rst_desc.typeID, result_buffer},
-							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
-						};
-					}
-				}
-			}
-		}
-
-		{ // 2. object const
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.IsMemberConst()) {
-					NewArgsGuard guard{
-						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), argTypeIDs, argptr_buffer
-					};
-
-					if (!guard.IsCompatible())
-						continue;
-
-					const auto& methodptr = iter->second.methodptr;
-					const auto& rst_desc = methodptr.GetResultDesc();
-
-					if (rst_desc.IsVoid()) {
-						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, guard.GetArgPtrBuffer());
-						return {
-							{rst_desc.typeID, nullptr},
-							[](void* ptr) { assert(!ptr); }
-						};
-					}
-					else if (type_name_is_reference(Mngr->tregistry.Nameof(rst_desc.typeID))) {
-						std::aligned_storage_t<sizeof(void*)> buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgPtrBuffer());
-						return {
-							{rst_desc.typeID, buffer_as<void*>(&buffer)},
-							[](void* ptr) { assert(ptr); }
-						};
-					}
-					else {
-						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
-						return {
-							{rst_desc.typeID, result_buffer},
-							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
-						};
-					}
-				}
-			}
-		}
-
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			auto rst = MInvoke(
-				is_priority, args_rsrc,
-				ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
-				methodID, argTypeIDs, argptr_buffer, rst_rsrc
-			);
-			if (rst.GetID())
+			if (rst.GetTypeID())
 				return rst;
 		}
 
@@ -1011,120 +888,11 @@ namespace Ubpa::UDRefl::details {
 		return true;
 	}
 
-	static bool ForEachRWVar(
-		ObjectPtr obj,
-		const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func,
-		std::set<TypeID>& visitedVBs)
-	{
-		if (!obj.Valid())
-			return true;
-
-		auto target = ReflMngr::Instance().typeinfos.find(obj.GetID());
-
-		if (target == ReflMngr::Instance().typeinfos.end())
-			return true;
-
-		auto& typeinfo = target->second;
-
-		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
-			if (!fieldInfo.fieldptr.IsConst()) {
-				if (!func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.RWVar(obj.GetPtr())))
-					return false;
-			}
-		}
-
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
-					continue;
-				visitedVBs.insert(baseID);
-			}
-
-			if (!ForEachRWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, func, visitedVBs))
-				return false;
-		}
-
-		return true;
-	}
-
-	static bool ForEachRVar(
-		ConstObjectPtr obj,
-		const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func,
-		std::set<TypeID>& visitedVBs)
-	{
-		if (!obj.Valid())
-			return true;
-
-		auto target = ReflMngr::Instance().typeinfos.find(obj.GetID());
-
-		if (target == ReflMngr::Instance().typeinfos.end())
-			return true;
-
-		auto& typeinfo = target->second;
-
-		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
-			if (!func({ obj.GetID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.RVar(obj.GetPtr())))
-				return false;
-		}
-
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
-					continue;
-				visitedVBs.insert(baseID);
-			}
-
-			if (!ForEachRVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, func, visitedVBs))
-				return false;
-		}
-
-		return true;
-	}
-
-	static bool ForEachRWVar(
+	static bool ForEachVar(
 		TypeID typeID,
 		const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func,
 		std::set<TypeID>& visitedVBs)
 	{
-		if (!typeID)
-			return true;
-
-		auto target = ReflMngr::Instance().typeinfos.find(typeID);
-
-		if (target == ReflMngr::Instance().typeinfos.end())
-			return true;
-
-		auto& typeinfo = target->second;
-
-		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
-			if (fieldInfo.fieldptr.IsUnowned() && !fieldInfo.fieldptr.IsConst()) {
-				if (!func({ typeID, typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.RWVar()))
-					return false;
-			}
-		}
-
-		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-			if (baseinfo.IsVirtual()) {
-				if (visitedVBs.find(baseID) != visitedVBs.end())
-					continue;
-				visitedVBs.insert(baseID);
-			}
-
-			if (!ForEachRWVar(baseID, func, visitedVBs))
-				return false;
-		}
-
-		return true;
-	}
-
-	static bool ForEachRVar(
-		TypeID typeID,
-		const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func,
-		std::set<TypeID>& visitedVBs)
-	{
-		if (!typeID)
-			return true;
-
 		auto target = ReflMngr::Instance().typeinfos.find(typeID);
 
 		if (target == ReflMngr::Instance().typeinfos.end())
@@ -1134,7 +902,7 @@ namespace Ubpa::UDRefl::details {
 
 		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
 			if (fieldInfo.fieldptr.IsUnowned()) {
-				if (!func({ typeID, typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.RVar()))
+				if (!func({ typeID, typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Var()))
 					return false;
 			}
 		}
@@ -1146,7 +914,40 @@ namespace Ubpa::UDRefl::details {
 				visitedVBs.insert(baseID);
 			}
 
-			if (!ForEachRVar(baseID, func, visitedVBs))
+			if (!ForEachVar(baseID, func, visitedVBs))
+				return false;
+		}
+
+		return true;
+	}
+
+	static bool ForEachVar(
+		ObjectPtr obj,
+		const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func,
+		std::set<TypeID>& visitedVBs)
+	{
+		assert(Mngr->GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
+
+		auto target = ReflMngr::Instance().typeinfos.find(obj.GetTypeID());
+
+		if (target == ReflMngr::Instance().typeinfos.end())
+			return true;
+
+		auto& typeinfo = target->second;
+
+		for (auto& [fieldID, fieldInfo] : typeinfo.fieldinfos) {
+			if (!func({ obj.GetTypeID(), typeinfo }, { fieldID, fieldInfo }, fieldInfo.fieldptr.Var(obj.GetPtr())))
+				return false;
+		}
+
+		for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
+			if (baseinfo.IsVirtual()) {
+				if (visitedVBs.find(baseID) != visitedVBs.end())
+					continue;
+				visitedVBs.insert(baseID);
+			}
+
+			if (!ForEachVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, func, visitedVBs))
 				return false;
 		}
 
@@ -1227,6 +1028,16 @@ ReflMngr::ReflMngr() {
 	details::RegisterArithmeticConvertion<double>(*this);
 }
 
+TypeInfo* ReflMngr::GetTypeInfo(TypeID ID) {
+	auto name = tregistry.Nameof(ID);
+	auto raw_name = type_name_remove_cvref(name);
+	TypeID rawID{ raw_name };
+	auto target = typeinfos.find(rawID);
+	if (target == typeinfos.end())
+		return nullptr;
+	return &target->second;
+}
+
 void ReflMngr::Clear() noexcept {
 	// field attrs
 	for (auto& [typeID, typeinfo] : typeinfos) {
@@ -1251,6 +1062,7 @@ void ReflMngr::Clear() noexcept {
 	}
 
 	typeinfos.clear();
+	temporary_resource.release();
 }
 
 ReflMngr::~ReflMngr() {
@@ -1384,12 +1196,12 @@ ObjectPtr ReflMngr::New(TypeID typeID, std::span<const TypeID> argTypeIDs, ArgPt
 	return obj;
 }
 
-bool ReflMngr::Delete(ConstObjectPtr obj) const {
+bool ReflMngr::Delete(ObjectPtr obj) const {
 	bool dtor_success = Destruct(obj);
 	if (!dtor_success)
 		return false;
 
-	const auto& typeinfo = typeinfos.at(obj.GetID());
+	const auto& typeinfo = typeinfos.at(obj.GetTypeID());
 
 	bool free_success;
 	if (typeinfo.alignment <= std::alignment_of_v<std::max_align_t>)
@@ -1414,15 +1226,31 @@ SharedObject ReflMngr::MakeShared(TypeID typeID, std::span<const TypeID> argType
 
 ObjectPtr ReflMngr::StaticCast_DerivedToBase(ObjectPtr obj, TypeID typeID) const {
 	assert(typeID);
-	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
 
-	if (obj.GetID() == typeID)
+	switch (GetConstReferenceMode(obj.GetTypeID()))
+	{
+	case ConstReferenceMode::Left:
+		return StaticCast_DerivedToBase(obj.RemoveReference(), typeID).AddLValueReference();
+	case ConstReferenceMode::Right:
+		return StaticCast_DerivedToBase(obj.RemoveReference(), typeID).AddRValueReference();
+	case ConstReferenceMode::Const:
+		return StaticCast_DerivedToBase(obj.RemoveConst(), typeID).AddConst();
+	case ConstReferenceMode::ConstLeft:
+		return StaticCast_DerivedToBase(obj.RemoveConstReference(), typeID).AddConstLValueReference();
+	case ConstReferenceMode::ConstRight:
+		return StaticCast_DerivedToBase(obj.RemoveConstReference(), typeID).AddConstRValueReference();
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
+
+	if (obj.GetTypeID() == typeID)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
 		return { typeID, nullptr };
 
-	auto target = typeinfos.find(obj.GetID());
+	auto target = typeinfos.find(obj.GetTypeID());
 	if (target == typeinfos.end())
 		return nullptr;
 
@@ -1430,7 +1258,7 @@ ObjectPtr ReflMngr::StaticCast_DerivedToBase(ObjectPtr obj, TypeID typeID) const
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto ptr = StaticCast_DerivedToBase(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, typeID);
-		if (ptr.GetID())
+		if (ptr.GetTypeID())
 			return ptr;
 	}
 
@@ -1439,9 +1267,25 @@ ObjectPtr ReflMngr::StaticCast_DerivedToBase(ObjectPtr obj, TypeID typeID) const
 
 ObjectPtr ReflMngr::StaticCast_BaseToDerived(ObjectPtr obj, TypeID typeID) const {
 	assert(typeID);
-	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+	
+	switch (GetConstReferenceMode(obj.GetTypeID()))
+	{
+	case ConstReferenceMode::Left:
+		return StaticCast_BaseToDerived(obj.RemoveReference(), typeID).AddLValueReference();
+	case ConstReferenceMode::Right:
+		return StaticCast_BaseToDerived(obj.RemoveReference(), typeID).AddRValueReference();
+	case ConstReferenceMode::Const:
+		return StaticCast_BaseToDerived(obj.RemoveConst(), typeID).AddConst();
+	case ConstReferenceMode::ConstLeft:
+		return StaticCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstLValueReference();
+	case ConstReferenceMode::ConstRight:
+		return StaticCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstRValueReference();
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
 
-	if (obj.GetID() == typeID)
+	if (obj.GetTypeID() == typeID)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
@@ -1455,7 +1299,7 @@ ObjectPtr ReflMngr::StaticCast_BaseToDerived(ObjectPtr obj, TypeID typeID) const
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto ptr = StaticCast_BaseToDerived(obj, baseID);
-		if (ptr.GetID())
+		if (ptr.GetTypeID())
 			return { baseID, baseinfo.IsVirtual() ? nullptr : baseinfo.StaticCast_BaseToDerived(obj.GetPtr()) };
 	}
 	
@@ -1464,15 +1308,34 @@ ObjectPtr ReflMngr::StaticCast_BaseToDerived(ObjectPtr obj, TypeID typeID) const
 
 ObjectPtr ReflMngr::DynamicCast_BaseToDerived(ObjectPtr obj, TypeID typeID) const {
 	assert(typeID);
-	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+	
+	switch (GetConstReferenceMode(obj.GetTypeID()))
+	{
+	case ConstReferenceMode::Left:
+		return DynamicCast_BaseToDerived(obj.RemoveReference(), typeID).AddLValueReference();
+	case ConstReferenceMode::Right:
+		return DynamicCast_BaseToDerived(obj.RemoveReference(), typeID).AddRValueReference();
+	case ConstReferenceMode::Const:
+		return DynamicCast_BaseToDerived(obj.RemoveConst(), typeID).AddConst();
+	case ConstReferenceMode::ConstLeft:
+		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstLValueReference();
+	case ConstReferenceMode::ConstRight:
+		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), typeID).AddConstRValueReference();
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
 
-	if (obj.GetID() == typeID)
+	if (IsConst(obj.GetTypeID()))
+		return StaticCast_DerivedToBase(obj.RemoveReference(), typeID).AddConstLValueReference();
+
+	if (obj.GetTypeID() == typeID)
 		return obj;
 
 	if (obj.GetPtr() == nullptr)
 		return { typeID, nullptr };
 
-	auto target = typeinfos.find(obj.GetID());
+	auto target = typeinfos.find(obj.GetTypeID());
 	if (target == typeinfos.end())
 		return nullptr;
 
@@ -1480,7 +1343,7 @@ ObjectPtr ReflMngr::DynamicCast_BaseToDerived(ObjectPtr obj, TypeID typeID) cons
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
 		auto ptr = DynamicCast_BaseToDerived(ObjectPtr{ baseID, baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) }, typeID);
-		if (ptr.GetID())
+		if (ptr.GetTypeID())
 			return { baseID, baseinfo.IsPolymorphic() ? baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) : nullptr };
 	}
 
@@ -1489,11 +1352,11 @@ ObjectPtr ReflMngr::DynamicCast_BaseToDerived(ObjectPtr obj, TypeID typeID) cons
 
 ObjectPtr ReflMngr::StaticCast(ObjectPtr obj, TypeID typeID) const {
 	auto ptr_d2b = StaticCast_DerivedToBase(obj, typeID);
-	if (ptr_d2b.GetID())
+	if (ptr_d2b.GetTypeID())
 		return ptr_d2b;
 
 	auto ptr_b2d = StaticCast_BaseToDerived(obj, typeID);
-	if (ptr_b2d.GetID())
+	if (ptr_b2d.GetTypeID())
 		return ptr_b2d;
 
 	return nullptr;
@@ -1501,57 +1364,32 @@ ObjectPtr ReflMngr::StaticCast(ObjectPtr obj, TypeID typeID) const {
 
 ObjectPtr ReflMngr::DynamicCast(ObjectPtr obj, TypeID typeID) const {
 	auto ptr_b2d = DynamicCast_BaseToDerived(obj, typeID);
-	if (ptr_b2d.GetID())
+	if (ptr_b2d.GetTypeID())
 		return ptr_b2d;
 
 	auto ptr_d2b = StaticCast_DerivedToBase(obj, typeID);
-	if (ptr_d2b.GetID())
+	if (ptr_d2b.GetTypeID())
 		return ptr_d2b;
 
 	return nullptr;
 }
 
-ConstObjectPtr ReflMngr::StaticCast_DerivedToBase(ConstObjectPtr obj, TypeID typeID) const {
-	if (auto prop = GetDereferenceProperty(typeID); DereferenceProperty_IsReference(prop))
-		return StaticCast_DerivedToBase(DereferenceAsConst(obj), typeID);
-
-	return StaticCast_DerivedToBase(ConstCast(obj), typeID);
-}
-
-ConstObjectPtr ReflMngr::StaticCast_BaseToDerived(ConstObjectPtr obj, TypeID typeID) const {
-	if (auto prop = GetDereferenceProperty(typeID); DereferenceProperty_IsReference(prop))
-		return StaticCast_BaseToDerived(DereferenceAsConst(obj), typeID);
-
-	return StaticCast_BaseToDerived(ConstCast(obj), typeID);
-}
-
-ConstObjectPtr ReflMngr::DynamicCast_BaseToDerived(ConstObjectPtr obj, TypeID typeID) const {
-	if (auto prop = GetDereferenceProperty(typeID); DereferenceProperty_IsReference(prop))
-		return DynamicCast_BaseToDerived(DereferenceAsConst(obj), typeID);
-
-	return DynamicCast_BaseToDerived(ConstCast(obj), typeID);
-}
-
-ConstObjectPtr ReflMngr::StaticCast(ConstObjectPtr obj, TypeID typeID) const {
-	if (auto prop = GetDereferenceProperty(typeID); DereferenceProperty_IsReference(prop))
-		return StaticCast(DereferenceAsConst(obj), typeID);
-
-	return StaticCast(ConstCast(obj), typeID);
-}
-
-ConstObjectPtr ReflMngr::DynamicCast(ConstObjectPtr obj, TypeID typeID) const {
-	if (auto prop = GetDereferenceProperty(typeID); DereferenceProperty_IsReference(prop))
-		return DynamicCast(DereferenceAsConst(obj), typeID);
-
-	return DynamicCast(ConstCast(obj), typeID);
-}
-
-ObjectPtr ReflMngr::RWVar(TypeID typeID, StrID fieldID) {
-	if (auto prop = GetDereferenceProperty(typeID); DereferenceProperty_IsReference(prop)) {
-		if (prop == DereferenceProperty::Const)
-			return nullptr;
-
-		return RWVar(Dereference(typeID), fieldID);
+ObjectPtr ReflMngr::Var(TypeID typeID, StrID fieldID) {
+	switch (GetConstReferenceMode(typeID))
+	{
+	case ConstReferenceMode::Left:
+		return Var(RemoveReference(typeID), fieldID).AddLValueReference();
+	case ConstReferenceMode::Right:
+		return Var(RemoveReference(typeID), fieldID).AddRValueReference();
+	case ConstReferenceMode::Const:
+		return Var(RemoveConst(typeID), fieldID).AddConst();
+	case ConstReferenceMode::ConstLeft:
+		return Var(RemoveConstReference(typeID), fieldID).AddConstLValueReference();
+	case ConstReferenceMode::ConstRight:
+		return Var(RemoveConstReference(typeID), fieldID).AddConstRValueReference();
+	case ConstReferenceMode::None:
+	default:
+		break;
 	}
 
 	auto ttarget = typeinfos.find(typeID);
@@ -1562,103 +1400,59 @@ ObjectPtr ReflMngr::RWVar(TypeID typeID, StrID fieldID) {
 
 	auto ftarget = typeinfo.fieldinfos.find(fieldID);
 	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsUnowned())
-		return ftarget->second.fieldptr.RWVar();
+		return ftarget->second.fieldptr.Var();
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RWVar(baseID, fieldID);
-		if (bptr.GetID())
+		auto bptr = Var(baseID, fieldID);
+		if (bptr.GetTypeID())
 			return bptr;
 	}
 
 	return nullptr;
 }
 
-ConstObjectPtr ReflMngr::RVar(TypeID typeID, StrID fieldID) const {
-	if (GetDereferenceProperty(typeID) != DereferenceProperty::NotReference)
-		return RVar(Dereference(typeID), fieldID);
+ObjectPtr ReflMngr::Var(ObjectPtr obj, StrID fieldID) {
+	switch (GetConstReferenceMode(obj.GetTypeID()))
+	{
+	case ConstReferenceMode::Left:
+		return Var(obj.RemoveReference(), fieldID).AddLValueReference();
+	case ConstReferenceMode::Right:
+		return Var(obj.RemoveReference(), fieldID).AddRValueReference();
+	case ConstReferenceMode::Const:
+		return Var(obj.RemoveConst(), fieldID).AddConst();
+	case ConstReferenceMode::ConstLeft:
+		return Var(obj.RemoveConstReference(), fieldID).AddConstLValueReference();
+	case ConstReferenceMode::ConstRight:
+		return Var(obj.RemoveConstReference(), fieldID).AddConstRValueReference();
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
 
-	auto ttarget = typeinfos.find(typeID);
+	auto ttarget = typeinfos.find(obj.GetTypeID());
 	if (ttarget == typeinfos.end())
 		return nullptr;
 
 	auto& typeinfo = ttarget->second;
-
-
-	auto ftarget = typeinfo.fieldinfos.find(fieldID);
-	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsUnowned())
-		return ftarget->second.fieldptr.RVar();
-
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RVar(baseID, fieldID);
-		if (bptr.GetID())
-			return bptr;
-	}
-
-	return nullptr;
-}
-
-ObjectPtr ReflMngr::RWVar(ObjectPtr obj, StrID fieldID) {
-	if (auto prop = GetDereferenceProperty(obj.GetID()); DereferenceProperty_IsReference(prop)) {
-		if (prop == DereferenceProperty::Const)
-			return nullptr;
-
-		return RWVar(Dereference(obj), fieldID);
-	}
-
-	auto ttarget = typeinfos.find(obj.GetID());
-	if (ttarget == typeinfos.end())
-		return nullptr;
-
-	auto& typeinfo = ttarget->second;
-
-	auto ftarget = typeinfo.fieldinfos.find(fieldID);
-	if (ftarget != typeinfo.fieldinfos.end() && ftarget->second.fieldptr.IsVariable())
-		return ftarget->second.fieldptr.RWVar(obj.GetPtr());
-
-	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RWVar(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, fieldID);
-		if (bptr.GetID())
-			return bptr;
-	}
-
-	return nullptr;
-}
-
-ConstObjectPtr ReflMngr::RVar(ConstObjectPtr obj, StrID fieldID) const {
-	if (GetDereferenceProperty(obj.GetID()) != DereferenceProperty::NotReference)
-		return RVar(DereferenceAsConst(obj), fieldID);
-
-	auto ttarget = typeinfos.find(obj.GetID());
-	if (ttarget == typeinfos.end())
-		return nullptr;
-
-	const auto& typeinfo = ttarget->second;
 
 	auto ftarget = typeinfo.fieldinfos.find(fieldID);
 	if (ftarget != typeinfo.fieldinfos.end())
-		return ftarget->second.fieldptr.RVar(obj.GetPtr());
+		return ftarget->second.fieldptr.Var(obj.GetPtr());
 
 	for (const auto& [baseID, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = RVar(ConstObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, fieldID);
-		if (bptr.GetID())
+		auto bptr = Var(ObjectPtr{ baseID, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, fieldID);
+		if (bptr.GetTypeID())
 			return bptr;
 	}
 
 	return nullptr;
 }
 
-ObjectPtr ReflMngr::RWVar(ObjectPtr obj, TypeID baseID, StrID fieldID) {
+ObjectPtr ReflMngr::Var(ObjectPtr obj, TypeID baseID, StrID fieldID) {
 	auto base = StaticCast_DerivedToBase(obj, baseID);
-	if (!base.GetID())
+	if (!base.GetTypeID())
 		return nullptr;
-	return RWVar(base, fieldID);
-}
-
-ConstObjectPtr ReflMngr::RVar(ConstObjectPtr obj, TypeID baseID, StrID fieldID) const {
-	auto base = StaticCast_DerivedToBase(obj, baseID);
-	if (!base.GetID())
-		return nullptr;
-	return RVar(base, fieldID);
+	return Var(base, fieldID);
 }
 
 bool ReflMngr::IsCompatible(std::span<const TypeID> params, std::span<const TypeID> argTypeIDs) const {
@@ -1750,8 +1544,22 @@ InvocableResult ReflMngr::IsStaticInvocable(
 	StrID methodID,
 	std::span<const TypeID> argTypeIDs) const
 {
-	if (GetDereferenceProperty(typeID) != DereferenceProperty::NotReference)
-		return IsStaticInvocable(Dereference(typeID), methodID, argTypeIDs);
+	switch (GetConstReferenceMode(typeID))
+	{
+	case ConstReferenceMode::Left:
+		return IsStaticInvocable(RemoveReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::Right:
+		return IsStaticInvocable(RemoveReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::Const:
+		return IsStaticInvocable(RemoveConst(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::ConstLeft:
+		return IsStaticInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::ConstRight:
+		return IsStaticInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
 
 	if (auto priority_rst = details::IsStaticInvocable(true, typeID, methodID, argTypeIDs))
 		return priority_rst;
@@ -1764,8 +1572,22 @@ InvocableResult ReflMngr::IsConstInvocable(
 	StrID methodID,
 	std::span<const TypeID> argTypeIDs) const
 {
-	if (GetDereferenceProperty(typeID) != DereferenceProperty::NotReference)
-		return IsConstInvocable(Dereference(typeID), methodID, argTypeIDs);
+	switch (GetConstReferenceMode(typeID))
+	{
+	case ConstReferenceMode::Left:
+		return IsConstInvocable(RemoveReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::Right:
+		return IsConstInvocable(RemoveReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::Const:
+		return IsConstInvocable(RemoveConst(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::ConstLeft:
+		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::ConstRight:
+		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
 
 	if (auto priority_rst = details::IsConstInvocable(true, typeID, methodID, argTypeIDs))
 		return priority_rst;
@@ -1778,8 +1600,22 @@ InvocableResult ReflMngr::IsInvocable(
 	StrID methodID,
 	std::span<const TypeID> argTypeIDs) const
 {
-	if (GetDereferenceProperty(typeID) != DereferenceProperty::NotReference)
-		return IsInvocable(Dereference(typeID), methodID, argTypeIDs);
+	switch (GetConstReferenceMode(typeID))
+	{
+	case ConstReferenceMode::Left:
+		return IsInvocable(RemoveReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::Right:
+		return IsInvocable(RemoveReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::Const:
+		return IsConstInvocable(RemoveConst(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::ConstLeft:
+		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::ConstRight:
+		return IsConstInvocable(RemoveConstReference(typeID), methodID, argTypeIDs);
+	case ConstReferenceMode::None:
+	default:
+		break;
+	}
 
 	if (auto priority_rst = details::IsInvocable(true, typeID, methodID, argTypeIDs))
 		return priority_rst;
@@ -1794,37 +1630,30 @@ InvokeResult ReflMngr::Invoke(
 	std::span<const TypeID> argTypeIDs,
 	ArgPtrBuffer argptr_buffer) const
 {
-	if (GetDereferenceProperty(typeID) != DereferenceProperty::NotReference)
-		return Invoke(Dereference(typeID), methodID, result_buffer, argTypeIDs, argptr_buffer);
-
-	if(auto priority_rst = details::Invoke(true, &temporary_resource, typeID, methodID, result_buffer, argTypeIDs, argptr_buffer))
-		return priority_rst;
-
-	return details::Invoke(false, &temporary_resource, typeID, methodID, result_buffer, argTypeIDs, argptr_buffer);
-}
-
-InvokeResult ReflMngr::Invoke(
-	ConstObjectPtr obj,
-	StrID methodID,
-	void* result_buffer,
-	std::span<const TypeID> argTypeIDs,
-	ArgPtrBuffer argptr_buffer) const
-{
-	auto deref_prop = GetDereferenceProperty(obj.GetID());
-	switch (deref_prop)
+	TypeID rawTypeID;
+	switch (GetConstReferenceMode(typeID))
 	{
-	case Ubpa::UDRefl::DereferenceProperty::Variable:
-		return Invoke(Dereference(obj), methodID, result_buffer, argTypeIDs, argptr_buffer);
-	case Ubpa::UDRefl::DereferenceProperty::Const:
-		return Invoke(DereferenceAsConst(obj), methodID, result_buffer, argTypeIDs, argptr_buffer);
+	case ConstReferenceMode::Left: [[fallthrough]];
+	case ConstReferenceMode::Right:
+		rawTypeID = RemoveReference(typeID);
+		break;
+	case ConstReferenceMode::Const:
+		rawTypeID = RemoveConst(typeID);
+		break;
+	case ConstReferenceMode::ConstLeft: [[fallthrough]];
+	case ConstReferenceMode::ConstRight:
+		rawTypeID = RemoveConstReference(typeID);
+		break;
+	case ConstReferenceMode::None:
 	default:
+		rawTypeID = typeID;
 		break;
 	}
 
-	if (auto priority_rst = details::Invoke(true, &temporary_resource, obj, methodID, result_buffer, argTypeIDs, argptr_buffer))
+	if(auto priority_rst = details::Invoke(true, &temporary_resource, rawTypeID, methodID, result_buffer, argTypeIDs, argptr_buffer))
 		return priority_rst;
 
-	return details::Invoke(false, &temporary_resource, obj, methodID, result_buffer, argTypeIDs, argptr_buffer);
+	return details::Invoke(false, &temporary_resource, rawTypeID, methodID, result_buffer, argTypeIDs, argptr_buffer);
 }
 
 InvokeResult ReflMngr::Invoke(
@@ -1834,21 +1663,35 @@ InvokeResult ReflMngr::Invoke(
 	std::span<const TypeID> argTypeIDs,
 	ArgPtrBuffer argptr_buffer) const
 {
-	auto deref_prop = GetDereferenceProperty(obj.GetID());
-	switch (deref_prop)
+	ObjectPtr rawObj;
+	bool is_const;
+	switch (GetConstReferenceMode(obj.GetTypeID()))
 	{
-	case Ubpa::UDRefl::DereferenceProperty::Variable:
-		return Invoke(Dereference(obj), methodID, result_buffer, argTypeIDs, argptr_buffer);
-	case Ubpa::UDRefl::DereferenceProperty::Const:
-		return Invoke(DereferenceAsConst(obj), methodID, result_buffer, argTypeIDs, argptr_buffer);
+	case ConstReferenceMode::Left: [[fallthrough]];
+	case ConstReferenceMode::Right:
+		rawObj = obj.RemoveReference();
+		is_const = false;
+		break;
+	case ConstReferenceMode::Const:
+		rawObj = obj.RemoveConst();
+		is_const = true;
+		break;
+	case ConstReferenceMode::ConstLeft: [[fallthrough]];
+	case ConstReferenceMode::ConstRight:
+		rawObj = obj.RemoveConstReference();
+		is_const = true;
+		break;
+	case ConstReferenceMode::None:
 	default:
+		rawObj = obj;
+		is_const = false;
 		break;
 	}
 
-	if (auto priority_rst = details::Invoke(true, &temporary_resource, obj, methodID, result_buffer, argTypeIDs, argptr_buffer))
+	if (auto priority_rst = details::Invoke(true, &temporary_resource, rawObj, is_const, methodID, result_buffer, argTypeIDs, argptr_buffer))
 		return priority_rst;
 
-	return details::Invoke(false, &temporary_resource, obj, methodID, result_buffer, argTypeIDs, argptr_buffer);
+	return details::Invoke(false, &temporary_resource, rawObj, is_const, methodID, result_buffer, argTypeIDs, argptr_buffer);
 }
 
 SharedObject ReflMngr::MInvoke(
@@ -1859,38 +1702,31 @@ SharedObject ReflMngr::MInvoke(
 	std::pmr::memory_resource* rst_rsrc) const
 {
 	assert(rst_rsrc);
-	if (GetDereferenceProperty(typeID) != DereferenceProperty::NotReference)
-		return MInvoke(Dereference(typeID), methodID, argTypeIDs, argptr_buffer, rst_rsrc);
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, typeID, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
-		return priority_rst;
-
-	return details::MInvoke(false, &temporary_resource, typeID, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
-}
-
-SharedObject ReflMngr::MInvoke(
-	ConstObjectPtr obj,
-	StrID methodID,
-	std::span<const TypeID> argTypeIDs,
-	ArgPtrBuffer argptr_buffer,
-	std::pmr::memory_resource* rst_rsrc) const
-{
-	assert(rst_rsrc);
-	auto deref_prop = GetDereferenceProperty(obj.GetID());
-	switch (deref_prop)
+	TypeID rawTypeID;
+	switch (GetConstReferenceMode(typeID))
 	{
-	case Ubpa::UDRefl::DereferenceProperty::Variable:
-		return MInvoke(Dereference(obj), methodID, argTypeIDs, argptr_buffer, rst_rsrc);
-	case Ubpa::UDRefl::DereferenceProperty::Const:
-		return MInvoke(DereferenceAsConst(obj), methodID, argTypeIDs, argptr_buffer, rst_rsrc);
+	case ConstReferenceMode::Left: [[fallthrough]];
+	case ConstReferenceMode::Right:
+		rawTypeID = RemoveReference(typeID);
+		break;
+	case ConstReferenceMode::Const:
+		rawTypeID = RemoveConst(typeID);
+		break;
+	case ConstReferenceMode::ConstLeft: [[fallthrough]];
+	case ConstReferenceMode::ConstRight:
+		rawTypeID = RemoveConstReference(typeID);
+		break;
+	case ConstReferenceMode::None:
 	default:
+		rawTypeID = typeID;
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, obj, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawTypeID, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, obj, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
+	return details::MInvoke(false, &temporary_resource, rawTypeID, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
 }
 
 SharedObject ReflMngr::MInvoke(
@@ -1901,21 +1737,36 @@ SharedObject ReflMngr::MInvoke(
 	std::pmr::memory_resource* rst_rsrc) const
 {
 	assert(rst_rsrc);
-	auto deref_prop = GetDereferenceProperty(obj.GetID());
-	switch (deref_prop)
+
+	ObjectPtr rawObj;
+	bool is_const;
+	switch (GetConstReferenceMode(obj.GetTypeID()))
 	{
-	case Ubpa::UDRefl::DereferenceProperty::Variable:
-		return MInvoke(Dereference(obj), methodID, argTypeIDs, argptr_buffer, rst_rsrc);
-	case Ubpa::UDRefl::DereferenceProperty::Const:
-		return MInvoke(DereferenceAsConst(obj), methodID, argTypeIDs, argptr_buffer, rst_rsrc);
+	case ConstReferenceMode::Left: [[fallthrough]];
+	case ConstReferenceMode::Right:
+		rawObj = obj.RemoveReference();
+		is_const = false;
+		break;
+	case ConstReferenceMode::Const:
+		rawObj = obj.RemoveConst();
+		is_const = true;
+		break;
+	case ConstReferenceMode::ConstLeft: [[fallthrough]];
+	case ConstReferenceMode::ConstRight:
+		rawObj = obj.RemoveConstReference();
+		is_const = true;
+		break;
+	case ConstReferenceMode::None:
 	default:
+		rawObj = obj;
+		is_const = false;
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, obj, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, is_const, methodID, argTypeIDs, argptr_buffer, rst_rsrc); priority_rst.Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, obj, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
+	return details::MInvoke(false, &temporary_resource, rawObj, is_const, methodID, argTypeIDs, argptr_buffer, rst_rsrc);
 }
 
 ObjectPtr ReflMngr::NonArgCopyMNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
@@ -1958,22 +1809,22 @@ ObjectPtr ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, std::sp
 	return obj;
 }
 
-bool ReflMngr::MDelete(ConstObjectPtr obj, std::pmr::memory_resource* rsrc) const {
+bool ReflMngr::MDelete(ObjectPtr obj, std::pmr::memory_resource* rsrc) const {
 	assert(rsrc);
 
 	bool dtor_success = Destruct(obj);
 	if (!dtor_success)
 		return false;
 
-	const auto& typeinfo = typeinfos.at(obj.GetID());
+	const auto& typeinfo = typeinfos.at(obj.GetTypeID());
 
-	rsrc->deallocate(ConstCast(obj).GetPtr(), typeinfo.size, typeinfo.alignment);
+	rsrc->deallocate(obj.GetPtr(), typeinfo.size, typeinfo.alignment);
 
 	return true;
 }
 
 bool ReflMngr::IsNonArgConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const {
-	assert(GetDereferenceProperty(typeID) == DereferenceProperty::NotReference);
+	assert(GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 
 	auto target = typeinfos.find(typeID);
 	if (target == typeinfos.end())
@@ -1990,7 +1841,7 @@ bool ReflMngr::IsNonArgConstructible(TypeID typeID, std::span<const TypeID> argT
 }
 
 bool ReflMngr::IsConstructible(TypeID typeID, std::span<const TypeID> argTypeIDs) const {
-	assert(GetDereferenceProperty(typeID) == DereferenceProperty::NotReference);
+	assert(GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 
 	auto target = typeinfos.find(typeID);
 	if (target == typeinfos.end())
@@ -2017,7 +1868,7 @@ bool ReflMngr::IsMoveConstructible(TypeID typeID) const {
 }
 
 bool ReflMngr::IsDestructible(TypeID typeID) const {
-	assert(GetDereferenceProperty(typeID) == DereferenceProperty::NotReference);
+	assert(GetConstReferenceMode(typeID) == ConstReferenceMode::None);
 
 	auto target = typeinfos.find(typeID);
 	if (target == typeinfos.end())
@@ -2036,12 +1887,12 @@ bool ReflMngr::IsDestructible(TypeID typeID) const {
 }
 
 bool ReflMngr::NonArgConstruct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+	assert(GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
 
 	if (!obj.Valid())
 		return false;
 
-	auto target = typeinfos.find(obj.GetID());
+	auto target = typeinfos.find(obj.GetTypeID());
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
@@ -2060,12 +1911,12 @@ bool ReflMngr::NonArgConstruct(ObjectPtr obj, std::span<const TypeID> argTypeIDs
 }
 
 bool ReflMngr::Construct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
-	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+	assert(GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
 
 	if (!obj.Valid())
 		return false;
 
-	auto target = typeinfos.find(obj.GetID());
+	auto target = typeinfos.find(obj.GetTypeID());
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
@@ -2087,13 +1938,13 @@ bool ReflMngr::Construct(ObjectPtr obj, std::span<const TypeID> argTypeIDs, ArgP
 	return false;
 }
 
-bool ReflMngr::Destruct(ConstObjectPtr obj) const {
-	assert(GetDereferenceProperty(obj.GetID()) == DereferenceProperty::NotReference);
+bool ReflMngr::Destruct(ObjectPtr obj) const {
+	assert(GetConstReferenceMode(obj.GetTypeID()) == ConstReferenceMode::None);
 
 	if (!obj.Valid())
 		return false;
 
-	auto target = typeinfos.find(obj.GetID());
+	auto target = typeinfos.find(obj.GetTypeID());
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
@@ -2113,12 +1964,12 @@ bool ReflMngr::Destruct(ConstObjectPtr obj) const {
 
 void ReflMngr::ForEachTypeID(TypeID typeID, const std::function<bool(TypeID)>& func) const {
 	std::set<TypeID> visitedVBs;
-	details::ForEachTypeID(Dereference(typeID), func, visitedVBs);
+	details::ForEachTypeID(RemoveReference(typeID), func, visitedVBs);
 }
 
 void ReflMngr::ForEachType(TypeID typeID, const std::function<bool(TypeRef)>& func) const {
 	std::set<TypeID> visitedVBs;
-	details::ForEachTypeInfo(Dereference(typeID), func, visitedVBs);
+	details::ForEachTypeInfo(RemoveReference(typeID), func, visitedVBs);
 }
 
 void ReflMngr::ForEachField(
@@ -2147,77 +1998,54 @@ void ReflMngr::ForEachMethod(
 	});
 }
 
-void ReflMngr::ForEachRWVar(
+void ReflMngr::ForEachVar(
 	TypeID typeID,
 	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	details::ForEachRWVar(Dereference(typeID), func, visitedVBs);
+	details::ForEachVar(RemoveConstReference(typeID), func, visitedVBs);
 }
 
-void ReflMngr::ForEachRVar(
-	TypeID typeID,
-	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
-{
-	std::set<TypeID> visitedVBs;
-	details::ForEachRVar(Dereference(typeID), func, visitedVBs);
-}
-
-void ReflMngr::ForEachRWVar(
+void ReflMngr::ForEachVar(
 	ObjectPtr obj,
 	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
 {
 	std::set<TypeID> visitedVBs;
-	switch (GetDereferenceProperty(obj.GetID()))
+	switch (GetConstReferenceMode(obj.GetTypeID()))
 	{
-	case Ubpa::UDRefl::DereferenceProperty::NotReference:
-		details::ForEachRWVar(obj, func, visitedVBs);
+	case ConstReferenceMode::Left: [[fallthrough]];
+	case ConstReferenceMode::Right:
+		details::ForEachVar(obj.RemoveReference(), [&func](TypeRef t, FieldRef f, ObjectPtr o) {
+			return func(t, f, o.AddRValueReference());
+		}, visitedVBs);
 		break;
-	case Ubpa::UDRefl::DereferenceProperty::Variable:
-		details::ForEachRWVar(Dereference(obj), func, visitedVBs);
+	case ConstReferenceMode::Const:
+		details::ForEachVar(obj.RemoveConst(), [&func](TypeRef t, FieldRef f, ObjectPtr o) {
+			return func(t, f, o.AddConst());
+		}, visitedVBs);
 		break;
-	case Ubpa::UDRefl::DereferenceProperty::Const:
+	case ConstReferenceMode::ConstLeft:
+		details::ForEachVar(obj.RemoveConstReference(), [&func](TypeRef t, FieldRef f, ObjectPtr o) {
+			return func(t, f, o.AddConstLValueReference());
+		}, visitedVBs);
+		break;
+	case ConstReferenceMode::ConstRight:
+		details::ForEachVar(obj.RemoveConstReference(), [&func](TypeRef t, FieldRef f, ObjectPtr o) {
+			return func(t, f, o.AddConstRValueReference());
+		}, visitedVBs);
+		break;
+	case ConstReferenceMode::None:
 	default:
+		details::ForEachVar(obj, func, visitedVBs);
 		break;
 	}
 }
 
-void ReflMngr::ForEachRVar(
-	ConstObjectPtr obj,
-	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
-{
-	std::set<TypeID> visitedVBs;
-	switch (GetDereferenceProperty(obj.GetID()))
-	{
-	case Ubpa::UDRefl::DereferenceProperty::NotReference:
-		details::ForEachRVar(obj, func, visitedVBs);
-		break;
-	case Ubpa::UDRefl::DereferenceProperty::Const:
-	case Ubpa::UDRefl::DereferenceProperty::Variable:
-		details::ForEachRVar(DereferenceAsConst(obj), func, visitedVBs);
-		break;
-	default:
-		break;
-	}
-}
-
-void ReflMngr::ForEachRWOwnedVar(
+void ReflMngr::ForEachOwnedVar(
 	ObjectPtr obj,
 	const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const
 {
-	ForEachRWVar(obj, [func](TypeRef type, FieldRef field, ObjectPtr obj) {
-		if (field.info.fieldptr.IsUnowned())
-			return true;
-
-		return func(type, field, obj);
-	});
-}
-
-void ReflMngr::ForEachROwnedVar(
-	ConstObjectPtr obj,
-	const std::function<bool(TypeRef, FieldRef, ConstObjectPtr)>& func) const
-{
-	ForEachRVar(obj, [func](TypeRef type, FieldRef field, ConstObjectPtr obj) {
+	ForEachVar(obj, [func](TypeRef type, FieldRef field, ObjectPtr obj) {
 		if (field.info.fieldptr.IsUnowned())
 			return true;
 
@@ -2279,82 +2107,45 @@ std::vector<MethodRef> ReflMngr::GetMethods(TypeID typeID) {
 	return rst;
 }
 
-std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(TypeID typeID) {
+std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldVars(TypeID typeID) {
 	std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst;
-	ForEachRWVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+	ForEachVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
 	});
 	return rst;
 }
 
-std::vector<ObjectPtr> ReflMngr::GetRWVars(TypeID typeID) {
+std::vector<ObjectPtr> ReflMngr::GetVars(TypeID typeID) {
 	std::vector<ObjectPtr> rst;
-	ForEachRWVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+	ForEachVar(typeID, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.push_back(var);
 		return true;
 	});
 	return rst;
 }
 
-std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(TypeID typeID) {
-	std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst;
-	ForEachRVar(typeID, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
-		rst.emplace_back(std::tuple{ type, field, var });
-		return true;
-	});
-	return rst;
-}
-
-std::vector<ConstObjectPtr> ReflMngr::GetRVars(TypeID typeID) {
-	std::vector<ConstObjectPtr> rst;
-	ForEachRVar(typeID, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
-		rst.push_back(var);
-		return true;
-	});
-	return rst;
-}
-
-std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWVars(ObjectPtr obj) {
+std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldVars(ObjectPtr obj) {
 	std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst;
-	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+	ForEachVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.emplace_back(std::tuple{ type, field, var });
 		return true;
 	});
 	return rst;
 }
 
-std::vector<ObjectPtr> ReflMngr::GetRWVars(ObjectPtr obj) {
+std::vector<ObjectPtr> ReflMngr::GetVars(ObjectPtr obj) {
 	std::vector<ObjectPtr> rst;
-	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+	ForEachVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		rst.push_back(var);
 		return true;
 	});
 	return rst;
 }
 
-
-std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldRVars(ConstObjectPtr obj) {
-	std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst;
-	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
-		rst.emplace_back(std::tuple{ type, field, var });
-		return true;
-	});
-	return rst;
-}
-
-std::vector<ConstObjectPtr> ReflMngr::GetRVars(ConstObjectPtr obj) {
-	std::vector<ConstObjectPtr> rst;
-	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
-		rst.push_back(var);
-		return true;
-	});
-	return rst;
-}
-
-std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWOwnedVars(ObjectPtr obj) {
+std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldOwnedVars(ObjectPtr obj) {
 	std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> rst;
-	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+	ForEachVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		if (field.info.fieldptr.IsOwned())
 			rst.emplace_back(std::tuple{ type, field, var });
 
@@ -2363,31 +2154,11 @@ std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> ReflMngr::GetTypeFieldRWOw
 	return rst;
 }
 
-std::vector<ObjectPtr> ReflMngr::GetRWOwnedVars(ObjectPtr obj) {
+std::vector<ObjectPtr> ReflMngr::GetOwnedVars(ObjectPtr obj) {
 	std::vector<ObjectPtr> rst;
-	ForEachRWVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
+	ForEachVar(obj, [&rst](TypeRef type, FieldRef field, ObjectPtr var) {
 		if (field.info.fieldptr.IsOwned())
 			rst.push_back(var);
-		return true;
-	});
-	return rst;
-}
-
-std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> ReflMngr::GetTypeFieldROwnedVars(ConstObjectPtr obj) {
-	std::vector<std::tuple<TypeRef, FieldRef, ConstObjectPtr>> rst;
-	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
-		if (field.info.fieldptr.IsOwned())
-			rst.emplace_back(std::tuple{ type, field, var });
-		return true;
-	});
-	return rst;
-}
-
-std::vector<ConstObjectPtr> ReflMngr::GetROwnedVars(ConstObjectPtr obj) {
-	std::vector<ConstObjectPtr> rst;
-	ForEachRVar(obj, [&rst](TypeRef type, FieldRef field, ConstObjectPtr var) {
-		if (field.info.fieldptr.IsOwned())
-			rst.emplace_back(var);
 		return true;
 	});
 	return rst;
@@ -2441,9 +2212,9 @@ std::optional<MethodRef> ReflMngr::FindMethod(TypeID typeID, const std::function
 	return rst;
 }
 
-ObjectPtr ReflMngr::FindRWVar(TypeID typeID, const std::function<bool(ObjectPtr)>& func) const {
+ObjectPtr ReflMngr::FindVar(TypeID typeID, const std::function<bool(ObjectPtr)>& func) const {
 	ObjectPtr rst;
-	ForEachRWVar(typeID, [&rst, func](TypeRef type, FieldRef field, ObjectPtr obj) {
+	ForEachVar(typeID, [&rst, func](TypeRef type, FieldRef field, ObjectPtr obj) {
 		if (!func(obj))
 			return true;
 
@@ -2453,21 +2224,9 @@ ObjectPtr ReflMngr::FindRWVar(TypeID typeID, const std::function<bool(ObjectPtr)
 	return rst;
 }
 
-ConstObjectPtr ReflMngr::FindRVar(TypeID typeID, const std::function<bool(ConstObjectPtr)>& func) const {
-	ConstObjectPtr rst;
-	ForEachRVar(typeID, [&rst, func](TypeRef type, FieldRef field, ConstObjectPtr obj) {
-		if (!func(obj))
-			return true;
-
-		rst = obj;
-		return false; // stop
-	});
-	return rst;
-}
-
-ObjectPtr ReflMngr::FindRWVar(ObjectPtr obj, const std::function<bool(ObjectPtr)>& func) const {
+ObjectPtr ReflMngr::FindVar(ObjectPtr obj, const std::function<bool(ObjectPtr)>& func) const {
 	ObjectPtr rst;
-	ForEachRWVar(obj, [&rst, func](TypeRef type, FieldRef field, ObjectPtr obj) {
+	ForEachVar(obj, [&rst, func](TypeRef type, FieldRef field, ObjectPtr obj) {
 		if (!func(obj))
 			return true;
 
@@ -2477,21 +2236,9 @@ ObjectPtr ReflMngr::FindRWVar(ObjectPtr obj, const std::function<bool(ObjectPtr)
 	return rst;
 }
 
-ConstObjectPtr ReflMngr::FindRVar(ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const {
-	ConstObjectPtr rst;
-	ForEachRVar(obj, [&rst, func](TypeRef type, FieldRef field, ConstObjectPtr obj) {
-		if (!func(obj))
-			return true;
-
-		rst = obj;
-		return false; // stop
-	});
-	return rst;
-}
-
-ObjectPtr ReflMngr::FindRWOwnedVar(ObjectPtr obj, const std::function<bool(ObjectPtr)>& func) const {
+ObjectPtr ReflMngr::FindOwnedVar(ObjectPtr obj, const std::function<bool(ObjectPtr)>& func) const {
 	ObjectPtr rst;
-	ForEachRWVar(obj, [&rst, func](TypeRef type, FieldRef field, ObjectPtr obj) {
+	ForEachVar(obj, [&rst, func](TypeRef type, FieldRef field, ObjectPtr obj) {
 		if (field.info.fieldptr.IsUnowned() || !func(obj))
 			return true;
 
@@ -2501,80 +2248,80 @@ ObjectPtr ReflMngr::FindRWOwnedVar(ObjectPtr obj, const std::function<bool(Objec
 	return rst;
 }
 
-ConstObjectPtr ReflMngr::FindROwnedVar(ConstObjectPtr obj, const std::function<bool(ConstObjectPtr)>& func) const {
-	ConstObjectPtr rst;
-	ForEachRVar(obj, [&rst, func](TypeRef type, FieldRef field, ConstObjectPtr obj) {
-		if (field.info.fieldptr.IsUnowned() || !func(obj))
-			return true;
-
-		rst = obj;
-		return false; // stop
-	});
-	return rst;
+bool ReflMngr::IsConst(TypeID ID) const {
+	auto name = tregistry.Nameof(ID);
+	return type_name_is_const(name);
 }
 
-DereferenceProperty ReflMngr::GetDereferenceProperty(TypeID ID) const {
+bool ReflMngr::IsReadOnly(TypeID ID) const {
+	auto name = tregistry.Nameof(ID);
+	return type_name_is_const(type_name_remove_reference(name));
+}
+
+ConstReferenceMode ReflMngr::GetConstReferenceMode(TypeID ID) const {
+	auto name = tregistry.Nameof(ID);
+	if (type_name_is_lvalue_reference(name)) {
+		if (type_name_is_const(type_name_remove_reference(name)))
+			return ConstReferenceMode::ConstLeft;
+		else
+			return ConstReferenceMode::Left;
+	}
+	else if (type_name_is_rvalue_reference(name)) {
+		if (type_name_is_const(type_name_remove_reference(name)))
+			return ConstReferenceMode::ConstRight;
+		else
+			return ConstReferenceMode::Right;
+	}
+	else {
+		if (type_name_is_const(name))
+			return ConstReferenceMode::Const;
+		else
+			return ConstReferenceMode::None;
+	}
+}
+
+bool ReflMngr::IsReference(TypeID ID) const {
+	auto name = tregistry.Nameof(ID);
+	return type_name_is_reference(name);
+}
+
+TypeID ReflMngr::RemoveConst(TypeID ID) const {
 	auto name = tregistry.Nameof(ID);
 
-	if (!type_name_is_reference(name))
-		return DereferenceProperty::NotReference;
+	if (!type_name_is_const(name))
+		return ID;
 
-	auto unref_name = type_name_remove_reference(name);
-
-	return type_name_is_const(unref_name) ? DereferenceProperty::Const : DereferenceProperty::Variable;
+	return type_name_remove_const(name);
 }
 
-TypeID ReflMngr::Dereference(TypeID ID) const {
+TypeID ReflMngr::RemoveReference(TypeID ID) const {
 	auto name = tregistry.Nameof(ID);
 
 	if (!type_name_is_reference(name))
 		return ID;
 
-	std::string_view ele_name = type_name_remove_reference(name);
-
-	auto rst_name = type_name_remove_cv(ele_name);
-
-	return rst_name;
+	return type_name_remove_reference(name);
 }
 
-ObjectPtr ReflMngr::Dereference(ConstObjectPtr ref_obj) const {
-	if (!ref_obj.GetPtr())
-		return nullptr;
+TypeID ReflMngr::RemoveConstReference(TypeID ID) const {
+	auto name = tregistry.Nameof(ID);
 
-	auto name = tregistry.Nameof(ref_obj.GetID());
+	if (!type_name_is_reference(name) && !type_name_is_const(name))
+		return ID;
 
-	if (!type_name_is_reference(name))
-		return nullptr;
-
-	std::string_view rst_name = type_name_remove_reference(name);
-
-	if (type_name_is_const(rst_name))
-		return nullptr;
-
-	assert(!type_name_is_volatile(rst_name));
-
-	return { TypeID{ rst_name }, const_cast<void*>(ref_obj.GetPtr()) };
+	return type_name_remove_cvref(name);
 }
 
-ConstObjectPtr ReflMngr::DereferenceAsConst(ConstObjectPtr ref_obj) const {
-	if (!ref_obj.Valid())
-		return nullptr;
-
-	auto name = tregistry.Nameof(ref_obj.GetID());
-
-	if (!type_name_is_reference(name))
-		return ref_obj;
-
-	std::string_view ele_name = type_name_remove_reference(name);
-
-	auto rst_name = type_name_remove_const(ele_name);
-	assert(!type_name_is_volatile(rst_name));
-
-	return { TypeID{ rst_name }, ref_obj.GetPtr() };
+TypeID ReflMngr::AddConst(TypeID ID) {
+	return tregistry.RegisterAddConst(ID);
 }
 
 TypeID ReflMngr::AddLValueReference(TypeID ID) {
 	return tregistry.RegisterAddLValueReference(ID);
+}
+
+TypeID ReflMngr::AddLValueReferenceWeak(TypeID ID) {
+	return tregistry.RegisterAddLValueReferenceWeak(ID);
 }
 
 TypeID ReflMngr::AddRValueReference(TypeID ID) {
@@ -2587,38 +2334,6 @@ TypeID ReflMngr::AddConstLValueReference(TypeID ID) {
 
 TypeID ReflMngr::AddConstRValueReference(TypeID ID) {
 	return tregistry.RegisterAddConstRValueReference(ID);
-}
-
-ObjectPtr ReflMngr::AddLValueReference(ObjectPtr obj) {
-	TypeID newID = tregistry.RegisterAddLValueReference(obj.GetID());
-	if (!newID.Valid())
-		return {};
-
-	return { newID, obj.GetPtr() };
-}
-
-ObjectPtr ReflMngr::AddRValueReference(ObjectPtr obj) {
-	TypeID newID = tregistry.RegisterAddRValueReference(obj.GetID());
-	if (!newID.Valid())
-		return {};
-
-	return { newID, obj.GetPtr() };
-}
-
-ConstObjectPtr ReflMngr::AddConstLValueReference(ConstObjectPtr obj) {
-	TypeID newID = tregistry.RegisterAddConstLValueReference(obj.GetID());
-	if (!newID.Valid())
-		return {};
-
-	return { newID, const_cast<void*>(obj.GetPtr()) };
-}
-
-ConstObjectPtr ReflMngr::AddConstRValueReference(ConstObjectPtr obj) {
-	TypeID newID = tregistry.RegisterAddConstRValueReference(obj.GetID());
-	if (!newID.Valid())
-		return {};
-
-	return { newID, const_cast<void*>(obj.GetPtr()) };
 }
 
 bool ReflMngr::ContainsBase(TypeID typeID, TypeID baseID) const {
@@ -2645,24 +2360,6 @@ bool ReflMngr::ContainsField(TypeID typeID, StrID fieldID) const {
 
 	const auto& info = target->second;
 	if (info.fieldinfos.contains(fieldID))
-		return true;
-
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsField(ID, fieldID);
-		if (found)
-			return true;
-	}
-	return false;
-}
-
-bool ReflMngr::ContainsRWField(TypeID typeID, StrID fieldID) const {
-	auto target = typeinfos.find(typeID);
-	if (target == typeinfos.end())
-		return false;
-
-	const auto& info = target->second;
-	auto ftarget = info.fieldinfos.find(fieldID);
-	if (ftarget != info.fieldinfos.end() && ftarget->second.fieldptr.IsVariable())
 		return true;
 
 	for (const auto& [ID, baseinfo] : info.baseinfos) {

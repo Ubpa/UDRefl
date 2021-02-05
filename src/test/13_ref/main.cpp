@@ -77,22 +77,22 @@ int main() {
 	Data f = 1.f;
 	Data g = 2.f;
 	auto a = ReflMngr::Instance().MakeShared(TypeID_of<A>, f, std::move(g));
-	std::cout << "a.rref: " << a->RVar("rref").RVar("value") << std::endl;
-	std::cout << "a.lref: " << a->RVar("lref").RVar("value") << std::endl;
+	std::cout << "a.rref: " << a->Var("rref").Var("value") << std::endl;
+	std::cout << "a.lref: " << a->Var("lref").Var("value") << std::endl;
 
-	a->RWVar("lref").RWVar("value") = 2.f;
-	a->RWVar("rref").RWVar("value") = 3.f;
-	std::cout << "a.lref: " << a->RVar("lref").RVar("value") << std::endl;
-	std::cout << "a.rref: " << a->RVar("rref").RVar("value") << std::endl;
+	a->Var("lref").Var("value") = 2.f;
+	a->Var("rref").Var("value") = 3.f;
+	std::cout << "a.lref: " << a->Var("lref").Var("value") << std::endl;
+	std::cout << "a.rref: " << a->Var("rref").Var("value") << std::endl;
 	std::cout << "f: " << f.value << std::endl;
 	std::cout << "g: " << g.value << std::endl;
 
-	std::cout << "a.get_r(): " << a->DMInvoke("get_r")->RVar("value") << std::endl;
-	std::cout << "a.get_c(): " << a->DMInvoke("get_r")->RVar("value") << std::endl;
+	std::cout << "a.get_r(): " << a->DMInvoke("get_r")->Var("value") << std::endl;
+	std::cout << "a.get_c(): " << a->DMInvoke("get_r")->Var("value") << std::endl;
 
 	a->Invoke<void>("set", g);
 	a->Invoke<void>("set_r", std::move(g));
-	std::cout << "a.lref: " << a->DMInvoke("get_r")->RVar("value") << std::endl;
-	std::cout << "a.get_c(): " << a->DMInvoke("get_c")->RVar("value") << std::endl;
+	std::cout << "a.lref: " << a->DMInvoke("get_r")->Var("value") << std::endl;
+	std::cout << "a.get_c(): " << a->DMInvoke("get_c")->Var("value") << std::endl;
 	return 0;
 }

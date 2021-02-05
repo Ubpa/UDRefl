@@ -30,13 +30,13 @@ int main() {
 	}
 
 	auto d = ReflMngr::Instance().MakeShared(TypeID_of<D>);
-	d->RWVar(TypeID_of<B>, "a") = 1.f;
-	d->RWVar(TypeID_of<C>, "a") = 2.f;
-	d->RWVar("b") = 3.f;
-	d->RWVar("c") = 4.f;
-	d->RWVar("d") = 5.f;
+	d->Var(TypeID_of<B>, "a") = 1.f;
+	d->Var(TypeID_of<C>, "a") = 2.f;
+	d->Var("b") = 3.f;
+	d->Var("c") = 4.f;
+	d->Var("d") = 5.f;
 
-	for (const auto& [type, field, var] : d->GetTypeFieldRVars()) {
+	for (const auto& [type, field, var] : d->GetTypeFieldVars()) {
 		std::cout
 			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 			<< ": " << var

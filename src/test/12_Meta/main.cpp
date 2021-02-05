@@ -72,7 +72,7 @@ int main() {
 	SharedObject w6 = v + Vec{ 1.f,2.f };
 
 	for (const auto& w : std::array{ w0,w1,w2,w3,w4,w5,w6 }) {
-		for (const auto& [type, field, var] : w->GetTypeFieldRVars()) {
+		for (const auto& [type, field, var] : w->GetTypeFieldVars()) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 				<< ": " << var

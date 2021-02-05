@@ -32,13 +32,13 @@ int main() {
 
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
 
-	v->RWVar("x") = 3.f;
-	v->RWVar("y") = 4.f;
+	v->Var("x") = 3.f;
+	v->Var("y") = 4.f;
 
 	for (auto method : ReflMngr::Instance().GetMethods(TypeID_of<Vec>))
 		std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
 
-	for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
+	for (const auto& [type, field, var] : v->GetTypeFieldVars()) {
 		std::cout
 			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 			<< ": " << var
@@ -51,7 +51,7 @@ int main() {
 
 	std::array arr_w = { w0,w1,w2 };
 	for (auto w : arr_w) {
-		for (const auto& [type, field, var] : w->GetTypeFieldRVars()) {
+		for (const auto& [type, field, var] : w->GetTypeFieldVars()) {
 			std::cout
 				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
 				<< ": " << var

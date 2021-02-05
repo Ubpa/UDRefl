@@ -12,11 +12,11 @@ int main() {
 	SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<std::tuple<int, float, double>>);
 	std::cout << v->TypeName() << std::endl;
 
-	v->RWVar("__0") = 1;
-	v->RWVar("__1") = 2;
-	v->RWVar("__2") = 3;
+	v->Var("__0") = 1;
+	v->Var("__1") = 2;
+	v->Var("__2") = 3;
 
-	std::cout << "__0: " << v->RVar("__0") << std::endl;
+	std::cout << "__0: " << v->Var("__0") << std::endl;
 	std::cout << "__1: " << v->tuple_get(1) << std::endl;
 	std::cout << "__2: " << v->tuple_get(2) << std::endl;
 	
@@ -26,7 +26,7 @@ int main() {
 	for (auto method : ReflMngr::Instance().GetMethods(TypeID_of<std::tuple<int, float, double>>))
 		std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
 
-	for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
+	for (const auto& [type, field, var] : v->GetTypeFieldVars()) {
 		std::cout
 			<< ReflMngr::Instance().tregistry.Nameof(field.info.fieldptr.GetValueID()) << " "
 			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
