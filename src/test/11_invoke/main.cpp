@@ -24,36 +24,36 @@ struct Vec {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterType<Vec>();
-	ReflMngr::Instance().AddField<&Vec::x>("x");
-	ReflMngr::Instance().AddField<&Vec::y>("y");
-	ReflMngr::Instance().AddMethod<&Vec::norm>("norm");
-	ReflMngr::Instance().AddMethod<&Vec::copy>("copy");
+	Mngr.RegisterType<Vec>();
+	Mngr.AddField<&Vec::x>("x");
+	Mngr.AddField<&Vec::y>("y");
+	Mngr.AddMethod<&Vec::norm>("norm");
+	Mngr.AddMethod<&Vec::copy>("copy");
 
-	SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
+	SharedObject v = Mngr.MakeShared(TypeID_of<Vec>);
 
-	v->Var("x") = 3.f;
-	v->Var("y") = 4.f;
+	v.Var("x") = 3.f;
+	v.Var("y") = 4.f;
 
-	for (auto method : ReflMngr::Instance().GetMethods(TypeID_of<Vec>))
-		std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
+	for (auto method : Mngr.GetMethods(TypeID_of<Vec>))
+		std::cout << Mngr.nregistry.Nameof(method.ID) << std::endl;
 
-	for (const auto& [type, field, var] : v->GetTypeFieldVars()) {
+	for (const auto& [type, field, var] : v.GetTypeFieldVars()) {
 		std::cout
-			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< Mngr.nregistry.Nameof(field.ID)
 			<< ": " << var
 			<< std::endl;
 	}
 
-	auto w0 = v->MInvoke(StrIDRegistry::MetaID::operator_add, std::pmr::get_default_resource(), v.As<Vec>());
-	auto w1 = v->DMInvoke(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
-	auto w2 = v->ADMInvoke(StrIDRegistry::MetaID::operator_add, v);
+	auto w0 = v.MInvoke(StrIDRegistry::MetaID::operator_add, std::pmr::get_default_resource(), v.As<Vec>());
+	auto w1 = v.DMInvoke(StrIDRegistry::MetaID::operator_add, v.As<Vec>());
+	auto w2 = v.ADMInvoke(StrIDRegistry::MetaID::operator_add, v);
 
 	std::array arr_w = { w0,w1,w2 };
 	for (auto w : arr_w) {
-		for (const auto& [type, field, var] : w->GetTypeFieldVars()) {
+		for (const auto& [type, field, var] : w.GetTypeFieldVars()) {
 			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< Mngr.nregistry.Nameof(field.ID)
 				<< ": " << var
 				<< std::endl;
 		}

@@ -13,32 +13,32 @@ struct D : B, C { float d; };
 
 int main() {
 	{ // register
-		ReflMngr::Instance().RegisterType<A>();
-		ReflMngr::Instance().AddField<&A::a>("a");
+		Mngr.RegisterType<A>();
+		Mngr.AddField<&A::a>("a");
 
-		ReflMngr::Instance().RegisterType<B>();
-		ReflMngr::Instance().AddBases<B, A>();
-		ReflMngr::Instance().AddField<&B::b>("b");
+		Mngr.RegisterType<B>();
+		Mngr.AddBases<B, A>();
+		Mngr.AddField<&B::b>("b");
 
-		ReflMngr::Instance().RegisterType<C>();
-		ReflMngr::Instance().AddBases<C, A>();
-		ReflMngr::Instance().AddField<&C::c>("c");
+		Mngr.RegisterType<C>();
+		Mngr.AddBases<C, A>();
+		Mngr.AddField<&C::c>("c");
 
-		ReflMngr::Instance().RegisterType<D>();
-		ReflMngr::Instance().AddBases<D, B, C>();
-		ReflMngr::Instance().AddField<&D::d>("d");
+		Mngr.RegisterType<D>();
+		Mngr.AddBases<D, B, C>();
+		Mngr.AddField<&D::d>("d");
 	}
 
-	auto d = ReflMngr::Instance().MakeShared(TypeID_of<D>);
-	d->Var(TypeID_of<B>, "a") = 1.f;
-	d->Var(TypeID_of<C>, "a") = 2.f;
-	d->Var("b") = 3.f;
-	d->Var("c") = 4.f;
-	d->Var("d") = 5.f;
+	auto d = Mngr.MakeShared(TypeID_of<D>);
+	d.Var(TypeID_of<B>, "a") = 1.f;
+	d.Var(TypeID_of<C>, "a") = 2.f;
+	d.Var("b") = 3.f;
+	d.Var("c") = 4.f;
+	d.Var("d") = 5.f;
 
-	for (const auto& [type, field, var] : d->GetTypeFieldVars()) {
+	for (const auto& [type, field, var] : d.GetTypeFieldVars()) {
 		std::cout
-			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< Mngr.nregistry.Nameof(field.ID)
 			<< ": " << var
 			<< std::endl;
 	}

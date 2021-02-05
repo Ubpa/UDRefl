@@ -19,6 +19,7 @@
 - [x] combine `IsCompatible` and `ConstructedArgumentsGuard` to improve performance
 - [ ] improve return type
   - [ ] `size()` -> `std::size_t` 
-- [ ] `ObjectView` -> `ObjectView` and let `SharedObject : public ObjectView` 
+- [x] `ObjectPtr` -> `ObjectView` and let `SharedObject : public ObjectView` 
 - [ ] `TypeID` -> `TypeName` 
+- [ ] rename invoke
 

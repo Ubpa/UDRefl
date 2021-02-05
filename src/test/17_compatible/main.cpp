@@ -5,7 +5,7 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-struct Object {
+struct Funcs {
 	void f(double) {
 		std::cout << "f(double)" << std::endl;
 	}
@@ -24,22 +24,22 @@ struct Object {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterType<Object>();
-	ReflMngr::Instance().AddMethod<MemFuncOf<void(double)>::get(&Object::f)>("f");
-	ReflMngr::Instance().AddMethod<MemFuncOf<void(std::uint8_t&)>::get(&Object::f)>("f");
-	ReflMngr::Instance().AddMethod<MemFuncOf<void(const std::uint8_t&)>::get(&Object::f)>("f");
-	ReflMngr::Instance().AddMethod<MemFuncOf<void(std::uint8_t&&)>::get(&Object::f)>("f");
-	ReflMngr::Instance().AddMethod<MemFuncOf<void(const std::uint8_t&&)>::get(&Object::f)>("f");
+	Mngr.RegisterType<Funcs>();
+	Mngr.AddMethod<MemFuncOf<void(double)>::get(&Funcs::f)>("f");
+	Mngr.AddMethod<MemFuncOf<void(std::uint8_t&)>::get(&Funcs::f)>("f");
+	Mngr.AddMethod<MemFuncOf<void(const std::uint8_t&)>::get(&Funcs::f)>("f");
+	Mngr.AddMethod<MemFuncOf<void(std::uint8_t&&)>::get(&Funcs::f)>("f");
+	Mngr.AddMethod<MemFuncOf<void(const std::uint8_t&&)>::get(&Funcs::f)>("f");
 
-	SharedObject obj = ReflMngr::Instance().MakeShared(TypeID_of<Object>);
+	SharedObject funcs = Mngr.MakeShared(TypeID_of<Funcs>);
 
 	std::uint8_t i = 1;
 	const std::uint8_t ci = 1;
-	obj->Invoke<void>("f", 1.);
-	obj->Invoke<void>("f", 1.f);
-	obj->Invoke<void>("f", 1);
-	obj->Invoke<void>("f", i);
-	obj->Invoke<void>("f", ci);
-	obj->Invoke<void>("f", std::move(i));
-	obj->Invoke<void>("f", static_cast<const std::uint8_t&&>(ci));
+	funcs.Invoke<void>("f", 1.);
+	funcs.Invoke<void>("f", 1.f);
+	funcs.Invoke<void>("f", 1);
+	funcs.Invoke<void>("f", i);
+	funcs.Invoke<void>("f", ci);
+	funcs.Invoke<void>("f", std::move(i));
+	funcs.Invoke<void>("f", static_cast<const std::uint8_t&&>(ci));
 }

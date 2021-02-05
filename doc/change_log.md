@@ -2,6 +2,11 @@
 
 [TOC]
 
+## 0.8
+
+- 0.8.0
+  - remove `ConstObjectPtr` and `SharedConstObject` 
+
 ## 0.7
 
 - 0.7.3

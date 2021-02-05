@@ -6,71 +6,53 @@
 #include <optional>
 #include <span>
 
-#define OBJECT_PTR_DECLARE_OPERATOR(op, name) \
-template<typename Arg>                        \
+#define OBJECT_VIEW_DECLARE_OPERATOR(op, name) \
+template<typename Arg>                         \
 SharedObject operator op (Arg&& rhs) const
 
-#define OBJECT_PTR_DEFINE_CMP_OPERATOR(op, name)                                      \
+#define OBJECT_VIEW_DEFINE_CMP_OPERATOR(op, name)                                     \
 template<typename Arg>                                                                \
 bool operator op (const Arg& rhs) const {                                             \
     return static_cast<bool>(ADMInvoke(StrIDRegistry::MetaID::operator_##name, rhs)); \
 }
 
-#define OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(op, name)                             \
+#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                            \
 template<typename Arg>                                                             \
-const ObjectPtr& operator op (Arg&& rhs) const {                                   \
+const ObjectView& operator op (Arg&& rhs) const {                                  \
 	AInvoke<void>(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
 	return *this;                                                                  \
 }
 
-#define OBJECT_PTR_DECLARE_CONTAINER(name) \
-template<typename Arg>                     \
+#define OBJECT_VIEW_DECLARE_CONTAINER(name) \
+template<typename Arg>                      \
 SharedObject name (Arg&& rhs) const
 
-#define OBJECT_PTR_DECLARE_CONTAINER_VARS(name) \
-template<typename... Args>                      \
+#define OBJECT_VIEW_DECLARE_CONTAINER_VARS(name) \
+template<typename... Args>                       \
 SharedObject name (Args&&... args) const
-
-#define SHARED_OBJECT_DEFINE_OPERATOR(op)                \
-template<typename Arg>                                   \
-SharedObject operator op (Arg&& rhs) const {             \
-    AsObjectPtr()->operator op (std::forward<Arg>(rhs)); \
-    return *this;                                        \
-}
-
-#define SHARED_OBJECT_DEFINE_CMP_OPERATOR(op) \
-template<typename Arg>                        \
-bool operator op (const Arg& rhs) const {     \
-    return AsObjectPtr()->operator op (rhs);  \
-}
-
-#define SHARED_OBJECT_DEFINE_UNARY_OPERATOR(op) \
-SharedObject operator op () const {             \
-    return AsObjectPtr()->operator op();        \
-}
 
 namespace Ubpa::UDRefl {
 	class SharedObject;
-	class ObjectPtr;
+	class ObjectView;
 
 	template<typename T>
-	struct IsObjectOrPtr;
+	struct IsObjectOrView;
 	template<typename T>
-	constexpr bool IsObjectOrPtr_v = IsObjectOrPtr<T>::value;
+	constexpr bool IsObjectOrView_v = IsObjectOrView<T>::value;
 	template<typename T>
-	concept NonObjectAndPtr = !IsObjectOrPtr<T>::value;
+	concept NonObjectAndView = !IsObjectOrView_v<T>;
 
-	class ObjectPtr {
+	class ObjectView {
 	public:
-		constexpr ObjectPtr() noexcept : ptr{ nullptr } {}
-		constexpr ObjectPtr(std::nullptr_t) noexcept : ptr{ nullptr } {}
-		constexpr ObjectPtr(TypeID ID, void* ptr) noexcept : ID{ ID }, ptr{ ptr }{}
-		explicit constexpr ObjectPtr(TypeID ID) noexcept : ObjectPtr{ ID, nullptr } {}
+		constexpr ObjectView() noexcept : ptr{ nullptr } {}
+		constexpr ObjectView(std::nullptr_t) noexcept : ObjectView{} {}
+		constexpr ObjectView(TypeID ID, void* ptr) noexcept : ID{ ID }, ptr{ ptr }{}
+		explicit constexpr ObjectView(TypeID ID) noexcept : ObjectView{ ID, nullptr } {}
 		template<typename T> requires
 			std::negation_v<std::is_same<std::remove_cvref_t<T>, TypeID>>
 			&& std::negation_v<std::is_same<std::remove_cvref_t<T>, std::nullptr_t>>
-			&& NonObjectAndPtr<T>
-		explicit ObjectPtr(T&& obj) noexcept : ObjectPtr{ TypeID_of<decltype(obj)>, const_cast<void*>(static_cast<const void*>(&obj)) } {}
+			&& NonObjectAndView<T>
+		explicit ObjectView(T&& obj) noexcept : ObjectView{ TypeID_of<decltype(obj)>, const_cast<void*>(static_cast<const void*>(&obj)) } {}
 
 		constexpr TypeID GetTypeID() const noexcept { return ID; }
 		void* GetPtr() const noexcept { return ptr; }
@@ -94,9 +76,6 @@ namespace Ubpa::UDRefl {
 				return *ptr;
 		}
 
-		constexpr       ObjectPtr* operator->()       noexcept { return this; }
-		constexpr const ObjectPtr* operator->() const noexcept { return this; }
-
 		//////////////
 		// ReflMngr //
 		//////////////
@@ -109,11 +88,11 @@ namespace Ubpa::UDRefl {
 		// Cast
 		/////////
 
-		ObjectPtr StaticCast_DerivedToBase (TypeID baseID   ) const;
-		ObjectPtr StaticCast_BaseToDerived (TypeID derivedID) const;
-		ObjectPtr DynamicCast_BaseToDerived(TypeID derivedID) const;
-		ObjectPtr StaticCast               (TypeID typeID   ) const;
-		ObjectPtr DynamicCast              (TypeID typeID   ) const;
+		ObjectView StaticCast_DerivedToBase (TypeID baseID   ) const;
+		ObjectView StaticCast_BaseToDerived (TypeID derivedID) const;
+		ObjectView DynamicCast_BaseToDerived(TypeID derivedID) const;
+		ObjectView StaticCast               (TypeID typeID   ) const;
+		ObjectView DynamicCast              (TypeID typeID   ) const;
 
 		//
 		// Invoke
@@ -156,18 +135,18 @@ namespace Ubpa::UDRefl {
 			StrID methodID,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectPtr/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, ObjectView/SharedObject will be transformed as ID + ptr
 		template<typename T, typename... Args>
 		T AInvoke(StrID methodID, Args&&... args) const;
 
-		// 'A' means auto, ObjectPtr/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, ObjectView/SharedObject will be transformed as ID + ptr
 		template<typename... Args>
 		SharedObject AMInvoke(
 			StrID methodID,
 			std::pmr::memory_resource* rst_rsrc,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectPtr/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, ObjectView/SharedObject will be transformed as ID + ptr
 		template<typename... Args>
 		SharedObject ADMInvoke(
 			StrID methodID,
@@ -178,38 +157,38 @@ namespace Ubpa::UDRefl {
 		///////////
 
 		// all
-		ObjectPtr Var(StrID fieldID) const;
+		ObjectView Var(StrID fieldID) const;
 
 		// all, for diamond inheritance
-		ObjectPtr Var(TypeID baseID, StrID fieldID) const;
+		ObjectView Var(TypeID baseID, StrID fieldID) const;
 
 		// self vars and all bases' vars
-		void ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
+		void ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
 
 		// self owned vars and all bases' owned vars
-		void ForEachOwnedVar(const std::function<bool(TypeRef, FieldRef, ObjectPtr)>& func) const;
+		void ForEachOwnedVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
 
 		//
 		// Algorithm
 		//////////////
 
-		std::vector<TypeID>                                        GetTypeIDs();
-		std::vector<TypeRef>                                       GetTypes();
-		std::vector<TypeFieldRef>                                  GetTypeFields();
-		std::vector<FieldRef>                                      GetFields();
-		std::vector<TypeMethodRef>                                 GetTypeMethods();
-		std::vector<MethodRef>                                     GetMethods();
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldVars();
-		std::vector<ObjectPtr>                                GetVars();
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectPtr>> GetTypeFieldOwnedVars();
-		std::vector<ObjectPtr>                                GetOwnedVars();
+		std::vector<TypeID>                                    GetTypeIDs() const;
+		std::vector<TypeRef>                                   GetTypes() const;
+		std::vector<TypeFieldRef>                              GetTypeFields() const;
+		std::vector<FieldRef>                                  GetFields() const;
+		std::vector<TypeMethodRef>                             GetTypeMethods() const;
+		std::vector<MethodRef>                                 GetMethods() const;
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars() const;
+		std::vector<ObjectView>                                GetVars() const;
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldOwnedVars() const;
+		std::vector<ObjectView>                                GetOwnedVars() const;
 
 		std::optional<TypeID   > FindTypeID   (const std::function<bool(TypeID        )>& func) const;
 		std::optional<TypeRef  > FindType     (const std::function<bool(TypeRef       )>& func) const;
 		std::optional<FieldRef > FindField    (const std::function<bool(FieldRef      )>& func) const;
 		std::optional<MethodRef> FindMethod   (const std::function<bool(MethodRef     )>& func) const;
-		ObjectPtr           FindVar     (const std::function<bool(ObjectPtr)>& func) const;
-		ObjectPtr           FindOwnedVar(const std::function<bool(ObjectPtr)>& func) const;
+		ObjectView           FindVar     (const std::function<bool(ObjectView)>& func) const;
+		ObjectView           FindOwnedVar(const std::function<bool(ObjectView)>& func) const;
 
 		bool ContainsBase          (TypeID baseID  ) const;
 		bool ContainsField         (StrID  fieldID ) const;
@@ -227,52 +206,52 @@ namespace Ubpa::UDRefl {
 		bool IsReference() const;
 		ConstReferenceMode GetConstReferenceMode() const;
 
-		ObjectPtr RemoveConst() const;
-		ObjectPtr RemoveReference() const;
-		ObjectPtr RemoveConstReference() const;
+		ObjectView RemoveConst() const;
+		ObjectView RemoveReference() const;
+		ObjectView RemoveConstReference() const;
 
-		ObjectPtr AddConst() const;
-		ObjectPtr AddLValueReference() const;
-		ObjectPtr AddLValueReferenceWeak() const;
-		ObjectPtr AddRValueReference() const;
-		ObjectPtr AddConstLValueReference() const;
-		ObjectPtr AddConstRValueReference() const;
+		ObjectView AddConst() const;
+		ObjectView AddLValueReference() const;
+		ObjectView AddLValueReferenceWeak() const;
+		ObjectView AddRValueReference() const;
+		ObjectView AddConstLValueReference() const;
+		ObjectView AddConstRValueReference() const;
 
 
 		//
 		// Meta
 		/////////
 
-		OBJECT_PTR_DECLARE_OPERATOR(+, add);
-		OBJECT_PTR_DECLARE_OPERATOR(-, sub);
-		OBJECT_PTR_DECLARE_OPERATOR(*, mul);
-		OBJECT_PTR_DECLARE_OPERATOR(/, div);
-		OBJECT_PTR_DECLARE_OPERATOR(%, mod);
-		OBJECT_PTR_DECLARE_OPERATOR(&, band);
-		OBJECT_PTR_DECLARE_OPERATOR(|, bor);
-		OBJECT_PTR_DECLARE_OPERATOR(^, bxor);
+		OBJECT_VIEW_DECLARE_OPERATOR(+, add);
+		OBJECT_VIEW_DECLARE_OPERATOR(-, sub);
+		OBJECT_VIEW_DECLARE_OPERATOR(*, mul);
+		OBJECT_VIEW_DECLARE_OPERATOR(/, div);
+		OBJECT_VIEW_DECLARE_OPERATOR(%, mod);
+		OBJECT_VIEW_DECLARE_OPERATOR(&, band);
+		OBJECT_VIEW_DECLARE_OPERATOR(|, bor);
+		OBJECT_VIEW_DECLARE_OPERATOR(^, bxor);
 
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(<, lt);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(<=, le);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(>, gt);
-		OBJECT_PTR_DEFINE_CMP_OPERATOR(>=, ge);
+		OBJECT_VIEW_DEFINE_CMP_OPERATOR(<, lt);
+		OBJECT_VIEW_DEFINE_CMP_OPERATOR(<=, le);
+		OBJECT_VIEW_DEFINE_CMP_OPERATOR(>, gt);
+		OBJECT_VIEW_DEFINE_CMP_OPERATOR(>=, ge);
 
-		template<typename Arg> requires NonObjectAndPtr<std::decay_t<Arg>>
-		const ObjectPtr& operator=(Arg&& rhs) const {
+		template<typename Arg> requires NonObjectAndView<std::decay_t<Arg>>
+		const ObjectView& operator=(Arg&& rhs) const {
 			AInvoke<void>(StrIDRegistry::MetaID::operator_assign, std::forward<Arg>(rhs));
 			return *this;    
 		}
 
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(+=, assign_add);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(-=, assign_sub);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(*=, assign_mul);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(/=, assign_div);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(%=, assign_mod);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(&=, assign_band);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(|=, assign_bor);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(^=, assign_bxor);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(<<=, assign_lshift);
-		OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR(>>=, assign_rshift);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(+=, assign_add);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(-=, assign_sub);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(*=, assign_mul);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(/=, assign_div);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(%=, assign_mod);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(&=, assign_band);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(|=, assign_bor);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(^=, assign_bxor);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(<<=, assign_lshift);
+		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(>>=, assign_rshift);
 
 		SharedObject operator++() const;
 		SharedObject operator++(int) const;
@@ -283,8 +262,8 @@ namespace Ubpa::UDRefl {
 		SharedObject operator~() const;
 		SharedObject operator*() const;
 
-		OBJECT_PTR_DECLARE_OPERATOR([], subscript);
-		OBJECT_PTR_DECLARE_OPERATOR(->*, member_of_pointer);
+		OBJECT_VIEW_DECLARE_OPERATOR([], subscript);
+		OBJECT_VIEW_DECLARE_OPERATOR(->*, member_of_pointer);
 		SharedObject operator[](std::size_t n) const;
 
 		template<typename... Args>
@@ -304,13 +283,13 @@ namespace Ubpa::UDRefl {
 		//////////
 
 		std::size_t tuple_size() const;
-		ObjectPtr tuple_get(std::size_t i) const;
+		ObjectView tuple_get(std::size_t i) const;
 
 		//
 		// container
 		//////////////
 
-		OBJECT_PTR_DECLARE_CONTAINER_VARS(assign);
+		OBJECT_VIEW_DECLARE_CONTAINER_VARS(assign);
 
 		// - iterator
 
@@ -331,38 +310,38 @@ namespace Ubpa::UDRefl {
 		//SharedObject max_size() const;
 		SharedObject capacity() const;
 		SharedObject bucket_count() const;
-		OBJECT_PTR_DECLARE_CONTAINER(resize);
+		OBJECT_VIEW_DECLARE_CONTAINER(resize);
 		void reserve(std::size_t n) const;
 		void shrink_to_fit() const;
 
 		// - element access
 
-		OBJECT_PTR_DECLARE_CONTAINER(at);
+		OBJECT_VIEW_DECLARE_CONTAINER(at);
 		SharedObject front() const;
 		SharedObject back() const;
 		SharedObject data() const;
 
 		// - lookup
 
-		OBJECT_PTR_DECLARE_CONTAINER(count);
-		OBJECT_PTR_DECLARE_CONTAINER(find);
-		OBJECT_PTR_DECLARE_CONTAINER(lower_bound);
-		OBJECT_PTR_DECLARE_CONTAINER(upper_bound);
-		OBJECT_PTR_DECLARE_CONTAINER(equal_range);
+		OBJECT_VIEW_DECLARE_CONTAINER(count);
+		OBJECT_VIEW_DECLARE_CONTAINER(find);
+		OBJECT_VIEW_DECLARE_CONTAINER(lower_bound);
+		OBJECT_VIEW_DECLARE_CONTAINER(upper_bound);
+		OBJECT_VIEW_DECLARE_CONTAINER(equal_range);
 
 		// - modifiers
 
 		void clear() const;
-		OBJECT_PTR_DECLARE_CONTAINER_VARS(insert);
-		OBJECT_PTR_DECLARE_CONTAINER_VARS(insert_or_assign);
-		OBJECT_PTR_DECLARE_CONTAINER(erase);
-		OBJECT_PTR_DECLARE_CONTAINER(push_front);
-		OBJECT_PTR_DECLARE_CONTAINER(push_back);
+		OBJECT_VIEW_DECLARE_CONTAINER_VARS(insert);
+		OBJECT_VIEW_DECLARE_CONTAINER_VARS(insert_or_assign);
+		OBJECT_VIEW_DECLARE_CONTAINER(erase);
+		OBJECT_VIEW_DECLARE_CONTAINER(push_front);
+		OBJECT_VIEW_DECLARE_CONTAINER(push_back);
 		void pop_front() const;
 		void pop_back() const;
-		OBJECT_PTR_DECLARE_CONTAINER(swap);
-		OBJECT_PTR_DECLARE_CONTAINER(merge);
-		OBJECT_PTR_DECLARE_CONTAINER(extract);
+		OBJECT_VIEW_DECLARE_CONTAINER(swap);
+		OBJECT_VIEW_DECLARE_CONTAINER(merge);
+		OBJECT_VIEW_DECLARE_CONTAINER(extract);
 
 		// - observers
 
@@ -372,45 +351,35 @@ namespace Ubpa::UDRefl {
 		SharedObject key_eq() const;
 		SharedObject get_allocator() const;
 
-	private:
+	protected:
 		TypeID ID;
 		void* ptr; // if type is reference, ptr is a pointer of referenced object
 	};
 	
-	// SharedBuffer + ID
-	class SharedObject {
+	class SharedObject : public ObjectView {
 	public:
 		//
 		// Constructor
 		////////////////
 
-		constexpr SharedObject() noexcept = default;
-		constexpr SharedObject(std::nullptr_t) noexcept {}
-		explicit constexpr SharedObject(TypeID ID) noexcept : ID{ ID } {}
+		using ObjectView::ObjectView;
 
-		SharedObject(TypeID ID, SharedBuffer buffer) noexcept : ID{ ID }, buffer{ std::move(buffer) } {}
+		SharedObject(TypeID ID, SharedBuffer buffer) noexcept : ObjectView{ ID }, buffer{ std::move(buffer) } { ptr = buffer.get(); }
 
 		template<typename T>
-		SharedObject(TypeID ID, std::shared_ptr<T> buffer) noexcept : ID{ ID }, buffer{ std::move(buffer) } {}
+		SharedObject(TypeID ID, std::shared_ptr<T> buffer) noexcept : ObjectView{ ID, buffer.get() }, buffer{ std::move(buffer) } { }
 
 		template<typename Deleter>
-		SharedObject(ObjectPtr obj, Deleter d) noexcept : ID{ obj.GetTypeID() }, buffer{ obj.GetPtr(), std::move(d) } {}
+		SharedObject(ObjectView obj, Deleter d) noexcept : ObjectView{ obj }, buffer{ obj.GetPtr(), std::move(d) } {}
 		template<typename U, typename Deleter, typename Alloc>
-		SharedObject(ObjectPtr obj, Deleter d, Alloc alloc) noexcept : ID{ obj.GetTypeID() }, buffer{ obj.GetPtr(), std::move(d), alloc } {}
+		SharedObject(ObjectView obj, Deleter d, Alloc alloc) noexcept : ObjectView{ obj }, buffer{ obj.GetPtr(), std::move(d), alloc } {}
 
-		SharedObject(const SharedObject& obj) noexcept : SharedObject{ obj.ID, obj.buffer } {}
-		SharedObject(SharedObject&& obj) noexcept : SharedObject{ obj.ID, std::move(obj.buffer) } {}
+		SharedObject(const SharedObject& obj) noexcept = default;
+		SharedObject(SharedObject&& obj) noexcept = default;
 
-		SharedObject& operator=(const SharedObject& rhs) noexcept {
-			ID = rhs.ID;
-			buffer = rhs.buffer;
-			return *this;
-		}
+		SharedObject& operator=(const SharedObject& rhs) noexcept = default;
 
-		SharedObject& operator=(SharedObject&& rhs) noexcept {
-			SharedObject(std::move(rhs)).Swap(*this);
-			return *this;
-		}
+		SharedObject& operator=(SharedObject&& rhs) noexcept = default;
 
 		SharedObject& operator=(std::nullptr_t) noexcept {
 			Reset();
@@ -418,130 +387,32 @@ namespace Ubpa::UDRefl {
 		}
 
 		// set pointer to nullptr
-		void Reset() noexcept { buffer.reset(); }
-
-		// Reset and set ID to invalid
-		void Clear() noexcept { *this = SharedObject{}; }
-
-		TypeID GetTypeID() const noexcept { return ID; }
+		void Reset() noexcept { ptr = nullptr; buffer.reset(); }
 
 		SharedBuffer& GetBuffer() noexcept { return buffer; }
 		const SharedBuffer& GetBuffer() const noexcept { return buffer; }
 
 		long UseCount() const noexcept { return buffer.use_count(); }
 
-		constexpr bool Valid() const noexcept { return ID.Valid() && static_cast<bool>(buffer); }
-		explicit operator bool() const noexcept { return static_cast<bool>(AsObjectPtr()); }
+		bool IsObjectView() const noexcept {
+			return ptr && !buffer;
+		}
 
 		void Swap(SharedObject& rhs) noexcept {
 			std::swap(ID, rhs.ID);
+			std::swap(ptr, rhs.ptr);
 			buffer.swap(rhs.buffer);
 		}
 
-		void* GetPtr() const noexcept { return buffer.get(); }
-
-		template<typename T>
-		auto* AsPtr() const noexcept {
-			assert(ID.Is<T>());
-			return reinterpret_cast<std::add_pointer_t<T>>(GetPtr());
-		}
-
-		template<typename T>
-		decltype(auto) As() const noexcept {
-			assert(GetPtr());
-			auto* ptr = AsPtr<T>();
-			if constexpr (std::is_reference_v<T>)
-				return std::forward<T>(*ptr);
-			else
-				return *ptr;
-		}
-
-		ObjectPtr AsObjectPtr() const noexcept { return { ID, buffer.get() }; }
-		operator ObjectPtr() const noexcept { return AsObjectPtr(); }
-		ObjectPtr operator->() const noexcept { return AsObjectPtr(); }
-
-		//////////////
-		// ReflMngr //
-		//////////////
-
-		//
-		// Meta
-		/////////
-
-		SHARED_OBJECT_DEFINE_OPERATOR(+);
-		SHARED_OBJECT_DEFINE_OPERATOR(-);
-		SHARED_OBJECT_DEFINE_OPERATOR(*);
-		SHARED_OBJECT_DEFINE_OPERATOR(/);
-		SHARED_OBJECT_DEFINE_OPERATOR(%);
-		SHARED_OBJECT_DEFINE_OPERATOR(&);
-		SHARED_OBJECT_DEFINE_OPERATOR(|);
-		SHARED_OBJECT_DEFINE_OPERATOR(^);
-
-		SHARED_OBJECT_DEFINE_CMP_OPERATOR(>)
-		SHARED_OBJECT_DEFINE_CMP_OPERATOR(>=)
-		SHARED_OBJECT_DEFINE_CMP_OPERATOR(<)
-		SHARED_OBJECT_DEFINE_CMP_OPERATOR(<=)
-
-		template<typename Arg> requires NonObjectAndPtr<std::decay_t<Arg>>
-		SharedObject operator=(Arg&& rhs) const {
-			return AsObjectPtr()->operator=(std::forward<Arg>(rhs));
-		}
-
-		SHARED_OBJECT_DEFINE_OPERATOR(+=)
-		SHARED_OBJECT_DEFINE_OPERATOR(-=)
-		SHARED_OBJECT_DEFINE_OPERATOR(*=)
-		SHARED_OBJECT_DEFINE_OPERATOR(/=)
-		SHARED_OBJECT_DEFINE_OPERATOR(%=)
-		SHARED_OBJECT_DEFINE_OPERATOR(&=)
-		SHARED_OBJECT_DEFINE_OPERATOR(|=)
-		SHARED_OBJECT_DEFINE_OPERATOR(^=)
-		SHARED_OBJECT_DEFINE_OPERATOR(<<=)
-		SHARED_OBJECT_DEFINE_OPERATOR(>>=)
-
-		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(++)
-		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(--)
-		SharedObject operator++(int) const { return AsObjectPtr()++; }
-		SharedObject operator--(int) const { return AsObjectPtr()--; }
-		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(+)
-		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(-)
-		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(~)
-		SHARED_OBJECT_DEFINE_UNARY_OPERATOR(*)
-
-		SHARED_OBJECT_DEFINE_OPERATOR([])
-		SHARED_OBJECT_DEFINE_OPERATOR(->*)
-		SharedObject operator[](std::size_t n) const { return AsObjectPtr()[n]; }
-
-		template<typename... Args>
-		SharedObject operator()(Args&&... args) const {
-			return AsObjectPtr()->operator()<Args&&...>(std::forward<Args>(args)...);
-		}
-
-		template<typename T>
-		T& operator>>(T& out) const { return AsObjectPtr() >> out; }
-
-		template<typename T>
-		SharedObject operator<<(T&& in) const { return AsObjectPtr() << std::forward<T>(in); }
-
-		//
-		// container
-		//////////////
-
-		SharedObject begin() const;
-		SharedObject end() const;
-
 	private:
-		TypeID ID;
-		SharedBuffer buffer; // if type is reference, ptr is a pointer of referenced object
+		SharedBuffer buffer; // if type is reference, buffer is empty
 	};
 }
 
-#undef OBJECT_PTR_DECLARE_OPERATOR
-#undef OBJECT_PTR_DEFINE_CMP_OPERATOR
-#undef OBJECT_PTR_DEFINE_ASSIGN_OP_OPERATOR
-#undef OBJECT_PTR_DECLARE_CONTAINER
-#undef OBJECT_PTR_DECLARE_CONTAINER_VARS
-#undef SHARED_OBJECT_DEFINE_OPERATOR
-#undef SHARED_OBJECT_DEFINE_CMP_OPERATOR
-#undef SHARED_OBJECT_DEFINE_UNARY_OPERATOR
+#undef OBJECT_VIEW_DECLARE_OPERATOR
+#undef OBJECT_VIEW_DEFINE_CMP_OPERATOR
+#undef OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR
+#undef OBJECT_VIEW_DECLARE_CONTAINER
+#undef OBJECT_VIEW_DECLARE_CONTAINER_VARS
 
 #include "details/Object.inl"

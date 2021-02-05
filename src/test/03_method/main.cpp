@@ -31,24 +31,24 @@ struct Vec {
 
 int main() {
 	{ // register Vec
-		ReflMngr::Instance().RegisterType<Vec>();
-		ReflMngr::Instance().AddConstructor<Vec, float, float>();
-		ReflMngr::Instance().AddField<&Vec::x>("x");
-		ReflMngr::Instance().AddField<&Vec::y>("y");
-		ReflMngr::Instance().AddMethod<&Vec::Norm2>("Norm2");
-		ReflMngr::Instance().AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
-		ReflMngr::Instance().AddMethod<&Vec::operator+= >(StrIDRegistry::Meta::operator_assign_add);
+		Mngr.RegisterType<Vec>();
+		Mngr.AddConstructor<Vec, float, float>();
+		Mngr.AddField<&Vec::x>("x");
+		Mngr.AddField<&Vec::y>("y");
+		Mngr.AddMethod<&Vec::Norm2>("Norm2");
+		Mngr.AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
+		Mngr.AddMethod<&Vec::operator+= >(StrIDRegistry::Meta::operator_assign_add);
 	}
 
-	auto v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>, 1.f, 2.f);
+	auto v = Mngr.MakeShared(TypeID_of<Vec>, 1.f, 2.f);
 
-	v->Invoke("NormalizeSelf");
-	std::cout << v->Var("x") << ", " << v->Var("y") << std::endl;
+	v.Invoke("NormalizeSelf");
+	std::cout << v.Var("x") << ", " << v.Var("y") << std::endl;
 
-	std::cout << v->DMInvoke("Norm2") << std::endl;
+	std::cout << v.DMInvoke("Norm2") << std::endl;
 
 	auto w = v += Vec{ 10.f,10.f };
-	std::cout << w->Var("x") << ", " << w->Var("y") << std::endl;
+	std::cout << w.Var("x") << ", " << w.Var("y") << std::endl;
 	
 	return 0;
 }

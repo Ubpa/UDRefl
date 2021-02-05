@@ -26,23 +26,23 @@ struct Vec {
 
 int main() {
 	{ // register Vec
-		ReflMngr::Instance().RegisterType<Vec>();
-		ReflMngr::Instance().AddField<&Vec::x>("x");
-		ReflMngr::Instance().AddField<&Vec::y>("y");
-		ReflMngr::Instance().AddMethod<MemFuncOf<Vec& (const Vec&)>::get(&Vec::operator+=)>(StrIDRegistry::Meta::operator_assign_add);
-		ReflMngr::Instance().AddMethod<MemFuncOf<Vec& (float)>::get(&Vec::operator+=)>(StrIDRegistry::Meta::operator_assign_add);
+		Mngr.RegisterType<Vec>();
+		Mngr.AddField<&Vec::x>("x");
+		Mngr.AddField<&Vec::y>("y");
+		Mngr.AddMethod<MemFuncOf<Vec& (const Vec&)>::get(&Vec::operator+=)>(StrIDRegistry::Meta::operator_assign_add);
+		Mngr.AddMethod<MemFuncOf<Vec& (float)>::get(&Vec::operator+=)>(StrIDRegistry::Meta::operator_assign_add);
 	}
 	
-	auto obj = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
+	auto obj = Mngr.MakeShared(TypeID_of<Vec>);
 
 	{
 		auto v = obj += Vec{ 10.f,10.f };
-		std::cout << v->Var("x") << ", " << v->Var("y") << std::endl;
+		std::cout << v.Var("x") << ", " << v.Var("y") << std::endl;
 	}
 
 	{
 		auto v = obj += 2.f;
-		std::cout << v->Var("x") << ", " << v->Var("y") << std::endl;
+		std::cout << v.Var("x") << ", " << v.Var("y") << std::endl;
 	}
 	
 	return 0;

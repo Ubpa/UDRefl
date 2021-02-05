@@ -35,7 +35,7 @@ Suppose you need to reflect `struct Vec`
 struct Vec {
   float x;
   float y;
-  float norm() const noexcept {
+  float norm() const {
     return std::sqrt(x * x + y * y);
   }
 };
@@ -44,49 +44,49 @@ struct Vec {
 ### Manual registration
 
 ```c++
-ReflMngr::Instance().RegisterTypePro<Vec>();
-ReflMngr::Instance().AddField<&Vec::x>("x");
-ReflMngr::Instance().AddField<&Vec::y>("y");
-ReflMngr::Instance().AddMethod<&Vec::norm>("norm");
+Mngr.RegisterTypePro<Vec>();
+Mngr.AddField<&Vec::x>("x");
+Mngr.AddField<&Vec::y>("y");
+Mngr.AddMethod<&Vec::norm>("norm");
 ```
 
 ### Iterate over members
 
 ```c++
-for (auto field : ReflMngr::Instance().GetFields(TypeID_of<Vec>))
-  std::cout << ReflMngr::Instance().nregistry.Nameof(field.ID) << std::endl;
+for (auto field : Mngr.GetFields(TypeID_of<Vec>))
+  std::cout << Mngr.nregistry.Nameof(field.ID) << std::endl;
 
-for (auto method : ReflMngr::Instance().GetMethods(TypeID_of<Vec>))
-  std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
+for (auto method : Mngr.GetMethods(TypeID_of<Vec>))
+  std::cout << Mngr.nregistry.Nameof(method.ID) << std::endl;
 ```
 
 ### Constructing types
 
 ```c++
-SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>);
-std::cout << v->TypeName() << std::endl; // prints "Vec"
+SharedObject v = Mngr.MakeShared(TypeID_of<Vec>);
+std::cout << v.TypeName() << std::endl; // prints "Vec"
 ```
 
 ### Set/get variables
 
 ```c++
-v->RWVar("x") = 3.f;
-v->RWVar("y") = 4.f;
-std::cout << "x: " << v->RVar("x") << std::endl;
+v.Var("x") = 3;
+v.Var("y") = 4;
+std::cout << "x: " << v.Var("x") << std::endl;
 ```
 
 ### Invoke Methods
 
 ```c++
-std::cout << "norm: " << v->DMInvoke("norm") << std::endl;
+std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
 ```
 
 ### Iterate over variables
 
 ```c++
-for (const auto& [type, field, var] : v->GetTypeFieldRVars()) {
+for (const auto& [type, field, var] : v.GetTypeFieldRVars()) {
   std::cout
-    << ReflMngr::Instance().nregistry.Nameof(field.ID)
+    << Mngr.nregistry.Nameof(field.ID)
     << ": " << var
     << std::endl;
 }

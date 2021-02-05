@@ -55,44 +55,44 @@ struct A {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterType<A>();
-	ReflMngr::Instance().RegisterType<Data>();
-	ReflMngr::Instance().AddField<&Data::value>("value");
-	ReflMngr::Instance().AddConstructor<A, Data&, Data&&>();
-	ReflMngr::Instance().AddField("lref", [](A* a) {
+	Mngr.RegisterType<A>();
+	Mngr.RegisterType<Data>();
+	Mngr.AddField<&Data::value>("value");
+	Mngr.AddConstructor<A, Data&, Data&&>();
+	Mngr.AddField("lref", [](A* a) {
 		return &a->lref;
 	});
-	ReflMngr::Instance().AddField("rref", [](A* a) {
+	Mngr.AddField("rref", [](A* a) {
 		return &a->rref;
 	});
-	ReflMngr::Instance().AddMethod<&A::get>("get");
-	ReflMngr::Instance().AddMethod<&A::get_c>("get_c");
-	ReflMngr::Instance().AddMethod<&A::get_l>("get_l");
-	ReflMngr::Instance().AddMethod<&A::get_r>("get_r");
-	ReflMngr::Instance().AddMethod<&A::set>("set");
-	ReflMngr::Instance().AddMethod<&A::set_c>("set_c");
-	ReflMngr::Instance().AddMethod<&A::set_l>("set_l");
-	ReflMngr::Instance().AddMethod<&A::set_r>("set_r");
+	Mngr.AddMethod<&A::get>("get");
+	Mngr.AddMethod<&A::get_c>("get_c");
+	Mngr.AddMethod<&A::get_l>("get_l");
+	Mngr.AddMethod<&A::get_r>("get_r");
+	Mngr.AddMethod<&A::set>("set");
+	Mngr.AddMethod<&A::set_c>("set_c");
+	Mngr.AddMethod<&A::set_l>("set_l");
+	Mngr.AddMethod<&A::set_r>("set_r");
 
 	Data f = 1.f;
 	Data g = 2.f;
-	auto a = ReflMngr::Instance().MakeShared(TypeID_of<A>, f, std::move(g));
-	std::cout << "a.rref: " << a->Var("rref").Var("value") << std::endl;
-	std::cout << "a.lref: " << a->Var("lref").Var("value") << std::endl;
+	auto a = Mngr.MakeShared(TypeID_of<A>, f, std::move(g));
+	std::cout << "a.rref: " << a.Var("rref").Var("value") << std::endl;
+	std::cout << "a.lref: " << a.Var("lref").Var("value") << std::endl;
 
-	a->Var("lref").Var("value") = 2.f;
-	a->Var("rref").Var("value") = 3.f;
-	std::cout << "a.lref: " << a->Var("lref").Var("value") << std::endl;
-	std::cout << "a.rref: " << a->Var("rref").Var("value") << std::endl;
+	a.Var("lref").Var("value") = 2.f;
+	a.Var("rref").Var("value") = 3.f;
+	std::cout << "a.lref: " << a.Var("lref").Var("value") << std::endl;
+	std::cout << "a.rref: " << a.Var("rref").Var("value") << std::endl;
 	std::cout << "f: " << f.value << std::endl;
 	std::cout << "g: " << g.value << std::endl;
 
-	std::cout << "a.get_r(): " << a->DMInvoke("get_r")->Var("value") << std::endl;
-	std::cout << "a.get_c(): " << a->DMInvoke("get_r")->Var("value") << std::endl;
+	std::cout << "a.get_r(): " << a.DMInvoke("get_r").Var("value") << std::endl;
+	std::cout << "a.get_c(): " << a.DMInvoke("get_r").Var("value") << std::endl;
 
-	a->Invoke<void>("set", g);
-	a->Invoke<void>("set_r", std::move(g));
-	std::cout << "a.lref: " << a->DMInvoke("get_r")->Var("value") << std::endl;
-	std::cout << "a.get_c(): " << a->DMInvoke("get_c")->Var("value") << std::endl;
+	a.Invoke<void>("set", g);
+	a.Invoke<void>("set_r", std::move(g));
+	std::cout << "a.lref: " << a.DMInvoke("get_r").Var("value") << std::endl;
+	std::cout << "a.get_c(): " << a.DMInvoke("get_c").Var("value") << std::endl;
 	return 0;
 }

@@ -6,28 +6,28 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void Serializer(ObjectPtr obj) {
-	if (type_name_is_arithmetic(obj->TypeName()))
+void Serializer(ObjectView obj) {
+	if (type_name_is_arithmetic(obj.TypeName()))
 		std::cout << obj;
 	else {
-		std::cout << "{" << "\"TYPE\":\"" << obj->TypeName() << "\",";
-		auto iter = obj->GetType()->attrs.find(TypeID_of<ContainerType>);
-		if (iter != obj->GetType()->attrs.end()) {
+		std::cout << "{" << "\"TYPE\":\"" << obj.TypeName() << "\",";
+		auto iter = obj.GetTypeInfo()->attrs.find(TypeID_of<ContainerType>);
+		if (iter != obj.GetTypeInfo()->attrs.end()) {
 			if (*iter == ContainerType::Vector) {
 				std::cout << "\"Vector\":[";
-				for (size_t i = 0; i < obj->size(); i++) {
-					Serializer(obj[i]->RemoveReference());
-					if (i + 1 != obj->size())
+				for (size_t i = 0; i < obj.size(); i++) {
+					Serializer(obj[i].RemoveReference());
+					if (i + 1 != obj.size())
 						std::cout << ",";
 				}
 				std::cout << "]";
 			}
 		}
 		else { // normal object
-			size_t N = obj->GetVars().size();
+			size_t N = obj.GetVars().size();
 			size_t i = 0;
-			for (const auto& [type, field, var] : obj->GetTypeFieldVars()) {
-				std::cout << "\"" << Mngr->nregistry.Nameof(field.ID) << "\":";
+			for (const auto& [type, field, var] : obj.GetTypeFieldVars()) {
+				std::cout << "\"" << Mngr.nregistry.Nameof(field.ID) << "\":";
 				Serializer(var);
 				if (++i != N)
 					std::cout << ",";
@@ -40,13 +40,13 @@ void Serializer(ObjectPtr obj) {
 int main() {
 	RegisterVector();
 
-	auto a = Mngr->MakeShared(TypeID_of<Vector>);
+	auto a = Mngr.MakeShared(TypeID_of<Vector>);
 
 	for (size_t i = 0; i < 10; i++) {
 		std::vector<size_t> row;
 		for (size_t j = 0; j < 10; j++)
 			row.push_back(j);
-		a->Var("data").push_back(std::move(row));
+		a.Var("data").push_back(std::move(row));
 	}
 
 	Serializer(a);

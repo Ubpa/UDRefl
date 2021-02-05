@@ -27,37 +27,37 @@ struct Point {
 
 int main() {
 	{ // register
-		Mngr->RegisterType<UInspector::Range>();
-		Mngr->AddField<&UInspector::Range::min_value>("min_value");
-		Mngr->AddField<&UInspector::Range::max_value>("max_value");
-		Mngr->AddConstructor<UInspector::Range, float, float>();
+		Mngr.RegisterType<UInspector::Range>();
+		Mngr.AddField<&UInspector::Range::min_value>("min_value");
+		Mngr.AddField<&UInspector::Range::max_value>("max_value");
+		Mngr.AddConstructor<UInspector::Range, float, float>();
 
-		Mngr->RegisterType<UInspector::A>();
+		Mngr.RegisterType<UInspector::A>();
 
-		Mngr->RegisterType<Point>();
-		Mngr->AddConstructor<Point, float, float>();
-		Mngr->AddField<&Point::x>("x", { Mngr->MakeShared(TypeID_of<UInspector::Range>, 1.f, 2.f) });
-		Mngr->AddField<&Point::y>("y", { Mngr->MakeShared(TypeID_of<UInspector::A>) });
+		Mngr.RegisterType<Point>();
+		Mngr.AddConstructor<Point, float, float>();
+		Mngr.AddField<&Point::x>("x", { Mngr.MakeShared(TypeID_of<UInspector::Range>, 1.f, 2.f) });
+		Mngr.AddField<&Point::y>("y", { Mngr.MakeShared(TypeID_of<UInspector::A>) });
 	}
 
-	auto p = Mngr->MakeShared(TypeID_of<Point>, 1.f, 2.f);
+	auto p = Mngr.MakeShared(TypeID_of<Point>, 1.f, 2.f);
 
-	p->Var("x") += 1.f;
-	p->Var("y") += 2.f;
+	p.Var("x") += 1.f;
+	p.Var("y") += 2.f;
 
-	for (const auto& [type, field, var] : p->GetTypeFieldVars()) {
+	for (const auto& [type, field, var] : p.GetTypeFieldVars()) {
 		for (const auto& attr : field.info.attrs) {
-			std::cout << "[" << Mngr->tregistry.Nameof(attr.GetTypeID()) << "]" << std::endl;
-			for (const auto& [type, field, var] :attr->GetTypeFieldVars()) {
+			std::cout << "[" << Mngr.tregistry.Nameof(attr.GetTypeID()) << "]" << std::endl;
+			for (const auto& [type, field, var] :attr.GetTypeFieldVars()) {
 				std::cout
-					<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+					<< Mngr.nregistry.Nameof(field.ID)
 					<< ": " << var
 					<< std::endl;
 			}
 			std::cout << "------" << std::endl;
 		}
 		std::cout
-			<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+			<< Mngr.nregistry.Nameof(field.ID)
 			<< ": " << var
 			<< std::endl;
 	}

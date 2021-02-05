@@ -11,9 +11,9 @@ int main() {
 	RegisterA();
 	RegisterB();
 
-	for (const auto& [ID, info] : ReflMngr::Instance().typeinfos) {
-		for (auto method : ReflMngr::Instance().GetMethods(ID))
-			std::cout << ReflMngr::Instance().nregistry.Nameof(method.ID) << std::endl;
+	for (const auto& [ID, info] : Mngr.typeinfos) {
+		for (auto method : Mngr.GetMethods(ID))
+			std::cout << Mngr.nregistry.Nameof(method.ID) << std::endl;
 	}
 
 	return 0;

@@ -76,7 +76,7 @@ namespace Ubpa::UDRefl::details {
 			return nullptr;
 		else {
 			if (i == TargetIdx)
-				return ObjectPtr{ std::get<TargetIdx>(std::forward<T>(obj)) };
+				return ObjectView{ std::get<TargetIdx>(std::forward<T>(obj)) };
 			else
 				return runtime_get_impl<Rst, TargetIdx + 1>(std::forward<T>(obj), i);
 		}
@@ -247,8 +247,8 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (is_valid_v<tuple_size, T>) {
 				mngr.AddStaticMethod(TypeID_of<T>, StrIDRegistry::Meta::tuple_size, []() { return std::tuple_size_v<T>; });
-				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get<ObjectPtr>(t, i); });
-				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<ObjectPtr>(t, i); });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get<ObjectView>(t, i); });
+				mngr.AddMemberMethod(StrIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<ObjectView>(t, i); });
 				if constexpr (!IsArray_v<T>)
 					register_tuple_elements<T>(mngr, std::make_index_sequence<std::tuple_size_v<T>>{});
 			}
@@ -939,7 +939,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ObjectPtr obj, StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
+	T ReflMngr::InvokeRet(ObjectView obj, StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
@@ -963,7 +963,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ReflMngr::InvokeArgs(ObjectPtr obj, StrID methodID, void* result_buffer, Args&&... args) const {
+	InvokeResult ReflMngr::InvokeArgs(ObjectView obj, StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
@@ -985,7 +985,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ObjectPtr obj, StrID methodID, Args&&... args) const {
+	T ReflMngr::Invoke(ObjectView obj, StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
@@ -1006,7 +1006,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	bool ReflMngr::Construct(ObjectPtr obj, Args&&... args) const {
+	bool ReflMngr::Construct(ObjectView obj, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
@@ -1017,7 +1017,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	ObjectPtr ReflMngr::New(TypeID typeID, Args&&... args) const {
+	ObjectView ReflMngr::New(TypeID typeID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
@@ -1028,7 +1028,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	ObjectPtr ReflMngr::NewAuto(Args... args) {
+	ObjectView ReflMngr::NewAuto(Args... args) {
 		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
 		RegisterType<T>();
 		AddConstructor<T, Args...>();
@@ -1076,7 +1076,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	SharedObject ReflMngr::MInvoke(
-		ObjectPtr obj,
+		ObjectView obj,
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
 		Args&&... args) const
@@ -1101,7 +1101,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	SharedObject ReflMngr::DMInvoke(
-		ObjectPtr obj,
+		ObjectView obj,
 		StrID methodID,
 		Args&&... args) const
 	{
@@ -1109,7 +1109,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	ObjectPtr ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, Args&&... args) const {
+	ObjectView ReflMngr::MNew(TypeID typeID, std::pmr::memory_resource* rsrc, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };

@@ -12,13 +12,13 @@ enum class Color {
 };
 
 int main() {
-	ReflMngr::Instance().AddDynamicField<const std::string>(GlobalID, "author", "Ubpa");
-	ReflMngr::Instance().AddDynamicField<const Color>(GlobalID, "theme", Color::Red);
-	ReflMngr::Instance().RegisterType<int>();
-	ReflMngr::Instance().AddDynamicField<const size_t>(TypeID_of<int>, "bits", sizeof(int) * 8);
+	Mngr.AddDynamicField<const std::string>(GlobalID, "author", "Ubpa");
+	Mngr.AddDynamicField<const Color>(GlobalID, "theme", Color::Red);
+	Mngr.RegisterType<int>();
+	Mngr.AddDynamicField<const size_t>(TypeID_of<int>, "bits", sizeof(int) * 8);
 
-	std::cout << ReflMngr::Instance().Var(GlobalID, "author") << std::endl;
-	std::cout << (ReflMngr::Instance().Var(GlobalID, "theme") == Color::Red) << std::endl;
+	std::cout << Mngr.Var(GlobalID, "author") << std::endl;
+	std::cout << (Mngr.Var(GlobalID, "theme") == Color::Red) << std::endl;
 
-	std::cout << ReflMngr::Instance().Var(TypeID_of<int>, "bits") << std::endl;
+	std::cout << Mngr.Var(TypeID_of<int>, "bits") << std::endl;
 }

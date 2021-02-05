@@ -54,15 +54,15 @@ struct Vec {
 };
 
 int main() {
-	ReflMngr::Instance().RegisterType<Vec>();
-	ReflMngr::Instance().AddConstructor<Vec, float, float>();
-	ReflMngr::Instance().AddField<&Vec::x>("x");
-	ReflMngr::Instance().AddField<&Vec::y>("y");
-	ReflMngr::Instance().AddMethod<MemFuncOf<Vec(float)const noexcept>::get(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
+	Mngr.RegisterType<Vec>();
+	Mngr.AddConstructor<Vec, float, float>();
+	Mngr.AddField<&Vec::x>("x");
+	Mngr.AddField<&Vec::y>("y");
+	Mngr.AddMethod<MemFuncOf<Vec(float)const noexcept>::get(&Vec::operator+)>(StrIDRegistry::Meta::operator_add);
 
-	SharedObject v = ReflMngr::Instance().MakeShared(TypeID_of<Vec>, 3.f, 4.f);
+	SharedObject v = Mngr.MakeShared(TypeID_of<Vec>, 3.f, 4.f);
 
-	ObjectPtr pv = v;
+	ObjectView pv = v;
 	SharedObject w0 = v + v;
 	SharedObject w1 = v + pv;
 	SharedObject w2 = v + 1.f;
@@ -72,9 +72,9 @@ int main() {
 	SharedObject w6 = v + Vec{ 1.f,2.f };
 
 	for (const auto& w : std::array{ w0,w1,w2,w3,w4,w5,w6 }) {
-		for (const auto& [type, field, var] : w->GetTypeFieldVars()) {
+		for (const auto& [type, field, var] : w.GetTypeFieldVars()) {
 			std::cout
-				<< ReflMngr::Instance().nregistry.Nameof(field.ID)
+				<< Mngr.nregistry.Nameof(field.ID)
 				<< ": " << var
 				<< std::endl;
 		}

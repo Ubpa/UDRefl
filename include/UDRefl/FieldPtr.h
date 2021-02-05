@@ -61,7 +61,7 @@ namespace Ubpa::UDRefl {
 			data{ ptr }
 		{ assert(valueID && ptr); }
 
-		explicit constexpr FieldPtr(ObjectPtr static_obj) noexcept : FieldPtr{ static_obj.GetTypeID(), static_obj.GetPtr() } {}
+		explicit constexpr FieldPtr(ObjectView static_obj) noexcept : FieldPtr{ static_obj.GetTypeID(), static_obj.GetPtr() } {}
 
 		explicit FieldPtr(SharedObject obj) noexcept :
 			valueID{ obj.GetTypeID() },
@@ -85,10 +85,10 @@ namespace Ubpa::UDRefl {
 		constexpr bool IsUnowned() const noexcept { return data.index() >= 2; }
 
 		// object
-		ObjectPtr Var() noexcept;
+		ObjectView Var() noexcept;
 
 		// variable
-		ObjectPtr Var(void* obj);
+		ObjectView Var(void* obj);
 
 	private:
 		TypeID valueID;

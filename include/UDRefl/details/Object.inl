@@ -2,19 +2,19 @@
 
 #include <array>
 
-#define OBJECT_PTR_DEFINE_OPERATOR_T(type, op, name)                                  \
+#define OBJECT_VIEW_DEFINE_OPERATOR_T(type, op, name)                                  \
 template<typename Arg>                                                                \
 SharedObject type::operator op (Arg&& rhs) const {                                    \
     return ADMInvoke(StrIDRegistry::MetaID::operator_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_PTR_DEFINE_CONTAINER_T(type, name)                                      \
+#define OBJECT_VIEW_DEFINE_CONTAINER_T(type, name)                                      \
 template<typename Arg>                                                                 \
 SharedObject type::name (Arg&& rhs) const {                                            \
     return ADMInvoke(StrIDRegistry::MetaID::container_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_PTR_DEFINE_CONTAINER_VARS_T(type, name)                                      \
+#define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(type, name)                                      \
 template<typename... Args>                                                                  \
 SharedObject type::name (Args&&... args) const {                                            \
     return ADMInvoke(StrIDRegistry::MetaID::container_##name, std::forward<Args>(args)...); \
@@ -35,15 +35,15 @@ namespace Ubpa::UDRefl::details {
 	template<typename T>
 	constexpr TypeID ArgID(const std::remove_const_t<std::remove_reference_t<T>>& arg) noexcept {
 		using U = std::remove_cvref_t<T>;
-		if constexpr (std::is_same_v<U, ObjectPtr> || std::is_same_v<U, SharedObject>)
-			return ObjectPtr{ arg }.AddLValueReference().GetTypeID();
+		if constexpr (std::is_same_v<U, ObjectView> || std::is_same_v<U, SharedObject>)
+			return ObjectView{ arg }.AddLValueReference().GetTypeID();
 		else
 			return TypeID_of<T>;
 	}
 
 	template<typename T>
 	constexpr void* ArgPtr(const T& arg) noexcept {
-		if constexpr (std::is_same_v<T, ObjectPtr> || std::is_same_v<T, SharedObject>)
+		if constexpr (std::is_same_v<T, ObjectView> || std::is_same_v<T, SharedObject>)
 			return arg.GetPtr();
 		else
 			return const_cast<void*>(static_cast<const void*>(&arg));
@@ -52,10 +52,10 @@ namespace Ubpa::UDRefl::details {
 
 namespace Ubpa::UDRefl {
 	//
-	// ObjectPtr
+	// ObjectView
 	//////////////////
 
-	inline ObjectPtr::operator bool() const noexcept {
+	inline ObjectView::operator bool() const noexcept {
 		if (ptr) {
 			if (ID.Is<bool>())
 				return As<bool>();
@@ -74,13 +74,13 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvocableResult ObjectPtr::IsInvocable(StrID methodID) const {
+	InvocableResult ObjectView::IsInvocable(StrID methodID) const {
 		constexpr std::array argTypeIDs = { TypeID_of<Args>... };
 		return IsInvocable(methodID, std::span<const TypeID>{argTypeIDs});
 	}
 
 	template<typename T>
-	T ObjectPtr::InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
+	T ObjectView::InvokeRet(StrID methodID, std::span<const TypeID> argTypeIDs, ArgPtrBuffer argptr_buffer) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
@@ -93,7 +93,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	InvokeResult ObjectPtr::InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const {
+	InvokeResult ObjectView::InvokeArgs(StrID methodID, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
@@ -104,7 +104,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ObjectPtr::Invoke(StrID methodID, Args&&... args) const {
+	T ObjectView::Invoke(StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypeIDs = { TypeID_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
@@ -115,7 +115,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ObjectPtr::MInvoke(
+	SharedObject ObjectView::MInvoke(
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
 		Args&&... args) const
@@ -130,7 +130,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ObjectPtr::DMInvoke(
+	SharedObject ObjectView::DMInvoke(
 		StrID methodID,
 		Args&&... args) const
 	{
@@ -138,7 +138,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T, typename... Args>
-	T ObjectPtr::AInvoke(StrID methodID, Args&&... args) const {
+	T ObjectView::AInvoke(StrID methodID, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypeIDs = { details::ArgID<decltype(args)>(args)... };
 			const std::array argptr_buffer{ details::ArgPtr(args)... };
@@ -149,7 +149,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ObjectPtr::AMInvoke(
+	SharedObject ObjectView::AMInvoke(
 		StrID methodID,
 		std::pmr::memory_resource* rst_rsrc,
 		Args&&... args) const
@@ -164,32 +164,32 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ObjectPtr::ADMInvoke(
+	SharedObject ObjectView::ADMInvoke(
 		StrID methodID,
 		Args&&... args) const
 	{
 		return AMInvoke(methodID, std::pmr::get_default_resource(), std::forward<Args>(args)...);
 	}
 	
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, +, add)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, -, sub)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, *, mul)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, /, div)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, %, mod)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, &, band)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, |, bor)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, ^, bxor)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, +, add)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, -, sub)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, *, mul)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, /, div)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, %, mod)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, &, band)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, |, bor)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, ^, bxor)
 
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, [], subscript)
-	OBJECT_PTR_DEFINE_OPERATOR_T(ObjectPtr, ->*, member_of_pointer)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, [], subscript)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, ->*, member_of_pointer)
 
 	template<typename... Args>
-	SharedObject ObjectPtr::operator()(Args&&... args) const {
+	SharedObject ObjectView::operator()(Args&&... args) const {
 		return DMInvoke(StrIDRegistry::MetaID::operator_call, std::forward<Args>(args)...);
 	}
 
 	template<typename T>
-	SharedObject ObjectPtr::operator<<(T&& in) const {
+	SharedObject ObjectView::operator<<(T&& in) const {
 		return ADMInvoke(StrIDRegistry::MetaID::operator_lshift, std::forward<T>(in));
 	}
 
@@ -197,39 +197,39 @@ namespace Ubpa::UDRefl {
 	// container
 	//////////////
 
-	OBJECT_PTR_DEFINE_CONTAINER_VARS_T(ObjectPtr, assign)
+	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(ObjectView, assign)
 
 	// - element access
 
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, at)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, at)
 
 	// - capacity
 
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, resize)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, resize)
 
 	// - modifiers
 
-	OBJECT_PTR_DEFINE_CONTAINER_VARS_T(ObjectPtr, insert)
-	OBJECT_PTR_DEFINE_CONTAINER_VARS_T(ObjectPtr, insert_or_assign)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, erase)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, push_front)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, push_back)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, swap)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, merge)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, extract)
+	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(ObjectView, insert)
+	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(ObjectView, insert_or_assign)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, erase)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, push_front)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, push_back)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, swap)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, merge)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, extract)
 
 	// - lookup
 	
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, count)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, find)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, lower_bound)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, upper_bound)
-	OBJECT_PTR_DEFINE_CONTAINER_T(ObjectPtr, equal_range)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, count)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, find)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, lower_bound)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, upper_bound)
+	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, equal_range)
 }
 
 template<>
-struct std::hash<Ubpa::UDRefl::ObjectPtr> {
-	std::size_t operator()(const Ubpa::UDRefl::ObjectPtr& obj) const noexcept {
+struct std::hash<Ubpa::UDRefl::ObjectView> {
+	std::size_t operator()(const Ubpa::UDRefl::ObjectView& obj) const noexcept {
 		return obj.GetTypeID().GetValue() ^ std::hash<const void*>()(obj.GetPtr());
 	}
 };
@@ -248,109 +248,68 @@ namespace std {
 }
 
 template<typename T>
-struct Ubpa::UDRefl::IsObjectOrPtr {
+struct Ubpa::UDRefl::IsObjectOrView {
 private:
 	using U = std::remove_cvref_t<T>;
 public:
 	static constexpr bool value =
-		std::is_same_v<U, ObjectPtr>
+		std::is_same_v<U, ObjectView>
 		|| std::is_same_v<U, SharedObject>;
 };
 
 namespace Ubpa::UDRefl {
-	inline bool operator== (const ObjectPtr& lhs, const ObjectPtr& rhs) {
+	inline bool operator== (const ObjectView& lhs, const ObjectView& rhs) {
     	return static_cast<bool>(lhs.ADMInvoke(StrIDRegistry::MetaID::operator_eq, rhs))
 		|| static_cast<bool>(rhs.ADMInvoke(StrIDRegistry::MetaID::operator_eq, lhs));
 	}
 
-	inline bool operator!= (const ObjectPtr& lhs, const ObjectPtr& rhs) {
+	inline bool operator!= (const ObjectView& lhs, const ObjectView& rhs) {
     	return static_cast<bool>(lhs.ADMInvoke(StrIDRegistry::MetaID::operator_ne, rhs))
 		|| static_cast<bool>(rhs.ADMInvoke(StrIDRegistry::MetaID::operator_ne, lhs));
 	}
 
-	template<NonObjectAndPtr T>
-	bool operator==(const T& lhs, ObjectPtr ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) } == ptr;
+	template<NonObjectAndView T>
+	bool operator==(const T& lhs, ObjectView ptr) {
+		return ObjectView{ TypeID_of<T>, const_cast<T*>(&lhs) } == ptr;
 	}
 
-	template<NonObjectAndPtr T>
-	bool operator!=(const T& lhs, ObjectPtr ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  != ptr;
+	template<NonObjectAndView T>
+	bool operator!=(const T& lhs, ObjectView ptr) {
+		return ObjectView{ TypeID_of<T>, const_cast<T*>(&lhs) }  != ptr;
 	}
 
-	template<NonObjectAndPtr T>
-	bool operator<(const T& lhs, ObjectPtr ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  < ptr;
+	template<NonObjectAndView T>
+	bool operator<(const T& lhs, ObjectView ptr) {
+		return ObjectView{ TypeID_of<T>, const_cast<T*>(&lhs) }  < ptr;
 	}
 
-	template<NonObjectAndPtr T>
-	bool operator>(const T& lhs, ObjectPtr ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  > ptr;
+	template<NonObjectAndView T>
+	bool operator>(const T& lhs, ObjectView ptr) {
+		return ObjectView{ TypeID_of<T>, const_cast<T*>(&lhs) }  > ptr;
 	}
 
-	template<NonObjectAndPtr T>
-	bool operator<=(const T& lhs, ObjectPtr ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  <= ptr;
+	template<NonObjectAndView T>
+	bool operator<=(const T& lhs, ObjectView ptr) {
+		return ObjectView{ TypeID_of<T>, const_cast<T*>(&lhs) }  <= ptr;
 	}
 
-	template<NonObjectAndPtr T>
-	bool operator>=(const T& lhs, ObjectPtr ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  >= ptr;
-	}
+	DEFINE_OPERATOR_LSHIFT(std::ostream, ObjectView)
+	DEFINE_OPERATOR_LSHIFT(std::ostringstream, ObjectView)
+	DEFINE_OPERATOR_LSHIFT(std::ofstream, ObjectView)
+	DEFINE_OPERATOR_LSHIFT(std::iostream, ObjectView)
+	DEFINE_OPERATOR_LSHIFT(std::stringstream, ObjectView)
+	DEFINE_OPERATOR_LSHIFT(std::fstream, ObjectView)
 
-	template<NonObjectAndPtr T>
-	bool operator==(const T& lhs, const SharedObject& ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  == ptr;
-	}
-
-	template<NonObjectAndPtr T>
-	bool operator!=(const T& lhs, const SharedObject& ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  != ptr;
-	}
-
-	template<NonObjectAndPtr T>
-	bool operator<(const T& lhs, const SharedObject& ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  < ptr;
-	}
-
-	template<NonObjectAndPtr T>
-	bool operator>(const T& lhs, const SharedObject& ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  > ptr;
-	}
-
-	template<NonObjectAndPtr T>
-	bool operator<=(const T& lhs, const SharedObject& ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  <= ptr;
-	}
-
-	template<NonObjectAndPtr T>
-	bool operator>=(const T& lhs, const SharedObject& ptr) {
-		return ObjectPtr{ TypeID_of<T>, const_cast<T*>(&lhs) }  >= ptr;
-	}
-
-	DEFINE_OPERATOR_LSHIFT(std::ostream, ObjectPtr)
-	DEFINE_OPERATOR_LSHIFT(std::ostream, SharedObject)
-	DEFINE_OPERATOR_LSHIFT(std::ostringstream, ObjectPtr)
-	DEFINE_OPERATOR_LSHIFT(std::ostringstream, SharedObject)
-	DEFINE_OPERATOR_LSHIFT(std::ofstream, ObjectPtr)
-	DEFINE_OPERATOR_LSHIFT(std::ofstream, SharedObject)
-	DEFINE_OPERATOR_LSHIFT(std::iostream, ObjectPtr)
-	DEFINE_OPERATOR_LSHIFT(std::iostream, SharedObject)
-	DEFINE_OPERATOR_LSHIFT(std::stringstream, ObjectPtr)
-	DEFINE_OPERATOR_LSHIFT(std::stringstream, SharedObject)
-	DEFINE_OPERATOR_LSHIFT(std::fstream, ObjectPtr)
-	DEFINE_OPERATOR_LSHIFT(std::fstream, SharedObject)
-
-	DEFINE_OPERATOR_RSHIFT(std::istream, ObjectPtr)
-	DEFINE_OPERATOR_RSHIFT(std::istringstream, ObjectPtr)
-	DEFINE_OPERATOR_RSHIFT(std::ifstream, ObjectPtr)
-	DEFINE_OPERATOR_RSHIFT(std::iostream, ObjectPtr)
-	DEFINE_OPERATOR_RSHIFT(std::stringstream, ObjectPtr)
-	DEFINE_OPERATOR_RSHIFT(std::fstream, SharedObject)
+	DEFINE_OPERATOR_RSHIFT(std::istream, ObjectView)
+	DEFINE_OPERATOR_RSHIFT(std::istringstream, ObjectView)
+	DEFINE_OPERATOR_RSHIFT(std::ifstream, ObjectView)
+	DEFINE_OPERATOR_RSHIFT(std::iostream, ObjectView)
+	DEFINE_OPERATOR_RSHIFT(std::stringstream, ObjectView)
+	DEFINE_OPERATOR_RSHIFT(std::fstream, ObjectView)
 }
 
-#undef OBJECT_PTR_DEFINE_OPERATOR_T
-#undef OBJECT_PTR_DEFINE_CONTAINER_T
-#undef OBJECT_PTR_DEFINE_CONTAINER_VARS_T
+#undef OBJECT_VIEW_DEFINE_OPERATOR_T
+#undef OBJECT_VIEW_DEFINE_CONTAINER_T
+#undef OBJECT_VIEW_DEFINE_CONTAINER_VARS_T
 #undef DEFINE_OPERATOR_LSHIFT
 #undef DEFINE_OPERATOR_RSHIFT
