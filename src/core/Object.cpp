@@ -46,80 +46,60 @@ SharedObject ObjectView::DMInvoke(
 	return Mngr.DMInvoke(*this, method_name, argTypes, argptr_buffer, flag);
 }
 
-void ObjectView::ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const {
-	return Mngr.ForEachVar({type, ptr}, func);
-}
-
-void ObjectView::ForEachOwnedVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const {
-	return Mngr.ForEachOwnedVar(*this, func);
+void ObjectView::ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func, FieldFlag flag) const {
+	return Mngr.ForEachVar(*this, func, flag);
 }
 
 std::vector<TypeRef> ObjectView::GetTypes() const {
 	return Mngr.GetTypes(type);
 }
 
-std::vector<TypeFieldRef> ObjectView::GetTypeFields() const {
+std::vector<TypeFieldRef> ObjectView::GetTypeFields(FieldFlag flag) const {
 	return Mngr.GetTypeFields(type);
 }
 
-std::vector<FieldRef> ObjectView::GetFields() const {
+std::vector<FieldRef> ObjectView::GetFields(FieldFlag flag) const {
 	return Mngr.GetFields(type);
 }
 
-std::vector<TypeMethodRef> ObjectView::GetTypeMethods() const {
+std::vector<TypeMethodRef> ObjectView::GetTypeMethods(FuncFlag flag) const {
 	return Mngr.GetTypeMethods(type);
 }
 
-std::vector<MethodRef> ObjectView::GetMethods() const {
+std::vector<MethodRef> ObjectView::GetMethods(FuncFlag flag) const {
 	return Mngr.GetMethods(type);
 }
 
-std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> ObjectView::GetTypeFieldVars() const {
-	return Mngr.GetTypeFieldVars(*this);
+std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> ObjectView::GetTypeFieldVars(FieldFlag flag) const {
+	return Mngr.GetTypeFieldVars(*this, flag);
 }
 
-std::vector<ObjectView> ObjectView::GetVars() const {
-	return Mngr.GetVars(*this);
-}
-
-std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> ObjectView::GetTypeFieldOwnedVars() const {
-	return Mngr.GetTypeFieldOwnedVars(*this);
-}
-
-std::vector<ObjectView> ObjectView::GetOwnedVars() const {
-	return Mngr.GetOwnedVars(*this);
+std::vector<ObjectView> ObjectView::GetVars(FieldFlag flag) const {
+	return Mngr.GetVars(*this, flag);
 }
 
 std::optional<TypeRef> ObjectView::FindType(const std::function<bool(TypeRef)>& func) const {
 	return Mngr.FindType(type, func);
 }
 
-std::optional<FieldRef> ObjectView::FindField(const std::function<bool(FieldRef)>& func) const {
-	return Mngr.FindField(type, func);
+std::optional<FieldRef> ObjectView::FindField(const std::function<bool(FieldRef)>& func, FieldFlag flag) const {
+	return Mngr.FindField(type, func, flag);
 }
 
-std::optional<MethodRef> ObjectView::FindMethod(const std::function<bool(MethodRef)>& func) const {
-	return Mngr.FindMethod(type, func);
+std::optional<MethodRef> ObjectView::FindMethod(const std::function<bool(MethodRef)>& func, FuncFlag flag) const {
+	return Mngr.FindMethod(type, func, flag);
 }
 
-ObjectView ObjectView::FindVar(const std::function<bool(ObjectView)>& func) const {
-	return Mngr.FindVar(*this, func);
-}
-
-ObjectView ObjectView::FindOwnedVar(const std::function<bool(ObjectView)>& func) const {
-	return Mngr.FindOwnedVar(*this, func);
+ObjectView ObjectView::FindVar(const std::function<bool(ObjectView)>& func, FieldFlag flag) const {
+	return Mngr.FindVar(*this, func, flag);
 }
 
 bool ObjectView::ContainsBase(Type base) const {
 	return Mngr.ContainsBase(type, base);
 }
 
-bool ObjectView::ContainsField(Name field_name) const {
-	return Mngr.ContainsField(type, field_name);
-}
-
-bool ObjectView::ContainsMethod(Name method_name) const {
-	return Mngr.ContainsMethod(type, method_name);
+bool ObjectView::ContainsField(Name field_name, FieldFlag flag) const {
+	return Mngr.ContainsField(type, field_name, flag);
 }
 
 bool ObjectView::ContainsMethod(Name method_name, FuncFlag flag) const {

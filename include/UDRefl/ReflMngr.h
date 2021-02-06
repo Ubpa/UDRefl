@@ -99,7 +99,7 @@ namespace Ubpa::UDRefl {
 		bool AddField(Type type, Name field_name, FieldInfo fieldinfo);
 		bool AddMethod(Type type, Name method_name, MethodInfo methodinfo);
 		bool AddBase(Type derived, Type base, BaseInfo baseinfo);
-		bool AddAttr(Type type, const Attr& attr);
+		bool AddAttr(Type type, Attr attr);
 
 		// -- template --
 
@@ -309,49 +309,36 @@ namespace Ubpa::UDRefl {
 		void ForEachTypeInfo(Type type, const std::function<bool(TypeRef)>& func) const;
 
 		// self fields and all bases' fields
-		void ForEachField(Type type, const std::function<bool(TypeRef, FieldRef)>& func) const;
+		void ForEachField (Type type, const std::function<bool(TypeRef, FieldRef)>&  func, FieldFlag flag = FieldFlag::All) const;
 
 		// self methods and all bases' methods
-		void ForEachMethod(Type type, const std::function<bool(TypeRef, MethodRef)>& func) const;
-
-		// self object vars and all bases' object vars
-		void ForEachVar(Type type, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
+		void ForEachMethod(Type type, const std::function<bool(TypeRef, MethodRef)>& func, FuncFlag  flag = FuncFlag ::All) const;
 
 		// self vars and all bases' vars
-		void ForEachVar(ObjectView obj, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
-
-		// self owned vars and all bases' owned vars
-		void ForEachOwnedVar(ObjectView obj, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
+		void ForEachVar(ObjectView obj, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		// Gather (DFS)
 
-		std::vector<TypeRef>                                   GetTypes             (Type      type);
-		std::vector<TypeFieldRef>                              GetTypeFields        (Type      type);
-		std::vector<FieldRef>                                  GetFields            (Type      type);
-		std::vector<TypeMethodRef>                             GetTypeMethods       (Type      type);
-		std::vector<MethodRef>                                 GetMethods           (Type      type);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars     (Type      type);
-		std::vector<ObjectView>                                GetVars              (Type      type);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars     (ObjectView obj);
-		std::vector<ObjectView>                                GetVars              (ObjectView obj);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldOwnedVars(ObjectView obj);
-		std::vector<ObjectView>                                GetOwnedVars         (ObjectView obj);
+		std::vector<TypeRef>                                   GetTypes        (Type      type);
+		std::vector<TypeFieldRef>                              GetTypeFields   (Type      type, FieldFlag flag = FieldFlag::All);
+		std::vector<FieldRef>                                  GetFields       (Type      type, FieldFlag flag = FieldFlag::All);
+		std::vector<TypeMethodRef>                             GetTypeMethods  (Type      type, FuncFlag  flag = FuncFlag ::All);
+		std::vector<MethodRef>                                 GetMethods      (Type      type, FuncFlag  flag = FuncFlag ::All);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag flag = FieldFlag::All);
+		std::vector<ObjectView>                                GetVars         (ObjectView obj, FieldFlag flag = FieldFlag::All);
 
 		// Find (DFS)
 
-		std::optional<TypeRef  > FindType    (Type      type, const std::function<bool(TypeRef   )>& func) const;
-		std::optional<FieldRef > FindField   (Type      type, const std::function<bool(FieldRef  )>& func) const;
-		std::optional<MethodRef> FindMethod  (Type      type, const std::function<bool(MethodRef )>& func) const;
-		ObjectView               FindVar     (Type      type, const std::function<bool(ObjectView)>& func) const;
-		ObjectView               FindVar     (ObjectView obj, const std::function<bool(ObjectView)>& func) const;
-		ObjectView               FindOwnedVar(ObjectView obj, const std::function<bool(ObjectView)>& func) const;
+		std::optional<TypeRef  > FindType  (Type      type, const std::function<bool(TypeRef   )>& func) const;
+		std::optional<FieldRef > FindField (Type      type, const std::function<bool(FieldRef  )>& func, FieldFlag flag = FieldFlag::All) const;
+		std::optional<MethodRef> FindMethod(Type      type, const std::function<bool(MethodRef )>& func, FuncFlag  flag = FuncFlag ::All) const;
+		ObjectView               FindVar   (ObjectView obj, const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		// Contains (DFS)
 
 		bool ContainsBase  (Type type, Type base       ) const;
-		bool ContainsField (Type type, Name field_name ) const;
-		bool ContainsMethod(Type type, Name method_name) const;
-		bool ContainsMethod(Type type, Name method_name, FuncFlag flag) const;
+		bool ContainsField (Type type, Name field_name , FieldFlag flag = FieldFlag::All) const;
+		bool ContainsMethod(Type type, Name method_name, FuncFlag  flag = FuncFlag ::All) const;
 
 		//
 		// Memory

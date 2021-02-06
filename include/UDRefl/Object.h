@@ -170,35 +170,28 @@ namespace Ubpa::UDRefl {
 		ObjectView Var(Type base, Name field_name, FieldFlag flag = FieldFlag::All) const;
 
 		// self vars and all bases' vars
-		void ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
-
-		// self owned vars and all bases' owned vars
-		void ForEachOwnedVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const;
+		void ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		//
 		// Algorithm
 		//////////////
 
-		std::vector<TypeRef>                                   GetTypes() const;
-		std::vector<TypeFieldRef>                              GetTypeFields() const;
-		std::vector<FieldRef>                                  GetFields() const;
-		std::vector<TypeMethodRef>                             GetTypeMethods() const;
-		std::vector<MethodRef>                                 GetMethods() const;
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars() const;
-		std::vector<ObjectView>                                GetVars() const;
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldOwnedVars() const;
-		std::vector<ObjectView>                                GetOwnedVars() const;
+		std::vector<TypeRef>                                   GetTypes        () const;
+		std::vector<TypeFieldRef>                              GetTypeFields   (FieldFlag flag = FieldFlag::All) const;
+		std::vector<FieldRef>                                  GetFields       (FieldFlag flag = FieldFlag::All) const;
+		std::vector<TypeMethodRef>                             GetTypeMethods  (FuncFlag  flag = FuncFlag ::All) const;
+		std::vector<MethodRef>                                 GetMethods      (FuncFlag  flag = FuncFlag ::All) const;
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(FieldFlag flag = FieldFlag::All) const;
+		std::vector<ObjectView>                                GetVars         (FieldFlag flag = FieldFlag::All) const;
 
-		std::optional<TypeRef  > FindType    (const std::function<bool(TypeRef   )>& func) const;
-		std::optional<FieldRef > FindField   (const std::function<bool(FieldRef  )>& func) const;
-		std::optional<MethodRef> FindMethod  (const std::function<bool(MethodRef )>& func) const;
-		ObjectView               FindVar     (const std::function<bool(ObjectView)>& func) const;
-		ObjectView               FindOwnedVar(const std::function<bool(ObjectView)>& func) const;
+		std::optional<TypeRef  > FindType  (const std::function<bool(TypeRef   )>& func) const;
+		std::optional<FieldRef > FindField (const std::function<bool(FieldRef  )>& func, FieldFlag flag = FieldFlag::All) const;
+		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef )>& func, FuncFlag  flag = FuncFlag ::All) const;
+		ObjectView               FindVar   (const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		bool ContainsBase  (Type base       ) const;
-		bool ContainsField (Name field_name ) const;
-		bool ContainsMethod(Name method_name) const;
-		bool ContainsMethod(Name method_name, FuncFlag flag) const;
+		bool ContainsField (Name field_name , FieldFlag flag = FieldFlag::All) const;
+		bool ContainsMethod(Name method_name, FuncFlag  flag = FuncFlag ::All) const;
 
 		//
 		// Type
@@ -214,7 +207,6 @@ namespace Ubpa::UDRefl {
 		ObjectView AddRValueReference() const;
 		ObjectView AddConstLValueReference() const;
 		ObjectView AddConstRValueReference() const;
-
 
 		//
 		// Meta

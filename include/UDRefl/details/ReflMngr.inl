@@ -653,7 +653,7 @@ namespace Ubpa::UDRefl {
 			return FieldPtr{ Type_of<T>, buffer };
 		}
 		else
-			return FieldPtr{ MakeShared(Type_of<T>, std::forward<Args>(args)...) };
+			return FieldPtr{ MakeShared(Type_of<RawT>, std::forward<Args>(args)...) };
 	}
 
 	template<typename Return>

@@ -46,7 +46,14 @@ int main() {
 		<< "//" << std::endl
 		<< "// object owned var" << std::endl
 		<< "/////////////////////" << std::endl;
-	for (const auto& [type, field, var] : ptr.GetTypeFieldOwnedVars())
+	for (const auto& [type, field, var] : ptr.GetTypeFieldVars(FieldFlag::Owned))
+		std::cout << field.name.GetView() << ": " << var << std::endl;
+
+	std::cout
+		<< "//" << std::endl
+		<< "// object unowned var" << std::endl
+		<< "/////////////////////" << std::endl;
+	for (const auto& [type, field, var] : ptr.GetTypeFieldVars(FieldFlag::Unowned))
 		std::cout << field.name.GetView() << ": " << var << std::endl;
 
 	return 0;
