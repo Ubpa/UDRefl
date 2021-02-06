@@ -26,4 +26,6 @@
 - [ ] remove metas: `malloc`, `free`, `aligned_malloc`, `aligned_free` 
 - [ ] compress API
   - [x] IsInvocable
+  - [ ] move APIs with Type to corresponding APIs with ObjectView
+  - [ ] add filters into APIs
 

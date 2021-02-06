@@ -58,8 +58,7 @@ namespace Ubpa::UDRefl {
 		FieldPtr GenerateFieldPtr(T&& data);
 
 		// if T is bufferable, T will be stored as buffer,
-		// else we will use std::make_shared to store it
-		// require alignof(T) <= alignof(std::max_align_t)
+		// else we will use MakeShared to store it
 		template<typename T, typename... Args>
 		FieldPtr GenerateDynamicFieldPtr(Args&&... args);
 
@@ -273,22 +272,22 @@ namespace Ubpa::UDRefl {
 		// Meta
 		/////////
 
-		bool IsNonCopiedArgConstructible(Type type, std::span<const Type  > argTypes  ) const;
-		bool IsNonCopiedArgConstructible(Type type, std::span<const TypeID> argTypeIDs) const;
-		bool IsConstructible            (Type type, std::span<const Type  > argTypes  ) const;
+		bool IsNonCopiedArgConstructible(Type type, std::span<const Type  > argTypes   = {}) const;
+		bool IsNonCopiedArgConstructible(Type type, std::span<const TypeID> argTypeIDs = {}) const;
+		bool IsConstructible            (Type type, std::span<const Type  > argTypes   = {}) const;
 		bool IsCopyConstructible        (Type type) const;
 		bool IsMoveConstructible        (Type type) const;
 		bool IsDestructible             (Type type) const;
 
-		bool NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
-		bool Construct            (ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		bool NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool Construct            (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		bool Destruct             (ObjectView obj) const;
 
-		ObjectView NonArgCopyNew(Type      type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
-		ObjectView New          (Type      type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		ObjectView NonArgCopyNew(Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		ObjectView New          (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		bool       Delete       (ObjectView obj) const;
 
-		SharedObject MakeShared(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
+		SharedObject MakeShared(Type type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		// -- template --
 
@@ -372,8 +371,9 @@ namespace Ubpa::UDRefl {
 		// Memory
 		///////////
 		//
+		// - MInvoke's 'M' means 'memory' (use a memory resource)
 		// - MInvoke will allocate buffer for result, and move to SharedObject
-		// - if result is reference, SharedObject's Ptr is a pointer of referenced object
+		// - if result is a reference, SharedObject is a ObjectView actually
 		// - DMInvoke's 'D' means 'default' (use the default memory resource)
 		//
 
@@ -382,16 +382,30 @@ namespace Ubpa::UDRefl {
 		SharedObject MInvoke(
 			Type type,
 			Name method_name,
+			std::pmr::memory_resource* result_rsrc,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource()) const;
+			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		SharedObject MInvoke(
 			ObjectView obj,
 			Name method_name,
+			std::pmr::memory_resource* result_rsrc,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			std::pmr::memory_resource* result_rsrc = std::pmr::get_default_resource()) const;
+			ArgPtrBuffer argptr_buffer = nullptr) const;
+
+		SharedObject DMInvoke(
+			Type type,
+			Name method_name,
+			std::span<const Type> argTypes = {},
+			ArgPtrBuffer argptr_buffer = nullptr) const
+		{ return MInvoke(type, method_name, &object_resource, argTypes, argptr_buffer); }
+
+		SharedObject DMInvoke(
+			ObjectView obj,
+			Name method_name,
+			std::span<const Type> argTypes = {},
+			ArgPtrBuffer argptr_buffer = nullptr) const
+		{ return MInvoke(obj, method_name, &object_resource, argTypes, argptr_buffer); }
 
 		template<typename... Args>
 		SharedObject MInvoke(

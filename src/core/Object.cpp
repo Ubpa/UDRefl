@@ -28,11 +28,19 @@ InvokeResult ObjectView::Invoke(
 
 SharedObject ObjectView::MInvoke(
 	Name method_name,
+	std::pmr::memory_resource* rst_rsrc,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer,
-	std::pmr::memory_resource* rst_rsrc) const
+	ArgPtrBuffer argptr_buffer) const
 {
-	return Mngr.MInvoke(*this, method_name, argTypes, argptr_buffer, rst_rsrc);
+	return Mngr.MInvoke(*this, method_name, rst_rsrc, argTypes, argptr_buffer);
+}
+
+SharedObject ObjectView::DMInvoke(
+	Name method_name,
+	std::span<const Type> argTypes,
+	ArgPtrBuffer argptr_buffer) const
+{
+	return Mngr.DMInvoke(*this, method_name, argTypes, argptr_buffer);
 }
 
 void ObjectView::ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const {
@@ -111,16 +119,8 @@ bool ObjectView::ContainsMethod(Name method_name) const {
 	return Mngr.ContainsMethod(type, method_name);
 }
 
-bool ObjectView::ContainsVariableMethod(Name method_name) const {
-	return Mngr.ContainsVariableMethod(type, method_name);
-}
-
-bool ObjectView::ContainsConstMethod(Name method_name) const {
-	return Mngr.ContainsConstMethod(type, method_name);
-}
-
-bool ObjectView::ContainsStaticMethod(Name method_name) const {
-	return Mngr.ContainsStaticMethod(type, method_name);
+bool ObjectView::ContainsMethod(Name method_name, FuncMode mode) const {
+	return Mngr.ContainsMethod(type, method_name, mode);
 }
 
 ObjectView ObjectView::RemoveConst() const {

@@ -653,9 +653,9 @@ namespace Ubpa::UDRefl::details {
 		std::pmr::memory_resource* args_rsrc,
 		Type type,
 		Name method_name,
+		std::pmr::memory_resource* rst_rsrc,
 		std::span<const Type> argTypes,
-		ArgPtrBuffer argptr_buffer,
-		std::pmr::memory_resource* rst_rsrc)
+		ArgPtrBuffer argptr_buffer)
 	{
 		assert(type.CVRefMode() == CVRefMode::None);
 
@@ -702,7 +702,7 @@ namespace Ubpa::UDRefl::details {
 		}
 
 		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = MInvoke(is_priority, args_rsrc, base, method_name, argTypes, argptr_buffer, rst_rsrc);
+			auto rst = MInvoke(is_priority, args_rsrc, base, method_name, rst_rsrc, argTypes, argptr_buffer);
 			if (rst.GetType())
 				return rst;
 		}
@@ -716,9 +716,9 @@ namespace Ubpa::UDRefl::details {
 		ObjectView obj,
 		bool is_const,
 		Name method_name,
+		std::pmr::memory_resource* rst_rsrc,
 		std::span<const Type> argTypes,
-		ArgPtrBuffer argptr_buffer,
-		std::pmr::memory_resource* rst_rsrc)
+		ArgPtrBuffer argptr_buffer)
 	{
 		assert(rst_rsrc);
 		assert(obj.GetType().CVRefMode() == CVRefMode::None);
@@ -803,7 +803,7 @@ namespace Ubpa::UDRefl::details {
 			auto rst = MInvoke(
 				is_priority, args_rsrc,
 				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
-				method_name, argTypes, argptr_buffer, rst_rsrc
+				method_name, rst_rsrc, argTypes, argptr_buffer
 			);
 			if (rst.GetType())
 				return rst;
@@ -1510,9 +1510,9 @@ InvokeResult ReflMngr::Invoke(
 SharedObject ReflMngr::MInvoke(
 	Type type,
 	Name method_name,
+	std::pmr::memory_resource* rst_rsrc,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer,
-	std::pmr::memory_resource* rst_rsrc) const
+	ArgPtrBuffer argptr_buffer) const
 {
 	assert(rst_rsrc);
 
@@ -1537,18 +1537,18 @@ SharedObject ReflMngr::MInvoke(
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawType, method_name, argTypes, argptr_buffer, rst_rsrc); priority_rst.GetType().Valid())
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawType, method_name, rst_rsrc, argTypes, argptr_buffer); priority_rst.GetType().Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, rawType, method_name, argTypes, argptr_buffer, rst_rsrc);
+	return details::MInvoke(false, &temporary_resource, rawType, method_name, rst_rsrc, argTypes, argptr_buffer);
 }
 
 SharedObject ReflMngr::MInvoke(
 	ObjectView obj,
 	Name method_name,
+	std::pmr::memory_resource* rst_rsrc,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer,
-	std::pmr::memory_resource* rst_rsrc) const
+	ArgPtrBuffer argptr_buffer) const
 {
 	assert(rst_rsrc);
 
@@ -1578,10 +1578,10 @@ SharedObject ReflMngr::MInvoke(
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, is_const, method_name, argTypes, argptr_buffer, rst_rsrc); priority_rst.GetType().Valid())
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, is_const, method_name, rst_rsrc, argTypes, argptr_buffer); priority_rst.GetType().Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, rawObj, is_const, method_name, argTypes, argptr_buffer, rst_rsrc);
+	return details::MInvoke(false, &temporary_resource, rawObj, is_const, method_name, rst_rsrc, argTypes, argptr_buffer);
 }
 
 ObjectView ReflMngr::NonArgCopyMNew(Type type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
