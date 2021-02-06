@@ -1,5 +1,22 @@
 #pragma once
 
+#define UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(Name)                      \
+constexpr Name operator & (const Name& lhs, const Name& rhs) noexcept {  \
+	static_assert(std::is_enum_v<Name>);                                 \
+	using T = std::underlying_type_t<Name>;                              \
+	return static_cast<Name>(static_cast<T>(lhs) & static_cast<T>(rhs)); \
+}                                                                        \
+constexpr Name operator | (const Name& lhs, const Name& rhs) noexcept {  \
+	static_assert(std::is_enum_v<Name>);                                 \
+	using T = std::underlying_type_t<Name>;                              \
+	return static_cast<Name>(static_cast<T>(lhs) | static_cast<T>(rhs)); \
+}                                                                        \
+constexpr Name operator ~ (const Name& e) noexcept {                     \
+	static_assert(std::is_enum_v<Name>);                                 \
+	using T = std::underlying_type_t<Name>;                              \
+	return static_cast<Name>(~static_cast<T>(e));                        \
+}
+
 #include <UTemplate/Func.h>
 
 #include <cstdint>
@@ -214,6 +231,19 @@ namespace Ubpa::UDRefl {
 	// - size : sizeof(Func)
 	template<typename Func>
 	constexpr auto wrap_static_function(Func&& func) noexcept;
+	
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr decltype(auto) enum_cast(Enum&& e) noexcept;
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr bool enum_empty(const Enum& e) noexcept;
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr bool enum_contain_any(const Enum& e, const Enum& flag) noexcept;
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr bool enum_contain(const Enum& e, const Enum& flag) noexcept;
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr Enum enum_combine(std::initializer_list<Enum> flags) noexcept;
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr Enum enum_remove(const Enum& e, const Enum& flag) noexcept;
 
 	//
 	// Traits

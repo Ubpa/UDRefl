@@ -896,9 +896,9 @@ namespace Ubpa::UDRefl {
 	///////////
 
 	template<typename... Args>
-	InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, FuncMode mode) const {
+	InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, FuncFlag flag) const {
 		constexpr std::array argTypes = { Type_of<Args>... };
-		return IsInvocable(type, method_name, std::span<const Type>{argTypes}, mode);
+		return IsInvocable(type, method_name, std::span<const Type>{argTypes}, flag);
 	}
 
 	template<typename T>
@@ -1036,49 +1036,19 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	SharedObject ReflMngr::MInvoke(
-		Type type,
-		Name method_name,
-		std::pmr::memory_resource* rst_rsrc,
-		Args&&... args) const
-	{
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MInvoke(type, method_name, rst_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return MInvoke(type, method_name, rst_rsrc);
-	}
-
-	template<typename... Args>
-	SharedObject ReflMngr::MInvoke(
 		ObjectView obj,
 		Name method_name,
 		std::pmr::memory_resource* rst_rsrc,
+		FuncFlag flag,
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MInvoke(obj, method_name, rst_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return MInvoke(obj, method_name, rst_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), flag);
 		}
 		else
-			return MInvoke(obj, method_name, rst_rsrc);
-	}
-
-	template<typename... Args>
-	SharedObject ReflMngr::DMInvoke(
-		Type type,
-		Name method_name,
-		Args&&... args) const
-	{
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return DMInvoke(type, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return DMInvoke(type, method_name);
+			return MInvoke(obj, method_name, rst_rsrc, flag);
 	}
 
 	template<typename... Args>

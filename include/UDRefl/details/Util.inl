@@ -189,6 +189,68 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	return wrapped_function;
 }
 
+template<typename Enum> requires std::is_enum_v<Enum>
+constexpr decltype(auto) Ubpa::UDRefl::enum_cast(Enum&& e) noexcept {
+	using E = decltype(e);
+	using T = std::underlying_type_t<std::remove_cvref_t<Enum>>;
+	if constexpr (std::is_reference_v<E>) {
+		using UnrefE = std::remove_reference_t<E>;
+		if constexpr (std::is_lvalue_reference_v<E>) {
+			if constexpr (std::is_const_v<UnrefE>)
+				return static_cast<const T&>(e);
+			else
+				return static_cast<T&>(e);
+		}
+		else if constexpr (std::is_rvalue_reference_v<E>) {
+			if constexpr (std::is_const_v<UnrefE>)
+				return static_cast<const T&&>(e);
+			else
+				return static_cast<T&&>(e);
+		}
+		else {
+			if constexpr (std::is_const_v<UnrefE>)
+				return static_cast<const T>(e);
+			else
+				return static_cast<T>(e);
+		}
+	}
+
+}
+
+template<typename Enum> requires std::is_enum_v<Enum>
+constexpr bool Ubpa::UDRefl::enum_empty(const Enum& e) noexcept {
+	using T = std::underlying_type_t<Enum>;
+	return static_cast<T>(e);
+}
+
+template<typename Enum> requires std::is_enum_v<Enum>
+constexpr bool Ubpa::UDRefl::enum_contain_any(const Enum& e, const Enum& flag) noexcept {
+	using T = std::underlying_type_t<Enum>;
+	return static_cast<T>(e) & static_cast<T>(flag);
+}
+
+template<typename Enum> requires std::is_enum_v<Enum>
+constexpr bool Ubpa::UDRefl::enum_contain(const Enum& e, const Enum& flag) noexcept {
+	using T = std::underlying_type_t<Enum>;
+	const auto flag_T = static_cast<T>(flag);
+	return (static_cast<T>(e) & flag_T) == flag_T;
+}
+
+template<typename Enum> requires std::is_enum_v<Enum>
+constexpr Enum Ubpa::UDRefl::enum_combine(std::initializer_list<Enum> flags) noexcept {
+	using T = std::underlying_type_t<Enum>;
+	T rst = 0;
+	for (const auto& flag : flags)
+		rst |= static_cast<T>(flag);
+	return static_cast<Enum>(rst);
+}
+
+template<typename Enum> requires std::is_enum_v<Enum>
+constexpr Enum Ubpa::UDRefl::enum_remove(const Enum& e, const Enum& flag) noexcept {
+	using T = std::underlying_type_t<Enum>;
+	return static_cast<Enum>(static_cast<T>(e) & (~static_cast<T>(flag)));
+}
+
 template<typename Func>
 constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using Traits = FuncTraits<std::decay_t<Func>>;

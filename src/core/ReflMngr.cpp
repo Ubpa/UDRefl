@@ -152,7 +152,7 @@ namespace Ubpa::UDRefl::details {
 			if (params[i] == argTypeIDs[i])
 				continue;
 
-			auto lhs = params[i];
+			const auto& lhs = params[i];
 #ifndef NDEBUG
 			// because rhs(arg)'s ID maybe have no name in the registry
 			// so we use type_name_add_*_hash(...) to avoid it
@@ -492,7 +492,7 @@ namespace Ubpa::UDRefl::details {
 		Type type,
 		Name method_name,
 		std::span<const Type> argTypes,
-		FuncMode mode)
+		FuncFlag flag)
 	{
 		assert(type.CVRefMode() == CVRefMode::None);
 		auto typetarget = Mngr.typeinfos.find(type);
@@ -504,7 +504,7 @@ namespace Ubpa::UDRefl::details {
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		// 1. object variable
-		if (mode == FuncMode::Variable) {
+		if (enum_contain(flag, FuncFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
@@ -515,9 +515,10 @@ namespace Ubpa::UDRefl::details {
 			}
 		}
 
-		{ // 2. object const and static
+		// 2. object const and static
+		if(enum_contain(flag, FuncFlag::Const | FuncFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && (mode != FuncMode::Static || iter->second.methodptr.IsStatic())
+				if (!iter->second.methodptr.IsMemberVariable() && enum_contain_any(flag, iter->second.methodptr.GetFuncFlag())
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
@@ -527,53 +528,7 @@ namespace Ubpa::UDRefl::details {
 		}
 
 		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			if (auto rst = IsInvocable(is_priority, base, method_name, argTypes, mode))
-				return rst;
-		}
-
-		return {};
-	}
-
-	static InvokeResult Invoke(
-		bool is_priority,
-		std::pmr::memory_resource* args_rsrc,
-		Type type,
-		Name method_name,
-		void* result_buffer,
-		std::span<const Type> argTypes,
-		ArgPtrBuffer argptr_buffer)
-	{
-		assert(type.CVRefMode() == CVRefMode::None);
-
-		auto typetarget = Mngr.typeinfos.find(type);
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-		
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (iter->second.methodptr.IsStatic()) {
-				NewArgsGuard guard{
-					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
-				};
-				if (!guard.IsCompatible())
-					continue;
-
-				return {
-					true,
-					iter->second.methodptr.GetResultDesc().type,
-					std::move(iter->second.methodptr.Invoke(result_buffer, guard.GetArgPtrBuffer()))
-				};
-			}
-		}
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = Invoke(is_priority, args_rsrc, base, method_name, result_buffer, argTypes, argptr_buffer);
-			if (rst.success)
+			if (auto rst = IsInvocable(is_priority, base, method_name, argTypes, flag))
 				return rst;
 		}
 
@@ -584,11 +539,11 @@ namespace Ubpa::UDRefl::details {
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
 		ObjectView obj,
-		bool is_const,
 		Name method_name,
 		void* result_buffer,
 		std::span<const Type> argTypes,
-		ArgPtrBuffer argptr_buffer)
+		ArgPtrBuffer argptr_buffer,
+		FuncFlag flag)
 	{
 		assert(obj.GetType().CVRefMode() == CVRefMode::None);
 
@@ -601,7 +556,7 @@ namespace Ubpa::UDRefl::details {
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
-		if (!is_const) {
+		if (enum_contain(flag, FuncFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()) {
 					NewArgsGuard guard{
@@ -618,19 +573,21 @@ namespace Ubpa::UDRefl::details {
 				}
 			}
 		}
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (!iter->second.methodptr.IsMemberVariable()) {
-				NewArgsGuard guard{
-					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
-				};
-				if (!guard.IsCompatible())
-					continue;
-				return {
-					true,
-					iter->second.methodptr.GetResultDesc().type,
-					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer())
-				};
+		if (enum_contain_any(flag, FuncFlag::Const | FuncFlag::Static)) {
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetFuncFlag())) {
+					NewArgsGuard guard{
+						is_priority, args_rsrc,
+						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
+					};
+					if (!guard.IsCompatible())
+						continue;
+					return {
+						true,
+						iter->second.methodptr.GetResultDesc().type,
+						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer())
+					};
+				}
 			}
 		}
 
@@ -638,8 +595,9 @@ namespace Ubpa::UDRefl::details {
 		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
 			auto rst = Invoke(
 				is_priority, args_rsrc,
-				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
-				method_name, result_buffer, argTypes, argptr_buffer
+				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
+				method_name, result_buffer, argTypes, argptr_buffer,
+				flag
 			);
 			if (rst.success)
 				return rst;
@@ -651,74 +609,12 @@ namespace Ubpa::UDRefl::details {
 	static SharedObject MInvoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
-		Type type,
-		Name method_name,
-		std::pmr::memory_resource* rst_rsrc,
-		std::span<const Type> argTypes,
-		ArgPtrBuffer argptr_buffer)
-	{
-		assert(type.CVRefMode() == CVRefMode::None);
-
-		auto typetarget = Mngr.typeinfos.find(type);
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (iter->second.methodptr.IsStatic()) {
-				NewArgsGuard guard{
-					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
-				};
-
-				if (!guard.IsCompatible())
-					continue;
-
-				const auto& methodptr = iter->second.methodptr;
-				const auto& rst_desc = methodptr.GetResultDesc();
-
-				if (rst_desc.type.Is<void>()) {
-					iter->second.methodptr.Invoke(nullptr, guard.GetArgPtrBuffer());
-					return SharedObject{ rst_desc.type };
-				}
-				else if (rst_desc.type.IsReference()) {
-					std::aligned_storage_t<sizeof(void*)> buffer;
-					iter->second.methodptr.Invoke(&buffer, guard.GetArgPtrBuffer());
-					return { rst_desc.type, buffer_as<void*>(&buffer) };
-				}
-				else {
-					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-					auto dtor = iter->second.methodptr.Invoke(result_buffer, guard.GetArgPtrBuffer());
-					return {
-						{rst_desc.type, result_buffer},
-						GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
-					};
-				}
-			}
-		}
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = MInvoke(is_priority, args_rsrc, base, method_name, rst_rsrc, argTypes, argptr_buffer);
-			if (rst.GetType())
-				return rst;
-		}
-
-		return nullptr;
-	}
-
-	static SharedObject MInvoke(
-		bool is_priority,
-		std::pmr::memory_resource* args_rsrc,
 		ObjectView obj,
-		bool is_const,
 		Name method_name,
 		std::pmr::memory_resource* rst_rsrc,
 		std::span<const Type> argTypes,
-		ArgPtrBuffer argptr_buffer)
+		ArgPtrBuffer argptr_buffer,
+		FuncFlag flag)
 	{
 		assert(rst_rsrc);
 		assert(obj.GetType().CVRefMode() == CVRefMode::None);
@@ -731,7 +627,7 @@ namespace Ubpa::UDRefl::details {
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
-		if (!is_const) {
+		if (enum_contain(flag, FuncFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()) {
 					NewArgsGuard guard{
@@ -766,35 +662,37 @@ namespace Ubpa::UDRefl::details {
 			}
 		}
 
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (!iter->second.methodptr.IsMemberVariable()) {
-				NewArgsGuard guard{
-					is_priority, args_rsrc,
-					iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
-				};
-
-				if (!guard.IsCompatible())
-					continue;
-
-				const auto& methodptr = iter->second.methodptr;
-				const auto& rst_desc = methodptr.GetResultDesc();
-
-				if (rst_desc.type.Is<void>()) {
-					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), nullptr, argptr_buffer);
-					return SharedObject{ rst_desc.type };
-				}
-				else if (rst_desc.type.IsReference()) {
-					std::aligned_storage_t<sizeof(void*)> buffer;
-					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), &buffer, guard.GetArgPtrBuffer());
-					return { rst_desc.type, buffer_as<void*>(&buffer) };
-				}
-				else {
-					void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-					auto dtor = iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
-					return {
-						{rst_desc.type, result_buffer},
-						GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
+		if (enum_contain_any(flag, FuncFlag::Const | FuncFlag::Static)) {
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetFuncFlag())) {
+					NewArgsGuard guard{
+						is_priority, args_rsrc,
+						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
 					};
+
+					if (!guard.IsCompatible())
+						continue;
+
+					const auto& methodptr = iter->second.methodptr;
+					const auto& rst_desc = methodptr.GetResultDesc();
+
+					if (rst_desc.type.Is<void>()) {
+						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), nullptr, argptr_buffer);
+						return SharedObject{ rst_desc.type };
+					}
+					else if (rst_desc.type.IsReference()) {
+						std::aligned_storage_t<sizeof(void*)> buffer;
+						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), &buffer, guard.GetArgPtrBuffer());
+						return { rst_desc.type, buffer_as<void*>(&buffer) };
+					}
+					else {
+						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
+						auto dtor = iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
+						return {
+							{rst_desc.type, result_buffer},
+							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
+						};
+					}
 				}
 			}
 		}
@@ -802,8 +700,9 @@ namespace Ubpa::UDRefl::details {
 		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
 			auto rst = MInvoke(
 				is_priority, args_rsrc,
-				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, is_const,
-				method_name, rst_rsrc, argTypes, argptr_buffer
+				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
+				method_name, rst_rsrc, argTypes, argptr_buffer,
+				flag
 			);
 			if (rst.GetType())
 				return rst;
@@ -1412,60 +1311,26 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 	return true;
 }
 
-InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, FuncMode mode) const {
+InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, FuncFlag flag) const {
 	const CVRefMode cvref_mode = type.CVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
-		return IsInvocable(type.RemoveReference(), method_name, argTypes, mode);
+		return IsInvocable(type.RemoveReference(), method_name, argTypes, flag);
 	case CVRefMode::Const: [[fallthrough]];
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		return IsInvocable(type.RemoveCVRef(), method_name, argTypes, mode == FuncMode::Variable ? FuncMode::Const : mode);
+		return IsInvocable(type.RemoveCVRef(), method_name, argTypes, enum_remove(flag, FuncFlag::Variable));
 	default:
 		break;
 	}
 
-	if (auto priority_rst = details::IsInvocable(true, type, method_name, argTypes, mode))
+	if (auto priority_rst = details::IsInvocable(true, type, method_name, argTypes, flag))
 		return priority_rst;
 
-	return details::IsInvocable(false, type, method_name, argTypes, mode);
-}
-
-InvokeResult ReflMngr::Invoke(
-	Type type,
-	Name method_name,
-	void* result_buffer,
-	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
-{
-	Type rawType;
-	const CVRefMode cvref_mode = type.CVRefMode();
-	assert(!CVRefMode_IsVolatile(cvref_mode));
-	switch (cvref_mode)
-	{
-	case CVRefMode::Left: [[fallthrough]];
-	case CVRefMode::Right:
-		rawType = type.RemoveReference();
-		break;
-	case CVRefMode::Const:
-		rawType = type.RemoveConst();
-		break;
-	case CVRefMode::ConstLeft: [[fallthrough]];
-	case CVRefMode::ConstRight:
-		rawType = type.RemoveCVRef();
-		break;
-	default:
-		rawType = type;
-		break;
-	}
-
-	if(auto priority_rst = details::Invoke(true, &temporary_resource, rawType, method_name, result_buffer, argTypes, argptr_buffer))
-		return priority_rst;
-
-	return details::Invoke(false, &temporary_resource, rawType, method_name, result_buffer, argTypes, argptr_buffer);
+	return details::IsInvocable(false, type, method_name, argTypes, flag);
 }
 
 InvokeResult ReflMngr::Invoke(
@@ -1473,10 +1338,10 @@ InvokeResult ReflMngr::Invoke(
 	Name method_name,
 	void* result_buffer,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
+	ArgPtrBuffer argptr_buffer,
+	FuncFlag flag) const
 {
 	ObjectView rawObj;
-	bool is_const;
 	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
@@ -1484,63 +1349,28 @@ InvokeResult ReflMngr::Invoke(
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
 		rawObj = obj.RemoveReference();
-		is_const = false;
 		break;
 	case CVRefMode::Const:
 		rawObj = obj.RemoveConst();
-		is_const = true;
+		flag = enum_remove(flag, FuncFlag::Variable);
 		break;
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
 		rawObj = obj.RemoveConstReference();
-		is_const = true;
+		flag = enum_remove(flag, FuncFlag::Variable);
 		break;
 	default:
 		rawObj = obj;
-		is_const = false;
 		break;
 	}
 
-	if (auto priority_rst = details::Invoke(true, &temporary_resource, rawObj, is_const, method_name, result_buffer, argTypes, argptr_buffer))
+	if (!obj.GetPtr())
+		flag = enum_remove(flag, FuncFlag::Variable | FuncFlag::Const);
+
+	if (auto priority_rst = details::Invoke(true, &temporary_resource, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag))
 		return priority_rst;
 
-	return details::Invoke(false, &temporary_resource, rawObj, is_const, method_name, result_buffer, argTypes, argptr_buffer);
-}
-
-SharedObject ReflMngr::MInvoke(
-	Type type,
-	Name method_name,
-	std::pmr::memory_resource* rst_rsrc,
-	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
-{
-	assert(rst_rsrc);
-
-	Type rawType;
-	const CVRefMode cvref_mode = type.CVRefMode();
-	assert(!CVRefMode_IsVolatile(cvref_mode));
-	switch (cvref_mode)
-	{
-	case CVRefMode::Left: [[fallthrough]];
-	case CVRefMode::Right:
-		rawType = type.RemoveReference();
-		break;
-	case CVRefMode::Const:
-		rawType = type.RemoveConst();
-		break;
-	case CVRefMode::ConstLeft: [[fallthrough]];
-	case CVRefMode::ConstRight:
-		rawType = type.RemoveCVRef();
-		break;
-	default:
-		rawType = type;
-		break;
-	}
-
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawType, method_name, rst_rsrc, argTypes, argptr_buffer); priority_rst.GetType().Valid())
-		return priority_rst;
-
-	return details::MInvoke(false, &temporary_resource, rawType, method_name, rst_rsrc, argTypes, argptr_buffer);
+	return details::Invoke(false, &temporary_resource, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ReflMngr::MInvoke(
@@ -1548,12 +1378,12 @@ SharedObject ReflMngr::MInvoke(
 	Name method_name,
 	std::pmr::memory_resource* rst_rsrc,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
+	ArgPtrBuffer argptr_buffer,
+	FuncFlag flag) const
 {
 	assert(rst_rsrc);
 
 	ObjectView rawObj;
-	bool is_const;
 	const CVRefMode cvref_mode = obj.GetType().CVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
@@ -1561,27 +1391,28 @@ SharedObject ReflMngr::MInvoke(
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
 		rawObj = obj.RemoveReference();
-		is_const = false;
 		break;
 	case CVRefMode::Const:
 		rawObj = obj.RemoveConst();
-		is_const = true;
+		flag = enum_remove(flag, FuncFlag::Variable);
 		break;
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
 		rawObj = obj.RemoveConstReference();
-		is_const = true;
+		flag = enum_remove(flag, FuncFlag::Variable);
 		break;
 	default:
 		rawObj = obj;
-		is_const = false;
 		break;
 	}
 
-	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, is_const, method_name, rst_rsrc, argTypes, argptr_buffer); priority_rst.GetType().Valid())
+	if (!obj.GetPtr())
+		flag = enum_remove(flag, FuncFlag::Variable | FuncFlag::Const);
+
+	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, method_name, rst_rsrc, argTypes, argptr_buffer, flag); priority_rst.GetType().Valid())
 		return priority_rst;
 
-	return details::MInvoke(false, &temporary_resource, rawObj, is_const, method_name, rst_rsrc, argTypes, argptr_buffer);
+	return details::MInvoke(false, &temporary_resource, rawObj, method_name, rst_rsrc, argTypes, argptr_buffer, flag);
 }
 
 ObjectView ReflMngr::NonArgCopyMNew(Type type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
@@ -2132,7 +1963,7 @@ bool ReflMngr::ContainsMethod(Type type, Name method_name) const {
 	return false;
 }
 
-bool ReflMngr::ContainsMethod(Type type, Name method_name, FuncMode mode) const {
+bool ReflMngr::ContainsMethod(Type type, Name method_name, FuncFlag mode) const {
 	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
@@ -2140,7 +1971,7 @@ bool ReflMngr::ContainsMethod(Type type, Name method_name, FuncMode mode) const 
 	const auto& info = target->second;
 	auto [begin_iter, end_iter] = info.methodinfos.equal_range(method_name);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (iter->second.methodptr.GetFuncMode() == mode)
+		if (iter->second.methodptr.GetFuncFlag() == mode)
 			return true;
 	}
 

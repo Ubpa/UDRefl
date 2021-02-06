@@ -49,7 +49,7 @@ namespace Ubpa::UDRefl {
 		constexpr ObjectView() noexcept : ptr{ nullptr } {}
 		constexpr ObjectView(std::nullptr_t) noexcept : ObjectView{} {}
 		constexpr ObjectView(Type type, void* ptr) noexcept : type{ type }, ptr{ ptr }{}
-		explicit constexpr ObjectView(Type type) noexcept : ObjectView{ type, nullptr } {}
+		constexpr ObjectView(Type type) noexcept : ObjectView{ type, nullptr } {}
 		template<typename T> requires
 			std::negation_v<std::is_same<std::remove_cvref_t<T>, Type>>
 			&& std::negation_v<std::is_same<std::remove_cvref_t<T>, std::nullptr_t>>
@@ -97,19 +97,20 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}, FuncMode mode = FuncMode::Variable) const;
+		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}, FuncFlag mode = FuncFlag::All) const;
 
 		InvokeResult Invoke(
 			Name method_name,
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
+			ArgPtrBuffer argptr_buffer = nullptr,
+			FuncFlag flag = FuncFlag::All) const;
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Name method_name, FuncMode mode = FuncMode::Variable) const;
+		InvocableResult IsInvocable(Name method_name, FuncFlag mode = FuncFlag::All) const;
 
 		template<typename T>
-		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, FuncFlag flag = FuncFlag::All) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(Name method_name, void* result_buffer, Args&&... args) const;
@@ -121,17 +122,20 @@ namespace Ubpa::UDRefl {
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
+			ArgPtrBuffer argptr_buffer = nullptr,
+			FuncFlag flag = FuncFlag::All) const;
 
 		SharedObject DMInvoke(
 			Name method_name,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
+			ArgPtrBuffer argptr_buffer = nullptr,
+			FuncFlag flag = FuncFlag::All) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
+			FuncFlag flag,
 			Args&&... args) const;
 
 		template<typename... Args>
@@ -148,6 +152,7 @@ namespace Ubpa::UDRefl {
 		SharedObject AMInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
+			FuncFlag flag,
 			Args&&... args) const;
 
 		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
@@ -195,7 +200,7 @@ namespace Ubpa::UDRefl {
 		bool ContainsBase  (Type base       ) const;
 		bool ContainsField (Name field_name ) const;
 		bool ContainsMethod(Name method_name) const;
-		bool ContainsMethod(Name method_name, FuncMode mode) const;
+		bool ContainsMethod(Name method_name, FuncFlag mode) const;
 
 		//
 		// Type

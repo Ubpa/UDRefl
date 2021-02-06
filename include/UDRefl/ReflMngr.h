@@ -232,26 +232,20 @@ namespace Ubpa::UDRefl {
 		// - direct constructible
 		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
-		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, FuncMode mode = FuncMode::Variable) const;
-
-		InvokeResult Invoke(
-			Type type,
-			Name method_name,
-			void* result_buffer = nullptr,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
+		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, FuncFlag mode = FuncFlag::All) const;
 
 		InvokeResult Invoke(
 			ObjectView obj,
 			Name method_name,
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
+			ArgPtrBuffer argptr_buffer = nullptr,
+			FuncFlag flag = FuncFlag::All) const;
 
 		// -- template --
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Type type, Name method_name, FuncMode mode = FuncMode::Variable) const;
+		InvocableResult IsInvocable(Type type, Name method_name, FuncFlag mode = FuncFlag::All) const;
 
 		template<typename T>
 		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
@@ -365,7 +359,7 @@ namespace Ubpa::UDRefl {
 		bool ContainsBase  (Type type, Type base       ) const;
 		bool ContainsField (Type type, Name field_name ) const;
 		bool ContainsMethod(Type type, Name method_name) const;
-		bool ContainsMethod(Type type, Name method_name, FuncMode mode) const;
+		bool ContainsMethod(Type type, Name method_name, FuncFlag mode) const;
 
 		//
 		// Memory
@@ -380,51 +374,27 @@ namespace Ubpa::UDRefl {
 		std::pmr::synchronized_pool_resource* GetTemporaryResource() const{ return &temporary_resource; }
 
 		SharedObject MInvoke(
-			Type type,
-			Name method_name,
-			std::pmr::memory_resource* result_rsrc,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
-
-		SharedObject MInvoke(
 			ObjectView obj,
 			Name method_name,
 			std::pmr::memory_resource* result_rsrc,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const;
-
-		SharedObject DMInvoke(
-			Type type,
-			Name method_name,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const
-		{ return MInvoke(type, method_name, &object_resource, argTypes, argptr_buffer); }
+			ArgPtrBuffer argptr_buffer = nullptr,
+			FuncFlag flag = FuncFlag::All) const;
 
 		SharedObject DMInvoke(
 			ObjectView obj,
 			Name method_name,
 			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr) const
-		{ return MInvoke(obj, method_name, &object_resource, argTypes, argptr_buffer); }
-
-		template<typename... Args>
-		SharedObject MInvoke(
-			Type type,
-			Name method_name,
-			std::pmr::memory_resource* result_rsrc,
-			Args&&... args) const;
+			ArgPtrBuffer argptr_buffer = nullptr,
+			FuncFlag flag = FuncFlag::All) const
+		{ return MInvoke(obj, method_name, &object_resource, argTypes, argptr_buffer, flag); }
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			ObjectView obj,
 			Name method_name,
 			std::pmr::memory_resource* result_rsrc,
-			Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject DMInvoke(
-			Type type,
-			Name method_name,
+			FuncFlag flag,
 			Args&&... args) const;
 
 		template<typename... Args>

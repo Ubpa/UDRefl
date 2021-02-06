@@ -32,21 +32,21 @@ MethodPtr::MethodPtr(std::function<StaticFunction> func, ResultDesc resultDesc, 
 	resultDesc{ std::move(resultDesc) },
 	paramList{ std::move(paramList) } {}
 
-FuncMode MethodPtr::GetFuncMode() const noexcept {
+FuncFlag MethodPtr::GetFuncFlag() const noexcept {
 	switch (func.index())
 	{
 	case 0: [[fallthrough]];
 	case 3:
-		return FuncMode::Variable;
+		return FuncFlag::Variable;
 	case 1: [[fallthrough]];
 	case 4:
-		return FuncMode::Const;
+		return FuncFlag::Const;
 	case 2:
 	case 5:
-		return FuncMode::Static;
+		return FuncFlag::Static;
 	default:
 		assert(false);
-		return FuncMode::Static;
+		return FuncFlag::Static;
 	}
 }
 

@@ -21,26 +21,29 @@ InvokeResult ObjectView::Invoke(
 	Name method_name,
 	void* result_buffer,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
+	ArgPtrBuffer argptr_buffer,
+	FuncFlag flag) const
 {
-	return Mngr.Invoke(*this, method_name, result_buffer, argTypes, argptr_buffer);
+	return Mngr.Invoke(*this, method_name, result_buffer, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ObjectView::MInvoke(
 	Name method_name,
 	std::pmr::memory_resource* rst_rsrc,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
+	ArgPtrBuffer argptr_buffer,
+	FuncFlag flag) const
 {
-	return Mngr.MInvoke(*this, method_name, rst_rsrc, argTypes, argptr_buffer);
+	return Mngr.MInvoke(*this, method_name, rst_rsrc, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ObjectView::DMInvoke(
 	Name method_name,
 	std::span<const Type> argTypes,
-	ArgPtrBuffer argptr_buffer) const
+	ArgPtrBuffer argptr_buffer,
+	FuncFlag flag) const
 {
-	return Mngr.DMInvoke(*this, method_name, argTypes, argptr_buffer);
+	return Mngr.DMInvoke(*this, method_name, argTypes, argptr_buffer, flag);
 }
 
 void ObjectView::ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func) const {
@@ -119,7 +122,7 @@ bool ObjectView::ContainsMethod(Name method_name) const {
 	return Mngr.ContainsMethod(type, method_name);
 }
 
-bool ObjectView::ContainsMethod(Name method_name, FuncMode mode) const {
+bool ObjectView::ContainsMethod(Name method_name, FuncFlag mode) const {
 	return Mngr.ContainsMethod(type, method_name, mode);
 }
 
@@ -159,8 +162,8 @@ ObjectView ObjectView::AddRValueReference() const {
 	return { Mngr.AddRValueReference(type), ptr };
 }
 
-InvocableResult ObjectView::IsInvocable(Name method_name, std::span<const Type> argTypes, FuncMode mode) const {
-	return Mngr.IsInvocable(type, method_name, argTypes, mode);
+InvocableResult ObjectView::IsInvocable(Name method_name, std::span<const Type> argTypes, FuncFlag flag) const {
+	return Mngr.IsInvocable(type, method_name, argTypes, flag);
 }
 
 ObjectView ObjectView::StaticCast_DerivedToBase(Type type) const {
