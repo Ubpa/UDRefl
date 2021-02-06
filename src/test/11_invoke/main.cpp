@@ -45,7 +45,7 @@ int main() {
 			<< std::endl;
 	}
 
-	auto w0 = v.MInvoke(NameIDRegistry::Meta::operator_add, std::pmr::get_default_resource(), FuncFlag::All, v.As<Vec>());
+	auto w0 = v.MInvoke(NameIDRegistry::Meta::operator_add, std::pmr::get_default_resource(), MethodFlag::All, v.As<Vec>());
 	auto w1 = v.DMInvoke(NameIDRegistry::Meta::operator_add, v.As<Vec>());
 	auto w2 = v.ADMInvoke(NameIDRegistry::Meta::operator_add, v);
 

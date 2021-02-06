@@ -492,7 +492,7 @@ namespace Ubpa::UDRefl::details {
 		Type type,
 		Name method_name,
 		std::span<const Type> argTypes,
-		FuncFlag flag)
+		MethodFlag flag)
 	{
 		assert(type.GetCVRefMode() == CVRefMode::None);
 		auto typetarget = Mngr.typeinfos.find(type);
@@ -504,7 +504,7 @@ namespace Ubpa::UDRefl::details {
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
 		// 1. object variable
-		if (enum_contain(flag, FuncFlag::Variable)) {
+		if (enum_contain(flag, MethodFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
@@ -516,9 +516,9 @@ namespace Ubpa::UDRefl::details {
 		}
 
 		// 2. object const and static
-		if(enum_contain(flag, FuncFlag::Const | FuncFlag::Static)) {
+		if(enum_contain(flag, MethodFlag::Const | MethodFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && enum_contain_any(flag, iter->second.methodptr.GetFuncFlag())
+				if (!iter->second.methodptr.IsMemberVariable() && enum_contain_any(flag, iter->second.methodptr.GetMethodFlag())
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
@@ -543,7 +543,7 @@ namespace Ubpa::UDRefl::details {
 		void* result_buffer,
 		std::span<const Type> argTypes,
 		ArgPtrBuffer argptr_buffer,
-		FuncFlag flag)
+		MethodFlag flag)
 	{
 		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
 
@@ -556,7 +556,7 @@ namespace Ubpa::UDRefl::details {
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
-		if (enum_contain(flag, FuncFlag::Variable)) {
+		if (enum_contain(flag, MethodFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()) {
 					NewArgsGuard guard{
@@ -573,9 +573,9 @@ namespace Ubpa::UDRefl::details {
 				}
 			}
 		}
-		if (enum_contain_any(flag, FuncFlag::Const | FuncFlag::Static)) {
+		if (enum_contain_any(flag, MethodFlag::Const | MethodFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetFuncFlag())) {
+				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -614,7 +614,7 @@ namespace Ubpa::UDRefl::details {
 		std::pmr::memory_resource* rst_rsrc,
 		std::span<const Type> argTypes,
 		ArgPtrBuffer argptr_buffer,
-		FuncFlag flag)
+		MethodFlag flag)
 	{
 		assert(rst_rsrc);
 		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
@@ -627,7 +627,7 @@ namespace Ubpa::UDRefl::details {
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
-		if (enum_contain(flag, FuncFlag::Variable)) {
+		if (enum_contain(flag, MethodFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.IsMemberVariable()) {
 					NewArgsGuard guard{
@@ -662,9 +662,9 @@ namespace Ubpa::UDRefl::details {
 			}
 		}
 
-		if (enum_contain_any(flag, FuncFlag::Const | FuncFlag::Static)) {
+		if (enum_contain_any(flag, MethodFlag::Const | MethodFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetFuncFlag())) {
+				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -884,6 +884,7 @@ void ReflMngr::Clear() noexcept {
 	}
 
 	typeinfos.clear();
+
 	temporary_resource.release();
 	object_resource.release();
 }
@@ -1282,7 +1283,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 	return true;
 }
 
-InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, FuncFlag flag) const {
+InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
 	const CVRefMode cvref_mode = type.GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
@@ -1293,7 +1294,7 @@ InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<con
 	case CVRefMode::Const: [[fallthrough]];
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		return IsInvocable(type.RemoveCVRef(), method_name, argTypes, enum_remove(flag, FuncFlag::Variable));
+		return IsInvocable(type.RemoveCVRef(), method_name, argTypes, enum_remove(flag, MethodFlag::Variable));
 	default:
 		break;
 	}
@@ -1310,7 +1311,7 @@ InvokeResult ReflMngr::Invoke(
 	void* result_buffer,
 	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
-	FuncFlag flag) const
+	MethodFlag flag) const
 {
 	ObjectView rawObj;
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
@@ -1323,12 +1324,12 @@ InvokeResult ReflMngr::Invoke(
 		break;
 	case CVRefMode::Const:
 		rawObj = obj.RemoveConst();
-		flag = enum_remove(flag, FuncFlag::Variable);
+		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
 		rawObj = obj.RemoveConstReference();
-		flag = enum_remove(flag, FuncFlag::Variable);
+		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	default:
 		rawObj = obj;
@@ -1336,7 +1337,7 @@ InvokeResult ReflMngr::Invoke(
 	}
 
 	if (!obj.GetPtr())
-		flag = enum_within(flag, FuncFlag::Static);
+		flag = enum_within(flag, MethodFlag::Static);
 
 	if (auto priority_rst = details::Invoke(true, &temporary_resource, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag))
 		return priority_rst;
@@ -1350,7 +1351,7 @@ SharedObject ReflMngr::MInvoke(
 	std::pmr::memory_resource* rst_rsrc,
 	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
-	FuncFlag flag) const
+	MethodFlag flag) const
 {
 	assert(rst_rsrc);
 
@@ -1365,12 +1366,12 @@ SharedObject ReflMngr::MInvoke(
 		break;
 	case CVRefMode::Const:
 		rawObj = obj.RemoveConst();
-		flag = enum_remove(flag, FuncFlag::Variable);
+		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
 		rawObj = obj.RemoveConstReference();
-		flag = enum_remove(flag, FuncFlag::Variable);
+		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	default:
 		rawObj = obj;
@@ -1378,7 +1379,7 @@ SharedObject ReflMngr::MInvoke(
 	}
 
 	if (!obj.GetPtr())
-		flag = enum_within(flag, FuncFlag::Static);
+		flag = enum_within(flag, MethodFlag::Static);
 
 	if (auto priority_rst = details::MInvoke(true, &temporary_resource, rawObj, method_name, rst_rsrc, argTypes, argptr_buffer, flag); priority_rst.GetType().Valid())
 		return priority_rst;
@@ -1623,11 +1624,11 @@ void ReflMngr::ForEachField(
 void ReflMngr::ForEachMethod(
 	Type type,
 	const std::function<bool(TypeRef, MethodRef)>& func,
-	FuncFlag flag) const
+	MethodFlag flag) const
 {
 	ForEachTypeInfo(type, [flag, &func](TypeRef type) {
 		for (auto& [method_name, methodInfo] : type.info.methodinfos) {
-			if (!enum_contain(flag, methodInfo.methodptr.GetFuncFlag()))
+			if (!enum_contain(flag, methodInfo.methodptr.GetMethodFlag()))
 				continue;
 
 			if (!func(type, { method_name, methodInfo }))
@@ -1704,7 +1705,7 @@ std::vector<FieldRef> ReflMngr::GetFields(Type type, FieldFlag flag) {
 	return rst;
 }
 
-std::vector<TypeMethodRef> ReflMngr::GetTypeMethods(Type type, FuncFlag flag) {
+std::vector<TypeMethodRef> ReflMngr::GetTypeMethods(Type type, MethodFlag flag) {
 	std::vector<TypeMethodRef> rst;
 	ForEachMethod(type, [&rst](TypeRef type, MethodRef field) {
 		rst.emplace_back(TypeMethodRef{ type, field });
@@ -1713,7 +1714,7 @@ std::vector<TypeMethodRef> ReflMngr::GetTypeMethods(Type type, FuncFlag flag) {
 	return rst;
 }
 
-std::vector<MethodRef> ReflMngr::GetMethods(Type type, FuncFlag flag) {
+std::vector<MethodRef> ReflMngr::GetMethods(Type type, MethodFlag flag) {
 	std::vector<MethodRef> rst;
 	ForEachMethod(type, [&rst](TypeRef type, MethodRef field) {
 		rst.push_back(field);
@@ -1764,7 +1765,7 @@ std::optional<FieldRef> ReflMngr::FindField(Type type, const std::function<bool(
 	return rst;
 }
 
-std::optional<MethodRef> ReflMngr::FindMethod(Type type, const std::function<bool(MethodRef)>& func, FuncFlag flag) const {
+std::optional<MethodRef> ReflMngr::FindMethod(Type type, const std::function<bool(MethodRef)>& func, MethodFlag flag) const {
 	std::optional<MethodRef> rst;
 	ForEachMethod(type, [&rst, func](TypeRef type, MethodRef method) {
 		if (!func(method))
@@ -1846,7 +1847,7 @@ bool ReflMngr::ContainsField(Type type, Name field_name, FieldFlag flag) const {
 	return false;
 }
 
-bool ReflMngr::ContainsMethod(Type type, Name method_name, FuncFlag flag) const {
+bool ReflMngr::ContainsMethod(Type type, Name method_name, MethodFlag flag) const {
 	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
@@ -1854,7 +1855,7 @@ bool ReflMngr::ContainsMethod(Type type, Name method_name, FuncFlag flag) const 
 	const auto& info = target->second;
 	auto [begin_iter, end_iter] = info.methodinfos.equal_range(method_name);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (enum_contain(flag, iter->second.methodptr.GetFuncFlag()))
+		if (enum_contain(flag, iter->second.methodptr.GetMethodFlag()))
 			return true;
 	}
 

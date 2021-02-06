@@ -40,7 +40,7 @@ namespace Ubpa::UDRefl {
 		bool IsMemberConst   () const noexcept { return func.index() == 1 || func.index() == 4; }
 		bool IsStatic        () const noexcept { return func.index() == 2 || func.index() == 5; }
 
-		FuncFlag GetFuncFlag() const noexcept;
+		MethodFlag GetMethodFlag() const noexcept;
 
 		const ParamList&  GetParamList() const noexcept { return paramList; }
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }

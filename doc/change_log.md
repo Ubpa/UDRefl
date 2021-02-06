@@ -4,14 +4,15 @@
 
 ## 0.8
 
-- 0.8.0
+- :star: 0.8.0 [refactoring] : simplification, improve performance
   - remove `ConstObjectPtr` and `SharedConstObject` 
   - `TypeID` -> `Type`, `StrID` -> `Name` 
   - simplify API
-    - `IsInvocable` 
-    - use Flag
-      - move APIs with `Type` to corresponding APIs with `ObjectView` 
-  - remove `malloc` and `free` 
+    - `IsInvocable`, ...
+    - move APIs with `Type` to corresponding APIs with `ObjectView` 
+    - use flag (`FieldFlag`, `MethodFlag`)
+  - remove `[aligned]malloc` and `[aligned]free` 
+  - fully support every type in C++ (reference, constant)
 
 ## 0.7
 
@@ -27,9 +28,9 @@
 - 0.7.1
   - cast APIs with `ConstObjectPtr` support reference
   - improve `ObjectPtrBase::operator bool` (as a meta function)
-  - **refactor compatible, invokable and invoke** 
+  - **refactoring compatible, invokable and invoke** 
   - add `IsNonArgCopyConstructible` 
-  - add more type compuations
+  - add more type computations
     - `AddLValueReference` 
     - `AddRValueReference` 
   - fix bugs
@@ -54,7 +55,7 @@
 - 0.6.0
   - copy argument for `T <- T&/const T&/const T&&` when invoking.
   - use perfect forwarding for invoke.
-  - refactor `ParamList ` 
+  - refactoring `ParamList ` 
     - `ParamList::IsCompatible` -> `ReflMngr::IsCompatible` 
     - `ParamList` -> `std::vector<TypeID>` 
   - `ReflMngr::RVar` support reference object.

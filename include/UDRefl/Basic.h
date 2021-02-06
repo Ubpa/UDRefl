@@ -8,7 +8,7 @@
 #include <cassert>
 
 namespace Ubpa::UDRefl {
-	enum class FuncFlag {
+	enum class MethodFlag {
 		Variable = 0b001,
 		Const    = 0b010,
 		Static   = 0b100,
@@ -16,7 +16,7 @@ namespace Ubpa::UDRefl {
 		None     = 0b000,
 		All      = 0b111
 	};
-	UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(FuncFlag)
+	UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(MethodFlag)
 
 	enum class FieldFlag {
 		Basic         = 0b00001,

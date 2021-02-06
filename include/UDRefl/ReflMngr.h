@@ -35,6 +35,8 @@ namespace Ubpa::UDRefl {
 		// - type attrs
 		// - type dynamic shared field
 		// - typeinfos
+		// - temporary_resource
+		// - object_resource
 		void Clear() noexcept;
 
 		//
@@ -224,7 +226,7 @@ namespace Ubpa::UDRefl {
 		// - direct constructible
 		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
-		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, FuncFlag flag = FuncFlag::All) const;
+		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 
 		InvokeResult Invoke(
 			ObjectView obj,
@@ -232,17 +234,17 @@ namespace Ubpa::UDRefl {
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
-			FuncFlag flag = FuncFlag::All) const;
+			MethodFlag flag = MethodFlag::All) const;
 
 		// -- template --
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Type type, Name method_name, FuncFlag flag = FuncFlag::All) const;
+		InvocableResult IsInvocable(Type type, Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
-		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, FuncFlag flag = FuncFlag::All) const;
+		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 		template<typename T>
-		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, FuncFlag flag = FuncFlag::All) const;
+		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(Type      type, Name method_name, void* result_buffer, Args&&... args) const;
@@ -312,7 +314,7 @@ namespace Ubpa::UDRefl {
 		void ForEachField (Type type, const std::function<bool(TypeRef, FieldRef)>&  func, FieldFlag flag = FieldFlag::All) const;
 
 		// self methods and all bases' methods
-		void ForEachMethod(Type type, const std::function<bool(TypeRef, MethodRef)>& func, FuncFlag  flag = FuncFlag ::All) const;
+		void ForEachMethod(Type type, const std::function<bool(TypeRef, MethodRef)>& func, MethodFlag  flag = MethodFlag ::All) const;
 
 		// self vars and all bases' vars
 		void ForEachVar(ObjectView obj, const std::function<bool(TypeRef, FieldRef, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
@@ -322,8 +324,8 @@ namespace Ubpa::UDRefl {
 		std::vector<TypeRef>                                   GetTypes        (Type      type);
 		std::vector<TypeFieldRef>                              GetTypeFields   (Type      type, FieldFlag flag = FieldFlag::All);
 		std::vector<FieldRef>                                  GetFields       (Type      type, FieldFlag flag = FieldFlag::All);
-		std::vector<TypeMethodRef>                             GetTypeMethods  (Type      type, FuncFlag  flag = FuncFlag ::All);
-		std::vector<MethodRef>                                 GetMethods      (Type      type, FuncFlag  flag = FuncFlag ::All);
+		std::vector<TypeMethodRef>                             GetTypeMethods  (Type      type, MethodFlag  flag = MethodFlag ::All);
+		std::vector<MethodRef>                                 GetMethods      (Type      type, MethodFlag  flag = MethodFlag ::All);
 		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag flag = FieldFlag::All);
 		std::vector<ObjectView>                                GetVars         (ObjectView obj, FieldFlag flag = FieldFlag::All);
 
@@ -331,14 +333,14 @@ namespace Ubpa::UDRefl {
 
 		std::optional<TypeRef  > FindType  (Type      type, const std::function<bool(TypeRef   )>& func) const;
 		std::optional<FieldRef > FindField (Type      type, const std::function<bool(FieldRef  )>& func, FieldFlag flag = FieldFlag::All) const;
-		std::optional<MethodRef> FindMethod(Type      type, const std::function<bool(MethodRef )>& func, FuncFlag  flag = FuncFlag ::All) const;
+		std::optional<MethodRef> FindMethod(Type      type, const std::function<bool(MethodRef )>& func, MethodFlag  flag = MethodFlag ::All) const;
 		ObjectView               FindVar   (ObjectView obj, const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		// Contains (DFS)
 
 		bool ContainsBase  (Type type, Type base       ) const;
 		bool ContainsField (Type type, Name field_name , FieldFlag flag = FieldFlag::All) const;
-		bool ContainsMethod(Type type, Name method_name, FuncFlag  flag = FuncFlag ::All) const;
+		bool ContainsMethod(Type type, Name method_name, MethodFlag  flag = MethodFlag ::All) const;
 
 		//
 		// Memory
@@ -358,14 +360,14 @@ namespace Ubpa::UDRefl {
 			std::pmr::memory_resource* result_rsrc,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
-			FuncFlag flag = FuncFlag::All) const;
+			MethodFlag flag = MethodFlag::All) const;
 
 		SharedObject DMInvoke(
 			ObjectView obj,
 			Name method_name,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
-			FuncFlag flag = FuncFlag::All) const
+			MethodFlag flag = MethodFlag::All) const
 		{ return MInvoke(obj, method_name, &object_resource, argTypes, argptr_buffer, flag); }
 
 		template<typename... Args>
@@ -373,7 +375,7 @@ namespace Ubpa::UDRefl {
 			ObjectView obj,
 			Name method_name,
 			std::pmr::memory_resource* result_rsrc,
-			FuncFlag flag,
+			MethodFlag flag,
 			Args&&... args) const;
 
 		template<typename... Args>

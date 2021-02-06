@@ -87,20 +87,20 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}, FuncFlag flag = FuncFlag::All) const;
+		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 
 		InvokeResult Invoke(
 			Name method_name,
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
-			FuncFlag flag = FuncFlag::All) const;
+			MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Name method_name, FuncFlag flag = FuncFlag::All) const;
+		InvocableResult IsInvocable(Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
-		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, FuncFlag flag = FuncFlag::All) const;
+		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(Name method_name, void* result_buffer, Args&&... args) const;
@@ -113,19 +113,19 @@ namespace Ubpa::UDRefl {
 			std::pmr::memory_resource* rst_rsrc,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
-			FuncFlag flag = FuncFlag::All) const;
+			MethodFlag flag = MethodFlag::All) const;
 
 		SharedObject DMInvoke(
 			Name method_name,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
-			FuncFlag flag = FuncFlag::All) const;
+			MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
-			FuncFlag flag,
+			MethodFlag flag,
 			Args&&... args) const;
 
 		template<typename... Args>
@@ -142,7 +142,7 @@ namespace Ubpa::UDRefl {
 		SharedObject AMInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
-			FuncFlag flag,
+			MethodFlag flag,
 			Args&&... args) const;
 
 		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
@@ -169,19 +169,19 @@ namespace Ubpa::UDRefl {
 		std::vector<TypeRef>                                   GetTypes        () const;
 		std::vector<TypeFieldRef>                              GetTypeFields   (FieldFlag flag = FieldFlag::All) const;
 		std::vector<FieldRef>                                  GetFields       (FieldFlag flag = FieldFlag::All) const;
-		std::vector<TypeMethodRef>                             GetTypeMethods  (FuncFlag  flag = FuncFlag ::All) const;
-		std::vector<MethodRef>                                 GetMethods      (FuncFlag  flag = FuncFlag ::All) const;
+		std::vector<TypeMethodRef>                             GetTypeMethods  (MethodFlag  flag = MethodFlag ::All) const;
+		std::vector<MethodRef>                                 GetMethods      (MethodFlag  flag = MethodFlag ::All) const;
 		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(FieldFlag flag = FieldFlag::All) const;
 		std::vector<ObjectView>                                GetVars         (FieldFlag flag = FieldFlag::All) const;
 
 		std::optional<TypeRef  > FindType  (const std::function<bool(TypeRef   )>& func) const;
 		std::optional<FieldRef > FindField (const std::function<bool(FieldRef  )>& func, FieldFlag flag = FieldFlag::All) const;
-		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef )>& func, FuncFlag  flag = FuncFlag ::All) const;
+		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef )>& func, MethodFlag  flag = MethodFlag ::All) const;
 		ObjectView               FindVar   (const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		bool ContainsBase  (Type base       ) const;
 		bool ContainsField (Name field_name , FieldFlag flag = FieldFlag::All) const;
-		bool ContainsMethod(Name method_name, FuncFlag  flag = FuncFlag ::All) const;
+		bool ContainsMethod(Name method_name, MethodFlag  flag = MethodFlag ::All) const;
 
 		//
 		// Type
