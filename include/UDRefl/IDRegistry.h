@@ -47,20 +47,6 @@ namespace Ubpa::UDRefl {
 	class NameIDRegistry : public IDRegistry<NameID> {
 	public:
 		struct Meta {
-
-			//
-			// Global
-			///////////
-
-			static constexpr Name malloc{ "UDRefl::malloc" };
-			static constexpr Name free{ "UDRefl::free" };
-			static constexpr Name aligned_malloc{ "UDRefl::aligned_malloc" };
-			static constexpr Name aligned_free{ "UDRefl::aligned_free" };
-
-			//
-			// Member
-			///////////
-
 			static constexpr Name ctor{ "UDRefl::ctor" };
 			static constexpr Name dtor{ "UDRefl::dtor" };
 

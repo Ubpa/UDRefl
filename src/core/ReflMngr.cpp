@@ -909,24 +909,6 @@ namespace Ubpa::UDRefl::details {
 }
 
 ReflMngr::ReflMngr() {
-#if defined(_WIN32) || defined(_WIN64)
-	#define UBPA_UDREFL_ALIGN_MALLOC _aligned_malloc
-#else
-	#define UBPA_UDREFL_ALIGN_MALLOC aligned_alloc
-#endif // defined(_WIN32) || defined(_WIN64)
-#if defined(_WIN32) || defined(_WIN64)
-#define UBPA_UDREFL_ALIGN_FREE _aligned_free
-#else
-#define UBPA_UDREFL_ALIGN_FREE free
-#endif // defined(_WIN32) || defined(_WIN64)
-	RegisterType(Global, 0, 0);
-	AddMethod<&malloc>(Global, NameIDRegistry::Meta::malloc);
-	AddMethod<&UBPA_UDREFL_ALIGN_MALLOC>(Global, NameIDRegistry::Meta::aligned_malloc);
-	AddMethod<&free>(Global, NameIDRegistry::Meta::free);
-	AddMethod<&UBPA_UDREFL_ALIGN_FREE>(Global, NameIDRegistry::Meta::aligned_free);
-#undef UBPA_UDREFL_ALIGN_MALLOC
-#undef UBPA_UDREFL_ALIGN_FREE
-
 	RegisterType<ContainerType>();
 	AddField<ContainerType::Unknown>("Unknown");
 	AddField<ContainerType::Array>("Array");
@@ -998,6 +980,7 @@ void ReflMngr::Clear() noexcept {
 
 	typeinfos.clear();
 	temporary_resource.release();
+	object_resource.release();
 }
 
 ReflMngr::~ReflMngr() {
@@ -1064,31 +1047,13 @@ bool ReflMngr::AddAttr(Type type, const Attr& attr) {
 	return true;
 }
 
-void* ReflMngr::Malloc(size_t size) const {
-	return Invoke<void*>(Global, NameIDRegistry::Meta::malloc, std::move(size));
-}
-
-bool ReflMngr::Free(void* ptr) const {
-	return InvokeArgs(Global, NameIDRegistry::Meta::free, nullptr, std::move(ptr));
-}
-
-void* ReflMngr::AlignedMalloc(size_t size, size_t alignment) const {
-	return Invoke<void*>(Global, NameIDRegistry::Meta::aligned_malloc, std::move(size), std::move(alignment));
-}
-
-bool ReflMngr::AlignedFree(void* ptr) const {
-	return InvokeArgs(Global, NameIDRegistry::Meta::aligned_free, nullptr, std::move(ptr));
-}
-
 ObjectView ReflMngr::NonArgCopyNew(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
 	if (!IsNonCopiedArgConstructible(type, argTypes))
 		return nullptr;
 
 	const auto& typeinfo = typeinfos.at(type);
 
-	void* buffer = typeinfo.alignment <= std::alignment_of_v<std::max_align_t> ?
-		Malloc(typeinfo.size)
-		: AlignedMalloc(typeinfo.size, typeinfo.alignment);
+	void* buffer = object_resource.allocate(typeinfo.size, typeinfo.alignment);
 
 	if (!buffer)
 		return nullptr;
@@ -1106,9 +1071,7 @@ ObjectView ReflMngr::New(Type type, std::span<const Type> argTypes, ArgPtrBuffer
 
 	const auto& typeinfo = typeinfos.at(type);
 
-	void* buffer = typeinfo.alignment <= std::alignment_of_v<std::max_align_t> ?
-		Malloc(typeinfo.size)
-		: AlignedMalloc(typeinfo.size, typeinfo.alignment);
+	void* buffer = object_resource.allocate(typeinfo.size, typeinfo.alignment);
 
 	if (!buffer)
 		return nullptr;
@@ -1127,13 +1090,9 @@ bool ReflMngr::Delete(ObjectView obj) const {
 
 	const auto& typeinfo = typeinfos.at(obj.GetType());
 
-	bool free_success;
-	if (typeinfo.alignment <= std::alignment_of_v<std::max_align_t>)
-		free_success = Free(const_cast<void*>(obj.GetPtr()));
-	else
-		free_success = AlignedFree(const_cast<void*>(obj.GetPtr()));
+	object_resource.deallocate(obj.GetPtr(), typeinfo.size, typeinfo.alignment);
 
-	return free_success;
+	return true;
 }
 
 SharedObject ReflMngr::MakeShared(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
@@ -2131,8 +2090,8 @@ bool ReflMngr::ContainsBase(Type type, Type base) const {
 	if (info.baseinfos.contains(base))
 		return true;
 
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsBase(type, base);
+	for (const auto& [basetype, baseinfo] : info.baseinfos) {
+		bool found = ContainsBase(basetype, base);
 		if (found)
 			return true;
 	}
@@ -2148,8 +2107,8 @@ bool ReflMngr::ContainsField(Type type, Name field_name) const {
 	if (info.fieldinfos.contains(field_name))
 		return true;
 
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsField(type, field_name);
+	for (const auto& [basetype, baseinfo] : info.baseinfos) {
+		bool found = ContainsField(basetype, field_name);
 		if (found)
 			return true;
 	}
@@ -2165,70 +2124,30 @@ bool ReflMngr::ContainsMethod(Type type, Name method_name) const {
 	if (info.methodinfos.contains(method_name))
 		return true;
 
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(type, method_name);
-		if (found)
+	for (const auto& [basetype, baseinfo] : info.baseinfos) {
+		if (ContainsMethod(basetype, method_name))
 			return true;
 	}
+
 	return false;
 }
 
-bool ReflMngr::ContainsVariableMethod(Type type, Name method_name) const {
+bool ReflMngr::ContainsMethod(Type type, Name method_name, FuncMode mode) const {
 	auto target = typeinfos.find(type);
 	if (target == typeinfos.end())
 		return false;
 
 	const auto& info = target->second;
-	auto begin_end = info.methodinfos.equal_range(method_name);
-	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
-		if (iter->second.methodptr.IsMemberVariable())
+	auto [begin_iter, end_iter] = info.methodinfos.equal_range(method_name);
+	for (auto iter = begin_iter; iter != end_iter; ++iter) {
+		if (iter->second.methodptr.GetFuncMode() == mode)
 			return true;
 	}
 
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(type, method_name);
-		if (found)
-			return true;
-	}
-	return false;
-}
-
-bool ReflMngr::ContainsConstMethod(Type type, Name method_name) const {
-	auto target = typeinfos.find(type);
-	if (target == typeinfos.end())
-		return false;
-
-	const auto& info = target->second;
-	auto begin_end = info.methodinfos.equal_range(method_name);
-	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
-		if (iter->second.methodptr.IsMemberConst())
+	for (const auto& [basetype, baseinfo] : info.baseinfos) {
+		if (ContainsMethod(basetype, method_name, mode))
 			return true;
 	}
 
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(type, method_name);
-		if (found)
-			return true;
-	}
-	return false;
-}
-
-bool ReflMngr::ContainsStaticMethod(Type type, Name method_name) const {
-	auto target = typeinfos.find(type);
-	if (target == typeinfos.end())
-		return false;
-
-	const auto& info = target->second;
-	auto begin_end = info.methodinfos.equal_range(method_name);
-	for (auto iter = begin_end.first; iter != begin_end.second; ++iter) {
-		if (iter->second.methodptr.IsStatic())
-			return true;
-	}
-
-	for (const auto& [ID, baseinfo] : info.baseinfos) {
-		bool found = ContainsMethod(type, method_name);
-		if (found)
-			return true;
-	}
 	return false;
 }

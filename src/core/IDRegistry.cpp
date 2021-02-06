@@ -4,19 +4,6 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 NameIDRegistry::NameIDRegistry() {
-	//
-	// Global
-	///////////
-
-	RegisterUnmanaged(Meta::malloc.GetID(), Meta::malloc.GetView());
-	RegisterUnmanaged(Meta::free.GetID(), Meta::free.GetView());
-	RegisterUnmanaged(Meta::aligned_malloc.GetID(), Meta::aligned_malloc.GetView());
-	RegisterUnmanaged(Meta::aligned_free.GetID(), Meta::aligned_free.GetView());
-
-	//
-	// Member
-	///////////
-
 	RegisterUnmanaged(Meta::ctor.GetID(), Meta::ctor.GetView());
 	RegisterUnmanaged(Meta::dtor.GetID(), Meta::dtor.GetView());
 
