@@ -1,6 +1,5 @@
 #pragma once
 
-#include "AttrSet.h"
 #include "Basic.h"
 #include "config.h"
 #include "FieldPtr.h"

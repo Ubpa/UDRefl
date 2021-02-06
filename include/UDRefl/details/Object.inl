@@ -261,16 +261,6 @@ namespace std {
 	}
 }
 
-template<typename T>
-struct Ubpa::UDRefl::IsObjectOrView {
-private:
-	using U = std::remove_cvref_t<T>;
-public:
-	static constexpr bool value =
-		std::is_same_v<U, ObjectView>
-		|| std::is_same_v<U, SharedObject>;
-};
-
 namespace Ubpa::UDRefl {
 	inline bool operator== (const ObjectView& lhs, const ObjectView& rhs) {
     	return static_cast<bool>(lhs.ADMInvoke(NameIDRegistry::Meta::operator_eq, rhs))

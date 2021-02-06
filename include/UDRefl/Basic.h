@@ -33,6 +33,20 @@ namespace Ubpa::UDRefl {
 	UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(FieldFlag)
 
 	using SharedBuffer = std::shared_ptr<void>;
+	class ObjectView;
+	class SharedObject;
+
+	template<typename T>
+	struct IsObjectOrView {
+	private:
+		using U = std::remove_cvref_t<T>;
+	public:
+		static constexpr bool value =
+			std::is_same_v<U, ObjectView>
+			|| std::is_same_v<U, SharedObject>;
+	};
+	template<typename T> constexpr bool IsObjectOrView_v = IsObjectOrView<T>::value;
+	template<typename T> concept NonObjectAndView = !IsObjectOrView_v<T>;
 
 	struct ResultDesc {
 		Type type{ Type_of<void> };

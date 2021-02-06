@@ -29,8 +29,7 @@ int main() {
 		Mngr.RegisterType<Vec>();
 		Mngr.AddField<&Vec::x>("x");
 		Mngr.AddField<&Vec::y>("y");
-		Mngr.AddMethod<MemFuncOf<Vec& (const Vec&)>::get(&Vec::operator+=)>(NameIDRegistry::Meta::operator_assign_add);
-		Mngr.AddMethod<MemFuncOf<Vec& (float)>::get(&Vec::operator+=)>(NameIDRegistry::Meta::operator_assign_add);
+		Mngr.AddMethod<MemFuncOf<Vec, Vec& (float)>::get(&Vec::operator+=)>(NameIDRegistry::Meta::operator_assign_add);
 	}
 	
 	auto obj = Mngr.MakeShared(Type_of<Vec>);
