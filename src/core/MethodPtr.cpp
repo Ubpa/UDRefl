@@ -45,8 +45,7 @@ FuncFlag MethodPtr::GetFuncFlag() const noexcept {
 	case 5:
 		return FuncFlag::Static;
 	default:
-		assert(false);
-		return FuncFlag::Static;
+		return FuncFlag::None;
 	}
 }
 

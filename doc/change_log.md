@@ -9,6 +9,8 @@
   - `TypeID` -> `Type`, `StrID` -> `Name` 
   - simplify API
     - `IsInvocable` 
+    - use Flag
+      - move APIs with `Type` to corresponding APIs with `ObjectView` 
   - remove `malloc` and `free` 
 
 ## 0.7

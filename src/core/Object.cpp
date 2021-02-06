@@ -9,12 +9,12 @@ TypeInfo* ObjectView::GetTypeInfo() const {
 	return Mngr.GetTypeInfo(type);
 }
 
-ObjectView ObjectView::Var(Name field_name) const {
-	return Mngr.Var(*this, field_name);
+ObjectView ObjectView::Var(Name field_name, FieldFlag flag) const {
+	return Mngr.Var(*this, field_name, flag);
 }
 
-ObjectView ObjectView::Var(Type base, Name field_name) const {
-	return Mngr.Var(*this, base, field_name);
+ObjectView ObjectView::Var(Type base, Name field_name, FieldFlag flag) const {
+	return Mngr.Var(*this, base, field_name, flag);
 }
 
 InvokeResult ObjectView::Invoke(
@@ -122,8 +122,8 @@ bool ObjectView::ContainsMethod(Name method_name) const {
 	return Mngr.ContainsMethod(type, method_name);
 }
 
-bool ObjectView::ContainsMethod(Name method_name, FuncFlag mode) const {
-	return Mngr.ContainsMethod(type, method_name, mode);
+bool ObjectView::ContainsMethod(Name method_name, FuncFlag flag) const {
+	return Mngr.ContainsMethod(type, method_name, flag);
 }
 
 ObjectView ObjectView::RemoveConst() const {

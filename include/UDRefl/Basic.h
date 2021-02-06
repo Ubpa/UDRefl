@@ -12,10 +12,25 @@ namespace Ubpa::UDRefl {
 		Variable = 0b001,
 		Const    = 0b010,
 		Static   = 0b100,
-		
+
+		None     = 0b000,
 		All      = 0b111
 	};
 	UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(FuncFlag)
+
+	enum class FieldFlag {
+		Basic         = 0b00001,
+		Virtual       = 0b00010,
+		Static        = 0b00100,
+		DynamicShared = 0b01000,
+		DynamicBuffer = 0b10000,
+
+		None          = 0b00000,
+		Owned         = 0b00011,
+		Unowned       = 0b11100,
+		All           = 0b11111
+	};
+	UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(FieldFlag)
 
 	using SharedBuffer = std::shared_ptr<void>;
 

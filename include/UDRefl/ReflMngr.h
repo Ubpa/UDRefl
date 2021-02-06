@@ -62,11 +62,6 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		FieldPtr GenerateDynamicFieldPtr(Args&&... args);
 
-		// if T is bufferable, T will be stored as buffer,
-		// else we will use std::alloc_shared to store it
-		template<typename T, typename Alloc, typename... Args>
-		FieldPtr GenerateDynamicFieldPtrByAlloc(const Alloc& alloc, Args&&... args);
-
 		template<typename Return>
 		static ResultDesc GenerateResultDesc();
 
@@ -202,12 +197,9 @@ namespace Ubpa::UDRefl {
 		// - result type of Var maintains the CVRefMode of the input
 		//
 
-		// object
-		ObjectView Var(Type type, Name field_name);
-		// all
-		ObjectView Var(ObjectView obj, Name field_name);
-		// all, for diamond inheritance
-		ObjectView Var(ObjectView obj, Type base, Name field_name);
+		ObjectView Var(ObjectView obj           , Name field_name, FieldFlag flag = FieldFlag::All);
+		// for diamond inheritance
+		ObjectView Var(ObjectView obj, Type base, Name field_name, FieldFlag flag = FieldFlag::All);
 
 		//
 		// Invoke
@@ -232,7 +224,7 @@ namespace Ubpa::UDRefl {
 		// - direct constructible
 		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
-		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, FuncFlag mode = FuncFlag::All) const;
+		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, FuncFlag flag = FuncFlag::All) const;
 
 		InvokeResult Invoke(
 			ObjectView obj,
@@ -245,12 +237,12 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Type type, Name method_name, FuncFlag mode = FuncFlag::All) const;
+		InvocableResult IsInvocable(Type type, Name method_name, FuncFlag flag = FuncFlag::All) const;
 
 		template<typename T>
-		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, FuncFlag flag = FuncFlag::All) const;
 		template<typename T>
-		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, FuncFlag flag = FuncFlag::All) const;
 
 		template<typename... Args>
 		InvokeResult InvokeArgs(Type      type, Name method_name, void* result_buffer, Args&&... args) const;
@@ -359,7 +351,7 @@ namespace Ubpa::UDRefl {
 		bool ContainsBase  (Type type, Type base       ) const;
 		bool ContainsField (Type type, Name field_name ) const;
 		bool ContainsMethod(Type type, Name method_name) const;
-		bool ContainsMethod(Type type, Name method_name, FuncFlag mode) const;
+		bool ContainsMethod(Type type, Name method_name, FuncFlag flag) const;
 
 		//
 		// Memory

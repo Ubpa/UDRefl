@@ -653,21 +653,7 @@ namespace Ubpa::UDRefl {
 			return FieldPtr{ Type_of<T>, buffer };
 		}
 		else
-			return MakeShared(Type_of<T>, std::forward<Args>(args)...);
-	}
-
-	template<typename T, typename Alloc, typename... Args>
-	FieldPtr ReflMngr::GenerateDynamicFieldPtrByAlloc(const Alloc& alloc, Args&&... args) {
-		static_assert(!std::is_reference_v<T> && !std::is_volatile_v<T>);
-		using RawT = std::remove_const_t<T>;
-		if constexpr (FieldPtr::IsBufferable<RawT>()) {
-			FieldPtr::Buffer buffer = FieldPtr::ConvertToBuffer(T{ std::forward<Args>(args)... });
-			return FieldPtr{ Type_of<T>, buffer };
-		}
-		else {
-			SharedObject obj = { Type_of<T>, std::allocate_shared<RawT>(alloc, std::forward<Args>(args)...) };
-			return FieldPtr{ std::move(obj) };
-		}
+			return FieldPtr{ MakeShared(Type_of<T>, std::forward<Args>(args)...) };
 	}
 
 	template<typename Return>
@@ -902,29 +888,29 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(Type type, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	T ReflMngr::InvokeRet(Type type, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, FuncFlag flag) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
-			InvokeResult result = Invoke(type, method_name, result_buffer, argTypes, argptr_buffer);
+			InvokeResult result = Invoke(type, method_name, result_buffer, argTypes, argptr_buffer, flag);
 			assert(result.type.Is<T>());
 			return result.Move<T>(result_buffer);
 		}
 		else
-			Invoke(type, method_name, (void*)nullptr, argTypes, argptr_buffer);
+			Invoke(type, method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
+	T ReflMngr::InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, FuncFlag flag) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
-			InvokeResult result = Invoke(obj, method_name, result_buffer, argTypes, argptr_buffer);
+			InvokeResult result = Invoke(obj, method_name, result_buffer, argTypes, argptr_buffer, flag);
 			assert(result.type.Is<T>());
 			return result.Move<T>(result_buffer);
 		}
 		else
-			Invoke(obj, method_name, (void*)nullptr, argTypes, argptr_buffer);
+			Invoke(obj, method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
 	}
 
 	template<typename... Args>

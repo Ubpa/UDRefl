@@ -244,6 +244,8 @@ namespace Ubpa::UDRefl {
 	constexpr Enum enum_combine(std::initializer_list<Enum> flags) noexcept;
 	template<typename Enum> requires std::is_enum_v<Enum>
 	constexpr Enum enum_remove(const Enum& e, const Enum& flag) noexcept;
+	template<typename Enum> requires std::is_enum_v<Enum>
+	constexpr Enum enum_within(const Enum& e, const Enum& flag) noexcept;
 
 	//
 	// Traits
