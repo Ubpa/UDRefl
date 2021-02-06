@@ -188,6 +188,8 @@ namespace Ubpa::UDRefl {
 		/////////
 
 		ObjectView RemoveConst() const;
+		ObjectView RemoveLValueReference() const;
+		ObjectView RemoveRValueReference() const;
 		ObjectView RemoveReference() const;
 		ObjectView RemoveConstReference() const;
 

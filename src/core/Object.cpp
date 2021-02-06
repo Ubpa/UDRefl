@@ -110,6 +110,14 @@ ObjectView ObjectView::RemoveConst() const {
 	return { type.RemoveConst(), ptr };
 }
 
+ObjectView ObjectView::RemoveLValueReference() const {
+	return { type.RemoveLValueReference(), ptr };
+}
+
+ObjectView ObjectView::RemoveRValueReference() const {
+	return { type.RemoveRValueReference(), ptr };
+}
+
 ObjectView ObjectView::RemoveReference() const {
 	return { type.RemoveReference(), ptr };
 }
@@ -119,27 +127,27 @@ ObjectView ObjectView::RemoveConstReference() const {
 }
 
 ObjectView ObjectView::AddConst() const {
-	return { Mngr.AddConst(type), ptr };
+	return { Mngr.tregistry.RegisterAddConst(type), ptr };
 }
 
 ObjectView ObjectView::AddConstLValueReference() const {
-	return { Mngr.AddConstLValueReference(type), ptr };
+	return { Mngr.tregistry.RegisterAddConstLValueReference(type), ptr };
 }
 
 ObjectView ObjectView::AddConstRValueReference() const {
-	return { Mngr.AddConstRValueReference(type), ptr };
+	return { Mngr.tregistry.RegisterAddConstRValueReference(type), ptr };
 }
 
 ObjectView ObjectView::AddLValueReference() const {
-	return { Mngr.AddLValueReference(type), ptr };
+	return { Mngr.tregistry.RegisterAddLValueReference(type), ptr };
 }
 
 ObjectView ObjectView::AddLValueReferenceWeak() const {
-	return { Mngr.AddLValueReferenceWeak(type), ptr };
+	return { Mngr.tregistry.RegisterAddLValueReferenceWeak(type), ptr };
 }
 
 ObjectView ObjectView::AddRValueReference() const {
-	return { Mngr.AddRValueReference(type), ptr };
+	return { Mngr.tregistry.RegisterAddRValueReference(type), ptr };
 }
 
 InvocableResult ObjectView::IsInvocable(Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
