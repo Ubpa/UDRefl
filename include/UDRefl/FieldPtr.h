@@ -12,28 +12,29 @@ namespace Ubpa::UDRefl {
 		// Buffer
 		///////////
 
-		static constexpr size_t BufferSize = std::max(sizeof(Offsetor), sizeof(SharedBuffer)); // maybe 64
+		static constexpr std::size_t BufferSize = std::max(sizeof(Offsetor), sizeof(SharedBuffer)); // maybe 64
 		using Buffer = std::aligned_storage_t<BufferSize>;
 		static_assert(sizeof(Buffer) == BufferSize);
 		// raw offsetor
-		using Data = 
-			std::variant<
-				std::size_t,  // forward_offset_value 0 BASIC
-				Offsetor,     // offsetor             1 VIRTUAL
-				void*,        // static_obj           2 STATIC
-				SharedBuffer, // dynamic_obj          3 DYNAMIC_SHARED
-				Buffer        // dynamic_obj          4 DYNAMIC_BUFFER
-			>;
+		using Data =  std::variant<
+			std::size_t,  // forward_offset_value 0 BASIC
+			Offsetor,     // offsetor             1 VIRTUAL
+			void*,        // static_obj           2 STATIC
+			SharedBuffer, // dynamic_obj          3 DYNAMIC_SHARED
+			Buffer        // dynamic_obj          4 DYNAMIC_BUFFER
+		>;
 
 		template<typename T>
 		static constexpr bool IsBufferable() noexcept {
-			return std::is_trivially_copyable_v<T> && sizeof(T) <= BufferSize && alignof(T) <= alignof(Buffer);
+			return std::is_trivially_copyable_v<T>
+				&& sizeof(T) <= BufferSize
+				&& alignof(T) <= alignof(Buffer);
 		}
 
 		template<typename T>
 		static constexpr Buffer ConvertToBuffer(const T& data) noexcept {
 			static_assert(IsBufferable<T>());
-			Buffer buffer{};
+			Buffer buffer;
 			memcpy(&buffer, &data, sizeof(T));
 			return buffer;
 		}
@@ -52,9 +53,7 @@ namespace Ubpa::UDRefl {
 		FieldPtr(Type type, Offsetor offsetor) noexcept :
 			type{ type },
 			data{ std::move(offsetor) }
-		{
-			assert(type&& std::get<1>(data));
-		}
+		{ assert(type && std::get<1>(data)); }
 
 		constexpr FieldPtr(Type type, void* ptr) noexcept :
 			type{ type },

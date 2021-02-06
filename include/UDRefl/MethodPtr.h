@@ -29,46 +29,24 @@ namespace Ubpa::UDRefl {
 		using MemberConstFunction    = Destructor(const void*, void*, ArgsView);
 		using StaticFunction         = Destructor(             void*, ArgsView);
 
-		MethodPtr(MemberVariableFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			func{ func },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) } { assert(func); }
-
-		MethodPtr(MemberConstFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			func{ func },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) } { assert(func); }
-
-		MethodPtr(StaticFunction* func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			func{ func },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) } { assert(func); }
-
-		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			func{ (assert(func), std::move(func)) },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) } {}
-
-		MethodPtr(std::function<MemberConstFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			func{ (assert(func), std::move(func)) },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) } {}
-
-		MethodPtr(std::function<StaticFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {}) :
-			func{ (assert(func), std::move(func)) },
-			resultDesc{ std::move(resultDesc) },
-			paramList{ std::move(paramList) } {}
+		MethodPtr(MemberVariableFunction*               func, ResultDesc resultDesc = {}, ParamList paramList = {});
+		MethodPtr(MemberConstFunction*                  func, ResultDesc resultDesc = {}, ParamList paramList = {});
+		MethodPtr(StaticFunction*                       func, ResultDesc resultDesc = {}, ParamList paramList = {});
+		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {});
+		MethodPtr(std::function<MemberConstFunction>    func, ResultDesc resultDesc = {}, ParamList paramList = {});
+		MethodPtr(std::function<StaticFunction>         func, ResultDesc resultDesc = {}, ParamList paramList = {});
 
 		bool IsMemberVariable() const noexcept { return func.index() == 0 || func.index() == 3; }
 		bool IsMemberConst   () const noexcept { return func.index() == 1 || func.index() == 4; }
 		bool IsStatic        () const noexcept { return func.index() == 2 || func.index() == 5; }
 
+		FuncMode GetFuncMode() const noexcept;
+
 		const ParamList&  GetParamList() const noexcept { return paramList; }
 		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
 
 		bool IsDistinguishableWith(const MethodPtr& rhs) const noexcept {
-			return func.index() != rhs.func.index()
-				|| paramList != rhs.paramList;
+			return func.index() != rhs.func.index() || paramList != rhs.paramList;
 		}
 
 		Destructor Invoke(      void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;

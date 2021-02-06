@@ -35,5 +35,5 @@ int main() {
 		std::cout << method.name.GetView() << std::endl;
 
 	for (auto&& [type, field, var] : v.GetTypeFieldVars())
-		std::cout << field.name.View() << ": " << var << std::endl;
+		std::cout << field.name.GetView() << ": " << var << std::endl;
 }

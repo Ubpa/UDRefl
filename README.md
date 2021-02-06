@@ -85,7 +85,7 @@ std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
 
 ```c++
 for (auto&& [type, field, var] : v.GetTypeFieldVars())
-  std::cout << field.name.View() << ": " << var << std::endl;
+  std::cout << field.name.GetView() << ": " << var << std::endl;
 ```
 
 ### other example

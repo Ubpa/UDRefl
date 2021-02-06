@@ -97,7 +97,7 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}) const;
+		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}, FuncMode mode = FuncMode::Variable) const;
 
 		InvokeResult Invoke(
 			Name method_name,
@@ -106,7 +106,7 @@ namespace Ubpa::UDRefl {
 			ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Name method_name) const;
+		InvocableResult IsInvocable(Name method_name, FuncMode mode = FuncMode::Variable) const;
 
 		template<typename T>
 		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
@@ -134,18 +134,18 @@ namespace Ubpa::UDRefl {
 			Name method_name,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectView/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		template<typename T, typename... Args>
 		T AInvoke(Name method_name, Args&&... args) const;
 
-		// 'A' means auto, ObjectView/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		template<typename... Args>
 		SharedObject AMInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectView/SharedObject will be transformed as ID + ptr
+		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		template<typename... Args>
 		SharedObject ADMInvoke(
 			Name method_name,
@@ -229,9 +229,9 @@ namespace Ubpa::UDRefl {
 		OBJECT_VIEW_DEFINE_CMP_OPERATOR(>=, ge);
 
 		template<typename Arg> requires NonObjectAndView<std::decay_t<Arg>>
-		const ObjectView& operator=(Arg&& rhs) const {
+		ObjectView operator=(Arg&& rhs) const {
 			AInvoke<void>(NameIDRegistry::Meta::operator_assign, std::forward<Arg>(rhs));
-			return *this;    
+			return AddLValueReference();    
 		}
 
 		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(+=, assign_add);
@@ -366,17 +366,10 @@ namespace Ubpa::UDRefl {
 		template<typename U, typename Deleter, typename Alloc>
 		SharedObject(ObjectView obj, Deleter d, Alloc alloc) noexcept : ObjectView{ obj }, buffer{ obj.GetPtr(), std::move(d), alloc } {}
 
-		SharedObject(const SharedObject& obj) noexcept = default;
+		/*SharedObject(const SharedObject& obj) noexcept = default;
 		SharedObject(SharedObject&& obj) noexcept = default;
-
 		SharedObject& operator=(const SharedObject& rhs) noexcept = default;
-
-		SharedObject& operator=(SharedObject&& rhs) noexcept = default;
-
-		SharedObject& operator=(std::nullptr_t) noexcept {
-			Reset();
-			return *this;
-		}
+		SharedObject& operator=(SharedObject&& rhs) noexcept = default;*/
 
 		// set pointer to nullptr
 		void Reset() noexcept { ptr = nullptr; buffer.reset(); }

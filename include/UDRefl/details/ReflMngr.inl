@@ -898,21 +898,9 @@ namespace Ubpa::UDRefl {
 	///////////
 
 	template<typename... Args>
-	InvocableResult ReflMngr::IsStaticInvocable(Type type, Name method_name) const {
+	InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, FuncMode mode) const {
 		constexpr std::array argTypes = { Type_of<Args>... };
-		return IsStaticInvocable(type, method_name, std::span<const Type>{argTypes});
-	}
-
-	template<typename... Args>
-	InvocableResult ReflMngr::IsConstInvocable(Type type, Name method_name) const {
-		constexpr std::array argTypes = { Type_of<Args>... };
-		return IsConstInvocable(type, method_name, std::span<const Type>{argTypes});
-	}
-
-	template<typename... Args>
-	InvocableResult ReflMngr::IsInvocable(Type type, Name method_name) const {
-		constexpr std::array argTypes = { Type_of<Args>... };
-		return IsInvocable(type, method_name, std::span<const Type>{argTypes});
+		return IsInvocable(type, method_name, std::span<const Type>{argTypes}, mode);
 	}
 
 	template<typename T>

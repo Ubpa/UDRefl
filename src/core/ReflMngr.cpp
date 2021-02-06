@@ -487,75 +487,12 @@ namespace Ubpa::UDRefl::details {
 		ArgPtrBuffer argptr_buffer{ nullptr };
 	};
 
-	static InvocableResult IsStaticInvocable(
-		bool is_priority,
-		Type type,
-		Name method_name,
-		std::span<const Type> argTypes)
-	{
-		assert(type.CVRefMode() == CVRefMode::None);
-		auto typetarget = Mngr.typeinfos.find(type);
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (iter->second.methodptr.IsStatic()
-				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
-					: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
-				return { true, iter->second.methodptr.GetResultDesc() };
-		}
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = IsStaticInvocable(is_priority, base, method_name, argTypes);
-			if (rst)
-				return rst;
-		}
-
-		return {};
-	}
-
-	static InvocableResult IsConstInvocable(
-		bool is_priority,
-		Type type,
-		Name method_name,
-		std::span<const Type> argTypes)
-	{
-		assert(type.CVRefMode() == CVRefMode::None);
-		auto typetarget = Mngr.typeinfos.find(type);
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (!iter->second.methodptr.IsMemberVariable()
-				&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
-					: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
-				return { true, iter->second.methodptr.GetResultDesc() };
-		}
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = IsConstInvocable(is_priority, base, method_name, argTypes);
-			if (rst)
-				return rst;
-		}
-
-		return {};
-	}
-
 	static InvocableResult IsInvocable(
 		bool is_priority,
 		Type type,
 		Name method_name,
-		std::span<const Type> argTypes)
+		std::span<const Type> argTypes,
+		FuncMode mode)
 	{
 		assert(type.CVRefMode() == CVRefMode::None);
 		auto typetarget = Mngr.typeinfos.find(type);
@@ -566,9 +503,10 @@ namespace Ubpa::UDRefl::details {
 		const auto& typeinfo = typetarget->second;
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
-		{ // 1. object variable and static
+		// 1. object variable
+		if (mode == FuncMode::Variable) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberConst()
+				if (iter->second.methodptr.IsMemberVariable()
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
@@ -577,9 +515,9 @@ namespace Ubpa::UDRefl::details {
 			}
 		}
 
-		{ // 2. object const
+		{ // 2. object const and static
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.IsMemberConst()
+				if (!iter->second.methodptr.IsMemberVariable() && (mode != FuncMode::Static || iter->second.methodptr.IsStatic())
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
@@ -589,8 +527,7 @@ namespace Ubpa::UDRefl::details {
 		}
 
 		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = IsInvocable(is_priority, base, method_name, argTypes);
-			if (rst)
+			if (auto rst = IsInvocable(is_priority, base, method_name, argTypes, mode))
 				return rst;
 		}
 
@@ -1516,91 +1453,26 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 	return true;
 }
 
-InvocableResult ReflMngr::IsStaticInvocable(
-	Type type,
-	Name method_name,
-	std::span<const Type> argTypes) const
-{
+InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, FuncMode mode) const {
 	const CVRefMode cvref_mode = type.CVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
-	case CVRefMode::Left:
-		return IsStaticInvocable(type.RemoveReference(), method_name, argTypes);
+	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
-		return IsStaticInvocable(type.RemoveReference(), method_name, argTypes);
-	case CVRefMode::Const:
-		return IsStaticInvocable(type.RemoveConst(), method_name, argTypes);
-	case CVRefMode::ConstLeft:
-		return IsStaticInvocable(type.RemoveCVRef(), method_name, argTypes);
+		return IsInvocable(type.RemoveReference(), method_name, argTypes, mode);
+	case CVRefMode::Const: [[fallthrough]];
+	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		return IsStaticInvocable(type.RemoveCVRef(), method_name, argTypes);
+		return IsInvocable(type.RemoveCVRef(), method_name, argTypes, mode == FuncMode::Variable ? FuncMode::Const : mode);
 	default:
 		break;
 	}
 
-	if (auto priority_rst = details::IsStaticInvocable(true, type, method_name, argTypes))
+	if (auto priority_rst = details::IsInvocable(true, type, method_name, argTypes, mode))
 		return priority_rst;
 
-	return details::IsStaticInvocable(false, type, method_name, argTypes);
-}
-
-InvocableResult ReflMngr::IsConstInvocable(
-	Type type,
-	Name method_name,
-	std::span<const Type> argTypes) const
-{
-	const CVRefMode cvref_mode = type.CVRefMode();
-	assert(!CVRefMode_IsVolatile(cvref_mode));
-	switch (cvref_mode)
-	{
-	case CVRefMode::Left:
-		return IsConstInvocable(type.RemoveReference(), method_name, argTypes);
-	case CVRefMode::Right:
-		return IsConstInvocable(type.RemoveReference(), method_name, argTypes);
-	case CVRefMode::Const:
-		return IsConstInvocable(type.RemoveConst(), method_name, argTypes);
-	case CVRefMode::ConstLeft:
-		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
-	case CVRefMode::ConstRight:
-		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
-	default:
-		break;
-	}
-
-	if (auto priority_rst = details::IsConstInvocable(true, type, method_name, argTypes))
-		return priority_rst;
-
-	return details::IsConstInvocable(false, type, method_name, argTypes);
-}
-
-InvocableResult ReflMngr::IsInvocable(
-	Type type,
-	Name method_name,
-	std::span<const Type> argTypes) const
-{
-	const CVRefMode cvref_mode = type.CVRefMode();
-	assert(!CVRefMode_IsVolatile(cvref_mode));
-	switch (cvref_mode)
-	{
-	case CVRefMode::Left:
-		return IsInvocable(type.RemoveReference(), method_name, argTypes);
-	case CVRefMode::Right:
-		return IsInvocable(type.RemoveReference(), method_name, argTypes);
-	case CVRefMode::Const:
-		return IsConstInvocable(type.RemoveConst(), method_name, argTypes);
-	case CVRefMode::ConstLeft:
-		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
-	case CVRefMode::ConstRight:
-		return IsConstInvocable(type.RemoveCVRef(), method_name, argTypes);
-	default:
-		break;
-	}
-
-	if (auto priority_rst = details::IsInvocable(true, type, method_name, argTypes))
-		return priority_rst;
-
-	return details::IsInvocable(false, type, method_name, argTypes);
+	return details::IsInvocable(false, type, method_name, argTypes, mode);
 }
 
 InvokeResult ReflMngr::Invoke(

@@ -21,5 +21,9 @@
   - [ ] `size()` -> `std::size_t` 
 - [x] `ObjectPtr` -> `ObjectView` and let `SharedObject : public ObjectView` 
 - [x] `TypeID` -> `Type` 
+- [ ] improve function wrapper
 - [ ] rename invoke
+- [ ] remove metas: `malloc`, `free`, `aligned_malloc`, `aligned_free` 
+- [ ] compress API
+  - [x] IsInvocable
 

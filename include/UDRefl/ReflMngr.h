@@ -233,9 +233,7 @@ namespace Ubpa::UDRefl {
 		// - direct constructible
 		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
-		InvocableResult IsStaticInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}) const;
-		InvocableResult IsConstInvocable (Type type, Name method_name, std::span<const Type> argTypes = {}) const;
-		InvocableResult IsInvocable      (Type type, Name method_name, std::span<const Type> argTypes = {}) const;
+		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, FuncMode mode = FuncMode::Variable) const;
 
 		InvokeResult Invoke(
 			Type type,
@@ -254,24 +252,20 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename... Args>
-		InvocableResult IsStaticInvocable(Type type, Name method_name) const;
-		template<typename... Args>
-		InvocableResult IsConstInvocable (Type type, Name method_name) const;
-		template<typename... Args>
-		InvocableResult IsInvocable      (Type type, Name method_name) const;
+		InvocableResult IsInvocable(Type type, Name method_name, FuncMode mode = FuncMode::Variable) const;
 
 		template<typename T>
-		T InvokeRet(Type type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		template<typename T>
 		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(Type type, Name method_name, void* result_buffer, Args&&... args) const;
+		InvokeResult InvokeArgs(Type      type, Name method_name, void* result_buffer, Args&&... args) const;
 		template<typename... Args>
 		InvokeResult InvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(Type type, Name method_name, Args&&... args) const;
+		T Invoke(Type      type, Name method_name, Args&&... args) const;
 		template<typename T, typename... Args>
 		T Invoke(ObjectView obj, Name method_name, Args&&... args) const;
 
