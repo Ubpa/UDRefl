@@ -2,7 +2,7 @@
 
 #include "attrs/ContainerType.h"
 
-#include "TypeInfo.h"
+#include "Info.h"
 
 namespace Ubpa::UDRefl {
 	constexpr Type Global = TypeIDRegistry::Meta::global;
@@ -22,7 +22,7 @@ namespace Ubpa::UDRefl {
 		// enum is a special type (all member is static)
 		//
 
-		NameIDRegistry  nregistry;
+		NameIDRegistry nregistry;
 		TypeIDRegistry tregistry;
 
 		std::unordered_map<Type, TypeInfo> typeinfos;

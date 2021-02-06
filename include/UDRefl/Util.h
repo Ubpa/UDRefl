@@ -25,8 +25,7 @@ constexpr Name operator ~ (const Name& e) noexcept {                     \
 namespace Ubpa::UDRefl {
 	using Offsetor = std::function<void*(void*)>;
 	using Destructor = std::function<void(const void*)>;
-	using FreeFunc = std::function<void(void*)>;
-	using DeleteFunc = std::function<void(void*)>; // Destructor + FreeFunc
+	using DeleteFunc = std::function<void(void*)>; // destruct + free
 
 	template<typename Obj, typename T>
 	std::size_t field_forward_offset_value(T Obj::* field_ptr) noexcept {

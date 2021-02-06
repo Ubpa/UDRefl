@@ -37,12 +37,9 @@ namespace Ubpa::UDRefl {
 	class SharedObject;
 	class ObjectView;
 
-	template<typename T>
-	struct IsObjectOrView;
-	template<typename T>
-	constexpr bool IsObjectOrView_v = IsObjectOrView<T>::value;
-	template<typename T>
-	concept NonObjectAndView = !IsObjectOrView_v<T>;
+	template<typename T> struct IsObjectOrView;
+	template<typename T> constexpr bool IsObjectOrView_v = IsObjectOrView<T>::value;
+	template<typename T> concept NonObjectAndView = !IsObjectOrView_v<T>;
 
 	class ObjectView {
 	public:
@@ -348,10 +345,6 @@ namespace Ubpa::UDRefl {
 	
 	class SharedObject : public ObjectView {
 	public:
-		//
-		// Constructor
-		////////////////
-
 		using ObjectView::ObjectView;
 
 		SharedObject(Type type, SharedBuffer buffer) noexcept : ObjectView{ type }, buffer{ std::move(buffer) } { ptr = buffer.get(); }
@@ -364,11 +357,6 @@ namespace Ubpa::UDRefl {
 		template<typename U, typename Deleter, typename Alloc>
 		SharedObject(ObjectView obj, Deleter d, Alloc alloc) noexcept : ObjectView{ obj }, buffer{ obj.GetPtr(), std::move(d), alloc } {}
 
-		/*SharedObject(const SharedObject& obj) noexcept = default;
-		SharedObject(SharedObject&& obj) noexcept = default;
-		SharedObject& operator=(const SharedObject& rhs) noexcept = default;
-		SharedObject& operator=(SharedObject&& rhs) noexcept = default;*/
-
 		// set pointer to nullptr
 		void Reset() noexcept { ptr = nullptr; buffer.reset(); }
 
@@ -377,9 +365,7 @@ namespace Ubpa::UDRefl {
 
 		long UseCount() const noexcept { return buffer.use_count(); }
 
-		bool IsObjectView() const noexcept {
-			return ptr && !buffer;
-		}
+		bool IsObjectView() const noexcept { return ptr && !buffer; }
 
 		void Swap(SharedObject& rhs) noexcept {
 			std::swap(type, rhs.type);
