@@ -16,16 +16,18 @@ bool details::IsPriorityCompatible(std::span<const Type> params, std::span<const
 		if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
 			const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
 			assert(!type_name_is_volatile(unref_lhs));
-			if (!type_name_is_const(unref_lhs)) {
-				if (rhs.Is(unref_lhs))
-					continue; // &&{T} <- T
-			}
+			if (!type_name_is_const(unref_lhs) && rhs.Is(unref_lhs))
+				continue; // &&{T} <- T
+		}
+		else if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
+			const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
+			assert(!type_name_is_volatile(unref_lhs));
+			if (type_name_is_const(unref_lhs) && rhs.Is(unref_lhs))
+				continue; // &{const{T}} <- const{T}
 		}
 		else {
-			if (!lhs.IsLValueReference()) { // T
-				if (lhs.Is(rhs.Name_RemoveRValueReference()))
-					continue; // T <- &&{T}
-			}
+			if (lhs.Is(rhs.Name_RemoveRValueReference()))
+				continue; // T <- &&{T}
 		}
 
 		return false;
@@ -49,7 +51,7 @@ bool details::IsNonCopiedArgConstructCompatible(std::span<const Type> params, st
 			const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
 			if (type_name_is_const(unref_lhs)) { // &{const{T}}
 				if (unref_lhs == rhs.Name_RemoveRValueReference())
-					continue; // &{const{T}} <- &&{const{T}}
+					continue; // &{const{T}} <- &&{const{T}} | const{T}
 
 				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
@@ -62,12 +64,15 @@ bool details::IsNonCopiedArgConstructCompatible(std::span<const Type> params, st
 			assert(!type_name_is_volatile(unref_lhs));
 
 			if (type_name_is_const(unref_lhs)) { // &&{const{T}}
+				if (rhs.Is(unref_lhs))
+					continue; // &&{const{T}} <- const{T}
+
 				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
 				if (rhs.Is(raw_lhs))
 					continue; // &&{const{T}} <- T
 
-				if (raw_lhs == rhs.Name_RemoveRValueReference()) // &&{const{T}}
+				if (raw_lhs == rhs.Name_RemoveRValueReference())
 					continue; // &&{const{T}} <- &&{T}
 			}
 			else {
@@ -108,6 +113,9 @@ bool details::IsNonCopiedArgConstructCompatible(std::span<const Type> params, st
 				if (type_name_add_rvalue_reference_hash(unref_lhs) == rhs_hash)
 					continue; // &{const{T}} <- &&{const{T}}
 
+				if (string_hash(unref_lhs) == rhs_hash)
+					continue; // &{const{T}} <- const{T}
+
 				auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
 				if (TypeID{ raw_lhs }.GetValue() == rhs_hash
@@ -126,6 +134,9 @@ bool details::IsNonCopiedArgConstructCompatible(std::span<const Type> params, st
 				if (TypeID{ raw_lhs }.GetValue() == rhs_hash)
 					continue; // &&{const{T}} <- T
 
+				if(TypeID{unref_lhs}.GetValue() == rhs_hash)
+					continue; // &&{const{T}} <- const{T}
+
 				if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
 					continue; // &&{const{T}} <- &&{T}
 			}
@@ -143,6 +154,32 @@ bool details::IsNonCopiedArgConstructCompatible(std::span<const Type> params, st
 	}
 
 	return true;
+}
+
+bool details::IsPointerAndArrayCompatible(std::string_view lhs, std::string_view rhs) {
+	assert(!type_name_is_reference(lhs) && !type_name_is_const(lhs));
+	assert(!type_name_is_reference(rhs) && !type_name_is_const(rhs));
+
+	if (lhs == rhs)
+		return true;
+
+	std::string_view lhs_ele;
+	if (type_name_is_pointer(lhs))
+		lhs_ele = type_name_remove_pointer(lhs);
+	else if (type_name_is_unbounded_array(lhs))
+		lhs_ele = type_name_remove_extent(lhs);
+	else
+		return false;
+
+	std::string_view rhs_ele;
+	if (type_name_is_pointer(rhs))
+		rhs_ele = type_name_remove_pointer(rhs);
+	else if (type_name_is_array(rhs))
+		rhs_ele = type_name_remove_extent(rhs);
+	else
+		return false;
+
+	return lhs_ele == rhs_ele || type_name_remove_const(lhs_ele) == rhs_ele;
 }
 
 details::NewArgsGuard::NewArgsGuard(
@@ -181,13 +218,11 @@ details::NewArgsGuard::NewArgsGuard(
 			const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
 			if (type_name_is_const(unref_lhs)) { // &{const{T}}
 				if (unref_lhs == rhs.Name_RemoveRValueReference())
-					continue; // &{const{T}} <- &&{const{T}}
+					continue; // &{const{T}} <- &&{const{T}} || const{T}
 
 				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 				if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
 					continue; // &{const{T}} <- T | &{T} | &&{T}
-
-				assert(!type_name_is_pointer(raw_lhs));
 
 				Type raw_lhs_type{ raw_lhs };
 				if (Mngr.IsNonCopiedArgConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
@@ -195,7 +230,7 @@ details::NewArgsGuard::NewArgsGuard(
 					assert(num_copiedargs <= MaxArgNum);
 
 					info.idx = i;
-					info.is_ptr = false;
+					info.is_pointer_or_array = false;
 					info.name = raw_lhs_type.GetName().data();
 					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
 					info.name_hash = raw_lhs_type.GetID().GetValue();
@@ -207,15 +242,16 @@ details::NewArgsGuard::NewArgsGuard(
 		else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
 			const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
 			if (type_name_is_const(unref_lhs)) { // &&{const{T}}
+				if (rhs.Is(unref_lhs))
+					continue; // &&{const{T}} <- const{T}
+
 				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
 
 				if (rhs.Is(raw_lhs))
 					continue; // &&{const{T}} <- T
 
-				if (raw_lhs == rhs.Name_RemoveRValueReference()) // &&{const{T}}
+				if (raw_lhs == rhs.Name_RemoveRValueReference())
 					continue; // &&{const{T}} <- &&{T}
-
-				assert(!type_name_is_pointer(raw_lhs));
 
 				Type raw_lhs_type{ raw_lhs };
 				if (Mngr.IsNonCopiedArgConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
@@ -223,7 +259,7 @@ details::NewArgsGuard::NewArgsGuard(
 					assert(num_copiedargs <= MaxArgNum);
 
 					info.idx = i;
-					info.is_ptr = false;
+					info.is_pointer_or_array = false;
 					info.name = raw_lhs_type.GetName().data();
 					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
 					info.name_hash = raw_lhs_type.GetID().GetValue();
@@ -233,43 +269,37 @@ details::NewArgsGuard::NewArgsGuard(
 			}
 			else { // &&{T}
 				if (rhs.Is(unref_lhs))
-					continue;
+					continue; // &&{T} <- T
 			}
 		}
 		else { // T
 			if (lhs.Is(rhs.Name_RemoveRValueReference()))
 				continue; // T <- &&{T}
 
-			if ((lhs.IsPointer() || Mngr.IsCopyConstructible(lhs))
-				&& (
-					lhs.Is(rhs.Name_RemoveLValueReference())
-					|| lhs.Is(rhs.Name_RemoveCVRef())
-					))
-			{
-				auto& info = info_copiedargs[num_copiedargs++];
-				assert(num_copiedargs <= MaxArgNum);
-
-				info.idx = i;
-				info.is_ptr = type_name_is_pointer(lhs);
-				info.name = lhs.GetName().data();
-				info.name_size = static_cast<std::uint16_t>(lhs.GetName().size());
-				info.name_hash = lhs.GetID().GetValue();
-
-				continue; // T <- T{arg} [copy]
-			}
-
 			if (Mngr.IsNonCopiedArgConstructible(lhs, std::span<const Type>{&rhs, 1})) {
 				auto& info = info_copiedargs[num_copiedargs++];
 				assert(num_copiedargs <= MaxArgNum);
 
 				info.idx = i;
-				info.is_ptr = false;
+				info.is_pointer_or_array = false;
 				info.name = lhs.GetName().data();
 				info.name_size = static_cast<std::uint16_t>(lhs.GetName().size());
 				info.name_hash = lhs.GetID().GetValue();
 
 				continue; // T <- T{arg}
 			}
+		}
+
+		auto raw_lhs = lhs.Name_RemoveCVRef();
+		if (!(lhs.IsLValueReference() && !lhs.IsReadOnly()) && IsPointerAndArrayCompatible(raw_lhs, rhs.Name_RemoveCVRef())) {
+			auto& info = info_copiedargs[num_copiedargs++];
+			assert(num_copiedargs <= MaxArgNum);
+			info.idx = i;
+			info.is_pointer_or_array = true;
+			info.name = raw_lhs.data();
+			info.name_size = static_cast<std::uint16_t>(raw_lhs.size());
+			info.name_hash = TypeID{ raw_lhs }.GetValue();
+			continue;
 		}
 
 		return; // not compatible
@@ -286,7 +316,7 @@ details::NewArgsGuard::NewArgsGuard(
 
 	for (std::uint8_t k = 0; k < num_copiedargs; ++k) {
 		std::uint32_t size, alignment;
-		if (info_copiedargs[k].is_ptr) {
+		if (info_copiedargs[k].is_pointer_or_array) {
 			size = static_cast<std::uint32_t>(sizeof(void*));
 			alignment = static_cast<std::uint32_t>(alignof(void*));
 		}
@@ -335,7 +365,7 @@ details::NewArgsGuard::NewArgsGuard(
 		new_argptr_buffer[i] = arg_buffer;
 
 		// copy
-		if (info.is_ptr)
+		if (info.is_pointer_or_array)
 			buffer_as<void*>(arg_buffer) = orig_argptr_buffer[i];
 		else {
 			bool success = Mngr.NonCopiedArgConstruct(

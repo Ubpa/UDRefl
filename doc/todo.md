@@ -28,6 +28,7 @@
 - [x] special types
   - [x] pointer
   - [x] array
+  - [x] string
 - [ ] iterator API
   - [ ] adaptors: make_reverse_iterator, make_move_iterator, front_inserter, back_inserter, inserter
   - [x] operations: advance, distance, next, prev

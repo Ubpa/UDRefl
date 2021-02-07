@@ -167,21 +167,21 @@ namespace Ubpa::UDRefl {
 		//////////////
 
 		std::vector<TypeRef>                                   GetTypes        () const;
-		std::vector<TypeFieldRef>                              GetTypeFields   (FieldFlag flag = FieldFlag::All) const;
-		std::vector<FieldRef>                                  GetFields       (FieldFlag flag = FieldFlag::All) const;
-		std::vector<TypeMethodRef>                             GetTypeMethods  (MethodFlag  flag = MethodFlag ::All) const;
-		std::vector<MethodRef>                                 GetMethods      (MethodFlag  flag = MethodFlag ::All) const;
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(FieldFlag flag = FieldFlag::All) const;
-		std::vector<ObjectView>                                GetVars         (FieldFlag flag = FieldFlag::All) const;
+		std::vector<TypeFieldRef>                              GetTypeFields   (FieldFlag  flag = FieldFlag ::All) const;
+		std::vector<FieldRef>                                  GetFields       (FieldFlag  flag = FieldFlag ::All) const;
+		std::vector<TypeMethodRef>                             GetTypeMethods  (MethodFlag flag = MethodFlag::All) const;
+		std::vector<MethodRef>                                 GetMethods      (MethodFlag flag = MethodFlag::All) const;
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(FieldFlag  flag = FieldFlag ::All) const;
+		std::vector<ObjectView>                                GetVars         (FieldFlag  flag = FieldFlag ::All) const;
 
 		std::optional<TypeRef  > FindType  (const std::function<bool(TypeRef   )>& func) const;
-		std::optional<FieldRef > FindField (const std::function<bool(FieldRef  )>& func, FieldFlag flag = FieldFlag::All) const;
-		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef )>& func, MethodFlag  flag = MethodFlag ::All) const;
-		ObjectView               FindVar   (const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
+		std::optional<FieldRef > FindField (const std::function<bool(FieldRef  )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef )>& func, MethodFlag flag = MethodFlag::All) const;
+		ObjectView               FindVar   (const std::function<bool(ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		bool ContainsBase  (Type base       ) const;
-		bool ContainsField (Name field_name , FieldFlag flag = FieldFlag::All) const;
-		bool ContainsMethod(Name method_name, MethodFlag  flag = MethodFlag ::All) const;
+		bool ContainsField (Name field_name , FieldFlag  flag = FieldFlag ::All) const;
+		bool ContainsMethod(Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		//
 		// Type

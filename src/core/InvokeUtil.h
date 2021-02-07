@@ -13,39 +13,52 @@ namespace Ubpa::UDRefl::details {
 	// - reference
 	// > - 0 (invalid), 1 (convertible)
 	// > - table
-	//     |    -     | T | T & | const T & | T&& | const T&& |
-	//     |      T   | - |  0  |     0     |  1  |     0     |
-	//     |      T & | 0 |  -  |     0     |  0  |     0     |
-	//     |const T & | 0 |  0  |     -     |  0  |     0     |
-	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
-	//     |const T&& | 0 |  0  |     0     |  0  |     -     |
+	//     |    -     | T | T & | const T & | T&& | const T&& | const T |
+	//     |      T   | - |  0  |     0     |  1  |     0     |    0    |
+	//     |      T & | 0 |  -  |     0     |  0  |     0     |    0    |
+	//     |const T & | 0 |  0  |     -     |  0  |     0     |    1    |
+	//     |      T&& | 1 |  0  |     0     |  -  |     0     |    0    |
+	//     |const T&& | 0 |  0  |     0     |  0  |     -     |    0    |
 	bool IsPriorityCompatible(std::span<const Type> params, std::span<const Type> argTypes);
 
 	// parameter <- argument
 	// - same
 	// - reference
-	// > - 0 (invalid), 1 (convertible), 2 (copy)
+	// > - 0 (invalid), 1 (convertible)
 	// > - table
-	//     |    -     | T | T & | const T & | T&& | const T&& |
-	//     |      T   | - |  0  |     0     |  1  |     0     |
-	//     |      T & | 0 |  -  |     0     |  0  |     0     |
-	//     |const T & | 1 |  1  |     -     |  1  |     1     |
-	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
-	//     |const T&& | 1 |  0  |     0     |  1  |     -     |
+	//     |     -     | T | T & | const T & | T&& | const T&& | const T |
+	//     |       T   | - |  0  |     0     |  1  |     0     |    0    |
+	//     |       T & | 0 |  -  |     0     |  0  |     0     |    0    |
+	//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
+	//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
+	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
 	bool IsNonCopiedArgConstructCompatible(std::span<const Type> params, std::span<const Type> argTypes);
 
 	// parameter <- argument
 	// - same
 	// - reference
-	// > - 0 (invalid), 1 (convertible), 2 (copy)
+	// > - 0 (invalid), 1 (convertible)
 	// > - table
-	//     |    -     | T | T & | const T & | T&& | const T&& |
-	//     |      T   | - |  0  |     0     |  1  |     0     |
-	//     |      T & | 0 |  -  |     0     |  0  |     0     |
-	//     |const T & | 1 |  1  |     -     |  1  |     1     |
-	//     |      T&& | 1 |  0  |     0     |  -  |     0     |
-	//     |const T&& | 1 |  0  |     0     |  1  |     -     |
+	//     |     -     | T | T & | const T & | T&& | const T&& | const T |
+	//     |       T   | - |  0  |     0     |  1  |     0     |    0    |
+	//     |       T & | 0 |  -  |     0     |  0  |     0     |    0    |
+	//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
+	//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
+	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
 	bool IsNonCopiedArgConstructCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs);
+
+	// parameter <- argument
+	// - require: param and arg is non cvref
+	// - 0 (invalid), 1 (convertible)
+	// - true : 1
+	// - false: 0, 2
+	// - table
+	//     |     -     | T * | const T * | T[] | const T[] |
+	//     |       T * |  -  |     0     |  1  |     0     |
+	//     | const T * |  1  |     -     |  1  |     1     |
+	//     |       T[] |  1  |     0     | -/1 |     0     |
+	//     | const T[] |  1  |     1     |  1  |    -/1    |
+	bool IsPointerAndArrayCompatible(std::string_view param, std::string_view arg);
 
 	class NewArgsGuard {
 		struct ArgInfo {
@@ -54,7 +67,7 @@ namespace Ubpa::UDRefl::details {
 			std::uint32_t offset;
 			std::uint16_t name_size;
 			std::uint8_t idx;
-			bool is_ptr;
+			bool is_pointer_or_array;
 			Type GetType() const {
 				return { std::string_view{name,name_size}, TypeID{name_hash} };
 			}

@@ -211,7 +211,7 @@ namespace Ubpa::UDRefl {
 		// parameter <- argument
 		// - same
 		// - reference
-		// > - 0 (invalid), 1 (convertible), 2 (copy)
+		// > - 0 (invalid), 1 (convertible), 2 (constructible)
 		// > - table
 		//     |    -     | T | T & | const T & | T&& | const T&& |
 		//     |      T   | - |  2  |     2     |  1  |     2     |
@@ -219,7 +219,14 @@ namespace Ubpa::UDRefl {
 		//     |const T & | 1 |  1  |     -     |  1  |     1     |
 		//     |      T&& | 1 |  0  |     0     |  -  |     0     |
 		//     |const T&& | 1 |  0  |     0     |  1  |     -     |
-		// - direct constructible
+		// - pointer and array (non cvref)
+		// > - 0 (invalid), 1 (convertible)
+		// > - table
+		//     |     -     | T * | const T * | T[] | const T[] |
+		//     |       T * |  -  |     0     |  1  |     0     |
+		//     | const T * |  1  |     -     |  1  |     1     |
+		//     |       T[] |  1  |     0     | -/1 |     0     |
+		//     | const T[] |  1  |     1     |  1  |    -/1    |
 		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
 		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
@@ -318,19 +325,19 @@ namespace Ubpa::UDRefl {
 		// Gather (DFS)
 
 		std::vector<TypeRef>                                   GetTypes        (Type      type);
-		std::vector<TypeFieldRef>                              GetTypeFields   (Type      type, FieldFlag flag = FieldFlag::All);
-		std::vector<FieldRef>                                  GetFields       (Type      type, FieldFlag flag = FieldFlag::All);
-		std::vector<TypeMethodRef>                             GetTypeMethods  (Type      type, MethodFlag  flag = MethodFlag ::All);
-		std::vector<MethodRef>                                 GetMethods      (Type      type, MethodFlag  flag = MethodFlag ::All);
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag flag = FieldFlag::All);
-		std::vector<ObjectView>                                GetVars         (ObjectView obj, FieldFlag flag = FieldFlag::All);
+		std::vector<TypeFieldRef>                              GetTypeFields   (Type      type, FieldFlag  flag = FieldFlag ::All);
+		std::vector<FieldRef>                                  GetFields       (Type      type, FieldFlag  flag = FieldFlag ::All);
+		std::vector<TypeMethodRef>                             GetTypeMethods  (Type      type, MethodFlag flag = MethodFlag::All);
+		std::vector<MethodRef>                                 GetMethods      (Type      type, MethodFlag flag = MethodFlag::All);
+		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag  flag = FieldFlag ::All);
+		std::vector<ObjectView>                                GetVars         (ObjectView obj, FieldFlag  flag = FieldFlag ::All);
 
 		// Find (DFS)
 
 		std::optional<TypeRef  > FindType  (Type      type, const std::function<bool(TypeRef   )>& func) const;
-		std::optional<FieldRef > FindField (Type      type, const std::function<bool(FieldRef  )>& func, FieldFlag flag = FieldFlag::All) const;
-		std::optional<MethodRef> FindMethod(Type      type, const std::function<bool(MethodRef )>& func, MethodFlag  flag = MethodFlag ::All) const;
-		ObjectView               FindVar   (ObjectView obj, const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
+		std::optional<FieldRef > FindField (Type      type, const std::function<bool(FieldRef  )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		std::optional<MethodRef> FindMethod(Type      type, const std::function<bool(MethodRef )>& func, MethodFlag flag = MethodFlag::All) const;
+		ObjectView               FindVar   (ObjectView obj, const std::function<bool(ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		// Contains (DFS)
 

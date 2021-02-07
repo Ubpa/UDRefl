@@ -116,6 +116,7 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - constructors (arbitrary argument count) and destructors
 - methods (**virtual**, **abstract**, **overloaded**, arbitrary argument count) : you can pass arguments by a buffer (on stack or heap)
 - ability to invoke methods of classes from any arbitrary class level
+- argument type auto **convertion** when invoking method
 - no header pollution: the reflection information is created in the cpp file to minimize compile time when modifying the data
 - working with custom types without the need of having the declaration of the type available at compile time (useful for plugins)
 - possibility to add additional **attribute** to all reflection objects

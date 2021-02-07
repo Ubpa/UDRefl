@@ -5,8 +5,11 @@
 ## 0.8
 
 - 0.8.1
-  - support pointer, array
+  - support
+    - pointer, array
+    - string: `std::string`, `std::string_view`, `const char*` 
   - operations: advance, distance, next, prev
+  - `IsCompatible` support pointer and array (e.g. `const char[5]->const char*`)
 - :star: 0.8.0 [refactoring] : simplification, improve performance
   - remove `ConstObjectPtr` and `SharedConstObject` 
   - `TypeID` -> `Type`, `StrID` -> `Name` 

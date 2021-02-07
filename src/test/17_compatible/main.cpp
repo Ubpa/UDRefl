@@ -21,6 +21,12 @@ struct Funcs {
 	void f(const std::uint8_t&&) {
 		std::cout << "f(const std::uint8_t&&)" << std::endl;
 	}
+	void g(const char*) {
+		std::cout << "f(const char*)" << std::endl;
+	}
+	void g(int(&&)[]) {
+		std::cout << "f(int(&&)[])" << std::endl;
+	}
 };
 
 int main() {
@@ -29,7 +35,8 @@ int main() {
 	Mngr.AddMethod<MemFuncOf<Funcs, void(std::uint8_t&)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(std::uint8_t&&)>::get(&Funcs::f)>("f");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&&)>::get(&Funcs::f)>("f");
+	Mngr.AddMethod<MemFuncOf<Funcs, void(const char*)>::get(&Funcs::g)>("g");
+	Mngr.AddMethod<MemFuncOf<Funcs, void(int(&&)[])>::get(&Funcs::g)>("g");
 
 	SharedObject funcs = Mngr.MakeShared(Type_of<Funcs>);
 
@@ -42,4 +49,8 @@ int main() {
 	funcs.Invoke<void>("f", ci);
 	funcs.Invoke<void>("f", std::move(i));
 	funcs.Invoke<void>("f", static_cast<const std::uint8_t&&>(ci));
+
+	int arr_i[5];
+	funcs.Invoke<void>("g", "hello"); // const char(&)[6]
+	funcs.Invoke<void>("g", arr_i);   // int(&)[5]
 }
