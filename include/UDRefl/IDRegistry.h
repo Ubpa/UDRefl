@@ -110,6 +110,13 @@ namespace Ubpa::UDRefl {
 			static constexpr Name tuple_size{ "UDRefl::tuple_size" };
 			static constexpr Name tuple_get{ "UDRefl::tuple_get" };
 
+			// iterator
+
+			static constexpr Name iterator_advance{ "UDRefl::iterator_advance" };
+			static constexpr Name iterator_distance{ "UDRefl::iterator_distance" };
+			static constexpr Name iterator_next{ "UDRefl::iterator_next" };
+			static constexpr Name iterator_prev{ "UDRefl::iterator_prev" };
+
 			// container
 
 			static constexpr Name container_assign{ "UDRefl::container_assign" };

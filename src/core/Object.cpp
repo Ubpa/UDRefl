@@ -246,6 +246,14 @@ std::size_t ObjectView::tuple_size() const {
 	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::tuple_size);
 }
 
+SharedObject ObjectView::next() const {
+	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::iterator_next);
+}
+
+SharedObject ObjectView::prev() const {
+	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::iterator_prev);
+}
+
 SharedObject ObjectView::cbegin() const {
 	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_cbegin);
 }

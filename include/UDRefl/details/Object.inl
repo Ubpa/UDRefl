@@ -2,21 +2,21 @@
 
 #include <array>
 
-#define OBJECT_VIEW_DEFINE_OPERATOR_T(type, op, name)                                \
+#define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                      \
 template<typename Arg>                                                               \
-SharedObject type::operator op (Arg&& rhs) const {                                   \
+SharedObject ObjectView::operator op (Arg&& rhs) const {                             \
     return ADMInvoke(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_CONTAINER_T(type, name)                                    \
-template<typename Arg>                                                                \
-SharedObject type::name (Arg&& rhs) const {                                           \
-    return ADMInvoke(NameIDRegistry::Meta::container_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_VIEW_DEFINE_META_T(prefix, name)                                      \
+template<typename Arg>                                                               \
+SharedObject ObjectView::name (Arg&& rhs) const {                                    \
+    return ADMInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(type, name)                                    \
+#define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(name)                                          \
 template<typename... Args>                                                                 \
-SharedObject type::name (Args&&... args) const {                                           \
+SharedObject ObjectView::name (Args&&... args) const {                                     \
     return ADMInvoke(NameIDRegistry::Meta::container_##name, std::forward<Args>(args)...); \
 }
 
@@ -185,17 +185,17 @@ namespace Ubpa::UDRefl {
 			return DMInvoke(method_name, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr));
 	}
 	
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, +, add)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, -, sub)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, *, mul)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, /, div)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, %, mod)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, &, band)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, |, bor)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, ^, bxor)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(+, add)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(-, sub)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(*, mul)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(/, div)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(%, mod)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(&, band)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(|, bor)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(^, bxor)
 
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, [], subscript)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(ObjectView, ->*, member_of_pointer)
+	OBJECT_VIEW_DEFINE_OPERATOR_T([], subscript)
+	OBJECT_VIEW_DEFINE_OPERATOR_T(->*, member_of_pointer)
 
 	template<typename... Args>
 	SharedObject ObjectView::operator()(Args&&... args) const {
@@ -208,37 +208,49 @@ namespace Ubpa::UDRefl {
 	}
 
 	//
+	// iterator
+	/////////////
+
+	template<typename Arg>
+	void ObjectView::advance (Arg&& rhs) const {
+		AInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<Arg>(rhs));
+	}
+	OBJECT_VIEW_DEFINE_META_T(iterator, distance);
+	OBJECT_VIEW_DEFINE_META_T(iterator, next);
+	OBJECT_VIEW_DEFINE_META_T(iterator, prev);
+
+	//
 	// container
 	//////////////
 
-	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(ObjectView, assign)
+	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(assign)
 
 	// - element access
 
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, at)
+	OBJECT_VIEW_DEFINE_META_T(container, at)
 
 	// - capacity
 
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, resize)
+	OBJECT_VIEW_DEFINE_META_T(container, resize)
 
 	// - modifiers
 
-	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(ObjectView, insert)
-	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(ObjectView, insert_or_assign)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, erase)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, push_front)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, push_back)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, swap)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, merge)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, extract)
+	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(insert)
+	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(insert_or_assign)
+	OBJECT_VIEW_DEFINE_META_T(container, erase)
+	OBJECT_VIEW_DEFINE_META_T(container, push_front)
+	OBJECT_VIEW_DEFINE_META_T(container, push_back)
+	OBJECT_VIEW_DEFINE_META_T(container, swap)
+	OBJECT_VIEW_DEFINE_META_T(container, merge)
+	OBJECT_VIEW_DEFINE_META_T(container, extract)
 
 	// - lookup
 	
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, count)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, find)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, lower_bound)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, upper_bound)
-	OBJECT_VIEW_DEFINE_CONTAINER_T(ObjectView, equal_range)
+	OBJECT_VIEW_DEFINE_META_T(container, count)
+	OBJECT_VIEW_DEFINE_META_T(container, find)
+	OBJECT_VIEW_DEFINE_META_T(container, lower_bound)
+	OBJECT_VIEW_DEFINE_META_T(container, upper_bound)
+	OBJECT_VIEW_DEFINE_META_T(container, equal_range)
 }
 
 template<>
@@ -313,7 +325,7 @@ namespace Ubpa::UDRefl {
 }
 
 #undef OBJECT_VIEW_DEFINE_OPERATOR_T
-#undef OBJECT_VIEW_DEFINE_CONTAINER_T
+#undef OBJECT_VIEW_DEFINE_META_T
 #undef OBJECT_VIEW_DEFINE_CONTAINER_VARS_T
 #undef DEFINE_OPERATOR_LSHIFT
 #undef DEFINE_OPERATOR_RSHIFT

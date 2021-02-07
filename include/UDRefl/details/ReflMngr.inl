@@ -228,10 +228,50 @@ namespace Ubpa::UDRefl::details {
 			// iterator
 
 			if constexpr (is_iterator_v<T>) {
-				if constexpr (is_valid_v<operator_add, T, std::size_t>)
-					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_add, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs + rhs; });
-				if constexpr (is_valid_v<operator_sub, T, std::size_t>)
-					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_sub, [](const T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs - rhs; });
+				if constexpr (is_valid_v<operator_add, T, std::size_t>) {
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::operator_add,
+						[](const T& lhs, const typename std::iterator_traits<T>::difference_type& rhs) -> decltype(auto) { return lhs + rhs; }
+					);
+				}
+				if constexpr (is_valid_v<operator_sub, T, std::size_t>) {
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::operator_sub,
+						[](const T& lhs, const typename std::iterator_traits<T>::difference_type& rhs) -> decltype(auto) { return lhs - rhs; }
+					);
+				}
+				if constexpr (is_valid_v<iterator_advance, T>) {
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::iterator_advance,
+						[](T& lhs, const typename std::iterator_traits<T>::difference_type& rhs) { std::advance(lhs, rhs); }
+					);
+				}
+				if constexpr (is_valid_v<iterator_distance, T>) {
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::iterator_distance,
+						[](const T& lhs, const T& rhs) { return std::distance(lhs, rhs); }
+					);
+				}
+				if constexpr (is_valid_v<iterator_next, T>) {
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::iterator_next,
+						[](const T& lhs, const typename std::iterator_traits<T>::difference_type& rhs) { return std::next(lhs, rhs); }
+					);
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::iterator_next,
+						[](const T& lhs) { return std::next(lhs); }
+					);
+				}
+				if constexpr (is_valid_v<iterator_prev, T>) {
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::iterator_prev,
+						[](const T& lhs, const typename std::iterator_traits<T>::difference_type& rhs) { return std::prev(lhs, rhs); }
+					);
+					mngr.AddMemberMethod(
+						NameIDRegistry::Meta::iterator_prev,
+						[](const T& lhs) { return std::prev(lhs); }
+					);
+				}
 			}
 
 			// pair

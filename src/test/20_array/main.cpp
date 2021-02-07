@@ -27,7 +27,10 @@ int main() {
 	std::cout << "arr.data: ";
 	for (SharedObject ele : data)
 		std::cout << ele << " ";
+	
 	std::cout << std::endl;
+
+	std::cout << "data.begin().next(1).next(2): " << *data.begin().next(1).next(2) << std::endl;
 
 	return 0;
 }

@@ -32,6 +32,6 @@
   - [x] array
 - [ ] iterator API
   - [ ] adaptors: make_reverse_iterator, make_move_iterator, front_inserter, back_inserter, inserter
-  - [ ] operations: advance, distance, next, prev
+  - [x] operations: advance, distance, next, prev
   - [x] range access: `[c][l/r]begin`, `[c][l/r]end` 
 

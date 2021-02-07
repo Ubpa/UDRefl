@@ -247,9 +247,9 @@ namespace Ubpa::UDRefl {
 	template<typename Enum> requires std::is_enum_v<Enum>
 	constexpr Enum enum_within(const Enum& e, const Enum& flag) noexcept;
 
-	//
-	// Traits
-	///////////
+	////////////
+	// Traits //
+	////////////
 
 	template<typename T>
 	using operator_bool = decltype(static_cast<bool>(std::declval<const T&>()));
@@ -358,19 +358,32 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename U>
 	using operator_member_of_pointer_const = decltype(std::declval<const T&>().operator->*(std::declval<U>()));
 
+	//
 	// iterator
+	/////////////
 
 	template<typename T>
 	struct is_iterator;
 	template<typename T>
 	constexpr bool is_iterator_v = is_iterator<T>::value;
 
-	template<typename T, typename U = std::size_t>
-	using iterator_add = decltype(std::declval<const T&>() + std::declval<U>);
-	template<typename T, typename U = std::size_t>
-	using iterator_sub = decltype(std::declval<const T&>() - std::declval<U>);
+	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
+	using iterator_add = decltype(std::declval<const T&>() + std::declval<U>());
+	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
+	using iterator_sub = decltype(std::declval<const T&>() - std::declval<U>());
 
-	// - pair
+	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
+	using iterator_advance = decltype(std::advance(std::declval<T&>(), std::declval<U>()));
+	template<typename T>
+	using iterator_distance = decltype(std::distance(std::declval<const T&>(), std::declval<const T&>()));
+	template<typename T>
+	using iterator_next = decltype(std::next(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()));
+	template<typename T>
+	using iterator_prev = decltype(std::prev(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()));
+
+	//
+	// pair
+	///////////
 
 	template<typename T>
 	using pair_first_type = typename T::first_type;
@@ -380,15 +393,19 @@ namespace Ubpa::UDRefl {
 	using pair_first = decltype(std::declval<const T&>().first);
 	template<typename T>
 	using pair_second = decltype(std::declval<const T&>().second);
-
-	// - tuple
+	
+	//
+	// tuple
+	//////////
 
 	template<typename T>
 	using tuple_size = decltype(std::tuple_size<T>{});
 	template<typename T, std::size_t Idx>
 	using tuple_element = typename std::tuple_element<Idx, T>::type;
 
+	//
 	// container
+	//////////////
 
 	template<typename T, typename U = typename T::size_type, typename V = const typename T::value_type&>
 	using container_assign = decltype(std::declval<T&>().assign(std::declval<U>(), std::declval<V>()));
