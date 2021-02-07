@@ -21,6 +21,7 @@ constexpr Name operator ~ (const Name& e) noexcept {                     \
 
 #include <cstdint>
 #include <functional>
+#include <iterator>
 
 namespace Ubpa::UDRefl {
 	using Offsetor = std::function<void*(void*)>;
@@ -317,17 +318,17 @@ namespace Ubpa::UDRefl {
 	using operator_assign_rshift = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() >>= std::declval<U>())>;
 
 	template<typename T, typename U = const T&>
-	using operator_eq = decltype(std::declval<const T&>() == std::declval<U>());
+	using operator_eq = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() == std::declval<U>())>;
 	template<typename T, typename U = const T&>
-	using operator_ne = decltype(std::declval<const T&>() != std::declval<U>());
+	using operator_ne = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() != std::declval<U>())>;
 	template<typename T, typename U = const T&>
-	using operator_lt = decltype(std::declval<const T&>() < std::declval<U>());
+	using operator_lt = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() < std::declval<U>())>;
 	template<typename T, typename U = const T&>
-	using operator_le = decltype(std::declval<const T&>() <= std::declval<U>());
+	using operator_le = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() <= std::declval<U>())>;
 	template<typename T, typename U = const T&>
-	using operator_gt = decltype(std::declval<const T&>() > std::declval<U>());
+	using operator_gt = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() > std::declval<U>())>;
 	template<typename T, typename U = const T&>
-	using operator_ge = decltype(std::declval<const T&>() >= std::declval<U>());
+	using operator_ge = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() >= std::declval<U>())>;
 
 	template<typename T, typename U = const T&>
 	using operator_and = decltype(std::declval<const T&>() && std::declval<U>());
@@ -395,32 +396,32 @@ namespace Ubpa::UDRefl {
 	// - iterator
 
 	template<typename T>
-	using container_begin = decltype(std::declval<T&>().begin());
+	using container_begin = decltype(std::begin(std::declval<T&>()));
 	template<typename T>
-	using container_begin_const = decltype(std::declval<const T&>().begin());
+	using container_begin_const = decltype(std::begin(std::declval<const T&>()));
 	template<typename T>
-	using container_cbegin = decltype(std::declval<const T&>().cbegin());
+	using container_cbegin = decltype(std::cbegin(std::declval<const T&>()));
 
 	template<typename T>
-	using container_end = decltype(std::declval<T&>().end());
+	using container_end = decltype(std::end(std::declval<T&>()));
 	template<typename T>
-	using container_end_const = decltype(std::declval<const T&>().end());
+	using container_end_const = decltype(std::begin(std::declval<const T&>()));
 	template<typename T>
-	using container_cend = decltype(std::declval<const T&>().cend());
+	using container_cend = decltype(std::cbegin(std::declval<const T&>()));
 
 	template<typename T>
-	using container_rbegin = decltype(std::declval<T&>().rbegin());
+	using container_rbegin = decltype(std::rbegin(std::declval<T&>()));
 	template<typename T>
-	using container_rbegin_const = decltype(std::declval<const T&>().rbegin());
+	using container_rbegin_const = decltype(std::rbegin(std::declval<const T&>()));
 	template<typename T>
-	using container_crbegin = decltype(std::declval<const T&>().crbegin());
+	using container_crbegin = decltype(std::crbegin(std::declval<const T&>()));
 
 	template<typename T>
-	using container_rend = decltype(std::declval<T&>().rend());
+	using container_rend = decltype(std::rend(std::declval<T&>()));
 	template<typename T>
-	using container_rend_const = decltype(std::declval<const T&>().rend());
+	using container_rend_const = decltype(std::rend(std::declval<const T&>()));
 	template<typename T>
-	using container_crend = decltype(std::declval<const T&>().crend());
+	using container_crend = decltype(std::crend(std::declval<const T&>()));
 
 	// - element access
 
@@ -445,9 +446,9 @@ namespace Ubpa::UDRefl {
 	using container_subscript_const = decltype(std::declval<const T&>()[std::declval<U>()]);
 
 	template<typename T>
-	using container_data = decltype(std::declval<T&>().data());
+	using container_data = decltype(std::data(std::declval<T&>()));
 	template<typename T>
-	using container_data_const = decltype(std::declval<const T&>().data());
+	using container_data_const = decltype(std::data(std::declval<const T&>()));
 
 	template<typename T>
 	using container_front = decltype(std::declval<T&>().front());
@@ -462,13 +463,13 @@ namespace Ubpa::UDRefl {
 	// - capacity
 
 	template<typename T>
-	using container_empty = decltype(std::declval<const T&>().empty());
+	using container_empty = decltype(std::empty(std::declval<const T&>()));
 
 	template<typename T>
-	using container_size = decltype(std::declval<const T&>().size());
+	using container_size = decltype(std::size(std::declval<const T&>()));
 
-	template<typename T>
-	using container_max_size = decltype(std::declval<const T&>().max_size());
+	//template<typename T>
+	//using container_max_size = decltype(std::declval<const T&>().max_size());
 
 	template<typename T, typename U = typename T::size_type>
 	using container_resize_0 = decltype(std::declval<T&>().resize(std::declval<U>()));
@@ -606,6 +607,8 @@ namespace Ubpa::UDRefl {
 	// - > allocator_type
 	// - > size_type
 	// - > difference_type
+	// - > pointer
+	// - > const_pointer
 	// - > key_compare
 	// - > value_coompare
 	// - > iterator
@@ -632,6 +635,10 @@ namespace Ubpa::UDRefl {
 	using container_size_type = typename T::size_type;
 	template<typename T>
 	using container_difference_type = typename T::difference_type;
+	template<typename T>
+	using container_pointer_type = typename T::pointer;
+	template<typename T>
+	using container_const_pointer_type = typename T::const_pointer;
 	template<typename T>
 	using container_key_compare = typename T::key_compare;
 	template<typename T>

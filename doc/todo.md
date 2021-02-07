@@ -27,7 +27,11 @@
   - [x] IsInvocable
   - [x] move APIs with `Type` to corresponding APIs with `ObjectView` 
   - [x] add flags into APIs
-- [ ] special types
+- [x] special types
   - [x] pointer
-  - [ ] array
+  - [x] array
+- [ ] iterator API
+  - [ ] adaptors: make_reverse_iterator, make_move_iterator, front_inserter, back_inserter, inserter
+  - [ ] operations: advance, distance, next, prev
+  - [x] range access: `[c][l/r]begin`, `[c][l/r]end` 
 

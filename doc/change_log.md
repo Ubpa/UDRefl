@@ -5,7 +5,7 @@
 ## 0.8
 
 - 0.8.1
-  - support pointer
+  - support pointer, array
 - :star: 0.8.0 [refactoring] : simplification, improve performance
   - remove `ConstObjectPtr` and `SharedConstObject` 
   - `TypeID` -> `Type`, `StrID` -> `Name` 
