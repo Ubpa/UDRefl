@@ -17,8 +17,6 @@
 - [x] simplify assign operator
 - [x] improve iteration for multimap
 - [x] combine `IsCompatible` and `ConstructedArgumentsGuard` to improve performance
-- [ ] improve return type
-  - [ ] `size()` -> `std::size_t` 
 - [x] `ObjectPtr` -> `ObjectView` and let `SharedObject : public ObjectView` 
 - [x] `TypeID` -> `Type` 
 - [x] rename invoke

@@ -6,6 +6,7 @@
 
 - 0.8.1
   - support pointer, array
+  - operations: advance, distance, next, prev
 - :star: 0.8.0 [refactoring] : simplification, improve performance
   - remove `ConstObjectPtr` and `SharedConstObject` 
   - `TypeID` -> `Type`, `StrID` -> `Name` 

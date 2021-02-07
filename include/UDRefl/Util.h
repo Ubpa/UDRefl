@@ -251,6 +251,10 @@ namespace Ubpa::UDRefl {
 	// Traits //
 	////////////
 
+	//
+	// operation
+	//////////////
+
 	template<typename T>
 	using operator_bool = decltype(static_cast<bool>(std::declval<const T&>()));
 

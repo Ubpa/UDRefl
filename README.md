@@ -97,13 +97,17 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - [inheritance](src/test/06_inheritance/main.cpp) 
 - [virtual inheritance](src/test/07_virtual/main.cpp) 
 - [attr](src/test/08_attr/main.cpp) 
-- [lifecycle (malloc, free, ctor, dtor)](src/test/09_lifecycle/main.cpp) 
+- [lifetime (ctor, dtor)](src/test/09_lifecycle/main.cpp) 
 - [dynamic field](src/test/10_dynamic/main.cpp) 
 - [invoke](src/test/11_invoke/main.cpp) 
 - [meta function](src/test/12_Meta/main.cpp) 
 - [reference](src/test/13_ref/main.cpp) 
 - [serialize](src/test/15_serializer/main.cpp) 
 - [container](src/test/16_container/main.cpp) 
+- [compatible](src/test/17_compatible/main.cpp) 
+- [tuple](src/test/18_tuple/main.cpp) 
+- [pointer](src/test/19_pointer/main.cpp) 
+- [array](src/test/20_array/main.cpp) 
 
 ## Features
 

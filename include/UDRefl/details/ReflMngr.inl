@@ -548,10 +548,12 @@ namespace Ubpa::UDRefl::details {
 					mngr.RegisterType<typename T::size_type>();
 				if constexpr (is_valid_v<container_difference_type, T>)
 					mngr.RegisterType<typename T::difference_type>();
-				if constexpr (is_valid_v<container_pointer_type, T>)
-					mngr.RegisterType<typename T::pointer>();
-				if constexpr (is_valid_v<container_const_pointer_type, T>)
-					mngr.RegisterType<typename T::const_pointer>();
+				if constexpr (!is_instance_of_v<T, std::allocator>) {
+					if constexpr (is_valid_v<container_pointer_type, T>)
+						mngr.RegisterType<typename T::pointer>();
+					if constexpr (is_valid_v<container_const_pointer_type, T>)
+						mngr.RegisterType<typename T::const_pointer>();
+				}
 				if constexpr (is_valid_v<container_key_compare, T>)
 					mngr.RegisterType<typename T::key_compare>();
 				if constexpr (is_valid_v<container_value_coompare, T>)

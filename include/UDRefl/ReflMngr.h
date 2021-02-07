@@ -43,6 +43,9 @@ namespace Ubpa::UDRefl {
 		//
 		// Factory
 		////////////
+		//
+		// - we will register the value type when generating FieldPtr, so those APIs aren't static
+		//
 
 		// field_data can be:
 		// - static field: pointer to **non-void** type
@@ -148,14 +151,6 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		bool AddDynamicField(Type type, Name name, Args&&... args)
 		{ return AddDynamicFieldWithAttr<T>(type, name, {}, std::forward<Args>(args)...); }
-
-		template<typename T, typename Alloc, typename... Args>
-		bool AddDynamicFieldByAllocWithAttr(Type type, Name name, const Alloc& alloc, AttrSet attrs, Args&&... args)
-		{ return AddField(type, name, { GenerateDynamicFieldPtrByAlloc<T>(alloc, std::forward<Args>(args)...), std::move(attrs) }); }
-
-		template<typename T, typename Alloc, typename... Args>
-		bool AddDynamicFieldByAlloc(Type type, Name name, const Alloc& alloc, Args&&... args)
-		{ return AddDynamicFieldByAllocWithAttr<T>(type, name, alloc, {}, std::forward<Args>(args)...); }
 
 		// funcptr is member function pointer
 		// get TypeID from funcptr
