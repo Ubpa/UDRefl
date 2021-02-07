@@ -377,13 +377,13 @@ namespace Ubpa::UDRefl {
 	using iterator_sub = decltype(std::declval<const T&>() - std::declval<U>());
 
 	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
-	using iterator_advance = decltype(std::advance(std::declval<T&>(), std::declval<U>()));
+	using iterator_advance = std::enable_if_t<std::random_access_iterator<T>, decltype(std::advance(std::declval<T&>(), std::declval<U>()))>;
 	template<typename T>
-	using iterator_distance = decltype(std::distance(std::declval<const T&>(), std::declval<const T&>()));
+	using iterator_distance = std::enable_if_t<std::random_access_iterator<T>, decltype(std::distance(std::declval<const T&>(), std::declval<const T&>()))>;
 	template<typename T>
-	using iterator_next = decltype(std::next(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()));
+	using iterator_next = std::enable_if_t<std::random_access_iterator<T>, decltype(std::next(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()))>;
 	template<typename T>
-	using iterator_prev = decltype(std::prev(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()));
+	using iterator_prev = std::enable_if_t<std::random_access_iterator<T>, decltype(std::prev(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()))>;
 
 	//
 	// pair
