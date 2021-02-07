@@ -341,6 +341,7 @@ namespace Ubpa::UDRefl {
 	class SharedObject : public ObjectView {
 	public:
 		using ObjectView::ObjectView;
+		using ObjectView::operator=;
 	
 		SharedObject(Type type, SharedBuffer buffer) noexcept : ObjectView{ type }, buffer{ std::move(buffer) } { ptr = buffer.get(); }
 		constexpr explicit SharedObject(ObjectView obj) noexcept : ObjectView{ obj } { }

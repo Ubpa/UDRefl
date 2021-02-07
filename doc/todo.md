@@ -27,5 +27,7 @@
   - [x] IsInvocable
   - [x] move APIs with `Type` to corresponding APIs with `ObjectView` 
   - [x] add flags into APIs
-- [ ] pointer
+- [ ] special types
+  - [x] pointer
+  - [ ] array
 

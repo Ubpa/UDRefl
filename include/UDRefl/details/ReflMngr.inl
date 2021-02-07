@@ -95,6 +95,11 @@ namespace Ubpa::UDRefl::details {
 	template<typename T>
 	struct TypeAutoRegister_Default {
 		static void run(ReflMngr& mngr) {
+			if constexpr (std::is_pointer_v<T>) {
+				mngr.RegisterType<std::remove_pointer_t<T>>();
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assign, [](const T& obj, const std::nullptr_t&) -> decltype(auto) { return static_cast<T>(nullptr); });
+			}
+
 			if constexpr (is_valid_v<operator_plus, T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_plus, [](const T& lhs) { return +lhs; });
 			if constexpr (is_valid_v<operator_minus, T>)
@@ -749,8 +754,6 @@ namespace Ubpa::UDRefl {
 				RegisterType<std::remove_const_t<T>>();
 			else if constexpr (std::is_reference_v<T>)
 				RegisterType<std::remove_cvref_t<T>>();
-			else if constexpr (std::is_pointer_v<T>)
-				RegisterType<std::remove_pointer_t<T>>();
 			else {
 				auto target = typeinfos.find(Type_of<T>);
 				if (target != typeinfos.end())

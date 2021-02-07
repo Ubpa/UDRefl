@@ -369,6 +369,7 @@ ReflMngr::ReflMngr() {
 	RegisterType<std::uint64_t>();
 	RegisterType<float>();
 	RegisterType<double>();
+	RegisterType<std::nullptr_t>();
 
 	details::RegisterArithmeticConvertion<bool>(*this);
 	details::RegisterArithmeticConvertion<std::int8_t>(*this);
