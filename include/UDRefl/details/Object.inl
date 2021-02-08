@@ -14,6 +14,12 @@ SharedObject ObjectView::name (Arg&& rhs) const {                               
     return ADMInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
 }
 
+#define OBJECT_VIEW_DEFINE_META_RET_T(prefix, name, ret)                                \
+template<typename Arg>                                                                  \
+ret ObjectView::name (Arg&& rhs) const {                                                \
+    return AInvoke<ret>(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
+}
+
 #define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(name)                                          \
 template<typename... Args>                                                                 \
 SharedObject ObjectView::name (Args&&... args) const {                                     \
@@ -195,7 +201,6 @@ namespace Ubpa::UDRefl {
 	OBJECT_VIEW_DEFINE_OPERATOR_T(^, bxor)
 
 	OBJECT_VIEW_DEFINE_OPERATOR_T([], subscript)
-	OBJECT_VIEW_DEFINE_OPERATOR_T(->*, member_of_pointer)
 
 	template<typename... Args>
 	SharedObject ObjectView::operator()(Args&&... args) const {
@@ -215,7 +220,7 @@ namespace Ubpa::UDRefl {
 	void ObjectView::advance (Arg&& rhs) const {
 		AInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<Arg>(rhs));
 	}
-	OBJECT_VIEW_DEFINE_META_T(iterator, distance);
+	OBJECT_VIEW_DEFINE_META_RET_T(iterator, distance, std::size_t);
 	OBJECT_VIEW_DEFINE_META_T(iterator, next);
 	OBJECT_VIEW_DEFINE_META_T(iterator, prev);
 
@@ -223,30 +228,28 @@ namespace Ubpa::UDRefl {
 	// container
 	//////////////
 
-	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(assign)
-
 	// - element access
 
 	OBJECT_VIEW_DEFINE_META_T(container, at)
 
 	// - capacity
 
-	OBJECT_VIEW_DEFINE_META_T(container, resize)
+	OBJECT_VIEW_DEFINE_META_RET_T(container, resize, void)
 
 	// - modifiers
 
 	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(insert)
 	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(insert_or_assign)
 	OBJECT_VIEW_DEFINE_META_T(container, erase)
-	OBJECT_VIEW_DEFINE_META_T(container, push_front)
-	OBJECT_VIEW_DEFINE_META_T(container, push_back)
-	OBJECT_VIEW_DEFINE_META_T(container, swap)
-	OBJECT_VIEW_DEFINE_META_T(container, merge)
+	OBJECT_VIEW_DEFINE_META_RET_T(container, push_front, void)
+	OBJECT_VIEW_DEFINE_META_RET_T(container, push_back, void)
+	OBJECT_VIEW_DEFINE_META_RET_T(container, swap, void)
+	OBJECT_VIEW_DEFINE_META_RET_T(container, merge, void)
 	OBJECT_VIEW_DEFINE_META_T(container, extract)
 
 	// - lookup
 	
-	OBJECT_VIEW_DEFINE_META_T(container, count)
+	OBJECT_VIEW_DEFINE_META_RET_T(container, count, std::size_t)
 	OBJECT_VIEW_DEFINE_META_T(container, find)
 	OBJECT_VIEW_DEFINE_META_T(container, lower_bound)
 	OBJECT_VIEW_DEFINE_META_T(container, upper_bound)

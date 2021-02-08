@@ -2,418 +2,289 @@
 
 #include "../../Util.h"
 
-namespace Ubpa::UDRefl::details {
-	template<typename T, typename = void>
-	struct IsArray : std::false_type {};
+#include <set>
+
+template<typename Key, typename Compare, typename Allocator>
+struct Ubpa::UDRefl::SpecializeIsSet<std::set<Key, Compare, Allocator>> : std::true_type {};
+
+namespace Ubpa::UDRefl {
 	template<typename T>
-	struct IsArray < T, std::enable_if_t <
-		// - iterator
+	concept IsArray = true
+		&& container_begin<T>
+		&& container_begin<const T>
+		&& container_cbegin<T>
 
-		is_valid_v<container_begin, T>
-		&& is_valid_v<container_begin_const, T>
-		&& is_valid_v<container_cbegin, T>
+		&& container_end<T>
+		&& container_end<const T>
+		&& container_cend<T>
 
-		&& is_valid_v<container_end, T>
-		&& is_valid_v<container_end_const, T>
-		&& is_valid_v<container_cend, T>
+		&& container_rbegin<T>
+		&& container_rbegin<const T>
+		&& container_crbegin<T>
 
-		&& is_valid_v<container_rbegin, T>
-		&& is_valid_v<container_rbegin_const, T>
-		&& is_valid_v<container_crbegin, T>
+		&& container_rend<T>
+		&& container_rend<const T>
+		&& container_crend<T>
 
-		&& is_valid_v<container_rend, T>
-		&& is_valid_v<container_rend_const, T>
-		&& is_valid_v<container_crend, T>
+		&& container_at_size<T>
+		&& container_at_size<const T>
 
-		// - element access
+		&& container_subscript_size<T>
+		&& container_subscript_size<const T>
 
-		&& is_valid_v<container_at, T>
-		&& is_valid_v<container_at_const, T>
-		&& is_valid_v<operator_subscript, T>
-		&& is_valid_v<operator_subscript_const, T>
-		&& is_valid_v<container_data, T>
-		&& is_valid_v<container_data_const, T>
-		&& is_valid_v<container_front, T>
-		&& is_valid_v<container_front_const, T>
-		&& is_valid_v<container_back, T>
-		&& is_valid_v<container_back_const, T>
+		&& container_data<T>
+		&& container_data<const T>
 
-		// - capacity
+		&& container_front<T>
+		&& container_front<const T>
 
-		&& is_valid_v<container_empty, T>
-		&& is_valid_v<container_size, T>
-		//&& is_valid_v<container_max_size, T>
+		&& container_back<T>
+		&& container_back<const T>
 
-		// - modifier
+		&& container_empty<T>
+		&& container_size<T>
 
-		&& is_valid_v<container_swap, T>
+		&& container_swap<T>
+		;
 
-		>> : std::true_type{};
-
-	template<typename T, typename = void>
-	struct IsVector : std::false_type {};
 	template<typename T>
-	struct IsVector<T, std::enable_if_t<
-		is_valid_v<container_assign, T>
-		
-		// - iterator
+	concept IsVector = IsArray<T>
+		&& container_resize_cnt<T>
+		&& container_resize_cnt_value<T>
+		&& container_capacity<T>
+		&& container_reserve<T>
+		&& container_shrink_to_fit<T>
 
-		&& is_valid_v<container_begin, T>
-		&& is_valid_v<container_begin_const, T>
-		&& is_valid_v<container_cbegin, T>
+		&& container_clear<T>
+		&& container_insert_citer_clvalue<T>
+		&& container_insert_citer_rvalue<T>
+		&& container_insert_citer_size_value<T>
+		&& container_erase_citer<T>
+		&& container_erase_range_citer<T>
+		&& container_push_back_clvalue<T>
+		&& container_push_back_rvalue<T>
+		&& container_pop_back<T>
 
-		&& is_valid_v<container_end, T>
-		&& is_valid_v<container_end_const, T>
-		&& is_valid_v<container_cend, T>
+		&& container_get_allocator<T>
+		;
 
-		&& is_valid_v<container_rbegin, T>
-		&& is_valid_v<container_rbegin_const, T>
-		&& is_valid_v<container_crbegin, T>
-
-		&& is_valid_v<container_rend, T>
-		&& is_valid_v<container_rend_const, T>
-		&& is_valid_v<container_crend, T>
-
-		// - element access
-
-		&& is_valid_v<container_at, T>
-		&& is_valid_v<container_at_const, T>
-		&& is_valid_v<operator_subscript, T>
-		&& is_valid_v<operator_subscript_const, T>
-		&& is_valid_v<container_data, T>
-		&& is_valid_v<container_data_const, T>
-		&& is_valid_v<container_front, T>
-		&& is_valid_v<container_front_const, T>
-		&& is_valid_v<container_back, T>
-		&& is_valid_v<container_back_const, T>
-
-		// - capacity
-
-		&& is_valid_v<container_empty, T>
-		&& is_valid_v<container_size, T>
-		//&& is_valid_v<container_max_size, T>
-		&& is_valid_v<container_resize_0, T>
-		&& is_valid_v<container_resize_1, T>
-		&& is_valid_v<container_capacity, T>
-		&& is_valid_v<container_reserve, T>
-		&& is_valid_v<container_shrink_to_fit, T>
-
-		// - modifier
-
-		&& is_valid_v<container_clear, T>
-		&& is_valid_v<container_insert_0, T>
-		&& is_valid_v<container_insert_1, T>
-		&& is_valid_v<container_insert_2, T>
-		&& is_valid_v<container_erase_1, T> // C++11
-		&& is_valid_v<container_erase_3, T> // C++11
-		&& is_valid_v<container_push_back_0, T>
-		&& is_valid_v<container_push_back_1, T>
-		&& is_valid_v<container_pop_back, T>
-		&& is_valid_v<container_swap, T>
-
-		// - allocator
-
-		&& is_valid_v<container_get_allocator, T>
-
-		>> : std::true_type {};
-
-	template<typename T, typename = void>
-	struct IsDeque : std::false_type {};
 	template<typename T>
-	struct IsDeque < T, std::enable_if_t <
-		is_valid_v<container_assign, T>
+	concept IsDeque = true
+		&& container_begin<T>
+		&& container_begin<const T>
+		&& container_cbegin<T>
 
-		// - iterator
+		&& container_end<T>
+		&& container_end<const T>
+		&& container_cend<T>
 
-		&& is_valid_v<container_begin, T>
-		&& is_valid_v<container_begin_const, T>
-		&& is_valid_v<container_cbegin, T>
+		&& container_rbegin<T>
+		&& container_rbegin<const T>
+		&& container_crbegin<T>
 
-		&& is_valid_v<container_end, T>
-		&& is_valid_v<container_end_const, T>
-		&& is_valid_v<container_cend, T>
+		&& container_rend<T>
+		&& container_rend<const T>
+		&& container_crend<T>
 
-		&& is_valid_v<container_rbegin, T>
-		&& is_valid_v<container_rbegin_const, T>
-		&& is_valid_v<container_crbegin, T>
+		&& container_at_size<T>
+		&& container_at_size<const T>
 
-		&& is_valid_v<container_rend, T>
-		&& is_valid_v<container_rend_const, T>
-		&& is_valid_v<container_crend, T>
+		&& container_subscript_size<T>
+		&& container_subscript_size<const T>
 
-		// - element access
+		&& container_front<T>
+		&& container_front<const T>
 
-		&& is_valid_v<container_at, T>
-		&& is_valid_v<container_at_const, T>
-		&& is_valid_v<operator_subscript, T>
-		&& is_valid_v<operator_subscript_const, T>
-		&& is_valid_v<container_front, T>
-		&& is_valid_v<container_front_const, T>
-		&& is_valid_v<container_back, T>
-		&& is_valid_v<container_back_const, T>
+		&& container_back<T>
+		&& container_back<const T>
 
-		// - capacity
+		&& container_empty<T>
+		&& container_size<T>
 
-		&& is_valid_v<container_empty, T>
-		&& is_valid_v<container_size, T>
-		//&& is_valid_v<container_max_size, T>
-		&& is_valid_v<container_resize_0, T>
-		&& is_valid_v<container_resize_1, T>
-		&& is_valid_v<container_shrink_to_fit, T>
+		&& container_resize_cnt<T>
+		&& container_resize_cnt_value<T>
+		&& container_shrink_to_fit<T>
+		&& container_clear<T>
+		&& container_insert_citer_clvalue<T>
+		&& container_insert_citer_rvalue<T>
+		&& container_insert_citer_size_value<T>
+		&& container_erase_citer<T>
+		&& container_erase_range_citer<T>
+		&& container_push_front_clvalue<T>
+		&& container_push_front_rvalue<T>
+		&& container_pop_front<T>
+		&& container_push_back_clvalue<T>
+		&& container_push_back_rvalue<T>
+		&& container_pop_back<T>
 
-		// - modifier
+		&& container_swap<T>
 
-		&& is_valid_v<container_clear, T>
-		&& is_valid_v<container_insert_0, T>
-		&& is_valid_v<container_insert_1, T>
-		&& is_valid_v<container_insert_2, T>
-		&& is_valid_v<container_erase_1, T> // C++11
-		&& is_valid_v<container_erase_3, T> // C++11
-		&& is_valid_v<container_push_front_0, T>
-		&& is_valid_v<container_push_front_1, T>
-		&& is_valid_v<container_pop_front, T>
-		&& is_valid_v<container_push_back_0, T>
-		&& is_valid_v<container_push_back_1, T>
-		&& is_valid_v<container_pop_back, T>
-		&& is_valid_v<container_swap, T>
-
-		// - allocator
-
-		&& is_valid_v<container_get_allocator, T>
-
-		>> : std::true_type{};
+		&& container_get_allocator<T>
+		;
 
 	// TODO : list
 
-	template<typename T, typename = void>
-	struct IsList : std::false_type {};
-
-	template<typename T, typename = void>
-	struct IsForwardList : std::false_type {};
-
-	template<typename T, typename = void>
-	struct IsSet : std::false_type {};
 	template<typename T>
-	struct IsSet < T, std::enable_if_t <
-		// - iterator
+	concept IsList = false;
 
-		is_valid_v<container_begin, T>
-		&& is_valid_v<container_begin_const, T>
-		&& is_valid_v<container_cbegin, T>
-
-		&& is_valid_v<container_end, T>
-		&& is_valid_v<container_end_const, T>
-		&& is_valid_v<container_cend, T>
-
-		&& is_valid_v<container_rbegin, T>
-		&& is_valid_v<container_rbegin_const, T>
-		&& is_valid_v<container_crbegin, T>
-
-		&& is_valid_v<container_rend, T>
-		&& is_valid_v<container_rend_const, T>
-		&& is_valid_v<container_crend, T>
-
-		// - capacity
-
-		&& is_valid_v<container_empty, T>
-		&& is_valid_v<container_size, T>
-		//&& is_valid_v<container_max_size, T>
-
-		// - modifier
-
-		&& is_valid_v<container_clear, T>
-		&& is_valid_v<container_insert_0, T>
-		&& is_valid_v<container_insert_1, T>
-		&& is_valid_v<container_insert_2, T>
-		&& is_valid_v<container_insert_3, T>
-		&& is_valid_v<container_insert_4, T>
-		&& is_valid_v<container_erase_0, T>
-		&& is_valid_v<container_erase_1, T>
-		&& is_valid_v<container_erase_3, T>
-		&& is_valid_v<container_erase_4, T>
-		&& is_valid_v<container_swap, T>
-		&& is_valid_v<container_merge_0, T>
-		&& is_valid_v<container_merge_1, T>
-		&& is_valid_v<container_extract_0, T>
-		&& is_valid_v<container_extract_1, T>
-
-		// - lookup
-
-		&& is_valid_v<container_count, T>
-		&& is_valid_v<container_find, T>
-		&& is_valid_v<container_find_const, T>
-		&& is_valid_v<container_lower_bound, T>
-		&& is_valid_v<container_lower_bound_const, T>
-		&& is_valid_v<container_upper_bound, T>
-		&& is_valid_v<container_upper_bound_const, T>
-		&& is_valid_v<container_equal_range, T>
-		&& is_valid_v<container_equal_range_const, T>
-
-		// - observers
-
-		&& is_valid_v<container_key_comp, T>
-		&& is_valid_v<container_value_comp, T>
-
-		// - allocator
-
-		&& is_valid_v<container_get_allocator, T>
-
-		>> : std::true_type{};
-
-	template<typename T, typename = void>
-	struct IsMap : std::false_type {};
 	template<typename T>
-	struct IsMap < T, std::enable_if_t <
-		IsSet<T>::value
+	concept IsForwardList = false;
 
-		// - element access
-
-		&& is_valid_v<container_at_key, T>
-		&& is_valid_v<container_at_key_const, T>
-		&& is_valid_v<container_subscript_key_0, T>
-		&& is_valid_v<container_subscript_key_1, T>
-
-		// - modifier
-
-		&& is_valid_v<container_insert_or_assign_0, T>
-		&& is_valid_v<container_insert_or_assign_1, T>
-		&& is_valid_v<container_insert_or_assign_2, T>
-		&& is_valid_v<container_insert_or_assign_3, T>
-		&& is_valid_v<container_insert_or_assign_4, T>
-		&& is_valid_v<container_insert_or_assign_5, T>
-		&& is_valid_v<container_insert_or_assign_6, T>
-		&& is_valid_v<container_insert_or_assign_7, T>
-
-		>> : std::true_type{};
-
-	template<typename T, typename = void>
-	struct IsUnorderedSet : std::false_type {};
 	template<typename T>
-	struct IsUnorderedSet < T, std::enable_if_t <
-		// - iterator
+	concept IsMultiSet = true
+		&& container_begin<T>
+		&& container_begin<const T>
+		&& container_cbegin<T>
 
-		is_valid_v<container_begin, T>
-		&& is_valid_v<container_begin_const, T>
-		&& is_valid_v<container_cbegin, T>
+		&& container_end<T>
+		&& container_end<const T>
+		&& container_cend<T>
 
-		&& is_valid_v<container_end, T>
-		&& is_valid_v<container_end_const, T>
-		&& is_valid_v<container_cend, T>
+		&& container_rbegin<T>
+		&& container_rbegin<const T>
+		&& container_crbegin<T>
 
-		// - capacity
+		&& container_rend<T>
+		&& container_rend<const T>
+		&& container_crend<T>
 
-		&& is_valid_v<container_empty, T>
-		&& is_valid_v<container_size, T>
-		//&& is_valid_v<container_max_size, T>
-		&& is_valid_v<container_bucket_count, T>
-		&& is_valid_v<container_reserve, T>
+		&& container_empty<T>
+		&& container_size<T>
 
-		// - modifier
+		&& container_clear<T>
+		&& container_insert_clvalue<T>
+		&& container_insert_rvalue<T>
+		&& container_insert_rnode<T>
+		&& container_insert_citer_clvalue<T>
+		&& container_insert_citer_rvalue<T>
+		&& container_insert_citer_size_value<T>
+		&& container_insert_citer_rnode<T>
 
-		&& is_valid_v<container_clear, T>
-		&& is_valid_v<container_insert_0, T>
-		&& is_valid_v<container_insert_1, T>
-		&& is_valid_v<container_insert_2, T>
-		&& is_valid_v<container_insert_3, T>
-		&& is_valid_v<container_insert_4, T>
-		&& is_valid_v<container_erase_0, T>
-		&& is_valid_v<container_erase_1, T>
-		&& is_valid_v<container_erase_3, T>
-		&& is_valid_v<container_erase_4, T>
-		&& is_valid_v<container_swap, T>
-		&& is_valid_v<container_merge_0, T>
-		&& is_valid_v<container_merge_1, T>
-		&& is_valid_v<container_extract_0, T>
-		&& is_valid_v<container_extract_1, T>
+		&& container_erase_citer<T>
+		&& container_erase_key<T>
+		&& container_erase_range_citer<T>
 
-		// - lookup
+		&& container_swap<T>
+		&& container_merge_l<T>
+		&& container_merge_r<T>
+		&& container_extract_citer<T>
+		&& container_extract_key<T>
 
-		&& is_valid_v<container_count, T>
-		&& is_valid_v<container_find, T>
-		&& is_valid_v<container_find_const, T>
-		&& is_valid_v<container_equal_range, T>
-		&& is_valid_v<container_equal_range_const, T>
+		&& container_count<T>
+		&& container_find<T>
+		&& container_find<const T>
+		&& container_contains<T>
+		&& container_lower_bound<T>
+		&& container_lower_bound<const T>
+		&& container_upper_bound<T>
+		&& container_upper_bound<const T>
+		&& container_equal_range<T>
+		&& container_equal_range<const T>
 
-		// - observers
+		&& container_key_comp<T>
+		&& container_value_comp<T>
 
-		&& is_valid_v<container_hash_function, T>
-		&& is_valid_v<container_key_eq, T>
+		&& container_get_allocator<T>
+		;
 
-		// - allocator
-
-		&& is_valid_v<container_get_allocator, T>
-
-		>> : std::true_type{};
-
-	template<typename T, typename = void>
-	struct IsUnorderedMap : std::false_type {};
 	template<typename T>
-	struct IsUnorderedMap < T, std::enable_if_t <
-		IsUnorderedSet<T>::value
+	concept IsSet = IsMultiSet<T>
+		&& SpecializeIsSet<T>::value
+		;
 
-		// - element access
+	template<typename T>
+	concept IsMultiMap = IsMultiSet<T>
+		&& container_mapped_type<T>
+		;
 
-		&& is_valid_v<container_at_key, T>
-		&& is_valid_v<container_at_key_const, T>
-		&& is_valid_v<container_subscript_key_0, T>
-		&& is_valid_v<container_subscript_key_1, T>
+	template<typename T>
+	concept IsMap = IsMultiMap<T>
+		&& container_at_key<T>
+		&& container_at_key<const T>
+		&& container_subscript_key_cl<T>
+		&& container_subscript_key_r<T>
+		;
+	
+	template<typename T>
+	concept IsUnorderedMultiSet = true
+		&& container_begin<T>
+		&& container_begin<const T>
+		&& container_cbegin<T>
 
-		// - modifier
+		&& container_end<T>
+		&& container_end<const T>
+		&& container_cend<T>
 
-		&& is_valid_v<container_insert_or_assign_0, T>
-		&& is_valid_v<container_insert_or_assign_1, T>
-		&& is_valid_v<container_insert_or_assign_2, T>
-		&& is_valid_v<container_insert_or_assign_3, T>
-		&& is_valid_v<container_insert_or_assign_4, T>
-		&& is_valid_v<container_insert_or_assign_5, T>
-		&& is_valid_v<container_insert_or_assign_6, T>
-		&& is_valid_v<container_insert_or_assign_7, T>
+		&& container_empty<T>
+		&& container_size<T>
+		&& container_bucket_count<T>
+		&& container_reserve<T>
 
-		>> : std::true_type{};
+		&& container_clear<T>
+		&& container_insert_clvalue<T>
+		&& container_insert_rvalue<T>
+		&& container_insert_rnode<T>
+		&& container_insert_citer_clvalue<T>
+		&& container_insert_citer_rvalue<T>
+		&& container_insert_citer_size_value<T>
+		&& container_insert_citer_rnode<T>
+
+		&& container_erase_citer<T>
+		&& container_erase_key<T>
+		&& container_erase_range_citer<T>
+
+		&& container_swap<T>
+		&& container_merge_l<T>
+		&& container_merge_r<T>
+		&& container_extract_citer<T>
+		&& container_extract_key<T>
+
+		&& container_count<T>
+		&& container_find<T>
+		&& container_find<const T>
+		&& container_contains<T>
+		&& container_equal_range<T>
+		&& container_equal_range<const T>
+
+		&& container_hash_function<T>
+		&& container_key_eq<T>
+
+		&& container_get_allocator<T>
+		;
+
+	template<typename T>
+	concept IsUnorderedSet = IsUnorderedMultiSet<T>;
+
+	template<typename T>
+	concept IsUnorderedMultiMap = IsUnorderedMultiSet<T>
+		&& container_mapped_type<T>
+		;
+
+	template<typename T>
+	concept IsUnorderedMap = IsUnorderedMultiMap<T>
+		&& container_at_key<T>
+		&& container_at_key<const T>
+		&& container_subscript_key_cl<T>
+		&& container_subscript_key_r<T>
+		;
+
+	template<typename T>
+	concept IsTuple = true
+		&& tuple_size<T>
+		&& container_swap<T>
+		;
+
+	template<typename T>
+	concept IsPair = IsTuple<T>
+		&& pair_first<T>
+		&& pair_second<T>
+		;
 
 	// TODO : Stack, Queue
 
-	template<typename T, typename = void>
-	struct IsStack : std::false_type {};
+	template<typename T>
+	concept IsStack = false;
 
-	template<typename T, typename = void>
-	struct IsQueue : std::false_type {};
+	template<typename T>
+	concept IsQueue = false;
 }
-
-template<typename T>
-struct Ubpa::UDRefl::IsArray : Ubpa::UDRefl::details::IsArray<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsVector : Ubpa::UDRefl::details::IsVector<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsDeque : Ubpa::UDRefl::details::IsDeque<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsForwardList : Ubpa::UDRefl::details::IsForwardList<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsList : Ubpa::UDRefl::details::IsList<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsSet : Ubpa::UDRefl::details::IsSet<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsMap : Ubpa::UDRefl::details::IsMap<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsUnorderedSet : Ubpa::UDRefl::details::IsUnorderedSet<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsUnorderedMap : Ubpa::UDRefl::details::IsUnorderedMap<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsStack : Ubpa::UDRefl::details::IsStack<T> {};
-template<typename T>
-struct Ubpa::UDRefl::IsQueue : Ubpa::UDRefl::details::IsQueue<T> {};
-
-template<typename T>
-struct Ubpa::UDRefl::IsContainer : std::bool_constant<
-	Ubpa::UDRefl::IsArray_v<T>
-	|| Ubpa::UDRefl::IsVector_v<T>
-	|| Ubpa::UDRefl::IsDeque_v<T>
-	|| Ubpa::UDRefl::IsForwardList_v<T>
-	|| Ubpa::UDRefl::IsList_v<T>
-	|| Ubpa::UDRefl::IsSet_v<T>
-	|| Ubpa::UDRefl::IsMap_v<T>
-	|| Ubpa::UDRefl::IsUnorderedSet_v<T>
-	|| Ubpa::UDRefl::IsUnorderedMap_v<T>
-	|| Ubpa::UDRefl::IsStack_v<T>
-	|| Ubpa::UDRefl::IsQueue_v<T>
-> {};

@@ -4,6 +4,8 @@
 
 ## 0.8
 
+- 0.8.2
+  - use concept for traits (operations, container API and flag)
 - 0.8.1
   - support
     - pointer, array

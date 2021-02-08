@@ -272,20 +272,20 @@ SharedObject ObjectView::crend() const {
 
 // - element access
 
-SharedObject ObjectView::empty() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_empty);
+bool ObjectView::empty() const {
+	return Mngr.Invoke<bool>(*this, NameIDRegistry::Meta::container_empty);
 }
 
-SharedObject ObjectView::size() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_size);
+std::size_t ObjectView::size() const {
+	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_size);
 }
 
-SharedObject ObjectView::capacity() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_capacity);
+std::size_t ObjectView::capacity() const {
+	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_capacity);
 }
 
-SharedObject ObjectView::bucket_count() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_bucket_count);
+std::size_t ObjectView::bucket_count() const {
+	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_bucket_count);
 }
 
 // - observers

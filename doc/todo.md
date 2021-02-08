@@ -3,11 +3,11 @@
 - [x] `TypeIDRegistry` Type Computation
 - [x] cast (reference) more
 - [ ] traits
-  - [ ] simplify
-  - [ ]  -> concept
+  - [x] simplify
+  - [x]  -> concept
   - [ ] container
     - [ ] list
-    - [ ] multi set/map
+    - [x] multi set/map
 - [ ] improve test
 - [ ] introduction
 - [ ] doc

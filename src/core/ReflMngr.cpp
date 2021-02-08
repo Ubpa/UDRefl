@@ -347,18 +347,23 @@ ReflMngr::ReflMngr() {
 	RegisterType(Global, 0, 0);
 
 	RegisterType<ContainerType>();
-	AddField<ContainerType::Unknown>("Unknown");
 	AddField<ContainerType::Array>("Array");
 	AddField<ContainerType::Vector>("Vector");
 	AddField<ContainerType::Deque>("Deque");
 	AddField<ContainerType::ForwardList>("ForwardList");
 	AddField<ContainerType::List>("List");
 	AddField<ContainerType::Set>("Set");
+	AddField<ContainerType::MultiSet>("MultiSet");
 	AddField<ContainerType::Map>("Map");
+	AddField<ContainerType::MultiMap>("MultiMap");
 	AddField<ContainerType::UnorderedSet>("UnorderedSet");
+	AddField<ContainerType::UnorderedMultiSet>("UnorderedMultiSet");
 	AddField<ContainerType::UnorderedMap>("UnorderedMap");
+	AddField<ContainerType::UnorderedMultiMap>("UnorderedMultiMap");
 	AddField<ContainerType::Stack>("Stack");
 	AddField<ContainerType::Queue>("Queue");
+	AddField<ContainerType::Tuple>("Tuple");
+	AddField<ContainerType::Pair>("Pair");
 
 	RegisterType<bool>();
 	RegisterType<std::int8_t>();

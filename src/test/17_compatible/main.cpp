@@ -35,6 +35,7 @@ int main() {
 	Mngr.AddMethod<MemFuncOf<Funcs, void(std::uint8_t&)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(std::uint8_t&&)>::get(&Funcs::f)>("f");
+	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&&)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(const char*)>::get(&Funcs::g)>("g");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(int(&&)[])>::get(&Funcs::g)>("g");
 

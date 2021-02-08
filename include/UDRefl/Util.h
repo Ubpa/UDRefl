@@ -2,19 +2,31 @@
 
 #define UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(Name)                      \
 constexpr Name operator & (const Name& lhs, const Name& rhs) noexcept {  \
-	static_assert(std::is_enum_v<Name>);                                 \
-	using T = std::underlying_type_t<Name>;                              \
-	return static_cast<Name>(static_cast<T>(lhs) & static_cast<T>(rhs)); \
+    static_assert(std::is_enum_v<Name>);                                 \
+    using T = std::underlying_type_t<Name>;                              \
+    return static_cast<Name>(static_cast<T>(lhs) & static_cast<T>(rhs)); \
 }                                                                        \
 constexpr Name operator | (const Name& lhs, const Name& rhs) noexcept {  \
-	static_assert(std::is_enum_v<Name>);                                 \
-	using T = std::underlying_type_t<Name>;                              \
-	return static_cast<Name>(static_cast<T>(lhs) | static_cast<T>(rhs)); \
+    static_assert(std::is_enum_v<Name>);                                 \
+    using T = std::underlying_type_t<Name>;                              \
+    return static_cast<Name>(static_cast<T>(lhs) | static_cast<T>(rhs)); \
 }                                                                        \
 constexpr Name operator ~ (const Name& e) noexcept {                     \
-	static_assert(std::is_enum_v<Name>);                                 \
-	using T = std::underlying_type_t<Name>;                              \
-	return static_cast<Name>(~static_cast<T>(e));                        \
+    static_assert(std::is_enum_v<Name>);                                 \
+    using T = std::underlying_type_t<Name>;                              \
+    return static_cast<Name>(~static_cast<T>(e));                        \
+}                                                                        \
+constexpr Name& operator &= (Name& lhs, const Name& rhs) noexcept {      \
+    static_assert(std::is_enum_v<Name>);                                 \
+    using T = std::underlying_type_t<Name>;                              \
+    lhs = static_cast<Name>(static_cast<T>(lhs) & static_cast<T>(rhs));  \
+    return lhs;                                                          \
+}                                                                        \
+constexpr Name& operator |= (Name& lhs, const Name& rhs) noexcept {      \
+    static_assert(std::is_enum_v<Name>);                                 \
+    using T = std::underlying_type_t<Name>;                              \
+    lhs = static_cast<Name>(static_cast<T>(lhs) | static_cast<T>(rhs));  \
+    return lhs;                                                          \
 }
 
 #include <UTemplate/Func.h>
@@ -256,370 +268,115 @@ namespace Ubpa::UDRefl {
 	//////////////
 
 	template<typename T>
-	using operator_bool = decltype(static_cast<bool>(std::declval<const T&>()));
+	concept operator_bool = std::convertible_to<T, bool>;
 
 	template<typename T>
-	using operator_plus = decltype(+std::declval<const T&>());
+	concept operator_plus = requires(T t) { +t; };
 	template<typename T>
-	using operator_minus = std::enable_if_t<!std::is_unsigned_v<T>, decltype(-std::declval<const T&>())>;
-
-	template<typename T, typename U = const T&>
-	using operator_add = decltype(std::declval<const T&>() + std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_sub = decltype(std::declval<const T&>() - std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_mul = decltype(std::declval<const T&>()* std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_div = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<const T&>() / std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_mod = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<const T&>() % std::declval<U>())>;
+	concept operator_minus = !std::is_unsigned_v<T> && requires(T t) { -t; };
 
 	template<typename T>
-	using operator_bnot = std::enable_if_t<!std::is_same_v<T, bool>, decltype(~std::declval<const T&>())>;
-	template<typename T, typename U = const T&>
-	using operator_band = decltype(std::declval<const T&>()& std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_bor = decltype(std::declval<const T&>() | std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_bxor = decltype(std::declval<const T&>() ^ std::declval<U>());
+	concept operator_add = requires(T lhs, T rhs) { lhs + rhs; };
+	template<typename T>
+	concept operator_sub = requires(T lhs, T rhs) { lhs - rhs; };
+	template<typename T>
+	concept operator_mul = requires(T lhs, T rhs) { lhs * rhs; };
+	template<typename T>
+	concept operator_div = !std::is_same_v<std::remove_cvref_t<T>, bool> && requires(T lhs, T rhs) { lhs / rhs; };
+	template<typename T>
+	concept operator_mod = !std::is_same_v<std::remove_cvref_t<T>, bool> && requires(T lhs, T rhs) { lhs % rhs; };
+
+	template<typename T>
+	concept operator_bnot = !std::is_same_v<std::remove_cvref_t<T>, bool> && requires(T t) { ~t; };
+	template<typename T>
+	concept operator_band = requires(T lhs, T rhs) { lhs & rhs; };
+	template<typename T>
+	concept operator_bor = requires(T lhs, T rhs) { lhs | rhs; };
+	template<typename T>
+	concept operator_bxor = requires(T lhs, T rhs) { lhs ^ rhs; };
 	template<typename T, typename U>
-	using operator_lshift = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<U>() >> std::declval<T&>())>;
+	concept operator_lshift = requires(T lhs, U rhs) { lhs << rhs; };
 	template<typename T, typename U>
-	using operator_rshift = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<U>() << std::declval<const T&>())>;
+	concept operator_rshift = requires(T lhs, U rhs) { lhs >> rhs; };
 
 	template<typename T>
-	using operator_pre_inc = std::enable_if_t<!std::is_same_v<T, bool>, decltype(++std::declval<T&>())>;
+	concept operator_pre_inc = !std::is_same_v<T, bool> && requires(T t) { ++t; };
 	template<typename T>
-	using operator_post_inc = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>()++)>;
+	concept operator_post_inc = !std::is_same_v<T, bool> && requires(T t) { t++; };
 	template<typename T>
-	using operator_pre_dec = std::enable_if_t<!std::is_same_v<T, bool>, decltype(--std::declval<T&>())>;
+	concept operator_pre_dec = !std::is_same_v<T, bool> && requires(T t) { --t; };
 	template<typename T>
-	using operator_post_dec = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>()--)>;
+	concept operator_post_dec = !std::is_same_v<T, bool> && requires(T t) { t--; };
 
 	template<typename T>
-	using operator_assign_copy = std::enable_if_t<std::is_copy_assignable_v<T>, decltype(std::declval<T&>() = std::declval<const T&>())> ;
+	concept operator_assign_copy = std::is_copy_assignable_v<T> && requires(T lhs, const T & rhs) { {lhs = rhs}->std::same_as<T&>; };
 	template<typename T>
-	using operator_assign_move = std::enable_if_t<std::is_move_assignable_v<T>, decltype(std::declval<T&>() = std::declval<T&&>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_add = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() += std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_sub = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() -= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_mul = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() *= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_div = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() /= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_mod = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() %= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_band = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() &= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_bor = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() |= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_assign_bxor = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() ^= std::declval<U>())>;
-	template<typename T, typename U = std::size_t>
-	using operator_assign_lshift = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() <<= std::declval<U>())>;
-	template<typename T, typename U = std::size_t>
-	using operator_assign_rshift = std::enable_if_t<!std::is_same_v<T, bool>, decltype(std::declval<T&>() >>= std::declval<U>())>;
+	concept operator_assign_move = std::is_move_assignable_v<T> && requires(T lhs, T rhs) { {lhs = std::move(rhs) }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_add = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs += rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_sub = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs -= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_mul = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs *= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_div = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs /= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_mod = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs %= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_band = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs &= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_bor = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs |= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_bxor = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs ^= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_lshift = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs <<= rhs }->std::same_as<T&>; };
+	template<typename T>
+	concept operator_assign_rshift = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs >>= rhs }->std::same_as<T&>; };
 
-	template<typename T, typename U = const T&>
-	using operator_eq = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() == std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_ne = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() != std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_lt = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() < std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_le = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() <= std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_gt = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() > std::declval<U>())>;
-	template<typename T, typename U = const T&>
-	using operator_ge = std::enable_if_t<!std::is_array_v<T>, decltype(std::declval<const T&>() >= std::declval<U>())>;
-
-	template<typename T, typename U = const T&>
-	using operator_and = decltype(std::declval<const T&>() && std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_or = decltype(std::declval<const T&>() || std::declval<U>());
-	template<typename T, typename U = const T&>
-	using operator_not = decltype(!std::declval<const T&>());
+	template<typename T>
+	concept operator_eq = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs == rhs }->std::convertible_to<bool>; };
+	template<typename T>
+	concept operator_ne = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs != rhs }->std::convertible_to<bool>; };
+	template<typename T>
+	concept operator_lt = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs <  rhs }->std::convertible_to<bool>; };
+	template<typename T>
+	concept operator_le = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs <= rhs }->std::convertible_to<bool>; };
+	template<typename T>
+	concept operator_gt = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs >  rhs }->std::convertible_to<bool>; };
+	template<typename T>
+	concept operator_ge = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs >= rhs }->std::convertible_to<bool>; };
 
 	template<typename T, typename U = std::size_t>
-	using operator_subscript = decltype(std::declval<T&>()[std::declval<U>()]);
-	template<typename T, typename U = std::size_t>
-	using operator_subscript_const = decltype(std::declval<const T&>()[std::declval<U>()]);
+	concept operator_subscript = requires(T lhs, const U & rhs) { lhs[rhs]; };
 	template<typename T>
-	using operator_deref = decltype(*std::declval<T&>());
+	concept operator_deref = requires(T t) { *t; };
 	template<typename T>
-	using operator_deref_const = decltype(*std::declval<const T&>());
-	template<typename T>
-	using operator_ref = decltype(&std::declval<T&>());
-	template<typename T>
-	using operator_ref_const = decltype(&std::declval<const T&>());
-	template<typename T>
-	using operator_member = decltype(std::declval<T&>().operator->());
-	template<typename T>
-	using operator_member_const = decltype(std::declval<const T&>().operator->());
-	template<typename T, typename U>
-	using operator_member_of_pointer = decltype(std::declval<T&>().operator->*(std::declval<U>()));
-	template<typename T, typename U>
-	using operator_member_of_pointer_const = decltype(std::declval<const T&>().operator->*(std::declval<U>()));
-
-	//
-	// iterator
-	/////////////
-
-	template<typename T>
-	struct is_iterator;
-	template<typename T>
-	constexpr bool is_iterator_v = is_iterator<T>::value;
-
-	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
-	using iterator_add = decltype(std::declval<const T&>() + std::declval<U>());
-	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
-	using iterator_sub = decltype(std::declval<const T&>() - std::declval<U>());
-
-	template<typename T, typename U = const typename std::iterator_traits<T>::difference_type&>
-	using iterator_advance = std::enable_if_t<std::random_access_iterator<T>, decltype(std::advance(std::declval<T&>(), std::declval<U>()))>;
-	template<typename T>
-	using iterator_distance = std::enable_if_t<std::random_access_iterator<T>, decltype(std::distance(std::declval<const T&>(), std::declval<const T&>()))>;
-	template<typename T>
-	using iterator_next = std::enable_if_t<std::random_access_iterator<T>, decltype(std::next(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()))>;
-	template<typename T>
-	using iterator_prev = std::enable_if_t<std::random_access_iterator<T>, decltype(std::prev(std::declval<const T&>(), std::declval<typename std::iterator_traits<T>::difference_type>()))>;
+	concept operator_ref = requires(T t) { &t; };
 
 	//
 	// pair
 	///////////
 
 	template<typename T>
-	using pair_first_type = typename T::first_type;
+	concept pair_first_type = requires{ typename T::first_type; };
 	template<typename T>
-	using pair_second_type = typename T::second_type;
+	concept pair_second_type = requires{ typename T::second_type; };
 	template<typename T>
-	using pair_first = decltype(std::declval<const T&>().first);
+	concept pair_first = requires(T t) { t.first; };
 	template<typename T>
-	using pair_second = decltype(std::declval<const T&>().second);
+	concept pair_second = requires(T t) { t.second; };
 	
 	//
 	// tuple
 	//////////
-
 	template<typename T>
-	using tuple_size = decltype(std::tuple_size<T>{});
+	concept tuple_size = requires() { std::tuple_size<T>::value; };
 	template<typename T, std::size_t Idx>
-	using tuple_element = typename std::tuple_element<Idx, T>::type;
+	concept tuple_element = requires() { typename std::tuple_element<Idx, T>::type; };
 
 	//
 	// container
 	//////////////
-
-	template<typename T, typename U = typename T::size_type, typename V = const typename T::value_type&>
-	using container_assign = decltype(std::declval<T&>().assign(std::declval<U>(), std::declval<V>()));
-
-	// - iterator
-
-	template<typename T>
-	using container_begin = decltype(std::begin(std::declval<T&>()));
-	template<typename T>
-	using container_begin_const = decltype(std::begin(std::declval<const T&>()));
-	template<typename T>
-	using container_cbegin = decltype(std::cbegin(std::declval<const T&>()));
-
-	template<typename T>
-	using container_end = decltype(std::end(std::declval<T&>()));
-	template<typename T>
-	using container_end_const = decltype(std::begin(std::declval<const T&>()));
-	template<typename T>
-	using container_cend = decltype(std::cbegin(std::declval<const T&>()));
-
-	template<typename T>
-	using container_rbegin = decltype(std::rbegin(std::declval<T&>()));
-	template<typename T>
-	using container_rbegin_const = decltype(std::rbegin(std::declval<const T&>()));
-	template<typename T>
-	using container_crbegin = decltype(std::crbegin(std::declval<const T&>()));
-
-	template<typename T>
-	using container_rend = decltype(std::rend(std::declval<T&>()));
-	template<typename T>
-	using container_rend_const = decltype(std::rend(std::declval<const T&>()));
-	template<typename T>
-	using container_crend = decltype(std::crend(std::declval<const T&>()));
-
-	// - element access
-
-	template<typename T, typename U = typename T::size_type>
-	using container_at = decltype(std::declval<T&>().at(std::declval<U>()));
-	template<typename T, typename U = typename T::size_type>
-	using container_at_const = decltype(std::declval<const T&>().at(std::declval<U>()));
-
-	template<typename T, typename U = const typename T::key_type&>
-	using container_at_key = decltype(std::declval<T&>().at(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_at_key_const = decltype(std::declval<const T&>().at(std::declval<U>()));
-
-	template<typename T, typename U = const typename T::key_type&>
-	using container_subscript_key_0 = decltype(std::declval<T&>()[std::declval<U>()]);
-	template<typename T, typename U = typename T::key_type&&>
-	using container_subscript_key_1 = decltype(std::declval<T&>()[std::declval<U>()]);
-
-	template<typename T, typename U = typename T::size_type>
-	using container_subscript = decltype(std::declval<T&>()[std::declval<U>()]);
-	template<typename T, typename U = typename T::size_type>
-	using container_subscript_const = decltype(std::declval<const T&>()[std::declval<U>()]);
-
-	template<typename T>
-	using container_data = decltype(std::data(std::declval<T&>()));
-	template<typename T>
-	using container_data_const = decltype(std::data(std::declval<const T&>()));
-
-	template<typename T>
-	using container_front = decltype(std::declval<T&>().front());
-	template<typename T>
-	using container_front_const = decltype(std::declval<const T&>().front());
-
-	template<typename T>
-	using container_back = decltype(std::declval<T&>().back());
-	template<typename T>
-	using container_back_const = decltype(std::declval<const T&>().back());
-
-	// - capacity
-
-	template<typename T>
-	using container_empty = decltype(std::empty(std::declval<const T&>()));
-
-	template<typename T>
-	using container_size = decltype(std::size(std::declval<const T&>()));
-
-	//template<typename T>
-	//using container_max_size = decltype(std::declval<const T&>().max_size());
-
-	template<typename T, typename U = typename T::size_type>
-	using container_resize_0 = decltype(std::declval<T&>().resize(std::declval<U>()));
-
-	template<typename T, typename U = typename T::size_type, typename V = const typename T::value_type&>
-	using container_resize_1 = decltype(std::declval<T&>().resize(std::declval<U>(), std::declval<V>()));
-
-	template<typename T>
-	using container_capacity = decltype(std::declval<const T&>().capacity());
-
-	template<typename T>
-	using container_bucket_count = decltype(std::declval<const T&>().bucket_count());
-
-	template<typename T, typename U = typename T::size_type>
-	using container_reserve = decltype(std::declval<T&>().reserve(std::declval<U>()));
-
-	template<typename T>
-	using container_shrink_to_fit = decltype(std::declval<T&>().shrink_to_fit());
-
-	// - modifiers
-
-	template<typename T>
-	using container_clear = decltype(std::declval<T&>().clear());
-
-	template<typename T, typename U = typename T::const_iterator, typename V = const typename T::value_type&>
-	using container_insert_0 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = typename T::value_type&&>
-	using container_insert_1 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = typename T::size_type, typename W = const typename T::value_type&>
-	using container_insert_2 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>(), std::declval<W>()));
-	template<typename T, typename U = typename T::node_type&&>
-	using container_insert_3 = decltype(std::declval<T&>().insert(std::declval<U>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = typename T::node_type&&>
-	using container_insert_4 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-
-	template<typename T, typename U = const typename T::key_type&, typename V = const typename T::mapped_type&>
-	using container_insert_or_assign_0 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-	template<typename T, typename U = const typename T::key_type&, typename V = const typename T::mapped_type&&>
-	using container_insert_or_assign_1 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-	template<typename T, typename U = typename T::key_type&&, typename V = const typename T::mapped_type&>
-	using container_insert_or_assign_2 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-	template<typename T, typename U = typename T::key_type&&, typename V = const typename T::mapped_type&&>
-	using container_insert_or_assign_3 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = const typename T::key_type&, typename W = const typename T::mapped_type&>
-	using container_insert_or_assign_4 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>(), std::declval<W>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = const typename T::key_type&, typename W = const typename T::mapped_type&&>
-	using container_insert_or_assign_5 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>(), std::declval<W>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = typename T::key_type&&, typename W = const typename T::mapped_type&>
-	using container_insert_or_assign_6 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>(), std::declval<W>()));
-	template<typename T, typename U = typename T::const_iterator, typename V = typename T::key_type&&, typename W = const typename T::mapped_type&&>
-	using container_insert_or_assign_7 = decltype(std::declval<T&>().insert(std::declval<U>(), std::declval<V>(), std::declval<W>()));
-
-	template<typename T, typename U = typename T::iterator>
-	using container_erase_0 = decltype(std::declval<T&>().erase(std::declval<U>()));
-	template<typename T, typename U = typename T::const_iterator>
-	using container_erase_1 = decltype(std::declval<T&>().erase(std::declval<U>()));
-	template<typename T, typename U = typename T::iterator>
-	using container_erase_2 = decltype(std::declval<T&>().erase(std::declval<U>(), std::declval<U>()));
-	template<typename T, typename U = typename T::const_iterator>
-	using container_erase_3 = decltype(std::declval<T&>().erase(std::declval<U>(), std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_erase_4 = decltype(std::declval<T&>().erase(std::declval<U>()));
-
-	template<typename T, typename U = const typename T::value_type&>
-	using container_push_front_0 = decltype(std::declval<T&>().push_front(std::declval<U>()));
-	template<typename T, typename U = typename T::value_type&&>
-	using container_push_front_1 = decltype(std::declval<T&>().push_front(std::declval<U>()));
-
-	template<typename T>
-	using container_pop_front = decltype(std::declval<T&>().pop_front());
-
-	template<typename T, typename U = const typename T::value_type&>
-	using container_push_back_0 = decltype(std::declval<T&>().push_back(std::declval<U>()));
-	template<typename T, typename U = typename T::value_type&&>
-	using container_push_back_1 = decltype(std::declval<T&>().push_back(std::declval<U>()));
-
-	template<typename T>
-	using container_pop_back = decltype(std::declval<T&>().pop_back());
-
-	template<typename T>
-	using container_swap = decltype(std::swap(std::declval<T&>(), std::declval<T&>()));
-
-	template<typename T, typename U = const T&>
-	using container_merge_0 = decltype(std::declval<T&>().merge(std::declval<U>()));
-	template<typename T, typename U = T&&>
-	using container_merge_1 = decltype(std::declval<T&>().merge(std::declval<U>()));
-
-	template<typename T, typename U = typename T::const_iterator>
-	using container_extract_0 = decltype(std::declval<T&>().extract(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_extract_1 = decltype(std::declval<T&>().extract(std::declval<U>()));
-
-	// - lookup
-
-	template<typename T, typename U = const typename T::key_type&>
-	using container_count = decltype(std::declval<const T&>().count(std::declval<U>()));
-
-	template<typename T, typename U = const typename T::key_type&>
-	using container_find = decltype(std::declval<T&>().count(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_find_const = decltype(std::declval<const T&>().count(std::declval<U>()));
-	// contains (C++20)
-	template<typename T, typename U = const typename T::key_type&>
-	using container_lower_bound = decltype(std::declval<T&>().lower_bound(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_lower_bound_const = decltype(std::declval<const T&>().lower_bound(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_upper_bound = decltype(std::declval<T&>().lower_bound(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_upper_bound_const = decltype(std::declval<const T&>().lower_bound(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_equal_range = decltype(std::declval<T&>().equal_range(std::declval<U>()));
-	template<typename T, typename U = const typename T::key_type&>
-	using container_equal_range_const = decltype(std::declval<const T&>().equal_range(std::declval<U>()));
-
-	// - observers
-
-	template<typename T>
-	using container_key_comp = decltype(std::declval<const T&>().key_comp());
-	template<typename T>
-	using container_value_comp = decltype(std::declval<const T&>().value_comp());
-	template<typename T>
-	using container_hash_function = decltype(std::declval<const T&>().hash_function());
-	template<typename T>
-	using container_key_eq = decltype(std::declval<const T&>().key_eq());
-	template<typename T>
-	using container_get_allocator = decltype(std::declval<const T&>().get_allocator());
-
-	// - list operations (TODO)
 
 	// - member type
 	// - > key_type
@@ -645,41 +402,239 @@ namespace Ubpa::UDRefl {
 	// - > > node
 
 	template<typename T>
-	using container_key_type = typename T::key_type;
+	concept container_key_type = requires {typename T::key_type; };
 	template<typename T>
-	using container_mapped_type = typename T::mapped_type;
+	concept container_mapped_type = requires { typename T::mapped_type; };
 	template<typename T>
-	using container_value_type = typename T::value_type;
+	concept container_value_type = requires { typename T::value_type; };
 	template<typename T>
-	using container_allocator_type = typename T::allocator_type;
+	concept container_allocator_type = requires { typename T::allocator_type; };
 	template<typename T>
-	using container_size_type = typename T::size_type;
+	concept container_size_type = requires { typename T::size_type; };
 	template<typename T>
-	using container_difference_type = typename T::difference_type;
+	concept container_difference_type = requires { typename T::difference_type; };
 	template<typename T>
-	using container_pointer_type = typename T::pointer;
+	concept container_pointer_type = requires { typename T::pointer; };
 	template<typename T>
-	using container_const_pointer_type = typename T::const_pointer;
+	concept container_const_pointer_type = requires { typename T::const_pointer; };
 	template<typename T>
-	using container_key_compare = typename T::key_compare;
+	concept container_key_compare = requires { typename T::key_compare; };
 	template<typename T>
-	using container_value_coompare = typename T::value_coompare;
+	concept container_value_coompare = requires { typename T::value_coompare; };
 	template<typename T>
-	using container_iterator = typename T::iterator;
+	concept container_iterator = requires { typename T::iterator; };
 	template<typename T>
-	using container_const_iterator = typename T::const_iterator;
+	concept container_const_iterator = requires { typename T::const_iterator; };
 	template<typename T>
-	using container_reverse_iterator = typename T::reverse_iterator;
+	concept container_reverse_iterator = requires { typename T::reverse_iterator; };
 	template<typename T>
-	using container_const_reverse_iterator = typename T::const_reverse_iterator;
+	concept container_const_reverse_iterator = requires { typename T::const_reverse_iterator; };
 	template<typename T>
-	using container_local_iterator = typename T::local_iterator;
+	concept container_local_iterator = requires { typename T::local_iterator; };
 	template<typename T>
-	using container_const_local_iterator = typename T::const_local_iterator;
+	concept container_const_local_iterator = requires { typename T::const_local_iterator; };
 	template<typename T>
-	using container_node_type = typename T::node_type;
+	concept container_node_type = requires { typename T::node_type; };
 	template<typename T>
-	using container_insert_return_type = typename T::insert_return_type;
+	concept container_insert_return_type = requires { typename T::insert_return_type; };
+
+	// TODO: assign
+
+	// - iterator
+
+	template<typename T>
+	concept container_begin = requires(T t) { std::begin(t); };
+	template<typename T>
+	concept container_cbegin = requires(const T& t) { std::cbegin(t); };
+	template<typename T>
+	concept container_rbegin = requires(T t) { std::rbegin(t); };
+	template<typename T>
+	concept container_crbegin = requires(const T & t) { std::crbegin(t); };
+	template<typename T>
+	concept container_end = requires(T t) { std::end(t); };
+	template<typename T>
+	concept container_cend = requires(const T & t) { std::cend(t); };
+	template<typename T>
+	concept container_rend = requires(T t) { std::rend(t); };
+	template<typename T>
+	concept container_crend = requires(const T & t) { std::crend(t); };
+
+	// - element access
+
+	template<typename T, typename U>
+	concept container_at = requires(T t, const U& key) { t.at(key); };
+	template<typename T>
+	concept container_at_size = container_size_type<T> && container_at<T, typename T::size_type>;
+	template<typename T>
+	concept container_at_key = container_key_type<T> && container_at<T, typename T::key_type>;
+	template<typename T, typename U>
+	concept container_subscript = requires(T t, U key) { t[std::forward<U>(key)]; };
+	template<typename T>
+	concept container_subscript_size = container_size_type<T> && container_subscript<T, const typename T::size_type&>;
+	template<typename T>
+	concept container_subscript_key_cl = container_key_type<T> && container_subscript<T, const typename T::key_type&>;
+	template<typename T>
+	concept container_subscript_key_r = container_key_type<T> && container_subscript<T, typename T::key_type>;
+	template<typename T>
+	concept container_data = requires(T t) { std::data(t); };
+	template<typename T>
+	concept container_front = requires(T t) { t.front(); };
+	template<typename T>
+	concept container_back = requires(T t) { t.back(); };
+
+	// - capacity
+
+	template<typename T>
+	concept container_empty = requires(const T & t) { {std::empty(t)}->std::convertible_to<bool>; };
+	template<typename T>
+	concept container_size = requires(const T & t) { {std::size(t)}->std::convertible_to<std::size_t>; };
+	template<typename T>
+	concept container_resize_cnt = container_size_type<T> && requires(T t, const typename T::size_type& cnt) { t.resize(cnt); };
+	template<typename T>
+	concept container_resize_cnt_value = container_size_type<T> && container_value_type<T>
+		&& requires(T t, const typename T::size_type & cnt, const typename T::value_type& value) { t.resize(cnt, value); };
+	template<typename T>
+	concept container_capacity = requires(const T & t) { {t.capacity()}->std::convertible_to<std::size_t>; };
+	template<typename T>
+	concept container_bucket_count = requires(const T & t) { {t.bucket_count()}->std::convertible_to<std::size_t>; };
+	template<typename T>
+	concept container_reserve = container_size_type<T> && requires(T t, const typename T::size_type & cnt) { t.reserve(cnt); };
+	template<typename T>
+	concept container_shrink_to_fit = container_size_type<T> && requires(T t) { t.shrink_to_fit(); };
+
+	// - modifiers
+
+	template<typename T>
+	concept container_clear = container_size_type<T> && requires(T t) { t.clear(); };
+
+	template<typename T, typename V>
+	concept container_insert = requires(T t, V value) { t.insert(std::forward<V>(value)); };
+	template<typename T>
+	concept container_insert_clvalue = container_value_type<T> && container_insert<T, const typename T::value_type&>;
+	template<typename T>
+	concept container_insert_rvalue = container_value_type<T> && container_insert<T, typename T::value_type&&>;
+	template<typename T>
+	concept container_insert_rnode = container_node_type<T> && container_insert<T, typename T::node_type&&>;
+
+	template<typename T, typename V>
+	concept container_insert_citer = container_const_iterator<T>
+		&& requires(T t, const typename T::const_iterator& iter, V value) { t.insert(iter, std::forward<V>(value)); };
+	template<typename T>
+	concept container_insert_citer_clvalue = container_value_type<T> && container_insert_citer<T, const typename T::value_type&>;
+	template<typename T>
+	concept container_insert_citer_rvalue = container_value_type<T> && container_insert_citer<T, typename T::value_type&&>;
+	template<typename T>
+	concept container_insert_citer_rnode = container_node_type<T> && container_insert_citer<T, typename T::node_type&&>;
+
+	template<typename T, typename S, typename V>
+	concept container_insert_citer_size = container_const_iterator<T>
+		&& requires(T t, const typename T::const_iterator & iter, const S& size, const V& value) { t.insert(iter, size, value); };
+	template<typename T>
+	concept container_insert_citer_size_value = container_value_type<T> && container_size_type<T>
+		&& container_insert_citer_size<T, typename T::size_type, typename T::value_type>;
+
+	template<typename T, typename U, typename V>
+	concept container_insert_or_assign = requires(T t, U u, V v) { t.insert_or_assign(std::forward<U>(u), std::forward<V>(v)); };
+	template<typename T>
+	concept container_insert_or_assign_clkey_rmap = container_key_type<T> && container_mapped_type<T>
+		&& container_insert_or_assign<T, const typename T::key_type&, typename T::mapped_type&&>;
+	template<typename T>
+	concept container_insert_or_assign_rkey_rmap = container_key_type<T> && container_mapped_type<T>
+		&& container_insert_or_assign<T, typename T::key_type&&, typename T::mapped_type&&>;
+
+	template<typename T, typename U, typename V>
+	concept container_insert_or_assign_citer = container_const_iterator<T>
+		&& requires(T t, const typename T::const_iterator& citer, U u, V v) { t.insert_or_assign(citer, std::forward<U>(u), std::forward<V>(v)); };
+	template<typename T>
+	concept container_insert_or_assign_citer_clkey_rmap = container_key_type<T> && container_mapped_type<T>
+		&& container_insert_or_assign_citer<T, const typename T::key_type&, typename T::mapped_type&&>;
+	template<typename T>
+	concept container_insert_or_assign_citer_rkey_rmap = container_key_type<T> && container_mapped_type<T>
+		&& container_insert_or_assign_citer<T, typename T::key_type&&, typename T::mapped_type&&>;
+
+	template<typename T, typename U>
+	concept container_erase = requires(T t, const U& u) { t.erase(u); };
+	template<typename T>
+	concept container_erase_citer = container_const_iterator<T>&& container_erase<T, typename T::const_iterator>;
+	template<typename T>
+	concept container_erase_key = container_key_type<T> && container_erase<T, typename T::key_type>;
+
+	template<typename T, typename U>
+	concept container_erase_range = requires(T t, const U & b, const U & e) { t.erase(b, e); };
+	template<typename T>
+	concept container_erase_range_citer = container_const_iterator<T> && container_erase_range<T, typename T::const_iterator>;
+
+	template<typename T, typename U>
+	concept container_push_front = requires(T t, U u) { t.push_front(std::forward<U>(u)); };
+	template<typename T>
+	concept container_push_front_clvalue = container_value_type<T>&& container_push_front<T, const typename T::value_type&>;
+	template<typename T>
+	concept container_push_front_rvalue = container_value_type<T>&& container_push_front<T, typename T::value_type&&>;
+
+	template<typename T>
+	concept container_pop_front = requires(T t) { t.pop_front(); };
+
+	template<typename T, typename U>
+	concept container_push_back = requires(T t, U u) { t.push_back(std::forward<U>(u)); };
+	template<typename T>
+	concept container_push_back_clvalue = container_value_type<T> && container_push_back<T, const typename T::value_type&>;
+	template<typename T>
+	concept container_push_back_rvalue = container_value_type<T> && container_push_back<T, typename T::value_type&&>;
+
+	template<typename T>
+	concept container_pop_back = requires(T t) { t.pop_back(); };
+
+	template<typename T>
+	concept container_swap = requires(T lhs, T rhs) { std::swap(lhs, rhs); };
+
+	template<typename T, typename U>
+	concept container_merge = requires(T t, U u) { t.merge(std::forward<U>(u)); };
+	template<typename T>
+	concept container_merge_l = container_merge<T, T&>;
+	template<typename T>
+	concept container_merge_r = container_merge<T, T&&>;
+
+	template<typename T, typename U>
+	concept container_extract = requires(T t, const U& u) { t.extract(u); };
+	template<typename T>
+	concept container_extract_citer = container_const_iterator<T> && container_extract<T, typename T::const_iterator>;
+	template<typename T>
+	concept container_extract_key = container_key_type<T> && container_extract<T, typename T::key_type>;
+
+	// - lookup
+
+	template<typename T>
+	concept container_count = container_key_type<T> && requires(const T& t, const typename T::key_type & u) { {t.count(u)}->std::convertible_to<std::size_t>; };
+
+	template<typename T>
+	concept container_find = container_key_type<T> && requires(T t, const typename T::key_type & u) { t.find(u); };
+
+	template<typename T>
+	concept container_contains = container_key_type<T> && requires(const T & t, const typename T::key_type & u) { {t.count(u)}->std::convertible_to<bool>; };
+
+	template<typename T>
+	concept container_lower_bound = container_key_type<T> && requires(T t, const typename T::key_type & u) { t.lower_bound(u); };
+
+	template<typename T>
+	concept container_upper_bound = container_key_type<T> && requires(T t, const typename T::key_type & u) { t.upper_bound(u); };
+
+	template<typename T>
+	concept container_equal_range = container_key_type<T> && requires(T t, const typename T::key_type& u) { t.equal_range(u); };
+
+	// - observers
+
+	template<typename T>
+	concept container_key_comp = requires(T t) { t.key_comp(); };
+	template<typename T>
+	concept container_value_comp = requires(T t) { t.value_comp(); };
+	template<typename T>
+	concept container_hash_function = requires(T t) { t.hash_function(); };
+	template<typename T>
+	concept container_key_eq = requires(T t) { t.key_eq(); };
+	template<typename T>
+	concept container_get_allocator = requires(T t) { t.get_allocator(); };
+
+	// - list operations (TODO)
 }
 
 #include "details/Util.inl"
