@@ -383,6 +383,9 @@ namespace Ubpa::UDRefl {
 	private:
 		SharedBuffer buffer; // if type is reference, buffer is empty
 	};
+
+	template<typename T>
+	constexpr ObjectView ObjectView_of = { Type_of<T> };
 }
 
 #undef OBJECT_VIEW_DECLARE_OPERATOR

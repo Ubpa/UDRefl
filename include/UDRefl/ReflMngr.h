@@ -5,7 +5,8 @@
 #include "Info.h"
 
 namespace Ubpa::UDRefl {
-	constexpr Type Global = TypeIDRegistry::Meta::global;
+	constexpr Type GlobalType = TypeIDRegistry::Meta::global;
+	constexpr ObjectView Global = { GlobalType };
 
 	class ReflMngr {
 	public:
