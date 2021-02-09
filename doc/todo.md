@@ -33,4 +33,8 @@
   - [ ] adaptors: make_reverse_iterator, make_move_iterator, front_inserter, back_inserter, inserter
   - [x] operations: advance, distance, next, prev
   - [x] range access: `[c][l/r]begin`, `[c][l/r]end` 
+- [ ] type alias
+- [ ] span
+- [ ] factory
+  - [ ] default arguments
 

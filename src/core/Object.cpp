@@ -46,31 +46,31 @@ SharedObject ObjectView::DMInvoke(
 	return Mngr.DMInvoke(*this, method_name, argTypes, argptr_buffer, flag);
 }
 
-void ObjectView::ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func, FieldFlag flag) const {
+void ObjectView::ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag) const {
 	return Mngr.ForEachVar(*this, func, flag);
 }
 
-std::vector<TypeRef> ObjectView::GetTypes() const {
+std::vector<InfoTypePair> ObjectView::GetTypes() const {
 	return Mngr.GetTypes(type);
 }
 
-std::vector<TypeFieldRef> ObjectView::GetTypeFields(FieldFlag flag) const {
+std::vector<InfoTypeFieldPair> ObjectView::GetTypeFields(FieldFlag flag) const {
 	return Mngr.GetTypeFields(type);
 }
 
-std::vector<FieldRef> ObjectView::GetFields(FieldFlag flag) const {
+std::vector<InfoFieldPair> ObjectView::GetFields(FieldFlag flag) const {
 	return Mngr.GetFields(type);
 }
 
-std::vector<TypeMethodRef> ObjectView::GetTypeMethods(MethodFlag flag) const {
+std::vector<InfoTypeMethodPair> ObjectView::GetTypeMethods(MethodFlag flag) const {
 	return Mngr.GetTypeMethods(type);
 }
 
-std::vector<MethodRef> ObjectView::GetMethods(MethodFlag flag) const {
+std::vector<InfoMethodPair> ObjectView::GetMethods(MethodFlag flag) const {
 	return Mngr.GetMethods(type);
 }
 
-std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> ObjectView::GetTypeFieldVars(FieldFlag flag) const {
+std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> ObjectView::GetTypeFieldVars(FieldFlag flag) const {
 	return Mngr.GetTypeFieldVars(*this, flag);
 }
 
@@ -78,15 +78,15 @@ std::vector<ObjectView> ObjectView::GetVars(FieldFlag flag) const {
 	return Mngr.GetVars(*this, flag);
 }
 
-std::optional<TypeRef> ObjectView::FindType(const std::function<bool(TypeRef)>& func) const {
+std::optional<InfoTypePair> ObjectView::FindType(const std::function<bool(InfoTypePair)>& func) const {
 	return Mngr.FindType(type, func);
 }
 
-std::optional<FieldRef> ObjectView::FindField(const std::function<bool(FieldRef)>& func, FieldFlag flag) const {
+std::optional<InfoFieldPair> ObjectView::FindField(const std::function<bool(InfoFieldPair)>& func, FieldFlag flag) const {
 	return Mngr.FindField(type, func, flag);
 }
 
-std::optional<MethodRef> ObjectView::FindMethod(const std::function<bool(MethodRef)>& func, MethodFlag flag) const {
+std::optional<InfoMethodPair> ObjectView::FindMethod(const std::function<bool(InfoMethodPair)>& func, MethodFlag flag) const {
 	return Mngr.FindMethod(type, func, flag);
 }
 
@@ -286,28 +286,6 @@ std::size_t ObjectView::capacity() const {
 
 std::size_t ObjectView::bucket_count() const {
 	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_bucket_count);
-}
-
-// - observers
-
-SharedObject ObjectView::key_comp() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_key_comp);
-}
-
-SharedObject ObjectView::value_comp() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_value_comp);
-}
-
-SharedObject ObjectView::hash_function() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_hash_function);
-}
-
-SharedObject ObjectView::key_eq() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_key_eq);
-}
-
-SharedObject ObjectView::get_allocator() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_get_allocator);
 }
 
 void ObjectView::reserve(std::size_t n) const {

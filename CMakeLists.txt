@@ -12,6 +12,8 @@ Ubpa_AddDep(UTemplate 0.7.0)
 
 include(cmake/Platform.cmake)
 
+option(Ubpa_UDRefl_Build_BootStrap "build boot strap" OFF)
+
 Ubpa_AddSubDirsRec(include)
 Ubpa_AddSubDirsRec(src)
 

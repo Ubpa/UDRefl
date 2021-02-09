@@ -164,23 +164,23 @@ namespace Ubpa::UDRefl {
 		ObjectView Var(Type base, Name field_name, FieldFlag flag = FieldFlag::All) const;
 
 		// self vars and all bases' vars
-		void ForEachVar(const std::function<bool(TypeRef, FieldRef, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
+		void ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		//
 		// Algorithm
 		//////////////
 
-		std::vector<TypeRef>                                   GetTypes        () const;
-		std::vector<TypeFieldRef>                              GetTypeFields   (FieldFlag  flag = FieldFlag ::All) const;
-		std::vector<FieldRef>                                  GetFields       (FieldFlag  flag = FieldFlag ::All) const;
-		std::vector<TypeMethodRef>                             GetTypeMethods  (MethodFlag flag = MethodFlag::All) const;
-		std::vector<MethodRef>                                 GetMethods      (MethodFlag flag = MethodFlag::All) const;
-		std::vector<std::tuple<TypeRef, FieldRef, ObjectView>> GetTypeFieldVars(FieldFlag  flag = FieldFlag ::All) const;
+		std::vector<InfoTypePair>                                   GetTypes        () const;
+		std::vector<InfoTypeFieldPair>                              GetTypeFields   (FieldFlag  flag = FieldFlag ::All) const;
+		std::vector<InfoFieldPair>                                  GetFields       (FieldFlag  flag = FieldFlag ::All) const;
+		std::vector<InfoTypeMethodPair>                             GetTypeMethods  (MethodFlag flag = MethodFlag::All) const;
+		std::vector<InfoMethodPair>                                 GetMethods      (MethodFlag flag = MethodFlag::All) const;
+		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(FieldFlag  flag = FieldFlag ::All) const;
 		std::vector<ObjectView>                                GetVars         (FieldFlag  flag = FieldFlag ::All) const;
 
-		std::optional<TypeRef  > FindType  (const std::function<bool(TypeRef   )>& func) const;
-		std::optional<FieldRef > FindField (const std::function<bool(FieldRef  )>& func, FieldFlag  flag = FieldFlag ::All) const;
-		std::optional<MethodRef> FindMethod(const std::function<bool(MethodRef )>& func, MethodFlag flag = MethodFlag::All) const;
+		std::optional<InfoTypePair  > FindType  (const std::function<bool(InfoTypePair   )>& func) const;
+		std::optional<InfoFieldPair > FindField (const std::function<bool(InfoFieldPair  )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		std::optional<InfoMethodPair> FindMethod(const std::function<bool(InfoMethodPair )>& func, MethodFlag flag = MethodFlag::All) const;
 		ObjectView               FindVar   (const std::function<bool(ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		bool ContainsBase  (Type base       ) const;
@@ -334,14 +334,6 @@ namespace Ubpa::UDRefl {
 		OBJECT_VIEW_DECLARE_META_RET(swap, void);
 		OBJECT_VIEW_DECLARE_META_RET(merge, void);
 		OBJECT_VIEW_DECLARE_META(extract);
-
-		// - observers
-
-		SharedObject key_comp() const;
-		SharedObject value_comp() const;
-		SharedObject hash_function() const;
-		SharedObject key_eq() const;
-		SharedObject get_allocator() const;
 
 	protected:
 		Type type;

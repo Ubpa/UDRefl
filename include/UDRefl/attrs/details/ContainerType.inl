@@ -9,7 +9,7 @@ struct Ubpa::UDRefl::SpecializeIsSet<std::set<Key, Compare, Allocator>> : std::t
 
 namespace Ubpa::UDRefl {
 	template<typename T>
-	concept IsArray = true
+	concept IsRawArray = true
 		&& container_begin<T>
 		&& container_begin<const T>
 		&& container_cbegin<T>
@@ -35,16 +35,19 @@ namespace Ubpa::UDRefl {
 		&& container_data<T>
 		&& container_data<const T>
 
+		&& container_empty<T>
+		&& container_size<T>
+
+		&& container_swap<T>
+		;
+
+	template<typename T>
+	concept IsArray = IsRawArray<T>
 		&& container_front<T>
 		&& container_front<const T>
 
 		&& container_back<T>
 		&& container_back<const T>
-
-		&& container_empty<T>
-		&& container_size<T>
-
-		&& container_swap<T>
 		;
 
 	template<typename T>
@@ -64,8 +67,6 @@ namespace Ubpa::UDRefl {
 		&& container_push_back_clvalue<T>
 		&& container_push_back_rvalue<T>
 		&& container_pop_back<T>
-
-		&& container_get_allocator<T>
 		;
 
 	template<typename T>
@@ -118,8 +119,6 @@ namespace Ubpa::UDRefl {
 		&& container_pop_back<T>
 
 		&& container_swap<T>
-
-		&& container_get_allocator<T>
 		;
 
 	// TODO : list
@@ -180,11 +179,6 @@ namespace Ubpa::UDRefl {
 		&& container_upper_bound<const T>
 		&& container_equal_range<T>
 		&& container_equal_range<const T>
-
-		&& container_key_comp<T>
-		&& container_value_comp<T>
-
-		&& container_get_allocator<T>
 		;
 
 	template<typename T>
@@ -226,7 +220,6 @@ namespace Ubpa::UDRefl {
 		&& container_insert_rnode<T>
 		&& container_insert_citer_clvalue<T>
 		&& container_insert_citer_rvalue<T>
-		&& container_insert_citer_size_value<T>
 		&& container_insert_citer_rnode<T>
 
 		&& container_erase_citer<T>
@@ -245,11 +238,6 @@ namespace Ubpa::UDRefl {
 		&& container_contains<T>
 		&& container_equal_range<T>
 		&& container_equal_range<const T>
-
-		&& container_hash_function<T>
-		&& container_key_eq<T>
-
-		&& container_get_allocator<T>
 		;
 
 	template<typename T>
@@ -271,7 +259,6 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	concept IsTuple = true
 		&& tuple_size<T>
-		&& container_swap<T>
 		;
 
 	template<typename T>
@@ -287,4 +274,17 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	concept IsQueue = false;
+
+	template<typename T>
+	concept IsContainerType = false
+		|| IsRawArray<T>
+		|| IsDeque<T>
+		|| IsForwardList<T>
+		|| IsList<T>
+		|| IsMultiSet<T>
+		|| IsUnorderedMultiSet<T>
+		|| IsStack<T>
+		|| IsQueue<T>
+		|| IsTuple<T>
+		;
 }

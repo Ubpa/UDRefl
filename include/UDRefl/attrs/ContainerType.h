@@ -7,13 +7,14 @@
 namespace Ubpa::UDRefl {
 	// TODO: list, forward_list, stack, queue
 
-	// Array -> Vector
+	// RawArray -> Array -> Vector
 	// MultiSet -> Set
 	// MultiSet -> MultiMap -> Map
 	// UnorderedMultiSet -> UnorderedSet
 	// UnorderedMultiSet -> UnorderedMultiMap -> UnorderedMap
 	// Tuple -> Pair
 	enum class ContainerType {
+		RawArray,
 		Array,
 		Vector,
 		Deque,

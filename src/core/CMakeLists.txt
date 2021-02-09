@@ -7,6 +7,19 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   list(APPEND c_options "-Wno-attributes")
 endif()
 
+set(defines "")
+if(Ubpa_UDRefl_Build_BootStrap)
+  list(APPEND defines "UBPA_UDREFL_BOOTSTRAP")
+endif()
+if(MSVC)
+  list(APPEND defines "_SILENCE_STDEXT_HASH_LOWER_BOUND_DEPRECATION_WARNING")
+  list(APPEND defines "_SILENCE_STDEXT_HASH_UPPER_BOUND_DEPRECATION_WARNING")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  list(APPEND defines "")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  list(APPEND defines "")
+endif()
+
 Ubpa_AddTarget(
   MODE STATIC
   RET_TARGET_NAME tname
@@ -18,6 +31,8 @@ Ubpa_AddTarget(
     ${c_options}
   LIB
     Ubpa::UTemplate_core
+  DEFINE
+    ${defines}
   PCH
     "${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.h"
 )

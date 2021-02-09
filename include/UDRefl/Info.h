@@ -17,6 +17,7 @@ namespace Ubpa::UDRefl {
 
 	class BaseInfo {
 	public:
+		BaseInfo() noexcept = default;
 		BaseInfo(InheritCastFunctions funcs, bool is_polymorphic = false, bool is_virtual = false) :
 			is_polymorphic{ is_polymorphic },
 			is_virtual{ is_virtual },
@@ -35,7 +36,6 @@ namespace Ubpa::UDRefl {
 		void* StaticCast_BaseToDerived (void* ptr) const noexcept { return IsVirtual() ? nullptr : funcs.static_base_to_derived(ptr); }
 		// require polymorphic
 		void* DynamicCast_BaseToDerived(void* ptr) const noexcept { return IsPolymorphic() ? funcs.dynamic_base_to_derived(ptr) : nullptr; }
-
 	private:
 		bool is_polymorphic;
 		bool is_virtual;

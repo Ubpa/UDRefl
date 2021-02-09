@@ -200,17 +200,17 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (operator_assign_lshift<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assign_rshift, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs >>= rhs; });
 
-			if constexpr (operator_eq<T>)
+			if constexpr (!IsContainerType<T> && operator_eq<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs == rhs); });
-			if constexpr (operator_ne<T>)
+			if constexpr (!IsContainerType<T> && operator_ne<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ne, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs != rhs); });
-			if constexpr (operator_lt<T>)
+			if constexpr (!IsContainerType<T> && operator_lt<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_lt, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs < rhs); });
-			if constexpr (operator_gt<T>)
+			if constexpr (!IsContainerType<T> && operator_gt<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_gt, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs > rhs); });
-			if constexpr (operator_le<T>)
+			if constexpr (!IsContainerType<T> && operator_le<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_le, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs <= rhs); });
-			if constexpr (operator_ge<T>)
+			if constexpr (!IsContainerType<T> && operator_ge<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs >= rhs); });
 
 			if constexpr (operator_subscript<T, const std::size_t>)
@@ -257,9 +257,9 @@ namespace Ubpa::UDRefl::details {
 			// pair
 
 			if constexpr (pair_first_type<T>)
-				mngr.RegisterType<pair_first_type<T>>();
+				mngr.RegisterType<typename T::first_type>();
 			if constexpr (pair_second_type<T>)
-				mngr.RegisterType<pair_second_type<T>>();
+				mngr.RegisterType<typename T::second_type>();
 			if constexpr (pair_first<T>)
 				mngr.AddField<&T::first>("first");
 			if constexpr (pair_second<T>)
@@ -461,27 +461,12 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (container_equal_range<const T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_equal_range, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.equal_range(rhs); });
 
-			// - observers
-
-			if constexpr (container_key_comp<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_key_comp, [](const T& lhs) -> decltype(auto) { return lhs.key_comp(); });
-
-			if constexpr (container_value_comp<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_value_comp, [](const T& lhs) -> decltype(auto) { return lhs.value_comp(); });
-
-			if constexpr (container_hash_function<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_hash_function, [](const T& lhs) -> decltype(auto) { return lhs.hash_function(); });
-
-			if constexpr (container_key_eq<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_key_eq, [](const T& lhs) -> decltype(auto) { return lhs.key_eq(); });
-
-			if constexpr (container_get_allocator<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_get_allocator, [](const T& lhs) -> decltype(auto) { return lhs.get_allocator(); });
-
 			if constexpr (IsVector<T>)
 				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Vector));
 			else if constexpr (IsArray<T>)
 				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Array));
+			else if constexpr (IsRawArray<T>)
+				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::RawArray));
 			else if constexpr (IsDeque<T>)
 				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Deque));
 			else if constexpr (IsForwardList<T>)
@@ -519,14 +504,9 @@ namespace Ubpa::UDRefl::details {
 				using value_type = std::remove_extent_t<T>;
 				using pointer = value_type*;
 				using const_pointer = const value_type*;
-				using reverse_iterator = std::reverse_iterator<pointer>;
-				using const_reverse_iterator = std::reverse_iterator<const_pointer>;
 				mngr.RegisterType<value_type>();
 				mngr.RegisterType<pointer>();
 				mngr.RegisterType<const_pointer>();
-				mngr.RegisterType<reverse_iterator>();
-				mngr.RegisterType<const_reverse_iterator>();
-				mngr.AddConstructor<const_reverse_iterator, const reverse_iterator&>();
 			}
 			else {
 				if constexpr (container_key_type<T>)
@@ -535,12 +515,6 @@ namespace Ubpa::UDRefl::details {
 					mngr.RegisterType<typename T::mapped_type>();
 				if constexpr (container_value_type<T>)
 					mngr.RegisterType<typename T::value_type>();
-				if constexpr (container_allocator_type<T>) {
-					using Allocator = typename T::allocator_type;
-					mngr.RegisterType<Allocator>();
-					mngr.AddMemberMethod("allocate", [](Allocator& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs.allocate(rhs); });
-					mngr.AddMemberMethod("deallocate", [](Allocator& lhs, typename T::value_type* ptr, const std::size_t& num) -> decltype(auto) { return lhs.deallocate(ptr, num); });
-				}
 				if constexpr (container_size_type<T>)
 					mngr.RegisterType<typename T::size_type>();
 				if constexpr (container_difference_type<T>)
@@ -551,18 +525,10 @@ namespace Ubpa::UDRefl::details {
 					if constexpr (container_const_pointer_type<T>)
 						mngr.RegisterType<typename T::const_pointer>();
 				}
-				if constexpr (container_key_compare<T>)
-					mngr.RegisterType<typename T::key_compare>();
-				if constexpr (container_value_coompare<T>)
-					mngr.RegisterType<typename T::value_coompare>();
 				if constexpr (container_iterator<T>)
 					mngr.RegisterType<typename T::iterator>();
 				if constexpr (container_const_iterator<T>)
 					mngr.RegisterType<typename T::const_iterator>();
-				if constexpr (container_reverse_iterator<T>)
-					mngr.RegisterType<typename T::reverse_iterator>();
-				if constexpr (container_const_reverse_iterator<T>)
-					mngr.RegisterType<typename T::const_reverse_iterator>();
 				if constexpr (container_local_iterator<T>)
 					mngr.RegisterType<typename T::local_iterator>();
 				if constexpr (container_const_local_iterator<T>)
@@ -571,15 +537,13 @@ namespace Ubpa::UDRefl::details {
 					mngr.RegisterType<typename T::node_type>();
 				if constexpr (container_insert_return_type<T>) {
 					mngr.RegisterType<typename T::insert_return_type>();
-					mngr.AddField<&T::allocator_type::position>("position");
-					mngr.AddField<&T::allocator_type::inserted>("inserted");
-					mngr.AddField<&T::allocator_type::node>("node");
+					mngr.AddField<&T::insert_return_type::position>("position");
+					mngr.AddField<&T::insert_return_type::inserted>("inserted");
+					mngr.AddField<&T::insert_return_type::node>("node");
 				}
 
 				if constexpr (container_iterator<T> && container_const_iterator<T>)
 					mngr.AddConstructor<typename T::const_iterator, const typename T::iterator&>();
-				if constexpr (container_reverse_iterator<T> && container_const_reverse_iterator<T>)
-					mngr.AddConstructor<typename T::const_reverse_iterator, const typename T::reverse_iterator&>();
 				if constexpr (container_local_iterator<T> && container_const_local_iterator<T>)
 					mngr.AddConstructor<typename T::const_local_iterator, const typename T::local_iterator&>();
 			}

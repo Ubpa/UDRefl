@@ -97,28 +97,28 @@ namespace Ubpa::UDRefl {
 	struct FieldInfo;
 	struct MethodInfo;
 
-	struct TypeRef {
+	struct InfoTypePair {
 		Type type;
-		TypeInfo& info;
+		TypeInfo* info;
 	};
 
-	struct FieldRef {
+	struct InfoFieldPair {
 		Name name;
-		FieldInfo& info;
+		FieldInfo* info;
 	};
 
-	struct MethodRef {
+	struct InfoMethodPair {
 		Name name;
-		MethodInfo& info;
+		MethodInfo* info;
 	};
 
-	struct TypeFieldRef {
-		TypeRef type;
-		FieldRef field;
+	struct InfoTypeFieldPair {
+		InfoTypePair type;
+		InfoFieldPair field;
 	};
 
-	struct TypeMethodRef {
-		TypeRef type;
-		MethodRef method;
+	struct InfoTypeMethodPair {
+		InfoTypePair type;
+		InfoMethodPair method;
 	};
 }
