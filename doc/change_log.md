@@ -6,6 +6,7 @@
 
 - 0.8.2
   - use concept for traits (operations, container API and flag)
+  - let some APIs return fundamental type (`void`, `std::size_t`, `bool`)
 - 0.8.1
   - support
     - pointer, array

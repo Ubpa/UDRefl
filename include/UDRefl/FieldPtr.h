@@ -79,10 +79,11 @@ namespace Ubpa::UDRefl {
 		constexpr bool IsStatic()        const noexcept { return data.index() == 2; }
 		constexpr bool IsDynamicShared() const noexcept { return data.index() == 3; }
 		constexpr bool IsDyanmicBuffer() const noexcept { return data.index() == 4; }
-		constexpr FieldFlag GetFieldFlag() const noexcept;
 
 		constexpr bool IsOwned()   const noexcept { return data.index() <  2; }
 		constexpr bool IsUnowned() const noexcept { return data.index() >= 2; }
+
+		constexpr FieldFlag GetFieldFlag() const noexcept;
 
 		// object
 		ObjectView Var() noexcept;
