@@ -491,6 +491,26 @@ Name ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
 	return new_method_name;
 }
 
+Name ReflMngr::AddTrivialConstructor(Type type, Name method_name) {
+	return AddMethod(
+		type,
+		method_name,
+		MethodInfo{ static_cast<MethodPtr::MemberVariableFunction*>([](void*, void*, ArgsView) {}) }
+	);
+}
+
+Name ReflMngr::AddZeroConstructor(Type type, Name method_name) {
+	auto* typeinfo = GetTypeInfo(type);
+	if (!typeinfo)
+		return {};
+	std::size_t size;
+	return AddMethod(
+		type,
+		method_name,
+		MethodInfo{ std::function<MethodPtr::MemberVariableFunction>{[size](void* obj, void*, ArgsView) {std::memset(obj,0,size); }} }
+	);
+}
+
 Type ReflMngr::AddBase(Type derived, Type base, BaseInfo baseinfo) {
 	auto* typeinfo = GetTypeInfo(derived);
 	if (!typeinfo)

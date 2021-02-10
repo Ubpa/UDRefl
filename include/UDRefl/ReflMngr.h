@@ -106,6 +106,9 @@ namespace Ubpa::UDRefl {
 		bool AddFieldAttr(Type type, Name field_name, Attr attr);
 		bool AddMethodAttr(Type type, Name method_name, Attr attr);
 
+		Name AddTrivialConstructor(Type type, Name method_name);
+		Name AddZeroConstructor   (Type type, Name method_name);
+
 		// -- template --
 
 		// RegisterType(type_name<T>(), sizeof(T), alignof(T))

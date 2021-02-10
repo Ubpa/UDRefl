@@ -12,7 +12,10 @@
   - :star: refactor `MethodPtr` 
     - `ResultDesc`, `InvokeResult`, `InvocableResult` -> `Type` 
     - `MethodPtr::func`'s result type change from `Destructor` to `void` 
-  - add API `AllocateShared` 
+  - add APIs
+    - `AllocateShared` 
+    - `AddTrivialConstructor` 
+    - `AddZeroConstructor` 
 - 0.8.1
   - support
     - pointer, array
