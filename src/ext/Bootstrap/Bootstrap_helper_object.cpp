@@ -1,9 +1,9 @@
-#include "bootstrap_helper.h"
+#include "Bootstrap_helper.h"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void Ubpa::UDRefl::details::bootstrap_helper_object() {
+void Ubpa::UDRefl::ext::details::Bootstrap_helper_object() {
 	Mngr.RegisterType<ObjectView>();
 	Mngr.AddConstructor<ObjectView, Type, void*>();
 	Mngr.AddConstructor<ObjectView, Type>();

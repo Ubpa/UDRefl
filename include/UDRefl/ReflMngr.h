@@ -19,7 +19,6 @@ namespace Ubpa::UDRefl {
 		// Data
 		/////////
 		//
-		// <typeinfos> does't contain reference/pointer/const/volatile type
 		// enum is a special type (all member is static)
 		//
 
@@ -106,7 +105,9 @@ namespace Ubpa::UDRefl {
 		Name AddField(Type type, Name field_name, FieldInfo fieldinfo);
 		Name AddMethod(Type type, Name method_name, MethodInfo methodinfo);
 		Type AddBase(Type derived, Type base, BaseInfo baseinfo);
-		bool AddAttr(Type type, Attr attr);
+		bool AddTypeAttr(Type type, Attr attr);
+		bool AddFieldAttr(Type type, Name field_name, Attr attr);
+		bool AddMethodAttr(Type type, Name method_name, Attr attr);
 
 		// -- template --
 
@@ -261,7 +262,7 @@ namespace Ubpa::UDRefl {
 		T Invoke(ObjectView obj, Name method_name, Args&&... args) const;
 
 		//
-		// Meta
+		// Make
 		/////////
 
 		bool IsNonCopiedArgConstructible(Type type, std::span<const Type  > argTypes   = {}) const;
@@ -274,12 +275,10 @@ namespace Ubpa::UDRefl {
 		bool NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		bool Construct            (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 		bool Destruct             (ObjectView obj) const;
-
-		ObjectView NonArgCopyNew(Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		ObjectView New          (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		bool       Delete       (ObjectView obj) const;
-
-		SharedObject MakeShared(Type type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		ObjectView NonArgCopyNew  (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		ObjectView New            (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool       Delete         (ObjectView obj) const;
+		SharedObject MakeShared   (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
 
 		// -- template --
 
@@ -311,40 +310,33 @@ namespace Ubpa::UDRefl {
 
 		// ForEach (DFS)
 
-		// self typeinfo and all bases' typeinfo
-		void ForEachTypeInfo(Type type, const std::function<bool(InfoTypePair)>& func) const;
-
-		// self fields and all bases' fields
-		void ForEachField (Type type, const std::function<bool(InfoTypePair, InfoFieldPair)>&  func, FieldFlag flag = FieldFlag::All) const;
-
-		// self methods and all bases' methods
-		void ForEachMethod(Type type, const std::function<bool(InfoTypePair, InfoMethodPair)>& func, MethodFlag  flag = MethodFlag ::All) const;
-
-		// self vars and all bases' vars
-		void ForEachVar(ObjectView obj, const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
+		void ForEachTypeInfo(Type      type, const std::function<bool(InfoTypePair)>& func) const;
+		void ForEachField   (Type      type, const std::function<bool(InfoTypePair, InfoFieldPair            )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		void ForEachMethod  (Type      type, const std::function<bool(InfoTypePair, InfoMethodPair           )>& func, MethodFlag flag = MethodFlag::All) const;
+		void ForEachVar     (ObjectView obj, const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		// Gather (DFS)
 
-		std::vector<InfoTypePair>                                   GetTypes        (Type      type);
-		std::vector<InfoTypeFieldPair>                              GetTypeFields   (Type      type, FieldFlag  flag = FieldFlag ::All);
-		std::vector<InfoFieldPair>                                  GetFields       (Type      type, FieldFlag  flag = FieldFlag ::All);
-		std::vector<InfoTypeMethodPair>                             GetTypeMethods  (Type      type, MethodFlag flag = MethodFlag::All);
-		std::vector<InfoMethodPair>                                 GetMethods      (Type      type, MethodFlag flag = MethodFlag::All);
+		std::vector<InfoTypePair>                                        GetTypes        (Type      type);
+		std::vector<InfoTypeFieldPair>                                   GetTypeFields   (Type      type, FieldFlag  flag = FieldFlag ::All);
+		std::vector<InfoFieldPair>                                       GetFields       (Type      type, FieldFlag  flag = FieldFlag ::All);
+		std::vector<InfoTypeMethodPair>                                  GetTypeMethods  (Type      type, MethodFlag flag = MethodFlag::All);
+		std::vector<InfoMethodPair>                                      GetMethods      (Type      type, MethodFlag flag = MethodFlag::All);
 		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag  flag = FieldFlag ::All);
-		std::vector<ObjectView>                                GetVars         (ObjectView obj, FieldFlag  flag = FieldFlag ::All);
+		std::vector<ObjectView>                                          GetVars         (ObjectView obj, FieldFlag  flag = FieldFlag ::All);
 
 		// Find (DFS)
 
-		std::optional<InfoTypePair  > FindType  (Type      type, const std::function<bool(InfoTypePair   )>& func) const;
-		std::optional<InfoFieldPair > FindField (Type      type, const std::function<bool(InfoFieldPair  )>& func, FieldFlag  flag = FieldFlag ::All) const;
-		std::optional<InfoMethodPair> FindMethod(Type      type, const std::function<bool(InfoMethodPair )>& func, MethodFlag flag = MethodFlag::All) const;
-		ObjectView               FindVar   (ObjectView obj, const std::function<bool(ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
+		std::optional<InfoTypePair  > FindType  (Type      type, const std::function<bool(InfoTypePair  )>& func) const;
+		std::optional<InfoFieldPair > FindField (Type      type, const std::function<bool(InfoFieldPair )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		std::optional<InfoMethodPair> FindMethod(Type      type, const std::function<bool(InfoMethodPair)>& func, MethodFlag flag = MethodFlag::All) const;
+		ObjectView                    FindVar   (ObjectView obj, const std::function<bool(ObjectView    )>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		// Contains (DFS)
 
 		bool ContainsBase  (Type type, Type base       ) const;
-		bool ContainsField (Type type, Name field_name , FieldFlag flag = FieldFlag::All) const;
-		bool ContainsMethod(Type type, Name method_name, MethodFlag  flag = MethodFlag ::All) const;
+		bool ContainsField (Type type, Name field_name , FieldFlag  flag = FieldFlag ::All) const;
+		bool ContainsMethod(Type type, Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		//
 		// Memory

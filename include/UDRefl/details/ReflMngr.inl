@@ -462,41 +462,41 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_equal_range, [](const T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.equal_range(rhs); });
 
 			if constexpr (IsVector<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Vector));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Vector));
 			else if constexpr (IsArray<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Array));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Array));
 			else if constexpr (IsRawArray<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::RawArray));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::RawArray));
 			else if constexpr (IsDeque<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Deque));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Deque));
 			else if constexpr (IsForwardList<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::ForwardList));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::ForwardList));
 			else if constexpr (IsList<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::List));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::List));
 			else if constexpr (IsMap<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Map));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Map));
 			else if constexpr (IsMultiMap<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::MultiMap));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::MultiMap));
 			else if constexpr (IsSet<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Set));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Set));
 			else if constexpr (IsMultiSet<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::MultiSet));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::MultiSet));
 			else if constexpr (IsUnorderedMap<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMap));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMap));
 			else if constexpr (IsUnorderedMultiMap<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMultiMap));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMultiMap));
 			else if constexpr (IsUnorderedSet<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedSet));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedSet));
 			else if constexpr (IsUnorderedMultiSet<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMultiSet));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMultiSet));
 			else if constexpr (IsPair<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Pair));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Pair));
 			else if constexpr (IsTuple<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Tuple));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Tuple));
 			else if constexpr (IsStack<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Stack));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Stack));
 			else if constexpr (IsQueue<T>)
-				mngr.AddAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Queue));
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Queue));
 
 			// - type
 

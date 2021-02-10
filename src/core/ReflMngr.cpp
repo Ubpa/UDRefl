@@ -491,14 +491,45 @@ Type ReflMngr::AddBase(Type derived, Type base, BaseInfo baseinfo) {
 	return new_base_type;
 }
 
-bool ReflMngr::AddAttr(Type type, Attr attr) {
+bool ReflMngr::AddTypeAttr(Type type, Attr attr) {
 	auto* typeinfo = GetTypeInfo(type);
 	if (!typeinfo)
 		return false;
-	auto atarget = typeinfo->attrs.find(attr);
-	if (atarget != typeinfo->attrs.end())
+	auto& attrs = typeinfo->attrs;
+	auto atarget = attrs.find(attr);
+	if (atarget != attrs.end())
 		return false;
-	typeinfo->attrs.emplace_hint(atarget, std::move(attr));
+	attrs.emplace_hint(atarget, std::move(attr));
+	return true;
+}
+
+bool ReflMngr::AddFieldAttr(Type type, Name name, Attr attr) {
+	auto* typeinfo = GetTypeInfo(type);
+	if (!typeinfo)
+		return false;
+	auto ftarget = typeinfo->fieldinfos.find(name);
+	if (ftarget == typeinfo->fieldinfos.end())
+		return false;
+	auto& attrs = ftarget->second.attrs;
+	auto atarget = attrs.find(attr);
+	if (atarget != attrs.end())
+		return false;
+	attrs.emplace_hint(atarget, std::move(attr));
+	return true;
+}
+
+bool ReflMngr::AddMethodAttr(Type type, Name name, Attr attr) {
+	auto* typeinfo = GetTypeInfo(type);
+	if (!typeinfo)
+		return false;
+	auto mtarget = typeinfo->methodinfos.find(name);
+	if (mtarget == typeinfo->methodinfos.end())
+		return false;
+	auto& attrs = mtarget->second.attrs;
+	auto atarget = attrs.find(attr);
+	if (atarget != attrs.end())
+		return false;
+	attrs.emplace_hint(atarget, std::move(attr));
 	return true;
 }
 

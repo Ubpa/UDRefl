@@ -108,6 +108,8 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - [tuple](src/test/18_tuple/main.cpp) 
 - [pointer](src/test/19_pointer/main.cpp) 
 - [array](src/test/20_array/main.cpp) 
+- [string](src/test/21_string/main.cpp) 
+- [bootstrap](src/test/ext/00_bootstrap/main.cpp) 
 
 ## Features
 
@@ -126,6 +128,7 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - **meta** function
   - operations: `operator +`, `operator-`, ...
   - container: `begin`, `end`, `empty`, `size`, ...
+- bootstrap
 - **no** macro usage
 - **no** rtti required
 - **no** exceptions (this feature come with cost and is also regularly disabled on consoles)

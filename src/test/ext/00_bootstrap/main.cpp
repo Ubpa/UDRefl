@@ -1,5 +1,5 @@
 #include <UDRefl/UDRefl.h>
-#include <UDRefl_bootstrap.h>
+#include <UDRefl_ext/Bootstrap.h>
 #include <iostream>
 
 using namespace Ubpa;
@@ -12,7 +12,7 @@ struct A {
 int main() {
 	Mngr.RegisterType<A>();
 	Mngr.AddField<&A::data>("data");
-	bootstrap();
+	ext::Bootstrap();
 	A a;
 	ObjectView{ a }.Var("data") = 3;
 	std::cout << a.data << std::endl;

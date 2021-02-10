@@ -1,9 +1,9 @@
-#include "bootstrap_helper.h"
+#include "Bootstrap_helper.h"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void Ubpa::UDRefl::details::bootstrap_helper_info_0() {
+void Ubpa::UDRefl::ext::details::Bootstrap_helper_info_0() {
 	Mngr.RegisterType<BaseInfo>();
 	Mngr.AddMethod<&BaseInfo::IsVirtual>("IsVirtual");
 	Mngr.AddMethod<&BaseInfo::IsPolymorphic>("IsPolymorphic");

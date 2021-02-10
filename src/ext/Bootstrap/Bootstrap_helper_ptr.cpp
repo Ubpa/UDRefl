@@ -1,9 +1,9 @@
-#include "bootstrap_helper.h"
+#include "Bootstrap_helper.h"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void Ubpa::UDRefl::details::bootstrap_helper_ptr() {
+void Ubpa::UDRefl::ext::details::Bootstrap_helper_ptr() {
 	// FieldPtr.h
 
 	Mngr.RegisterType<FieldPtr>();
@@ -35,7 +35,13 @@ void Ubpa::UDRefl::details::bootstrap_helper_ptr() {
 	Mngr.AddMethod<&ArgsView::GetParamList>("GetParamList");
 	Mngr.AddMethod<&ArgsView::At>("At");
 
+	Mngr.RegisterType<std::function<MethodPtr::MemberVariableFunction>>();
+	Mngr.RegisterType<std::function<MethodPtr::MemberConstFunction>>();
+	Mngr.RegisterType<std::function<MethodPtr::StaticFunction>>();
 	Mngr.RegisterType<MethodPtr>();
+	Mngr.AddConstructor<MethodPtr, std::function<MethodPtr::MemberVariableFunction>>();
+	Mngr.AddConstructor<MethodPtr, std::function<MethodPtr::MemberConstFunction>>();
+	Mngr.AddConstructor<MethodPtr, std::function<MethodPtr::StaticFunction>>();
 	Mngr.AddMethod<&MethodPtr::IsMemberVariable>("IsMemberVariable");
 	Mngr.AddMethod<&MethodPtr::IsMemberConst>("IsMemberConst");
 	Mngr.AddMethod<&MethodPtr::IsStatic>("IsStatic");

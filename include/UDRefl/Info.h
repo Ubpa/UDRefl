@@ -61,3 +61,8 @@ namespace Ubpa::UDRefl {
 		AttrSet attrs;
 	};
 }
+
+template<>
+constexpr auto Ubpa::type_name<Ubpa::UDRefl::AttrSet>() {
+	return TSTR("Ubpa::UDRefl::AttrSet");
+}

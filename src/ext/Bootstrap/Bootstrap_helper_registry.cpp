@@ -1,4 +1,4 @@
-#include "bootstrap_helper.h"
+#include "Bootstrap_helper.h"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
@@ -17,7 +17,7 @@ void RegisterIDRegistry() {
 	Mngr.AddMethod<&W::Clear>("Clear");
 }
 
-void Ubpa::UDRefl::details::bootstrap_helper_registry() {
+void Ubpa::UDRefl::ext::details::Bootstrap_helper_registry() {
 	RegisterIDRegistry<NameID, Name>();
 	Mngr.RegisterType<NameIDRegistry>();
 	Mngr.AddBases<NameIDRegistry, IDRegistry<NameID, Name>>();

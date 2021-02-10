@@ -1,4 +1,4 @@
-if(NOT Ubpa_UDRefl_Build_BootStrap)
+if(NOT Ubpa_UDRefl_Build_ext_Bootstrap)
   return()
 endif()
 
@@ -14,13 +14,12 @@ endif()
 Ubpa_AddTarget(
   MODE STATIC
   SOURCE
-    "${PROJECT_SOURCE_DIR}/include/UDRefl_bootstrap.h"
+    "${PROJECT_SOURCE_DIR}/include/UDRefl_ext/Bootstrap.h"
   INC
     "${PROJECT_SOURCE_DIR}/include"
   LIB
     Ubpa::UDRefl_core
   C_OPTION_PRIVATE
     ${c_options_private}
-  PCH
-    "${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.h"
+  PCH_REUSE_FROM UDRefl_core
 )

@@ -1,9 +1,9 @@
-#include "bootstrap_helper.h"
+#include "Bootstrap_helper.h"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void Ubpa::UDRefl::details::bootstrap_helper_utemplate() {
+void Ubpa::UDRefl::ext::details::Bootstrap_helper_utemplate() {
 	// UTemplate
 	Mngr.RegisterType<NameID>();
 	Mngr.AddConstructor<NameID, std::size_t>();
