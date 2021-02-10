@@ -1,4 +1,5 @@
 #include <UDRefl/UDRefl.h>
+#include <UDRefl_bootstrap.h>
 #include <iostream>
 
 using namespace Ubpa;
@@ -11,11 +12,11 @@ struct A {
 int main() {
 	Mngr.RegisterType<A>();
 	Mngr.AddField<&A::data>("data");
-	ObjectView mngr = Mngr.ReflSefl();
+	bootstrap();
 	A a;
 	ObjectView{ a }.Var("data") = 3;
 	std::cout << a.data << std::endl;
-	auto data = mngr.Invoke<ObjectView>("Var", ObjectView{ a }, Name{ "data" }, FieldFlag::All);
+	auto data = MngrView.Invoke<ObjectView>("Var", ObjectView{ a }, Name{ "data" }, FieldFlag::All);
 	data = 4;
 	std::cout << a.data << std::endl;
 

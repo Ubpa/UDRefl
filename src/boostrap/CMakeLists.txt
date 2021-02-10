@@ -1,0 +1,26 @@
+if(NOT Ubpa_UDRefl_Build_BootStrap)
+  return()
+endif()
+
+set(c_options_private "")
+if(MSVC)
+  list(APPEND c_options_private "/MP")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  #
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  #
+endif()
+
+Ubpa_AddTarget(
+  MODE STATIC
+  SOURCE
+    "${PROJECT_SOURCE_DIR}/include/UDRefl_bootstrap.h"
+  INC
+    "${PROJECT_SOURCE_DIR}/include"
+  LIB
+    Ubpa::UDRefl_core
+  C_OPTION_PRIVATE
+    ${c_options_private}
+  PCH
+    "${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.h"
+)

@@ -15,8 +15,6 @@ namespace Ubpa::UDRefl {
 			return instance;
 		}
 
-		ObjectView ReflSefl();
-
 		//
 		// Data
 		/////////
@@ -104,10 +102,10 @@ namespace Ubpa::UDRefl {
 		// Modifier
 		/////////////
 
-		bool RegisterType(Type type, size_t size, size_t alignment);
-		bool AddField(Type type, Name field_name, FieldInfo fieldinfo);
-		bool AddMethod(Type type, Name method_name, MethodInfo methodinfo);
-		bool AddBase(Type derived, Type base, BaseInfo baseinfo);
+		Type RegisterType(Type type, size_t size, size_t alignment);
+		Name AddField(Type type, Name field_name, FieldInfo fieldinfo);
+		Name AddMethod(Type type, Name method_name, MethodInfo methodinfo);
+		Type AddBase(Type derived, Type base, BaseInfo baseinfo);
 		bool AddAttr(Type type, Attr attr);
 
 		// -- template --
@@ -412,6 +410,7 @@ namespace Ubpa::UDRefl {
 	};
 
 	inline static ReflMngr& Mngr = ReflMngr::Instance();
+	inline static const ObjectView MngrView = { Type_of<ReflMngr>, &ReflMngr::Instance() };
 }
 
 #include "details/ReflMngr.inl"

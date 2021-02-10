@@ -12,15 +12,15 @@
 
 namespace Ubpa::UDRefl {
 	// name must end with '\0'
-	template<typename T>
+	template<typename T, typename U>
 	class IDRegistry {
 	public:
 		IDRegistry();
 
 		void RegisterUnmanaged(T ID, std::string_view name);
 		T RegisterUnmanaged(std::string_view name);
-		void Register(T ID, std::string_view name);
-		T Register(std::string_view name);
+		std::string_view Register(T ID, std::string_view name);
+		U Register(std::string_view name);
 
 		bool IsRegistered(T ID) const;
 		std::string_view Nameof(T ID) const;
@@ -44,7 +44,7 @@ namespace Ubpa::UDRefl {
 #endif // NDEBUG
 	};
 
-	class NameIDRegistry : public IDRegistry<NameID> {
+	class NameIDRegistry : public IDRegistry<NameID, Name> {
 	public:
 		struct Meta {
 			static constexpr Name ctor{ "UDRefl::ctor" };
@@ -172,23 +172,19 @@ namespace Ubpa::UDRefl {
 		NameIDRegistry();
 	};
 
-	class TypeIDRegistry : public IDRegistry<TypeID> {
+	class TypeIDRegistry : public IDRegistry<TypeID, Type> {
 	public:
 		struct Meta {
 			static constexpr Type global{ "UDRefl::global" };
 			static constexpr Type t_void{ "void" };
 		};
 
+		using IDRegistry<TypeID, Type>::Register;
+		using IDRegistry<TypeID, Type>::IsRegistered;
+
 		TypeIDRegistry();
 
-		void   RegisterUnmanaged(TypeID ID, std::string_view name);
-		TypeID RegisterUnmanaged(           std::string_view name);
-		void   Register         (TypeID ID, std::string_view name);
-		TypeID Register         (           std::string_view name);
-
 		// unmanaged
-		// U = std::remove_cvref_t<T>
-		// register: U, const U, U&, U&&, const U&, const U&&
 		template<typename T>
 		void Register();
 
@@ -205,10 +201,6 @@ namespace Ubpa::UDRefl {
 		Type RegisterAddRValueReference(Type type);
 		Type RegisterAddConstLValueReference(Type type);
 		Type RegisterAddConstRValueReference(Type type);
-
-	private:
-		using IDRegistry<TypeID>::Register;
-		using IDRegistry<TypeID>::IsRegistered;
 	};
 }
 

@@ -46,7 +46,7 @@ int main() {
 	p.Var("y") += 2.f;
 
 	for (const auto& [type, field, var] : p.GetTypeFieldVars()) {
-		for (const auto& attr : field.info.attrs) {
+		for (const auto& attr : field.info->attrs) {
 			std::cout << "[" << attr.GetType().GetName() << "]" << std::endl;
 			for (const auto& [type, field, var] :attr.GetTypeFieldVars()) {
 				std::cout

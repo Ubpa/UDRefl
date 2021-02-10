@@ -441,50 +441,54 @@ ReflMngr::~ReflMngr() {
 	Clear();
 }
 
-bool ReflMngr::RegisterType(Type type, size_t size, size_t alignment) {
-	if (!type)
-		return false;
-	auto rawType = type.RemoveCVRef();
-	if (auto target = typeinfos.find(rawType); target == typeinfos.end())
-		typeinfos.emplace_hint(target, rawType, TypeInfo{ size,alignment });
-	
-	return true;
+Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment) {
+	auto target = typeinfos.find(type.RemoveCVRef());
+	if (target != typeinfos.end())
+		return {};
+	Type new_type = { tregistry.Register(type.GetID(), type.GetName()),type.GetID() };
+	typeinfos.emplace_hint(target, new_type, TypeInfo{ size,alignment });
+	return new_type;
 }
 
-bool ReflMngr::AddField(Type type, Name field_name, FieldInfo fieldinfo) {
+Name ReflMngr::AddField(Type type, Name field_name, FieldInfo fieldinfo) {
 	auto* typeinfo = GetTypeInfo(type);
 	if (!typeinfo)
-		return false;
+		return {};
 	auto ftarget = typeinfo->fieldinfos.find(field_name);
 	if (ftarget != typeinfo->fieldinfos.end())
-		return false; // same name
-	typeinfo->fieldinfos.emplace_hint(ftarget, field_name, std::move(fieldinfo));
-	return true;
+		return {};
+
+	Name new_field_name = { nregistry.Register(field_name.GetID(), field_name.GetView()), field_name.GetID() };
+	typeinfo->fieldinfos.emplace_hint(ftarget, new_field_name, std::move(fieldinfo));
+
+	return new_field_name;
 }
 
-bool ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
+Name ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
 	auto* typeinfo = GetTypeInfo(type);
 	if (!typeinfo)
-		return false;
+		return {};
+	
 	auto [begin_iter, end_iter] = typeinfo->methodinfos.equal_range(method_name);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (!iter->second.methodptr.IsDistinguishableWith(methodinfo.methodptr))
-			return false;
+			return {};
 	}
-	typeinfo->methodinfos.emplace(method_name, std::move(methodinfo));
-	return true;
+	Name new_method_name = { nregistry.Register(method_name.GetID(), method_name.GetView()), method_name.GetID() };
+	typeinfo->methodinfos.emplace(new_method_name, std::move(methodinfo));
+	return new_method_name;
 }
 
-bool ReflMngr::AddBase(Type derived, Type base, BaseInfo baseinfo) {
+Type ReflMngr::AddBase(Type derived, Type base, BaseInfo baseinfo) {
 	auto* typeinfo = GetTypeInfo(derived);
 	if (!typeinfo)
-		return false;
-	auto rawBase = base.RemoveCVRef();
-	auto btarget = typeinfo->baseinfos.find(rawBase);
+		return {};
+	auto btarget = typeinfo->baseinfos.find(base.RemoveCVRef());
 	if (btarget != typeinfo->baseinfos.end())
-		return false;
-	typeinfo->baseinfos.emplace_hint(btarget, rawBase, std::move(baseinfo));
-	return true;
+		return {};
+	Type new_base_type = { tregistry.Register(base.GetID(), base.GetName()), base.GetID() };
+	typeinfo->baseinfos.emplace_hint(btarget, new_base_type, std::move(baseinfo));
+	return new_base_type;
 }
 
 bool ReflMngr::AddAttr(Type type, Attr attr) {

@@ -8,9 +8,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 set(defines "")
-if(Ubpa_UDRefl_Build_BootStrap)
-  list(APPEND defines "UBPA_UDREFL_BOOTSTRAP")
-endif()
 if(MSVC)
   list(APPEND defines "_SILENCE_STDEXT_HASH_LOWER_BOUND_DEPRECATION_WARNING")
   list(APPEND defines "_SILENCE_STDEXT_HASH_UPPER_BOUND_DEPRECATION_WARNING")
@@ -22,7 +19,6 @@ endif()
 
 Ubpa_AddTarget(
   MODE STATIC
-  RET_TARGET_NAME tname
   SOURCE
     "${PROJECT_SOURCE_DIR}/include/UDRefl"
   INC

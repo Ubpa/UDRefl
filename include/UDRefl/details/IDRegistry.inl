@@ -4,16 +4,16 @@
 #include <cstring>
 
 namespace Ubpa::UDRefl {
-	template<typename T>
-	IDRegistry<T>::IDRegistry() :
+	template<typename T, typename U>
+	IDRegistry<T, U>::IDRegistry() :
 		id2name{&resource}
 #ifndef NDEBUG
 		, unmanagedIDs{&resource}
 #endif // !NDEBUG
 	{}
 
-	template<typename T>
-	void IDRegistry<T>::RegisterUnmanaged(T ID, std::string_view name) {
+	template<typename T, typename U>
+	void IDRegistry<T, U>::RegisterUnmanaged(T ID, std::string_view name) {
 		assert(!name.empty());
 
 		auto target = id2name.find(ID);
@@ -30,21 +30,21 @@ namespace Ubpa::UDRefl {
 #endif // !NDEBUG
 	}
 
-	template<typename T>
-	T IDRegistry<T>::RegisterUnmanaged(std::string_view name) {
+	template<typename T, typename U>
+	T IDRegistry<T, U>::RegisterUnmanaged(std::string_view name) {
 		T ID{ name };
 		RegisterUnmanaged(ID, name);
 		return ID;
 	}
 
-	template<typename T>
-	void IDRegistry<T>::Register(T ID, std::string_view name) {
+	template<typename T, typename U>
+	std::string_view IDRegistry<T, U>::Register(T ID, std::string_view name) {
 		assert(!name.empty());
 
 		auto target = id2name.find(ID);
 		if (target != id2name.end()) {
 			assert(target->second == name);
-			return;
+			return target->second;
 		}
 
 		assert(name.data() && name.data()[name.size()] == 0);
@@ -53,22 +53,26 @@ namespace Ubpa::UDRefl {
 		std::memcpy(buffer, name.data(), name.size());
 		buffer[name.size()] = 0;
 
-		id2name.emplace_hint(target, ID, std::string_view{ buffer, name.size() });
+		std::string_view new_name{ buffer, name.size() };
+
+		id2name.emplace_hint(target, ID, new_name);
 
 #ifndef NDEBUG
 		unmanagedIDs.erase(ID);
 #endif // !NDEBUG
+
+		return new_name;
 	}
 
-	template<typename T>
-	T IDRegistry<T>::Register(std::string_view name) {
+	template<typename T, typename U>
+	U IDRegistry<T, U>::Register(std::string_view name) {
 		T ID{ name };
-		Register(ID, name);
-		return ID;
+		auto new_name = Register(ID, name);
+		return { new_name, ID };
 	}
 
-	template<typename T>
-	void IDRegistry<T>::UnregisterUnmanaged(T ID) {
+	template<typename T, typename U>
+	void IDRegistry<T, U>::UnregisterUnmanaged(T ID) {
 		auto target = id2name.find(ID);
 		if (target == id2name.end())
 			return;
@@ -78,8 +82,8 @@ namespace Ubpa::UDRefl {
 		id2name.erase(target);
 	}
 
-	template<typename T>
-	void IDRegistry<T>::Clear() noexcept {
+	template<typename T, typename U>
+	void IDRegistry<T, U>::Clear() noexcept {
 		id2name.clear();
 #ifndef NDEBUG
 		unmanagedIDs.clear();
@@ -88,13 +92,13 @@ namespace Ubpa::UDRefl {
 	}
 
 #ifndef NDEBUG
-	template<typename T>
-	bool IDRegistry<T>::IsUnmanaged(T ID) const {
+	template<typename T, typename U>
+	bool IDRegistry<T, U>::IsUnmanaged(T ID) const {
 		return unmanagedIDs.find(ID) != unmanagedIDs.end();
 	}
 
-	template<typename T>
-	void IDRegistry<T>::ClearUnmanaged() noexcept {
+	template<typename T, typename U>
+	void IDRegistry<T, U>::ClearUnmanaged() noexcept {
 		for (const auto& ID : unmanagedIDs)
 			id2name.erase(ID);
 		unmanagedIDs.clear();
@@ -102,13 +106,13 @@ namespace Ubpa::UDRefl {
 #endif // !NDEBUG
 
 
-	template<typename T>
-	bool IDRegistry<T>::IsRegistered(T ID) const {
+	template<typename T, typename U>
+	bool IDRegistry<T, U>::IsRegistered(T ID) const {
 		return id2name.contains(ID);
 	}
 
-	template<typename T>
-	std::string_view IDRegistry<T>::Nameof(T ID) const {
+	template<typename T, typename U>
+	std::string_view IDRegistry<T, U>::Nameof(T ID) const {
 		if(auto target = id2name.find(ID); target != id2name.end())
 			return target->second;
 		
@@ -117,19 +121,12 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	void TypeIDRegistry::Register() {
-		static_assert(!std::is_volatile_v<T>);
-		using U = std::remove_cvref_t<T>;
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<U>, type_name<U>());
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<const U>, type_name<const U>());
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<U&>, type_name<U&>());
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<U&&>, type_name<U&&>());
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<const U&>, type_name<const U&>());
-		IDRegistry<TypeID>::RegisterUnmanaged(TypeID_of<const U&&>, type_name<const U&&>());
+		IDRegistry<TypeID, Type>::RegisterUnmanaged(TypeID_of<T>, type_name<T>());
 	}
 
 	template<typename T>
 	bool TypeIDRegistry::IsRegistered() const {
 		static_assert(!std::is_volatile_v<T>);
-		return IDRegistry<TypeID>::IsRegistered(TypeID_of<T>);
+		return IDRegistry<TypeID, Type>::IsRegistered(TypeID_of<T>);
 	}
 }
