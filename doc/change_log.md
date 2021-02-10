@@ -9,6 +9,10 @@
   - let some APIs return fundamental type (`void`, `std::size_t`, `bool`)
   - original `constexpr Type Global` rename to `GlobalType`, add `constexpr ObjectView Global` for convenience
   - `Add{Type/Field/Method}Attr` 
+  - :star: refactor `MethodPtr` 
+    - `ResultDesc`, `InvokeResult`, `InvocableResult` -> `Type` 
+    - `MethodPtr::func`'s result type change from `Destructor` to `void` 
+  - add API `AllocateShared` 
 - 0.8.1
   - support
     - pointer, array

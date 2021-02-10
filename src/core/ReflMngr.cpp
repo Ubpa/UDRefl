@@ -8,19 +8,11 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 namespace Ubpa::UDRefl::details {
-	DeleteFunc GenerateDeleteFunc(Destructor&& dtor, std::pmr::memory_resource* result_rsrc, size_t size, size_t alignment) {
-		assert(size > 0);
-		if (dtor) {
-			return[d = std::move(dtor), result_rsrc, size, alignment](void* ptr) {
-				d(ptr);
-				result_rsrc->deallocate(ptr, size, alignment);
-			};
-		}
-		else { // !dtor
-			return [result_rsrc, size, alignment](void* ptr) {
-				result_rsrc->deallocate(ptr, size, alignment);
-			};
-		}
+	DeleteFunc GenerateDeleteFunc(Type type, std::pmr::memory_resource* result_rsrc, size_t size, size_t alignment) {
+		return [type, result_rsrc, size, alignment](void* ptr) {
+			Mngr.Destruct(ObjectView{ type, ptr });
+			result_rsrc->deallocate(ptr, size, alignment);
+		};
 	}
 
 	template<typename To, typename From>
@@ -51,7 +43,7 @@ namespace Ubpa::UDRefl::details {
 		AddConvertCtor<T, double>(mngr);
 	}
 
-	static InvocableResult IsInvocable(
+	static Type IsInvocable(
 		bool is_priority,
 		Type type,
 		Name method_name,
@@ -74,7 +66,7 @@ namespace Ubpa::UDRefl::details {
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
-					return { true, iter->second.methodptr.GetResultDesc() };
+					return iter->second.methodptr.GetResultType();
 				}
 			}
 		}
@@ -86,7 +78,7 @@ namespace Ubpa::UDRefl::details {
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
-					return { true, iter->second.methodptr.GetResultDesc() };
+					return iter->second.methodptr.GetResultType();
 				}
 			}
 		}
@@ -99,7 +91,7 @@ namespace Ubpa::UDRefl::details {
 		return {};
 	}
 
-	static InvokeResult Invoke(
+	static Type Invoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
 		ObjectView obj,
@@ -129,11 +121,8 @@ namespace Ubpa::UDRefl::details {
 					};
 					if (!guard.IsCompatible())
 						continue;
-					return {
-						true,
-						iter->second.methodptr.GetResultDesc().type,
-						iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer())
-					};
+					iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
+					return iter->second.methodptr.GetResultType();
 				}
 			}
 		}
@@ -146,11 +135,8 @@ namespace Ubpa::UDRefl::details {
 					};
 					if (!guard.IsCompatible())
 						continue;
-					return {
-						true,
-						iter->second.methodptr.GetResultDesc().type,
-						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer())
-					};
+					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
+					return iter->second.methodptr.GetResultType();
 				}
 			}
 		}
@@ -163,7 +149,7 @@ namespace Ubpa::UDRefl::details {
 				method_name, result_buffer, argTypes, argptr_buffer,
 				flag
 			);
-			if (rst.success)
+			if (rst)
 				return rst;
 		}
 
@@ -203,23 +189,36 @@ namespace Ubpa::UDRefl::details {
 						continue;
 
 					const auto& methodptr = iter->second.methodptr;
-					const auto& rst_desc = methodptr.GetResultDesc();
+					const auto& rst_type = methodptr.GetResultType();
 
-					if (rst_desc.type.Is<void>()) {
+					if (rst_type.Is<void>()) {
 						iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
 						return SharedObject{ Type_of<void> };
 					}
-					else if (rst_desc.type.IsReference()) {
+					else if (rst_type.IsReference()) {
 						std::aligned_storage_t<sizeof(void*)> buffer;
 						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgPtrBuffer());
-						return { rst_desc.type, buffer_as<void*>(&buffer) };
+						return { rst_type, buffer_as<void*>(&buffer) };
+					}
+					else if (rst_type.Is<ObjectView>()) {
+						std::aligned_storage_t<sizeof(ObjectView)> buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, argptr_buffer);
+						return SharedObject{ buffer_as<ObjectView>(&buffer) };
+					}
+					else if (rst_type.Is<SharedObject>()) {
+						SharedObject buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, argptr_buffer);
+						return buffer;
 					}
 					else {
-						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-						auto dtor = iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
+						auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
+						if (!result_typeinfo)
+							return {};
+						void* result_buffer = rst_rsrc->allocate(result_typeinfo->size, result_typeinfo->alignment);
+						iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgPtrBuffer());
 						return {
-							{rst_desc.type, result_buffer},
-							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
+							{rst_type, result_buffer},
+							GenerateDeleteFunc(iter->second.methodptr.GetResultType(), rst_rsrc, result_typeinfo->size, result_typeinfo->alignment)
 						};
 					}
 				}
@@ -238,23 +237,36 @@ namespace Ubpa::UDRefl::details {
 						continue;
 
 					const auto& methodptr = iter->second.methodptr;
-					const auto& rst_desc = methodptr.GetResultDesc();
+					const auto& rst_type = methodptr.GetResultType();
 
-					if (rst_desc.type.Is<void>()) {
+					if (rst_type.Is<void>()) {
 						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), nullptr, argptr_buffer);
-						return SharedObject{ rst_desc.type };
+						return SharedObject{ rst_type };
 					}
-					else if (rst_desc.type.IsReference()) {
+					else if (rst_type.IsReference()) {
 						std::aligned_storage_t<sizeof(void*)> buffer;
 						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), &buffer, guard.GetArgPtrBuffer());
-						return { rst_desc.type, buffer_as<void*>(&buffer) };
+						return { rst_type, buffer_as<void*>(&buffer) };
+					}
+					else if (rst_type.Is<ObjectView>()) {
+						std::aligned_storage_t<sizeof(ObjectView)> buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, argptr_buffer);
+						return SharedObject{ buffer_as<ObjectView>(&buffer) };
+					}
+					else if (rst_type.Is<SharedObject>()) {
+						SharedObject buffer;
+						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, argptr_buffer);
+						return buffer;
 					}
 					else {
-						void* result_buffer = rst_rsrc->allocate(rst_desc.size, rst_desc.alignment);
-						auto dtor = iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
+						auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
+						if (!result_typeinfo)
+							return {};
+						void* result_buffer = rst_rsrc->allocate(result_typeinfo->size, result_typeinfo->alignment);
+						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgPtrBuffer());
 						return {
-							{rst_desc.type, result_buffer},
-							GenerateDeleteFunc(std::move(dtor), rst_rsrc, rst_desc.size, rst_desc.alignment)
+							{rst_type, result_buffer},
+							GenerateDeleteFunc(iter->second.methodptr.GetResultType(), rst_rsrc, result_typeinfo->size, result_typeinfo->alignment)
 						};
 					}
 				}
@@ -569,16 +581,12 @@ ObjectView ReflMngr::New(Type type, std::span<const Type> argTypes, ArgPtrBuffer
 	return obj;
 }
 
-bool ReflMngr::Delete(ObjectView obj) const {
-	bool dtor_success = Destruct(obj);
-	if (!dtor_success)
-		return false;
+void ReflMngr::Delete(ObjectView obj) const {
+	Destruct(obj);
 
 	const auto& typeinfo = typeinfos.at(obj.GetType());
 
 	object_resource.deallocate(obj.GetPtr(), typeinfo.size, typeinfo.alignment);
-
-	return true;
 }
 
 SharedObject ReflMngr::MakeShared(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
@@ -588,9 +596,28 @@ SharedObject ReflMngr::MakeShared(Type type, std::span<const Type> argTypes, Arg
 		return nullptr;
 
 	return { obj, [type](void* ptr) {
-		bool success = Mngr.Delete({type, ptr});
-		assert(success);
+		Mngr.Delete({type, ptr});
 	} };
+}
+
+SharedObject ReflMngr::AllocateShared(Type type) const {
+	auto target = typeinfos.find(type);
+	if (target == typeinfos.end())
+		return {};
+
+	const auto& typeinfo = target->second;
+
+	void* buffer = object_resource.allocate(typeinfo.size, typeinfo.alignment);
+
+	if (!buffer)
+		return nullptr;
+
+	return {
+		ObjectView{type, buffer},
+		[rsrc = &object_resource, size = typeinfo.size, alignment = typeinfo.alignment](void* ptr) {
+			rsrc->deallocate(ptr, size, alignment);
+		}
+	};
 }
 
 ObjectView ReflMngr::StaticCast_DerivedToBase(ObjectView obj, Type type) const {
@@ -851,7 +878,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 	return true;
 }
 
-InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
+Type ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
 	const CVRefMode cvref_mode = type.GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
@@ -873,7 +900,7 @@ InvocableResult ReflMngr::IsInvocable(Type type, Name method_name, std::span<con
 	return details::IsInvocable(false, type, method_name, argTypes, flag);
 }
 
-InvokeResult ReflMngr::Invoke(
+Type ReflMngr::Invoke(
 	ObjectView obj,
 	Name method_name,
 	void* result_buffer,
@@ -998,9 +1025,7 @@ ObjectView ReflMngr::MNew(Type type, std::pmr::memory_resource* rsrc, std::span<
 bool ReflMngr::MDelete(ObjectView obj, std::pmr::memory_resource* rsrc) const {
 	assert(rsrc);
 
-	bool dtor_success = Destruct(obj);
-	if (!dtor_success)
-		return false;
+	Destruct(obj);
 
 	const auto& typeinfo = typeinfos.at(obj.GetType());
 
@@ -1121,10 +1146,10 @@ bool ReflMngr::Construct(ObjectView obj, std::span<const Type> argTypes, ArgPtrB
 	return false;
 }
 
-bool ReflMngr::Destruct(ObjectView obj) const {
+void ReflMngr::Destruct(ObjectView obj) const {
 	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
-		return false;
+		return;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
@@ -1132,10 +1157,9 @@ bool ReflMngr::Destruct(ObjectView obj) const {
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
 		{
 			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, {});
-			return true;
+			return;
 		}
 	}
-	return false;
 }
 
 void ReflMngr::ForEachTypeInfo(Type type, const std::function<bool(InfoTypePair)>& func) const {

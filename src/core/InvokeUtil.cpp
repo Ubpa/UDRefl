@@ -387,10 +387,8 @@ details::NewArgsGuard::NewArgsGuard(
 
 details::NewArgsGuard::~NewArgsGuard() {
 	if (buffer) {
-		for (const auto& info : std::span<const ArgInfo>{ new_nonptr_arg_info_buffer, num_copied_nonptr_args }) {
-			bool success = Mngr.Destruct({ info.GetType(), argptr_buffer[info.idx] });
-			assert(success);
-		}
+		for (const auto& info : std::span<const ArgInfo>{ new_nonptr_arg_info_buffer, num_copied_nonptr_args })
+			Mngr.Destruct({ info.GetType(), argptr_buffer[info.idx] });
 		rsrc->deallocate(buffer, buffer_size, max_alignment);
 	}
 }

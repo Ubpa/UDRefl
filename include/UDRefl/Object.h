@@ -91,9 +91,9 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 
-		InvocableResult IsInvocable(Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
+		Type IsInvocable(Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 
-		InvokeResult Invoke(
+		Type Invoke(
 			Name method_name,
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
@@ -101,13 +101,13 @@ namespace Ubpa::UDRefl {
 			MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Name method_name, MethodFlag flag = MethodFlag::All) const;
+		Type IsInvocable(Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
 		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(Name method_name, void* result_buffer, Args&&... args) const;
+		Type InvokeArgs(Name method_name, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
 		T Invoke(Name method_name, Args&&... args) const;

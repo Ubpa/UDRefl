@@ -94,27 +94,19 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
-	constexpr auto wrapped_function = [](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor {
+	constexpr auto wrapped_function = [](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
 			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer);
 			if (result_buffer) {
-				if constexpr (std::is_reference_v<Return>) {
+				if constexpr (std::is_reference_v<Return>)
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-					return destructor<std::add_pointer_t<Return>>();
-				}
-				else {
+				else
 					buffer_as<NonCVReturn>(result_buffer) = std::move(rst);
-					return destructor<NonCVReturn>();
-				}
 			}
-			else
-				return {};
 		}
-		else {
+		else
 			details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer);
-			return {};
-		}
 	};
 	return wrapped_function;
 }
@@ -127,27 +119,19 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 	using ArgList = typename Traits::ArgList;
 	using MaybeConstVoidPtr = std::conditional_t<Traits::is_const, const void*, void*>;
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable->Destructor {
+		[f = std::forward<Func>(func)](MaybeConstVoidPtr obj, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
 			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
 			if (result_buffer) {
-				if constexpr (std::is_reference_v<Return>) {
+				if constexpr (std::is_reference_v<Return>)
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-					return destructor<std::add_pointer_t<Return>>();
-				}
-				else {
+				else
 					new(result_buffer)NonCVReturn{ std::move(rst) };
-					return destructor<NonCVReturn>();
-				}
 			}
-			else
-				return {};
 		}
-		else {
+		else
 			details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
-			return {};
-		}
 	};
 	return wrapped_function;
 }
@@ -159,27 +143,19 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	using Traits = FuncTraits<FuncPtr>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
-	constexpr auto wrapped_function = [](void* result_buffer, ArgPtrBuffer argptr_buffer) -> Destructor {
+	constexpr auto wrapped_function = [](void* result_buffer, ArgPtrBuffer argptr_buffer) {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
 			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
 			if (result_buffer) {
-				if constexpr (std::is_reference_v<Return>) {
+				if constexpr (std::is_reference_v<Return>)
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-					return destructor<std::add_pointer_t<Return>>();
-				}
-				else {
+				else
 					new(result_buffer)NonCVReturn{ std::move(rst) };
-					return destructor<NonCVReturn>();
-				}
 			}
-			else
-				return {};
 		}
-		else {
+		else
 			details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
-			return {};
-		}
 	};
 	return wrapped_function;
 }
@@ -258,27 +234,19 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](void* result_buffer, ArgPtrBuffer argptr_buffer) mutable -> Destructor {
+		[f = std::forward<Func>(func)](void* result_buffer, ArgPtrBuffer argptr_buffer) mutable {
 			if constexpr (!std::is_void_v<Return>) {
 				using NonCVReturn = std::remove_cv_t<Return>;
 				NonCVReturn rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
 				if (result_buffer) {
-					if constexpr (std::is_reference_v<Return>) {
+					if constexpr (std::is_reference_v<Return>)
 						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
-						return destructor<std::add_pointer_t<Return>>();
-					}
-					else {
+					else
 						new(result_buffer)NonCVReturn{ std::move(rst) };
-						return destructor<NonCVReturn>();
-					}
 				}
-				else
-					return {};
 			}
-			else {
+			else
 				details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
-				return {};
-			}
 		};
 	return wrapped_function;
 }

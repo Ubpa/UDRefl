@@ -24,20 +24,6 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_basic() {
 	Mngr.AddField<FieldFlag::Unowned>("Unowned");
 	Mngr.AddField<FieldFlag::All>("All");
 
-	Mngr.RegisterType<ResultDesc>();
-	Mngr.AddField<&ResultDesc::type>("type");
-	Mngr.AddField<&ResultDesc::size>("size");
-	Mngr.AddField<&ResultDesc::alignment>("alignment");
-
-	Mngr.RegisterType<InvokeResult>();
-	Mngr.AddField<&InvokeResult::success>("success");
-	Mngr.AddField<&InvokeResult::type>("type");
-	Mngr.AddField<&InvokeResult::destructor>("destructor");
-
-	Mngr.RegisterType<InvocableResult>();
-	Mngr.AddField<&InvocableResult::success>("success");
-	Mngr.AddField<&InvocableResult::result_desc>("result_desc");
-
 	Mngr.RegisterType<InfoTypePair>();
 	Mngr.AddField<&InfoTypePair::type>("type");
 	Mngr.AddField<&InfoTypePair::info>("info");

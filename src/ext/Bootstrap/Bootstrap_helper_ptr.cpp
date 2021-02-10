@@ -47,6 +47,6 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_ptr() {
 	Mngr.AddMethod<&MethodPtr::IsStatic>("IsStatic");
 	Mngr.AddMethod<&MethodPtr::GetMethodFlag>("GetMethodFlag");
 	Mngr.AddMethod<&MethodPtr::GetParamList>("GetParamList");
-	Mngr.AddMethod<&MethodPtr::GetResultDesc>("GetResultDesc");
+	Mngr.AddMethod<&MethodPtr::GetResultType>("GetResultType");
 	Mngr.AddMethod<&MethodPtr::IsDistinguishableWith>("IsDistinguishableWith");
 }

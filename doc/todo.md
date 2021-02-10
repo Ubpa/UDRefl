@@ -35,4 +35,6 @@
   - [x] range access: `[c][l/r]begin`, `[c][l/r]end` 
 - [x] type alias for AttrSet
 - [ ] span
+- [ ] improve offsetor
+- [ ] speed up ReflMngr.cpp compiltation
 

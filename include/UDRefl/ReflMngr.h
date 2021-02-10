@@ -68,9 +68,6 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		FieldPtr GenerateDynamicFieldPtr(Args&&... args);
 
-		template<typename Return>
-		static ResultDesc GenerateResultDesc();
-
 		template<typename... Params>
 		static ParamList GenerateParamList() noexcept(sizeof...(Params) == 0);
 
@@ -231,9 +228,9 @@ namespace Ubpa::UDRefl {
 		//     | const T[] |  1  |     1     |  1  |    -/1    |
 		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
 
-		InvocableResult IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
+		Type IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 
-		InvokeResult Invoke(
+		Type Invoke(
 			ObjectView obj,
 			Name method_name,
 			void* result_buffer = nullptr,
@@ -244,7 +241,7 @@ namespace Ubpa::UDRefl {
 		// -- template --
 
 		template<typename... Args>
-		InvocableResult IsInvocable(Type type, Name method_name, MethodFlag flag = MethodFlag::All) const;
+		Type IsInvocable(Type type, Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
 		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
@@ -252,9 +249,9 @@ namespace Ubpa::UDRefl {
 		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
-		InvokeResult InvokeArgs(Type      type, Name method_name, void* result_buffer, Args&&... args) const;
+		Type InvokeArgs(Type      type, Name method_name, void* result_buffer, Args&&... args) const;
 		template<typename... Args>
-		InvokeResult InvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const;
+		Type InvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
 		T Invoke(Type      type, Name method_name, Args&&... args) const;
@@ -272,13 +269,14 @@ namespace Ubpa::UDRefl {
 		bool IsMoveConstructible        (Type type) const;
 		bool IsDestructible             (Type type) const;
 
-		bool NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		bool Construct            (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		bool Destruct             (ObjectView obj) const;
-		ObjectView NonArgCopyNew  (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		ObjectView New            (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		bool       Delete         (ObjectView obj) const;
-		SharedObject MakeShared   (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool NonCopiedArgConstruct (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool Construct             (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		void Destruct              (ObjectView obj) const;
+		ObjectView   NonArgCopyNew (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		ObjectView   New           (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		void         Delete        (ObjectView obj) const;
+		SharedObject MakeShared    (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		SharedObject AllocateShared(Type      type) const;
 
 		// -- template --
 
@@ -345,6 +343,7 @@ namespace Ubpa::UDRefl {
 		// - MInvoke's 'M' means 'memory' (use a memory resource)
 		// - MInvoke will allocate buffer for result, and move to SharedObject
 		// - if result is a reference, SharedObject is a ObjectView actually
+		// - if result is ObjectView or SharedObject, then MInvoke's result is it.
 		// - DMInvoke's 'D' means 'default' (use the default memory resource)
 		//
 

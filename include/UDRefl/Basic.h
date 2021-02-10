@@ -48,50 +48,30 @@ namespace Ubpa::UDRefl {
 	template<typename T> constexpr bool IsObjectOrView_v = IsObjectOrView<T>::value;
 	template<typename T> concept NonObjectAndView = !IsObjectOrView_v<T>;
 
-	struct ResultDesc {
-		Type type{ Type_of<void> };
-		size_t size{ 0 };
-		size_t alignment{ 1 };
-	};
-
-	struct InvokeResult {
-		bool success{ false };
-		Type type;
-		Destructor destructor;
-
-		template<typename T>
-		T Move(void* result_buffer) noexcept(std::is_reference_v<T> || std::is_nothrow_destructible_v<T> && std::is_nothrow_move_constructible_v<T>) {
-			static_assert(!std::is_void_v<T>);
-
-			assert(result_buffer);
+	template<typename T>
+	T MoveResult(Type type, void* result_buffer)
+		noexcept(std::is_reference_v<T> || std::is_nothrow_destructible_v<T> && std::is_nothrow_move_constructible_v<T>)
+	{
+		if constexpr (!std::is_void_v<T>) {
+			assert(result_buffer && type);
 
 			if constexpr (!std::is_reference_v<T> && std::is_default_constructible_v<T>) {
-				if (!success || type != Type_of<T>)
+				if (type != Type_of<T>)
 					return {};
 			}
 			else
-				assert(success && type == Type_of<T>);
+				assert(type == Type_of<T>);
 
-			if constexpr (std::is_reference_v<T>) {
-				assert(!destructor);
+			if constexpr (std::is_reference_v<T>)
 				return std::forward<T>(*buffer_as<std::add_pointer_t<T>>(result_buffer));
-			}
 			else {
 				T rst = std::move(buffer_as<T>(result_buffer));
-				if (destructor)
-					destructor(result_buffer);
+				if constexpr (std::is_compound_v<T> && !std::is_trivially_destructible_v<T>)
+					reinterpret_cast<const T*>(result_buffer)->~T();
 				return rst;
 			}
 		}
-
-		constexpr operator bool() const noexcept { return success; }
-	};
-
-	struct InvocableResult {
-		bool success{ false };
-		ResultDesc result_desc;
-		constexpr operator bool() const noexcept { return success; }
-	};
+	}
 
 	struct TypeInfo;
 	struct FieldInfo;

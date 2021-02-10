@@ -25,16 +25,16 @@ namespace Ubpa::UDRefl {
 
 	class MethodPtr {
 	public:
-		using MemberVariableFunction = Destructor(      void*, void*, ArgsView);
-		using MemberConstFunction    = Destructor(const void*, void*, ArgsView);
-		using StaticFunction         = Destructor(             void*, ArgsView);
+		using MemberVariableFunction = void(      void*, void*, ArgsView);
+		using MemberConstFunction    = void(const void*, void*, ArgsView);
+		using StaticFunction         = void(             void*, ArgsView);
 
-		MethodPtr(MemberVariableFunction*               func, ResultDesc resultDesc = {}, ParamList paramList = {});
-		MethodPtr(MemberConstFunction*                  func, ResultDesc resultDesc = {}, ParamList paramList = {});
-		MethodPtr(StaticFunction*                       func, ResultDesc resultDesc = {}, ParamList paramList = {});
-		MethodPtr(std::function<MemberVariableFunction> func, ResultDesc resultDesc = {}, ParamList paramList = {});
-		MethodPtr(std::function<MemberConstFunction>    func, ResultDesc resultDesc = {}, ParamList paramList = {});
-		MethodPtr(std::function<StaticFunction>         func, ResultDesc resultDesc = {}, ParamList paramList = {});
+		MethodPtr(MemberVariableFunction*               func, Type result_type = Type_of<void>, ParamList paramList = {});
+		MethodPtr(MemberConstFunction*                  func, Type result_type = Type_of<void>, ParamList paramList = {});
+		MethodPtr(StaticFunction*                       func, Type result_type = Type_of<void>, ParamList paramList = {});
+		MethodPtr(std::function<MemberVariableFunction> func, Type result_type = Type_of<void>, ParamList paramList = {});
+		MethodPtr(std::function<MemberConstFunction>    func, Type result_type = Type_of<void>, ParamList paramList = {});
+		MethodPtr(std::function<StaticFunction>         func, Type result_type = Type_of<void>, ParamList paramList = {});
 
 		bool IsMemberVariable() const noexcept { return func.index() == 0 || func.index() == 3; }
 		bool IsMemberConst   () const noexcept { return func.index() == 1 || func.index() == 4; }
@@ -42,16 +42,16 @@ namespace Ubpa::UDRefl {
 
 		MethodFlag GetMethodFlag() const noexcept;
 
-		const ParamList&  GetParamList() const noexcept { return paramList; }
-		const ResultDesc& GetResultDesc() const noexcept { return resultDesc; }
+		const ParamList& GetParamList() const noexcept { return paramList; }
+		const Type& GetResultType() const noexcept { return result_type; }
 
 		bool IsDistinguishableWith(const MethodPtr& rhs) const noexcept {
 			return func.index() != rhs.func.index() || paramList != rhs.paramList;
 		}
 
-		Destructor Invoke(      void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
-		Destructor Invoke(const void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
-		Destructor Invoke(                 void* result_buffer, ArgPtrBuffer argptr_buffer) const;
+		void Invoke(      void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
+		void Invoke(const void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
+		void Invoke(                 void* result_buffer, ArgPtrBuffer argptr_buffer) const;
 
 	private:
 		std::variant<
@@ -62,7 +62,7 @@ namespace Ubpa::UDRefl {
 			std::function<MemberConstFunction>,
 			std::function<StaticFunction>
 		> func;
-		ResultDesc resultDesc;
+		Type result_type;
 		ParamList paramList;
 	};
 }
