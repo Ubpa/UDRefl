@@ -1,5 +1,7 @@
 #include "InvokeUtil.h"
 
+#include <UDRefl/UDRefl.h>
+
 using namespace Ubpa::UDRefl;
 
 bool details::IsPriorityCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
