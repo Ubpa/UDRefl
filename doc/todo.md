@@ -37,4 +37,5 @@
 - [ ] span
 - [ ] improve offsetor
 - [ ] speed up ReflMngr.cpp compiltation
+- [x] simplify `MethodPtr::func` 
 

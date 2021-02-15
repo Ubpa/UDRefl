@@ -62,7 +62,7 @@ namespace Ubpa::UDRefl::details {
 		// 1. object variable
 		if (enum_contain(flag, MethodFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.IsMemberVariable()
+				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
@@ -74,7 +74,7 @@ namespace Ubpa::UDRefl::details {
 		// 2. object const and static
 		if(enum_contain(flag, MethodFlag::Const | MethodFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && enum_contain_any(flag, iter->second.methodptr.GetMethodFlag())
+				if (iter->second.methodptr.GetMethodFlag() != MethodFlag::Variable && enum_contain_any(flag, iter->second.methodptr.GetMethodFlag())
 					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
 						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
 				{
@@ -114,7 +114,7 @@ namespace Ubpa::UDRefl::details {
 
 		if (enum_contain(flag, MethodFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.IsMemberVariable()) {
+				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -128,7 +128,7 @@ namespace Ubpa::UDRefl::details {
 		}
 		if (enum_contain_any(flag, MethodFlag::Const | MethodFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
+				if (iter->second.methodptr.GetMethodFlag() != MethodFlag::Variable && enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -179,7 +179,7 @@ namespace Ubpa::UDRefl::details {
 
 		if (enum_contain(flag, MethodFlag::Variable)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.IsMemberVariable()) {
+				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -227,7 +227,7 @@ namespace Ubpa::UDRefl::details {
 
 		if (enum_contain_any(flag, MethodFlag::Const | MethodFlag::Static)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (!iter->second.methodptr.IsMemberVariable() && enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
+				if (iter->second.methodptr.GetMethodFlag() != MethodFlag::Variable && enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -495,7 +495,7 @@ Name ReflMngr::AddTrivialConstructor(Type type, Name method_name) {
 	return AddMethod(
 		type,
 		method_name,
-		MethodInfo{ static_cast<MethodPtr::MemberVariableFunction*>([](void*, void*, ArgsView) {}) }
+		MethodInfo{ {[](void*, void*, ArgsView) {}, MethodFlag::Variable} }
 	);
 }
 
@@ -507,7 +507,7 @@ Name ReflMngr::AddZeroConstructor(Type type, Name method_name) {
 	return AddMethod(
 		type,
 		method_name,
-		MethodInfo{ std::function<MethodPtr::MemberVariableFunction>{[size](void* obj, void*, ArgsView) {std::memset(obj,0,size); }} }
+		MethodInfo{ {[size](void* obj, void*, ArgsView) {std::memset(obj,0,size); }, MethodFlag::Variable} }
 	);
 }
 
@@ -1119,7 +1119,7 @@ bool ReflMngr::IsDestructible(Type type) const {
 
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (!iter->second.methodptr.IsMemberVariable()
+		if (iter->second.methodptr.GetMethodFlag() != MethodFlag::Variable
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
 			return true;
 	}
@@ -1135,7 +1135,7 @@ bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTy
 
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (iter->second.methodptr.IsMemberVariable()
+		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
 			&& details::IsNonCopiedArgConstructCompatible(iter->second.methodptr.GetParamList(), argTypes))
 		{
 			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
@@ -1152,7 +1152,7 @@ bool ReflMngr::Construct(ObjectView obj, std::span<const Type> argTypes, ArgPtrB
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (iter->second.methodptr.IsMemberVariable()) {
+		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable) {
 			details::NewArgsGuard guard{
 				false, &temporary_resource,
 				iter->second.methodptr.GetParamList(), argTypes, argptr_buffer
@@ -1173,7 +1173,7 @@ void ReflMngr::Destruct(ObjectView obj) const {
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (iter->second.methodptr.IsMemberConst()
+		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
 		{
 			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, {});

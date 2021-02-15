@@ -35,16 +35,9 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_ptr() {
 	Mngr.AddMethod<&ArgsView::GetParamList>("GetParamList");
 	Mngr.AddMethod<&ArgsView::At>("At");
 
-	Mngr.RegisterType<std::function<MethodPtr::MemberVariableFunction>>();
-	Mngr.RegisterType<std::function<MethodPtr::MemberConstFunction>>();
-	Mngr.RegisterType<std::function<MethodPtr::StaticFunction>>();
+	Mngr.RegisterType<MethodPtr::Func>();
 	Mngr.RegisterType<MethodPtr>();
-	Mngr.AddConstructor<MethodPtr, std::function<MethodPtr::MemberVariableFunction>>();
-	Mngr.AddConstructor<MethodPtr, std::function<MethodPtr::MemberConstFunction>>();
-	Mngr.AddConstructor<MethodPtr, std::function<MethodPtr::StaticFunction>>();
-	Mngr.AddMethod<&MethodPtr::IsMemberVariable>("IsMemberVariable");
-	Mngr.AddMethod<&MethodPtr::IsMemberConst>("IsMemberConst");
-	Mngr.AddMethod<&MethodPtr::IsStatic>("IsStatic");
+	Mngr.AddConstructor<MethodPtr, MethodPtr::Func, MethodFlag, Type, ParamList>();
 	Mngr.AddMethod<&MethodPtr::GetMethodFlag>("GetMethodFlag");
 	Mngr.AddMethod<&MethodPtr::GetParamList>("GetParamList");
 	Mngr.AddMethod<&MethodPtr::GetResultType>("GetResultType");
