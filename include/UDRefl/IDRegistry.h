@@ -170,6 +170,10 @@ namespace Ubpa::UDRefl {
 		};
 
 		NameIDRegistry();
+
+		using IDRegistry<NameID, Name>::Register;
+
+		Name Register(Name n) { return Register(n.GetID(), n.GetView()); }
 	};
 
 	class TypeIDRegistry : public IDRegistry<TypeID, Type> {
@@ -187,6 +191,8 @@ namespace Ubpa::UDRefl {
 		// unmanaged
 		template<typename T>
 		void Register();
+
+		Type Register(Type n) { return Register(n.GetID(), n.GetName()); }
 
 		template<typename T>
 		bool IsRegistered() const;

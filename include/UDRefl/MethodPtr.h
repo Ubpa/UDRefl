@@ -27,6 +27,7 @@ namespace Ubpa::UDRefl {
 	public:
 		using Func = std::function<void(void*, void*, ArgsView)>;
 
+		MethodPtr() = default;
 		MethodPtr(Func func, MethodFlag flag, Type result_type = Type_of<void>, ParamList paramList = {});
 
 		MethodFlag GetMethodFlag() const noexcept { return flag; }

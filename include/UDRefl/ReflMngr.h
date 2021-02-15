@@ -106,8 +106,8 @@ namespace Ubpa::UDRefl {
 		bool AddFieldAttr(Type type, Name field_name, Attr attr);
 		bool AddMethodAttr(Type type, Name method_name, Attr attr);
 
-		Name AddTrivialConstructor(Type type, Name method_name);
-		Name AddZeroConstructor   (Type type, Name method_name);
+		Name AddTrivialConstructor(Type type);
+		Name AddZeroConstructor   (Type type);
 
 		// -- template --
 

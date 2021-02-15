@@ -491,22 +491,22 @@ Name ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
 	return new_method_name;
 }
 
-Name ReflMngr::AddTrivialConstructor(Type type, Name method_name) {
+Name ReflMngr::AddTrivialConstructor(Type type) {
 	return AddMethod(
 		type,
-		method_name,
+		NameIDRegistry::Meta::ctor,
 		MethodInfo{ {[](void*, void*, ArgsView) {}, MethodFlag::Variable} }
 	);
 }
 
-Name ReflMngr::AddZeroConstructor(Type type, Name method_name) {
+Name ReflMngr::AddZeroConstructor(Type type) {
 	auto* typeinfo = GetTypeInfo(type);
 	if (!typeinfo)
 		return {};
 	std::size_t size;
 	return AddMethod(
 		type,
-		method_name,
+		NameIDRegistry::Meta::ctor,
 		MethodInfo{ {[size](void* obj, void*, ArgsView) {std::memset(obj,0,size); }, MethodFlag::Variable} }
 	);
 }
