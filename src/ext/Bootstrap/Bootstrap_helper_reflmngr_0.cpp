@@ -44,7 +44,7 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_reflmngr_0() {
 	Mngr.AddMethod<&ReflMngr::GetMethods>("GetMethods");
 	Mngr.AddMemberMethod("GetMethods", [](ReflMngr& mngr, Type type) {return mngr.GetMethods(type); });
 	Mngr.AddMethod<&ReflMngr::GetTypeFieldVars>("GetTypeFieldVars");
-	Mngr.AddMemberMethod("GetTypeFieldVars", [](ReflMngr& mngr, Type type) {return mngr.GetTypeFieldVars(type); });
+	Mngr.AddMemberMethod("GetTypeFieldVars", [](ReflMngr& mngr, ObjectView obj) {return mngr.GetTypeFieldVars(obj); });
 	Mngr.AddMethod<&ReflMngr::GetVars>("GetVars");
 	Mngr.AddMemberMethod("GetVars", [](ReflMngr& mngr, ObjectView obj) {return mngr.GetVars(obj); });
 

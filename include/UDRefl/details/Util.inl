@@ -141,8 +141,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	using Traits = FuncTraits<FuncPtr>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
-	constexpr auto wrapped_function = [](void* null_obj, void* result_buffer, ArgPtrBuffer argptr_buffer) {
-		assert(null_obj == nullptr);
+	constexpr auto wrapped_function = [](void*, void* result_buffer, ArgPtrBuffer argptr_buffer) {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
 			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
@@ -239,8 +238,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
 	/*constexpr*/ auto wrapped_function =
-		[f = std::forward<Func>(func)](void* null_obj, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable {
-			assert(null_obj == nullptr);
+		[f = std::forward<Func>(func)](void*, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable {
 			if constexpr (!std::is_void_v<Return>) {
 				using NonCVReturn = std::remove_cv_t<Return>;
 				NonCVReturn rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
