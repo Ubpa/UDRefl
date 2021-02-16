@@ -299,7 +299,8 @@ namespace Ubpa::UDRefl {
 		SharedObject MInvoke(
 			ObjectView obj,
 			Name method_name,
-			std::pmr::memory_resource* result_rsrc,
+			std::pmr::memory_resource* rst_rsrc,
+			std::pmr::memory_resource* temp_args_rsrc,
 			MethodFlag flag,
 			Args&&... args) const;
 

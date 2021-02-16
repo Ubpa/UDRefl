@@ -63,6 +63,6 @@ namespace Ubpa::UDRefl {
 }
 
 template<>
-constexpr auto Ubpa::type_name<Ubpa::UDRefl::AttrSet>() {
+constexpr auto Ubpa::type_name<Ubpa::UDRefl::AttrSet>() noexcept {
 	return TSTR("Ubpa::UDRefl::AttrSet");
 }
