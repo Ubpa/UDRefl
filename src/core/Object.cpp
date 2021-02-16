@@ -5,10 +5,6 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-TypeInfo* ObjectView::GetTypeInfo() const {
-	return Mngr->GetTypeInfo(type);
-}
-
 ObjectView ObjectView::Var(Name field_name, FieldFlag flag) const {
 	return Mngr->Var(*this, field_name, flag);
 }
@@ -51,26 +47,6 @@ void ObjectView::ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair
 	return Mngr->ForEachVar(*this, func, flag);
 }
 
-std::vector<InfoTypePair> ObjectView::GetTypes() const {
-	return Mngr->GetTypes(type);
-}
-
-std::vector<InfoTypeFieldPair> ObjectView::GetTypeFields(FieldFlag flag) const {
-	return Mngr->GetTypeFields(type);
-}
-
-std::vector<InfoFieldPair> ObjectView::GetFields(FieldFlag flag) const {
-	return Mngr->GetFields(type);
-}
-
-std::vector<InfoTypeMethodPair> ObjectView::GetTypeMethods(MethodFlag flag) const {
-	return Mngr->GetTypeMethods(type);
-}
-
-std::vector<InfoMethodPair> ObjectView::GetMethods(MethodFlag flag) const {
-	return Mngr->GetMethods(type);
-}
-
 std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> ObjectView::GetTypeFieldVars(FieldFlag flag) const {
 	return Mngr->GetTypeFieldVars(*this, flag);
 }
@@ -79,32 +55,8 @@ std::vector<ObjectView> ObjectView::GetVars(FieldFlag flag) const {
 	return Mngr->GetVars(*this, flag);
 }
 
-InfoTypePair ObjectView::FindType(const std::function<bool(InfoTypePair)>& func) const {
-	return Mngr->FindType(type, func);
-}
-
-InfoFieldPair ObjectView::FindField(const std::function<bool(InfoFieldPair)>& func, FieldFlag flag) const {
-	return Mngr->FindField(type, func, flag);
-}
-
-InfoMethodPair ObjectView::FindMethod(const std::function<bool(InfoMethodPair)>& func, MethodFlag flag) const {
-	return Mngr->FindMethod(type, func, flag);
-}
-
 ObjectView ObjectView::FindVar(const std::function<bool(ObjectView)>& func, FieldFlag flag) const {
 	return Mngr->FindVar(*this, func, flag);
-}
-
-bool ObjectView::ContainsBase(Type base) const {
-	return Mngr->ContainsBase(type, base);
-}
-
-bool ObjectView::ContainsField(Name field_name, FieldFlag flag) const {
-	return Mngr->ContainsField(type, field_name, flag);
-}
-
-bool ObjectView::ContainsMethod(Name method_name, MethodFlag flag) const {
-	return Mngr->ContainsMethod(type, method_name, flag);
 }
 
 ObjectView ObjectView::RemoveConst() const {

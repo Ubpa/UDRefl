@@ -75,8 +75,6 @@ namespace Ubpa::UDRefl {
 		// ReflMngr //
 		//////////////
 
-		TypeInfo* GetTypeInfo() const;
-
 		//
 		// Cast
 		/////////
@@ -155,36 +153,27 @@ namespace Ubpa::UDRefl {
 			Args&&... args) const;
 
 		//
-		// Fields
-		///////////
+		// Var
+		////////
 
 		ObjectView Var(Name field_name, FieldFlag flag = FieldFlag::All) const;
 		// for diamond inheritance
 		ObjectView Var(Type base, Name field_name, FieldFlag flag = FieldFlag::All) const;
 
-		// self vars and all bases' vars
-		void ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
-
 		//
 		// Algorithm
 		//////////////
+		//
+		// - only contains APIs with ObjectView in ReflMngr
+		//
 
-		std::vector<InfoTypePair>                                        GetTypes        () const;
-		std::vector<InfoTypeFieldPair>                                   GetTypeFields   (FieldFlag  flag = FieldFlag ::All) const;
-		std::vector<InfoFieldPair>                                       GetFields       (FieldFlag  flag = FieldFlag ::All) const;
-		std::vector<InfoTypeMethodPair>                                  GetTypeMethods  (MethodFlag flag = MethodFlag::All) const;
-		std::vector<InfoMethodPair>                                      GetMethods      (MethodFlag flag = MethodFlag::All) const;
 		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(FieldFlag  flag = FieldFlag ::All) const;
 		std::vector<ObjectView>                                          GetVars         (FieldFlag  flag = FieldFlag ::All) const;
 
-		InfoTypePair   FindType  (const std::function<bool(InfoTypePair   )>& func) const;
-		InfoFieldPair  FindField (const std::function<bool(InfoFieldPair  )>& func, FieldFlag  flag = FieldFlag ::All) const;
-		InfoMethodPair FindMethod(const std::function<bool(InfoMethodPair )>& func, MethodFlag flag = MethodFlag::All) const;
-		ObjectView     FindVar   (const std::function<bool(ObjectView     )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		// self vars and all bases' vars
+		void ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
-		bool ContainsBase  (Type base       ) const;
-		bool ContainsField (Name field_name , FieldFlag  flag = FieldFlag ::All) const;
-		bool ContainsMethod(Name method_name, MethodFlag flag = MethodFlag::All) const;
+		ObjectView FindVar(const std::function<bool(ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		//
 		// Type
@@ -383,6 +372,7 @@ namespace Ubpa::UDRefl {
 #undef OBJECT_VIEW_DEFINE_CMP_OPERATOR
 #undef OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR
 #undef OBJECT_VIEW_DECLARE_META
+#undef OBJECT_VIEW_DECLARE_META_RET
 #undef OBJECT_VIEW_DECLARE_META_VARS
 
 #include "details/Object.inl"

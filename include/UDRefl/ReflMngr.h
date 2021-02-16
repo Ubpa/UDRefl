@@ -196,8 +196,8 @@ namespace Ubpa::UDRefl {
 		ObjectView DynamicCast              (ObjectView obj, Type type) const;
 
 		//
-		// Field
-		//////////
+		// Var
+		////////
 		//
 		// - result type of Var maintains the CVRefMode of the input
 		//
