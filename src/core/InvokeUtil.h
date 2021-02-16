@@ -32,7 +32,7 @@ namespace Ubpa::UDRefl::details {
 	//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
 	//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
 	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
-	bool IsNonCopiedArgConstructCompatible(std::span<const Type> params, std::span<const Type> argTypes);
+	bool IsNonCopiedArgCompatible(std::span<const Type> params, std::span<const Type> argTypes);
 
 	// parameter <- argument
 	// - same
@@ -45,7 +45,7 @@ namespace Ubpa::UDRefl::details {
 	//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
 	//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
 	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
-	bool IsNonCopiedArgConstructCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs);
+	bool IsNonCopiedArgCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs);
 
 	// parameter <- argument
 	// - require: param and arg is non cvref
@@ -78,7 +78,7 @@ namespace Ubpa::UDRefl::details {
 		NewArgsGuard(
 			bool is_priority,
 			std::pmr::memory_resource* rsrc,
-			std::span<const Type> paramTypeIDs,
+			std::span<const Type> paramTypes,
 			std::span<const Type> argTypes,
 			ArgPtrBuffer orig_argptr_buffer);
 

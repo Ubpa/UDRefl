@@ -225,6 +225,19 @@ namespace Ubpa::UDRefl {
 		// parameter <- argument
 		// - same
 		// - reference
+		// > - 0 (invalid), 1 (convertible)
+		// > - table
+		//     |     -     | T | T & | const T & | T&& | const T&& | const T |
+		//     |       T   | - |  0  |     0     |  1  |     0     |    0    |
+		//     |       T & | 0 |  -  |     0     |  0  |     0     |    0    |
+		//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
+		//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
+		//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
+		static bool IsNonCopiedArgCompatible(std::span<const Type> paramTypes, std::span<const Type> argTypes);
+
+		// parameter <- argument
+		// - same
+		// - reference
 		// > - 0 (invalid), 1 (convertible), 2 (constructible)
 		// > - table
 		//     |    -     | T | T & | const T & | T&& | const T&& |
@@ -241,7 +254,7 @@ namespace Ubpa::UDRefl {
 		//     | const T * |  1  |     -     |  1  |     1     |
 		//     |       T[] |  1  |     0     | -/1 |     0     |
 		//     | const T[] |  1  |     1     |  1  |    -/1    |
-		bool IsCompatible(std::span<const Type> paramTypeIDs, std::span<const Type> argTypes) const;
+		bool IsCompatible(std::span<const Type> paramTypes, std::span<const Type> argTypes) const;
 
 		Type IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 

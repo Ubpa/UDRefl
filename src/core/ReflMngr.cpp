@@ -772,6 +772,10 @@ ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag f
 	return Var(base_obj, field_name);
 }
 
+bool ReflMngr::IsNonCopiedArgCompatible(std::span<const Type> paramTypes, std::span<const Type> argTypes) {
+	return details::IsNonCopiedArgCompatible(paramTypes, argTypes);
+}
+
 bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> argTypes) const {
 	if (params.size() != argTypes.size())
 		return false;
@@ -1020,7 +1024,7 @@ bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const Type> argT
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (details::IsNonCopiedArgConstructCompatible(iter->second.methodptr.GetParamList(), argTypes))
+		if (details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypes))
 			return true;
 	}
 	return false;
@@ -1033,7 +1037,7 @@ bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const TypeID> ar
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (details::IsNonCopiedArgConstructCompatible(iter->second.methodptr.GetParamList(), argTypeIDs))
+		if (details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypeIDs))
 			return true;
 	}
 	return false;
@@ -1089,7 +1093,7 @@ bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTy
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
-			&& details::IsNonCopiedArgConstructCompatible(iter->second.methodptr.GetParamList(), argTypes))
+			&& details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypes))
 		{
 			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
 			return true;
