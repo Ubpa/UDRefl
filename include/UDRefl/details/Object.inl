@@ -1,7 +1,5 @@
 #pragma once
 
-#include <array>
-
 #define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                    \
 template<typename Arg>                                                             \
 SharedObject ObjectView::operator op (Arg&& rhs) const {                           \
@@ -80,7 +78,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	Type ObjectView::IsInvocable(Name method_name, MethodFlag flag) const {
-		constexpr std::array argTypes = { Type_of<Args>... };
+		constexpr Type argTypes[] = { Type_of<Args>... };
 		return IsInvocable(method_name, std::span<const Type>{argTypes}, flag);
 	}
 
@@ -88,32 +86,21 @@ namespace Ubpa::UDRefl {
 	T ObjectView::BInvokeRet(Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
-			std::uint8_t result_buffer[sizeof(U)];
-			Type result_type = BInvoke(method_name, result_buffer, argTypes, argptr_buffer, flag);
+			std::aligned_storage_t<sizeof(U), alignof(U)> result_buffer;
+			Type result_type = BInvoke(method_name, static_cast<void*>(&result_buffer), argTypes, argptr_buffer, flag);
 			assert(result_type.Is<T>());
-			return MoveResult<T>(result_type, result_buffer);
+			return MoveResult<T>(result_type, &result_buffer);
 		}
 		else
 			BInvoke(method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
 	}
 
-	template<typename... Args>
-	Type ObjectView::BInvokeArgs(Name method_name, void* result_buffer, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return BInvoke(method_name, result_buffer, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return BInvoke(method_name, result_buffer);
-	}
-
 	template<typename T, typename... Args>
 	T ObjectView::BInvoke(Name method_name, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return BInvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
+			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return BInvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
 		}
 		else
 			return BInvokeRet<T>(method_name);
@@ -128,9 +115,9 @@ namespace Ubpa::UDRefl {
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MInvoke(method_name, rst_rsrc, temp_args_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), flag);
+			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
+			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MInvoke(method_name, rst_rsrc, temp_args_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer), flag);
 		}
 		else
 			return MInvoke(method_name, rst_rsrc, temp_args_rsrc, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr), flag);
@@ -142,9 +129,9 @@ namespace Ubpa::UDRefl {
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
+			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Invoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
 		}
 		else
 			return Invoke(method_name);
@@ -153,9 +140,9 @@ namespace Ubpa::UDRefl {
 	template<typename T, typename... Args>
 	T ObjectView::ABInvoke(Name method_name, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypes = { details::ArgType<decltype(args)>(args)... };
-			const std::array argptr_buffer{ details::ArgPtr(args)... };
-			return BInvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
+			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return BInvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
 		}
 		else
 			return BInvokeRet<T>(method_name);
@@ -170,9 +157,9 @@ namespace Ubpa::UDRefl {
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypes = { details::ArgType<decltype(args)>(args)... };
-			const std::array argptr_buffer{ details::ArgPtr(args)... };
-			return MInvoke(method_name, rst_rsrc, temp_args_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()), flag);
+			const Type argTypes[] = { details::ArgType<decltype(args)>(args)... };
+			void* const argptr_buffer[] = { details::ArgPtr(args)... };
+			return MInvoke(method_name, rst_rsrc, temp_args_rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer), flag);
 		}
 		else
 			return MInvoke(method_name, rst_rsrc, temp_args_rsrc, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr), flag);
@@ -184,9 +171,9 @@ namespace Ubpa::UDRefl {
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
-			std::array argTypes = { details::ArgType<decltype(args)>(args)... };
-			const std::array argptr_buffer{ details::ArgPtr(args)... };
-			return Invoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			const Type argTypes[] = { details::ArgType<decltype(args)>(args)... };
+			void* const argptr_buffer[] = { details::ArgPtr(args)... };
+			return Invoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
 		}
 		else
 			return Invoke(method_name, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr));

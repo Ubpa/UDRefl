@@ -3,53 +3,31 @@
 namespace Ubpa::UDRefl::details {
 	template<typename ArgList>
 	struct wrap_function_call;
-	template<typename OrigArgList, typename BufferArgList>
-	struct wrap_function_call_impl;
 
 	template<typename... Args>
 	struct wrap_function_call<TypeList<Args...>> {
-		template<typename Obj, auto func_ptr, typename MaybeConstVoidPtr>
-		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, ArgPtrBuffer argptr_buffer) {
-			return std::apply(
-				[ptr](auto... pointers) -> decltype(auto) {
-					return (buffer_as<Obj>(ptr).*func_ptr)(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
-				},
-				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(argptr_buffer)
-			);
+		template<typename Obj, auto func_ptr, typename MaybeConstVoidPtr, std::size_t... Ns>
+		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, ArgPtrBuffer argptr_buffer, std::index_sequence<Ns...>) {
+			return (buffer_as<Obj>(ptr).*func_ptr)(std::forward<Args>(*reinterpret_cast<const std::add_pointer_t<Args>>(argptr_buffer[Ns]))...);
 		}
-		template<auto func_ptr>
-		static constexpr decltype(auto) run(ArgPtrBuffer argptr_buffer) {
-			return std::apply(
-				[](auto... pointers) -> decltype(auto) {
-					return func_ptr(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
-				},
-				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(argptr_buffer)
-			);
+		template<auto func_ptr, std::size_t... Ns>
+		static constexpr decltype(auto) run(ArgPtrBuffer argptr_buffer, std::index_sequence<Ns...>) {
+			return func_ptr(std::forward<Args>(*reinterpret_cast<const std::add_pointer_t<Args>>(argptr_buffer[Ns]))...);
 		}
-		template<typename Obj, typename Func, typename MaybeConstVoidPtr>
-		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, Func&& func, ArgPtrBuffer argptr_buffer) {
-			return std::apply(
-				[ptr, f = std::forward<Func>(func)](auto*... pointers) -> decltype(auto) {
-					if constexpr (std::is_member_function_pointer_v<std::decay_t<Func>>)
-						return (buffer_as<Obj>(ptr).*f)(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
-					else {
-						return f(
-							buffer_as<Obj>(ptr),
-							std::forward<Args>(*reinterpret_cast<std::add_pointer_t<Args>>(pointers))...
-						);
-					}
-				},
-				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(argptr_buffer)
-			);
+		template<typename Obj, typename Func, typename MaybeConstVoidPtr, std::size_t... Ns>
+		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, Func&& func, ArgPtrBuffer argptr_buffer, std::index_sequence<Ns...>) {
+			if constexpr (std::is_member_function_pointer_v<std::decay_t<Func>>)
+				return (buffer_as<Obj>(ptr).*func)(std::forward<Args>(*reinterpret_cast<const std::add_pointer_t<Args>>(argptr_buffer[Ns]))...);
+			else {
+				return std::forward<Func>(func)(
+					buffer_as<Obj>(ptr),
+					std::forward<Args>(*reinterpret_cast<const std::add_pointer_t<Args>>(argptr_buffer[Ns]))...
+				);
+			}
 		}
-		template<typename Func>
-		static constexpr decltype(auto) run(Func&& func, ArgPtrBuffer argptr_buffer) {
-			return std::apply(
-				[f = std::forward<Func>(func)](auto... pointers) -> decltype(auto) {
-					return f(std::forward<Args>(*reinterpret_cast<std::add_const_t<std::add_pointer_t<Args>>>(pointers))...);
-				},
-				* reinterpret_cast<const std::array<void* const, sizeof...(Args)>*>(argptr_buffer)
-			);
+		template<typename Func, std::size_t... Ns>
+		static constexpr decltype(auto) run(Func&& func, ArgPtrBuffer argptr_buffer, std::index_sequence<Ns...>) {
+			return std::forward<Func>(func)(std::forward<Args>(*reinterpret_cast<const std::add_pointer_t<Args>>(argptr_buffer[Ns]))...);
 		}
 	};
 
@@ -93,10 +71,11 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 	using Obj = typename Traits::Object;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
+	using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
 	constexpr auto wrapped_function = [](void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
-			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer);
+			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer, IndexSeq{});
 			if (result_buffer) {
 				if constexpr (std::is_reference_v<Return>)
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
@@ -105,7 +84,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function() noexcept {
 			}
 		}
 		else
-			details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer);
+			details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, argptr_buffer, IndexSeq{});
 	};
 	return wrapped_function;
 }
@@ -116,11 +95,12 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 	using Return = typename Traits::Return;
 	using Obj = typename Traits::Object;
 	using ArgList = typename Traits::ArgList;
+	using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
 	/*constexpr*/ auto wrapped_function =
 		[f = std::forward<Func>(func)](void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
-			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
+			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer, IndexSeq{});
 			if (result_buffer) {
 				if constexpr (std::is_reference_v<Return>)
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
@@ -129,7 +109,7 @@ constexpr auto Ubpa::UDRefl::wrap_member_function(Func&& func) noexcept {
 			}
 		}
 		else
-			details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer);
+			details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), argptr_buffer, IndexSeq{});
 	};
 	return wrapped_function;
 }
@@ -141,10 +121,11 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 	using Traits = FuncTraits<FuncPtr>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
+	using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
 	constexpr auto wrapped_function = [](void*, void* result_buffer, ArgPtrBuffer argptr_buffer) {
 		if constexpr (!std::is_void_v<Return>) {
 			using NonCVReturn = std::remove_cv_t<Return>;
-			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
+			NonCVReturn rst = details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer, IndexSeq{});
 			if (result_buffer) {
 				if constexpr (std::is_reference_v<Return>)
 					buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
@@ -153,7 +134,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function() noexcept {
 			}
 		}
 		else
-			details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer);
+			details::wrap_function_call<ArgList>::template run<func_ptr>(argptr_buffer, IndexSeq{});
 	};
 	return wrapped_function;
 }
@@ -237,11 +218,12 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 	using Traits = FuncTraits<std::decay_t<Func>>;
 	using Return = typename Traits::Return;
 	using ArgList = typename Traits::ArgList;
+	using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
 	/*constexpr*/ auto wrapped_function =
 		[f = std::forward<Func>(func)](void*, void* result_buffer, ArgPtrBuffer argptr_buffer) mutable {
 			if constexpr (!std::is_void_v<Return>) {
 				using NonCVReturn = std::remove_cv_t<Return>;
-				NonCVReturn rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
+				NonCVReturn rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer, IndexSeq{});
 				if (result_buffer) {
 					if constexpr (std::is_reference_v<Return>)
 						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
@@ -250,7 +232,7 @@ constexpr auto Ubpa::UDRefl::wrap_static_function(Func&& func) noexcept {
 				}
 			}
 			else
-				details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer);
+				details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), argptr_buffer, IndexSeq{});
 		};
 	return wrapped_function;
 }

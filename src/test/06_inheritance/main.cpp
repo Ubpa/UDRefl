@@ -1,7 +1,6 @@
 #include <UDRefl/UDRefl.h>
 
 #include <iostream>
-#include <array>
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;

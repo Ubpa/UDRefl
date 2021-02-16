@@ -1,6 +1,7 @@
 #include <UDRefl/UDRefl.h>
 
 #include <iostream>
+#include <array>
 #include <cmath>
 
 using namespace Ubpa;
