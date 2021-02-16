@@ -31,16 +31,16 @@ struct Vec {
 
 int main() {
 	{ // register Vec
-		Mngr.RegisterType<Vec>();
-		Mngr.AddConstructor<Vec, float, float>();
-		Mngr.AddField<&Vec::x>("x");
-		Mngr.AddField<&Vec::y>("y");
-		Mngr.AddMethod<&Vec::Norm2>("Norm2");
-		Mngr.AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
-		Mngr.AddMethod<&Vec::operator+= >(NameIDRegistry::Meta::operator_assign_add);
+		Mngr->RegisterType<Vec>();
+		Mngr->AddConstructor<Vec, float, float>();
+		Mngr->AddField<&Vec::x>("x");
+		Mngr->AddField<&Vec::y>("y");
+		Mngr->AddMethod<&Vec::Norm2>("Norm2");
+		Mngr->AddMethod<&Vec::NormalizeSelf>("NormalizeSelf");
+		Mngr->AddMethod<&Vec::operator+= >(NameIDRegistry::Meta::operator_assign_add);
 	}
 
-	auto v = Mngr.MakeShared(Type_of<Vec>, 1.f, 2.f);
+	auto v = Mngr->MakeShared(Type_of<Vec>, 1.f, 2.f);
 
 	v.Invoke("NormalizeSelf");
 	std::cout << v.Var("x") << ", " << v.Var("y") << std::endl;

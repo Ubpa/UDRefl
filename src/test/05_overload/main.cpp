@@ -26,13 +26,13 @@ struct Vec {
 
 int main() {
 	{ // register Vec
-		Mngr.RegisterType<Vec>();
-		Mngr.AddField<&Vec::x>("x");
-		Mngr.AddField<&Vec::y>("y");
-		Mngr.AddMethod<MemFuncOf<Vec, Vec& (float)>::get(&Vec::operator+=)>(NameIDRegistry::Meta::operator_assign_add);
+		Mngr->RegisterType<Vec>();
+		Mngr->AddField<&Vec::x>("x");
+		Mngr->AddField<&Vec::y>("y");
+		Mngr->AddMethod<MemFuncOf<Vec, Vec& (float)>::get(&Vec::operator+=)>(NameIDRegistry::Meta::operator_assign_add);
 	}
 	
-	auto obj = Mngr.MakeShared(Type_of<Vec>);
+	auto obj = Mngr->MakeShared(Type_of<Vec>);
 
 	{
 		auto v = obj += Vec{ 10.f,10.f };

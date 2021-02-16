@@ -13,16 +13,16 @@ struct A {
 };
 
 int main() {
-	Mngr.RegisterType<A>();
-	Mngr.AddField<&A::data>("data");
-	Mngr.AddField<&A::c_data>("c_data");
-	Mngr.AddField(Type_of<A>, "s_data", &A::s_data);
-	Mngr.AddField(Type_of<A>, "sc_data", &A::sc_data);
+	Mngr->RegisterType<A>();
+	Mngr->AddField<&A::data>("data");
+	Mngr->AddField<&A::c_data>("c_data");
+	Mngr->AddField(Type_of<A>, "s_data", &A::s_data);
+	Mngr->AddField(Type_of<A>, "sc_data", &A::sc_data);
 
 	A a;
 	ObjectView ptr{ a };
 
-	for (const auto& field : Mngr.GetFields(Type_of<A>))
+	for (const auto& field : Mngr->GetFields(Type_of<A>))
 		std::cout << field.name.GetView() << std::endl;
 
 	ptr.Var("data") = 10;
@@ -32,7 +32,7 @@ int main() {
 		<< "//" << std::endl
 		<< "// unowned var" << std::endl
 		<< "////////////////" << std::endl;
-	for (const auto& [type, field, var] : Mngr.GetTypeFieldVars(Type_of<A>))
+	for (const auto& [type, field, var] : Mngr->GetTypeFieldVars(Type_of<A>))
 		std::cout << field.name.GetView() << ": " << var << std::endl;
 
 	std::cout

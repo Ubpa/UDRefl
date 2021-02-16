@@ -7,12 +7,12 @@ using namespace Ubpa::UDRefl;
 
 
 int main() {
-	Mngr.RegisterType<std::tuple<int, float, double>>();
+	Mngr->RegisterType<std::tuple<int, float, double>>();
 
-	SharedObject v = Mngr.MakeShared(Type_of<std::tuple<int, float, double>>);
+	SharedObject v = Mngr->MakeShared(Type_of<std::tuple<int, float, double>>);
 	std::cout << v.GetType().GetName() << std::endl;
 
-	for (const auto& method : Mngr.GetMethods(Type_of<std::tuple<int, float, double>>))
+	for (const auto& method : Mngr->GetMethods(Type_of<std::tuple<int, float, double>>))
 		std::cout << method.name.GetView() << std::endl;
 
 	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)

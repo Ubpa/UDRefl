@@ -974,69 +974,6 @@ namespace Ubpa::UDRefl {
 			return InvokeRet<T>(obj, method_name);
 	}
 
-	//
-	// Meta
-	/////////
-
-	template<typename... Args>
-	bool ReflMngr::IsConstructible(Type type) const {
-		constexpr std::array argTypes = { Type_of<Args>... };
-		return IsConstructible(type, std::span<const Type>{argTypes});
-	}
-
-	template<typename... Args>
-	bool ReflMngr::Construct(ObjectView obj, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Construct(obj, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return Construct(obj);
-	}
-
-	template<typename... Args>
-	ObjectView ReflMngr::New(Type type, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return New(type, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return New(type);
-	}
-
-	template<typename T, typename... Args>
-	ObjectView ReflMngr::NewAuto(Args... args) {
-		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		RegisterType<T>();
-		AddConstructor<T, Args...>();
-		return New(Type_of<T>, std::forward<Args>(args)...);
-	}
-
-	template<typename... Args>
-	SharedObject ReflMngr::MakeShared(Type type, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MakeShared(type, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return MakeShared(type);
-	}
-
-	template<typename T, typename... Args>
-	SharedObject ReflMngr::MakeSharedAuto(Args... args) {
-		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
-		RegisterType<T>();
-		AddConstructor<T, Args...>();
-		return MakeShared(Type_of<T>, std::forward<Args>(args)...);
-	}
-
-	//
-	// Memory
-	///////////
-
 	template<typename... Args>
 	SharedObject ReflMngr::MInvoke(
 		ObjectView obj,
@@ -1069,6 +1006,49 @@ namespace Ubpa::UDRefl {
 			return DMInvoke(obj, method_name);
 	}
 
+	//
+	// Make
+	/////////
+
+	template<typename... Args>
+	bool ReflMngr::IsConstructible(Type type) const {
+		constexpr std::array argTypes = { Type_of<Args>... };
+		return IsConstructible(type, std::span<const Type>{argTypes});
+	}
+
+	template<typename... Args>
+	bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, Args&&... args) const {
+		if constexpr (sizeof...(Args) > 0) {
+			constexpr std::array argTypes = { Type_of<decltype(args)>... };
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return NonCopiedArgConstruct(obj, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+		}
+		else
+			return NonCopiedArgConstruct(obj);
+	}
+
+	template<typename... Args>
+	bool ReflMngr::Construct(ObjectView obj, Args&&... args) const {
+		if constexpr (sizeof...(Args) > 0) {
+			constexpr std::array argTypes = { Type_of<decltype(args)>... };
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return Construct(obj, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+		}
+		else
+			return Construct(obj);
+	}
+
+	template<typename... Args>
+	ObjectView ReflMngr::MNonCopiedArgNew(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const {
+		if constexpr (sizeof...(Args) > 0) {
+			constexpr std::array argTypes = { Type_of<decltype(args)>... };
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MNonCopiedArgNew(type, rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+		}
+		else
+			return MNonCopiedArgNew(type, rsrc);
+	}
+
 	template<typename... Args>
 	ObjectView ReflMngr::MNew(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
@@ -1078,5 +1058,47 @@ namespace Ubpa::UDRefl {
 		}
 		else
 			return MNew(type, rsrc);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::MMakeShared(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const {
+		if constexpr (sizeof...(Args) > 0) {
+			constexpr std::array argTypes = { Type_of<decltype(args)>... };
+			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
+			return MMakeShared(type, rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+		}
+		else
+			return MMakeShared(type, rsrc);
+	}
+	
+	template<typename... Args>
+	ObjectView ReflMngr::NonCopiedArgNew(Type type, Args&&... args) const {
+		return MNonCopiedArgNew(type, &object_resource, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	ObjectView ReflMngr::New(Type type, Args&&... args) const {
+		return MNew(type, &object_resource, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	SharedObject ReflMngr::MakeShared(Type type, Args&&... args) const {
+		return MMakeShared(type, &object_resource, std::forward<Args>(args)...);
+	}
+
+	template<typename T, typename... Args>
+	ObjectView ReflMngr::NewAuto(Args... args) {
+		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
+		RegisterType<T>();
+		AddConstructor<T, Args...>();
+		return New(Type_of<T>, std::forward<Args>(args)...);
+	}
+
+	template<typename T, typename... Args>
+	SharedObject ReflMngr::MakeSharedAuto(Args... args) {
+		static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> && !std::is_reference_v<T>);
+		RegisterType<T>();
+		AddConstructor<T, Args...>();
+		return MakeShared(Type_of<T>, std::forward<Args>(args)...);
 	}
 }

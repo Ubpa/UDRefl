@@ -13,9 +13,9 @@
     - `ResultDesc`, `InvokeResult`, `InvocableResult` -> `Type` 
     - `MethodPtr::func`'s result type change from `Destructor` to `void` 
   - add APIs
-    - `AllocateShared` 
     - `AddTrivialConstructor` 
     - `AddZeroConstructor` 
+  - refactoring memory-aware APIs
 - 0.8.1
   - support
     - pointer, array

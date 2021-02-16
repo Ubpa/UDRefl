@@ -30,16 +30,16 @@ struct Funcs {
 };
 
 int main() {
-	Mngr.RegisterType<Funcs>();
-	Mngr.AddMethod<MemFuncOf<Funcs, void(double)>::get(&Funcs::f)>("f");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(std::uint8_t&)>::get(&Funcs::f)>("f");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&)>::get(&Funcs::f)>("f");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(std::uint8_t&&)>::get(&Funcs::f)>("f");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&&)>::get(&Funcs::f)>("f");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(const char*)>::get(&Funcs::g)>("g");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(int(&&)[])>::get(&Funcs::g)>("g");
+	Mngr->RegisterType<Funcs>();
+	Mngr->AddMethod<MemFuncOf<Funcs, void(double)>::get(&Funcs::f)>("f");
+	Mngr->AddMethod<MemFuncOf<Funcs, void(std::uint8_t&)>::get(&Funcs::f)>("f");
+	Mngr->AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&)>::get(&Funcs::f)>("f");
+	Mngr->AddMethod<MemFuncOf<Funcs, void(std::uint8_t&&)>::get(&Funcs::f)>("f");
+	Mngr->AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&&)>::get(&Funcs::f)>("f");
+	Mngr->AddMethod<MemFuncOf<Funcs, void(const char*)>::get(&Funcs::g)>("g");
+	Mngr->AddMethod<MemFuncOf<Funcs, void(int(&&)[])>::get(&Funcs::g)>("g");
 
-	SharedObject funcs = Mngr.MakeShared(Type_of<Funcs>);
+	SharedObject funcs = Mngr->MakeShared(Type_of<Funcs>);
 
 	std::uint8_t i = 1;
 	const std::uint8_t ci = 1;

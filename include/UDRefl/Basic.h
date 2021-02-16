@@ -72,7 +72,7 @@ namespace Ubpa::UDRefl {
 			}
 		}
 	}
-
+	
 	struct TypeInfo;
 	struct FieldInfo;
 	struct MethodInfo;
@@ -101,4 +101,6 @@ namespace Ubpa::UDRefl {
 		InfoTypePair type;
 		InfoMethodPair method;
 	};
+
+	class ReflMngr;
 }

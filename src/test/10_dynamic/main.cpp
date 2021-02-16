@@ -12,9 +12,9 @@ enum class Color {
 };
 
 int main() {
-	Mngr.AddDynamicField<const std::string>(GlobalType, "author", "Ubpa");
-	Mngr.AddDynamicField<const Color>(GlobalType, "theme", Color::Red);
-	Mngr.AddDynamicField<const size_t>(Type_of<int>, "bits", sizeof(int) * 8);
+	Mngr->AddDynamicField<const std::string>(GlobalType, "author", "Ubpa");
+	Mngr->AddDynamicField<const Color>(GlobalType, "theme", Color::Red);
+	Mngr->AddDynamicField<const size_t>(Type_of<int>, "bits", sizeof(int) * 8);
 
 	std::cout << Global.Var("author") << std::endl;
 	std::cout << (Global.Var("theme") == Color::Red) << std::endl;

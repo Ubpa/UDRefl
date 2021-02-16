@@ -12,13 +12,13 @@ enum class Color {
 };
 
 int main() {
-	Mngr.RegisterType<Color>();
-	Mngr.AddField<Color::Red>("Red");
-	Mngr.AddField<Color::Green>("Green");
-	Mngr.AddField<Color::Blue>("Blue");
+	Mngr->RegisterType<Color>();
+	Mngr->AddField<Color::Red>("Red");
+	Mngr->AddField<Color::Green>("Green");
+	Mngr->AddField<Color::Blue>("Blue");
 
 
-	for (const auto& [type, field, var] : Mngr.GetTypeFieldVars(Type_of<Color>)) {
+	for (const auto& [type, field, var] : Mngr->GetTypeFieldVars(Type_of<Color>)) {
 		std::cout
 			<< field.name.GetView()
 			<< ": " << static_cast<int>(var.As<Color>())
@@ -27,7 +27,7 @@ int main() {
 
 	// enumerator -> name
 	Color c = Color::Red;
-	auto c_field = Mngr.FindField(Type_of<Color>, [c](auto field) {
+	auto c_field = Mngr->FindField(Type_of<Color>, [c](auto field) {
 		return field.info->fieldptr.Var() == c;
 	});
 
@@ -35,7 +35,7 @@ int main() {
 
 	// name -> enumerator
 	std::string_view name = "Green";
-	auto name_field = Mngr.FindField(Type_of<Color>, [name](auto field) {
+	auto name_field = Mngr->FindField(Type_of<Color>, [name](auto field) {
 		return field.name.GetView() == name;
 	});
 

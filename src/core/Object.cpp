@@ -6,15 +6,15 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 TypeInfo* ObjectView::GetTypeInfo() const {
-	return Mngr.GetTypeInfo(type);
+	return Mngr->GetTypeInfo(type);
 }
 
 ObjectView ObjectView::Var(Name field_name, FieldFlag flag) const {
-	return Mngr.Var(*this, field_name, flag);
+	return Mngr->Var(*this, field_name, flag);
 }
 
 ObjectView ObjectView::Var(Type base, Name field_name, FieldFlag flag) const {
-	return Mngr.Var(*this, base, field_name, flag);
+	return Mngr->Var(*this, base, field_name, flag);
 }
 
 Type ObjectView::Invoke(
@@ -24,17 +24,18 @@ Type ObjectView::Invoke(
 	ArgPtrBuffer argptr_buffer,
 	MethodFlag flag) const
 {
-	return Mngr.Invoke(*this, method_name, result_buffer, argTypes, argptr_buffer, flag);
+	return Mngr->Invoke(*this, method_name, result_buffer, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ObjectView::MInvoke(
 	Name method_name,
 	std::pmr::memory_resource* rst_rsrc,
+	std::pmr::memory_resource* temp_args_rsrc,
 	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
 	MethodFlag flag) const
 {
-	return Mngr.MInvoke(*this, method_name, rst_rsrc, argTypes, argptr_buffer, flag);
+	return Mngr->MInvoke(*this, method_name, rst_rsrc, temp_args_rsrc, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ObjectView::DMInvoke(
@@ -43,67 +44,67 @@ SharedObject ObjectView::DMInvoke(
 	ArgPtrBuffer argptr_buffer,
 	MethodFlag flag) const
 {
-	return Mngr.DMInvoke(*this, method_name, argTypes, argptr_buffer, flag);
+	return Mngr->DMInvoke(*this, method_name, argTypes, argptr_buffer, flag);
 }
 
 void ObjectView::ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag) const {
-	return Mngr.ForEachVar(*this, func, flag);
+	return Mngr->ForEachVar(*this, func, flag);
 }
 
 std::vector<InfoTypePair> ObjectView::GetTypes() const {
-	return Mngr.GetTypes(type);
+	return Mngr->GetTypes(type);
 }
 
 std::vector<InfoTypeFieldPair> ObjectView::GetTypeFields(FieldFlag flag) const {
-	return Mngr.GetTypeFields(type);
+	return Mngr->GetTypeFields(type);
 }
 
 std::vector<InfoFieldPair> ObjectView::GetFields(FieldFlag flag) const {
-	return Mngr.GetFields(type);
+	return Mngr->GetFields(type);
 }
 
 std::vector<InfoTypeMethodPair> ObjectView::GetTypeMethods(MethodFlag flag) const {
-	return Mngr.GetTypeMethods(type);
+	return Mngr->GetTypeMethods(type);
 }
 
 std::vector<InfoMethodPair> ObjectView::GetMethods(MethodFlag flag) const {
-	return Mngr.GetMethods(type);
+	return Mngr->GetMethods(type);
 }
 
 std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> ObjectView::GetTypeFieldVars(FieldFlag flag) const {
-	return Mngr.GetTypeFieldVars(*this, flag);
+	return Mngr->GetTypeFieldVars(*this, flag);
 }
 
 std::vector<ObjectView> ObjectView::GetVars(FieldFlag flag) const {
-	return Mngr.GetVars(*this, flag);
+	return Mngr->GetVars(*this, flag);
 }
 
-std::optional<InfoTypePair> ObjectView::FindType(const std::function<bool(InfoTypePair)>& func) const {
-	return Mngr.FindType(type, func);
+InfoTypePair ObjectView::FindType(const std::function<bool(InfoTypePair)>& func) const {
+	return Mngr->FindType(type, func);
 }
 
-std::optional<InfoFieldPair> ObjectView::FindField(const std::function<bool(InfoFieldPair)>& func, FieldFlag flag) const {
-	return Mngr.FindField(type, func, flag);
+InfoFieldPair ObjectView::FindField(const std::function<bool(InfoFieldPair)>& func, FieldFlag flag) const {
+	return Mngr->FindField(type, func, flag);
 }
 
-std::optional<InfoMethodPair> ObjectView::FindMethod(const std::function<bool(InfoMethodPair)>& func, MethodFlag flag) const {
-	return Mngr.FindMethod(type, func, flag);
+InfoMethodPair ObjectView::FindMethod(const std::function<bool(InfoMethodPair)>& func, MethodFlag flag) const {
+	return Mngr->FindMethod(type, func, flag);
 }
 
 ObjectView ObjectView::FindVar(const std::function<bool(ObjectView)>& func, FieldFlag flag) const {
-	return Mngr.FindVar(*this, func, flag);
+	return Mngr->FindVar(*this, func, flag);
 }
 
 bool ObjectView::ContainsBase(Type base) const {
-	return Mngr.ContainsBase(type, base);
+	return Mngr->ContainsBase(type, base);
 }
 
 bool ObjectView::ContainsField(Name field_name, FieldFlag flag) const {
-	return Mngr.ContainsField(type, field_name, flag);
+	return Mngr->ContainsField(type, field_name, flag);
 }
 
 bool ObjectView::ContainsMethod(Name method_name, MethodFlag flag) const {
-	return Mngr.ContainsMethod(type, method_name, flag);
+	return Mngr->ContainsMethod(type, method_name, flag);
 }
 
 ObjectView ObjectView::RemoveConst() const {
@@ -127,51 +128,51 @@ ObjectView ObjectView::RemoveConstReference() const {
 }
 
 ObjectView ObjectView::AddConst() const {
-	return { Mngr.tregistry.RegisterAddConst(type), ptr };
+	return { Mngr->tregistry.RegisterAddConst(type), ptr };
 }
 
 ObjectView ObjectView::AddConstLValueReference() const {
-	return { Mngr.tregistry.RegisterAddConstLValueReference(type), ptr };
+	return { Mngr->tregistry.RegisterAddConstLValueReference(type), ptr };
 }
 
 ObjectView ObjectView::AddConstRValueReference() const {
-	return { Mngr.tregistry.RegisterAddConstRValueReference(type), ptr };
+	return { Mngr->tregistry.RegisterAddConstRValueReference(type), ptr };
 }
 
 ObjectView ObjectView::AddLValueReference() const {
-	return { Mngr.tregistry.RegisterAddLValueReference(type), ptr };
+	return { Mngr->tregistry.RegisterAddLValueReference(type), ptr };
 }
 
 ObjectView ObjectView::AddLValueReferenceWeak() const {
-	return { Mngr.tregistry.RegisterAddLValueReferenceWeak(type), ptr };
+	return { Mngr->tregistry.RegisterAddLValueReferenceWeak(type), ptr };
 }
 
 ObjectView ObjectView::AddRValueReference() const {
-	return { Mngr.tregistry.RegisterAddRValueReference(type), ptr };
+	return { Mngr->tregistry.RegisterAddRValueReference(type), ptr };
 }
 
 Type ObjectView::IsInvocable(Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
-	return Mngr.IsInvocable(type, method_name, argTypes, flag);
+	return Mngr->IsInvocable(type, method_name, argTypes, flag);
 }
 
 ObjectView ObjectView::StaticCast_DerivedToBase(Type type) const {
-	return Mngr.StaticCast_DerivedToBase(*this, type);
+	return Mngr->StaticCast_DerivedToBase(*this, type);
 }
 
 ObjectView ObjectView::StaticCast_BaseToDerived(Type type) const {
-	return Mngr.StaticCast_BaseToDerived(*this, type);
+	return Mngr->StaticCast_BaseToDerived(*this, type);
 }
 
 ObjectView ObjectView::DynamicCast_BaseToDerived(Type type) const {
-	return Mngr.DynamicCast_BaseToDerived(*this, type);
+	return Mngr->DynamicCast_BaseToDerived(*this, type);
 }
 
 ObjectView ObjectView::StaticCast(Type type) const {
-	return Mngr.StaticCast(*this, type);
+	return Mngr->StaticCast(*this, type);
 }
 
 ObjectView ObjectView::DynamicCast(Type type) const {
-	return Mngr.DynamicCast(*this, type);
+	return Mngr->DynamicCast(*this, type);
 }
 
 SharedObject ObjectView::operator+() const {
@@ -211,99 +212,99 @@ SharedObject ObjectView::operator--(int) const {
 }
 
 ObjectView ObjectView::tuple_get(std::size_t i) const {
-	return Mngr.Invoke<ObjectView>(*this, NameIDRegistry::Meta::tuple_get, std::move(i));
+	return Mngr->Invoke<ObjectView>(*this, NameIDRegistry::Meta::tuple_get, std::move(i));
 }
 
 SharedObject ObjectView::begin() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_begin);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_begin);
 }
 
 SharedObject ObjectView::end() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_end);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_end);
 }
 
 SharedObject ObjectView::rbegin() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_rbegin);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_rbegin);
 }
 
 SharedObject ObjectView::rend() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_rend);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_rend);
 }
 
 SharedObject ObjectView::data() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_data);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_data);
 }
 
 SharedObject ObjectView::front() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_front);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_front);
 }
 
 SharedObject ObjectView::back() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_back);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_back);
 }
 
 std::size_t ObjectView::tuple_size() const {
-	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::tuple_size);
+	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::tuple_size);
 }
 
 SharedObject ObjectView::next() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::iterator_next);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::iterator_next);
 }
 
 SharedObject ObjectView::prev() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::iterator_prev);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::iterator_prev);
 }
 
 SharedObject ObjectView::cbegin() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_cbegin);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_cbegin);
 }
 
 SharedObject ObjectView::cend() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_cend);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_cend);
 }
 
 SharedObject ObjectView::crbegin() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_crbegin);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_crbegin);
 }
 
 SharedObject ObjectView::crend() const {
-	return Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_crend);
+	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_crend);
 }
 
 // - element access
 
 bool ObjectView::empty() const {
-	return Mngr.Invoke<bool>(*this, NameIDRegistry::Meta::container_empty);
+	return Mngr->Invoke<bool>(*this, NameIDRegistry::Meta::container_empty);
 }
 
 std::size_t ObjectView::size() const {
-	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_size);
+	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_size);
 }
 
 std::size_t ObjectView::capacity() const {
-	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_capacity);
+	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_capacity);
 }
 
 std::size_t ObjectView::bucket_count() const {
-	return Mngr.Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_bucket_count);
+	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_bucket_count);
 }
 
 void ObjectView::reserve(std::size_t n) const {
-	Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_reserve, std::move(n));
+	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_reserve, std::move(n));
 }
 
 void ObjectView::shrink_to_fit() const {
-	Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_shrink_to_fit);
+	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_shrink_to_fit);
 }
 
 void ObjectView::clear() const {
-	Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_clear);
+	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_clear);
 }
 
 void ObjectView::pop_front() const {
-	Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_pop_front);
+	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_pop_front);
 }
 
 void ObjectView::pop_back() const {
-	Mngr.DMInvoke(*this, NameIDRegistry::Meta::container_pop_back);
+	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_pop_back);
 }

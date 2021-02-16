@@ -10,8 +10,8 @@ struct A {
 };
 
 int main() {
-	Mngr.RegisterType<A>();
-	Mngr.AddField<&A::data>("data");
+	Mngr->RegisterType<A>();
+	Mngr->AddField<&A::data>("data");
 	ext::Bootstrap();
 	A a;
 	ObjectView{ a }.Var("data") = 3;

@@ -100,6 +100,22 @@ namespace Ubpa::UDRefl {
 			ArgPtrBuffer argptr_buffer = nullptr,
 			MethodFlag flag = MethodFlag::All) const;
 
+		SharedObject MInvoke(
+			Name method_name,
+			std::pmr::memory_resource* rst_rsrc,
+			std::pmr::memory_resource* temp_args_rsrc,
+			std::span<const Type> argTypes = {},
+			ArgPtrBuffer argptr_buffer = nullptr,
+			MethodFlag flag = MethodFlag::All) const;
+
+		SharedObject DMInvoke(
+			Name method_name,
+			std::span<const Type> argTypes = {},
+			ArgPtrBuffer argptr_buffer = nullptr,
+			MethodFlag flag = MethodFlag::All) const;
+
+		// -- template --
+
 		template<typename... Args>
 		Type IsInvocable(Name method_name, MethodFlag flag = MethodFlag::All) const;
 
@@ -112,23 +128,11 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		T Invoke(Name method_name, Args&&... args) const;
 
-		SharedObject MInvoke(
-			Name method_name,
-			std::pmr::memory_resource* rst_rsrc,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			MethodFlag flag = MethodFlag::All) const;
-
-		SharedObject DMInvoke(
-			Name method_name,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			MethodFlag flag = MethodFlag::All) const;
-
 		template<typename... Args>
 		SharedObject MInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
+			std::pmr::memory_resource* temp_args_rsrc,
 			MethodFlag flag,
 			Args&&... args) const;
 
@@ -146,6 +150,7 @@ namespace Ubpa::UDRefl {
 		SharedObject AMInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
+			std::pmr::memory_resource* temp_args_rsrc,
 			MethodFlag flag,
 			Args&&... args) const;
 
@@ -178,10 +183,10 @@ namespace Ubpa::UDRefl {
 		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(FieldFlag  flag = FieldFlag ::All) const;
 		std::vector<ObjectView>                                          GetVars         (FieldFlag  flag = FieldFlag ::All) const;
 
-		std::optional<InfoTypePair  > FindType  (const std::function<bool(InfoTypePair   )>& func) const;
-		std::optional<InfoFieldPair > FindField (const std::function<bool(InfoFieldPair  )>& func, FieldFlag  flag = FieldFlag ::All) const;
-		std::optional<InfoMethodPair> FindMethod(const std::function<bool(InfoMethodPair )>& func, MethodFlag flag = MethodFlag::All) const;
-		ObjectView                    FindVar   (const std::function<bool(ObjectView     )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		InfoTypePair   FindType  (const std::function<bool(InfoTypePair   )>& func) const;
+		InfoFieldPair  FindField (const std::function<bool(InfoFieldPair  )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		InfoMethodPair FindMethod(const std::function<bool(InfoMethodPair )>& func, MethodFlag flag = MethodFlag::All) const;
+		ObjectView     FindVar   (const std::function<bool(ObjectView     )>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		bool ContainsBase  (Type base       ) const;
 		bool ContainsField (Name field_name , FieldFlag  flag = FieldFlag ::All) const;

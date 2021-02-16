@@ -8,6 +8,9 @@ namespace Ubpa::UDRefl {
 	constexpr Type GlobalType = TypeIDRegistry::Meta::global;
 	constexpr ObjectView Global = { GlobalType };
 
+	extern ReflMngr* Mngr;
+	extern const ObjectView MngrView;
+
 	class ReflMngr {
 	public:
 		static ReflMngr& Instance() noexcept {
@@ -30,6 +33,8 @@ namespace Ubpa::UDRefl {
 		// remove cvref
 		      TypeInfo* GetTypeInfo(Type type);
 		const TypeInfo* GetTypeInfo(Type type) const { return const_cast<ReflMngr*>(this)->GetTypeInfo(type); }
+
+		std::pmr::synchronized_pool_resource* GetTemporaryResource() const { return &temporary_resource; }
 
 		// clear order
 		// - field attrs
@@ -197,7 +202,7 @@ namespace Ubpa::UDRefl {
 		// - result type of Var maintains the CVRefMode of the input
 		//
 
-		ObjectView Var(ObjectView obj           , Name field_name, FieldFlag flag = FieldFlag::All);
+		ObjectView Var(ObjectView obj,            Name field_name, FieldFlag flag = FieldFlag::All);
 		// for diamond inheritance
 		ObjectView Var(ObjectView obj, Type base, Name field_name, FieldFlag flag = FieldFlag::All);
 
@@ -208,6 +213,11 @@ namespace Ubpa::UDRefl {
 		// - auto search methods in bases
 		// - support overload
 		// - require IsCompatible()
+		// - MInvoke's 'M' means 'memory' (use a memory resource)
+		// - MInvoke will allocate buffer for result, and move to SharedObject
+		// - if result is a reference, SharedObject is a ObjectView actually
+		// - if result is ObjectView or SharedObject, then MInvoke's result is it.
+		// - DMInvoke's 'D' means 'default' (use the default memory resource)
 		//
 
 		// parameter <- argument
@@ -239,7 +249,25 @@ namespace Ubpa::UDRefl {
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
+			MethodFlag flag = MethodFlag::All,
+			std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
+
+		SharedObject MInvoke(
+			ObjectView obj,
+			Name method_name,
+			std::pmr::memory_resource* rst_rsrc,
+			std::pmr::memory_resource* temp_args_rsrc,
+			std::span<const Type> argTypes = {},
+			ArgPtrBuffer argptr_buffer = nullptr,
 			MethodFlag flag = MethodFlag::All) const;
+
+		SharedObject DMInvoke(
+			ObjectView obj,
+			Name method_name,
+			std::span<const Type> argTypes = {},
+			ArgPtrBuffer argptr_buffer = nullptr,
+			MethodFlag flag = MethodFlag::All) const
+		{ return MInvoke(obj, method_name, &object_resource, &temporary_resource, argTypes, argptr_buffer, flag); }
 
 		// -- template --
 
@@ -261,6 +289,20 @@ namespace Ubpa::UDRefl {
 		template<typename T, typename... Args>
 		T Invoke(ObjectView obj, Name method_name, Args&&... args) const;
 
+		template<typename... Args>
+		SharedObject MInvoke(
+			ObjectView obj,
+			Name method_name,
+			std::pmr::memory_resource* result_rsrc,
+			MethodFlag flag,
+			Args&&... args) const;
+
+		template<typename... Args>
+		SharedObject DMInvoke(
+			ObjectView obj,
+			Name method_name,
+			Args&&... args) const;
+
 		//
 		// Make
 		/////////
@@ -272,28 +314,34 @@ namespace Ubpa::UDRefl {
 		bool IsMoveConstructible        (Type type) const;
 		bool IsDestructible             (Type type) const;
 
-		bool NonCopiedArgConstruct (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		bool Construct             (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		void Destruct              (ObjectView obj) const;
-		ObjectView   NonArgCopyNew (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		ObjectView   New           (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		void         Delete        (ObjectView obj) const;
-		SharedObject MakeShared    (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
-		SharedObject AllocateShared(Type      type) const;
+		bool NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool Construct            (ObjectView obj, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		void Destruct             (ObjectView obj) const;
+
+		ObjectView   MNonCopiedArgNew(Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		ObjectView   MNew            (Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		SharedObject MMakeShared     (Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool         MDelete         (ObjectView obj, std::pmr::memory_resource* rsrc                                                                           ) const;
+
+		ObjectView   NonCopiedArgNew(Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		ObjectView   New            (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		SharedObject MakeShared     (Type      type, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr) const;
+		bool         Delete         (ObjectView obj                                                                           ) const;
 
 		// -- template --
 
-		template<typename... Args>
-		bool IsConstructible(Type type) const;
+		template<typename... Args> bool IsConstructible(Type type) const;
 
-		template<typename... Args>
-		bool Construct(ObjectView obj, Args&&... args) const;
-		
-		template<typename... Args>
-		ObjectView New(Type type, Args&&... args) const;
+		template<typename... Args> bool NonCopiedArgConstruct(ObjectView obj, Args&&... args) const;
+		template<typename... Args> bool Construct            (ObjectView obj, Args&&... args) const;
 
-		template<typename... Args>
-		SharedObject MakeShared(Type type, Args&&... args) const;
+		template<typename... Args> ObjectView   MNonCopiedArgNew(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const;
+		template<typename... Args> ObjectView   MNew            (Type type, std::pmr::memory_resource* rsrc, Args&&... args) const;
+		template<typename... Args> SharedObject MMakeShared     (Type type, std::pmr::memory_resource* rsrc, Args&&... args) const;
+
+		template<typename... Args> ObjectView   NonCopiedArgNew(Type type, Args&&... args) const;
+		template<typename... Args> ObjectView   New            (Type type, Args&&... args) const;
+		template<typename... Args> SharedObject MakeShared     (Type type, Args&&... args) const;
 
 		// - if T is not register, call RegisterType<T>()
 		// - call AddConstructor<T, Args...>()
@@ -311,83 +359,38 @@ namespace Ubpa::UDRefl {
 
 		// ForEach (DFS)
 
-		void ForEachTypeInfo(Type      type, const std::function<bool(InfoTypePair)>& func) const;
-		void ForEachField   (Type      type, const std::function<bool(InfoTypePair, InfoFieldPair            )>& func, FieldFlag  flag = FieldFlag ::All) const;
-		void ForEachMethod  (Type      type, const std::function<bool(InfoTypePair, InfoMethodPair           )>& func, MethodFlag flag = MethodFlag::All) const;
-		void ForEachVar     (ObjectView obj, const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag  flag = FieldFlag ::All) const;
+		void ForEachTypeInfo(Type type,
+			const std::function<bool(InfoTypePair)>& func) const;
+		void ForEachField(Type type,
+			const std::function<bool(InfoTypePair, InfoFieldPair)>& func, FieldFlag flag = FieldFlag::All) const;
+		void ForEachMethod(Type type,
+			const std::function<bool(InfoTypePair, InfoMethodPair)>& func, MethodFlag flag = MethodFlag::All) const;
+		void ForEachVar(ObjectView obj,
+			const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		// Gather (DFS)
 
-		std::vector<InfoTypePair>                                        GetTypes        (Type      type);
 		std::vector<InfoTypeFieldPair>                                   GetTypeFields   (Type      type, FieldFlag  flag = FieldFlag ::All);
-		std::vector<InfoFieldPair>                                       GetFields       (Type      type, FieldFlag  flag = FieldFlag ::All);
 		std::vector<InfoTypeMethodPair>                                  GetTypeMethods  (Type      type, MethodFlag flag = MethodFlag::All);
-		std::vector<InfoMethodPair>                                      GetMethods      (Type      type, MethodFlag flag = MethodFlag::All);
-		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag  flag = FieldFlag ::All);
-		std::vector<ObjectView>                                          GetVars         (ObjectView obj, FieldFlag  flag = FieldFlag ::All);
+		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag  flag = FieldFlag::All);
+
+		std::vector<InfoTypePair>   GetTypes  (Type      type);
+		std::vector<InfoFieldPair>  GetFields (Type      type, FieldFlag  flag = FieldFlag ::All);
+		std::vector<InfoMethodPair> GetMethods(Type      type, MethodFlag flag = MethodFlag::All);
+		std::vector<ObjectView>     GetVars   (ObjectView obj, FieldFlag  flag = FieldFlag ::All);
 
 		// Find (DFS)
 
-		std::optional<InfoTypePair  > FindType  (Type      type, const std::function<bool(InfoTypePair  )>& func) const;
-		std::optional<InfoFieldPair > FindField (Type      type, const std::function<bool(InfoFieldPair )>& func, FieldFlag  flag = FieldFlag ::All) const;
-		std::optional<InfoMethodPair> FindMethod(Type      type, const std::function<bool(InfoMethodPair)>& func, MethodFlag flag = MethodFlag::All) const;
-		ObjectView                    FindVar   (ObjectView obj, const std::function<bool(ObjectView    )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		InfoTypePair   FindType  (Type      type, const std::function<bool(InfoTypePair  )>& func) const;
+		InfoFieldPair  FindField (Type      type, const std::function<bool(InfoFieldPair )>& func, FieldFlag  flag = FieldFlag ::All) const;
+		InfoMethodPair FindMethod(Type      type, const std::function<bool(InfoMethodPair)>& func, MethodFlag flag = MethodFlag::All) const;
+		ObjectView     FindVar   (ObjectView obj, const std::function<bool(ObjectView    )>& func, FieldFlag  flag = FieldFlag ::All) const;
 
 		// Contains (DFS)
 
 		bool ContainsBase  (Type type, Type base       ) const;
 		bool ContainsField (Type type, Name field_name , FieldFlag  flag = FieldFlag ::All) const;
 		bool ContainsMethod(Type type, Name method_name, MethodFlag flag = MethodFlag::All) const;
-
-		//
-		// Memory
-		///////////
-		//
-		// - MInvoke's 'M' means 'memory' (use a memory resource)
-		// - MInvoke will allocate buffer for result, and move to SharedObject
-		// - if result is a reference, SharedObject is a ObjectView actually
-		// - if result is ObjectView or SharedObject, then MInvoke's result is it.
-		// - DMInvoke's 'D' means 'default' (use the default memory resource)
-		//
-
-		std::pmr::synchronized_pool_resource* GetTemporaryResource() const{ return &temporary_resource; }
-
-		SharedObject MInvoke(
-			ObjectView obj,
-			Name method_name,
-			std::pmr::memory_resource* result_rsrc,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			MethodFlag flag = MethodFlag::All) const;
-
-		SharedObject DMInvoke(
-			ObjectView obj,
-			Name method_name,
-			std::span<const Type> argTypes = {},
-			ArgPtrBuffer argptr_buffer = nullptr,
-			MethodFlag flag = MethodFlag::All) const
-		{ return MInvoke(obj, method_name, &object_resource, argTypes, argptr_buffer, flag); }
-
-		template<typename... Args>
-		SharedObject MInvoke(
-			ObjectView obj,
-			Name method_name,
-			std::pmr::memory_resource* result_rsrc,
-			MethodFlag flag,
-			Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject DMInvoke(
-			ObjectView obj,
-			Name method_name,
-			Args&&... args) const;
-
-		ObjectView NonArgCopyMNew(Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
-		ObjectView MNew          (Type      type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const;
-		bool       MDelete       (ObjectView obj, std::pmr::memory_resource* rsrc) const;
-
-		template<typename... Args>
-		ObjectView MNew(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const;
 
 	private:
 		ReflMngr();
@@ -402,9 +405,6 @@ namespace Ubpa::UDRefl {
 		// - New
 		mutable std::pmr::synchronized_pool_resource object_resource;
 	};
-
-	inline static ReflMngr& Mngr = ReflMngr::Instance();
-	inline static const ObjectView MngrView = { Type_of<ReflMngr>, &ReflMngr::Instance() };
 }
 
 #include "details/ReflMngr.inl"

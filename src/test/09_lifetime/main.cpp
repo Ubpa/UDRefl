@@ -15,11 +15,11 @@ struct Point {
 };
 
 int main() {
-	Mngr.RegisterType<Point>();
-	Mngr.AddField<&Point::x>("x");
-	Mngr.AddField<&Point::y>("y");
+	Mngr->RegisterType<Point>();
+	Mngr->AddField<&Point::x>("x");
+	Mngr->AddField<&Point::y>("y");
 	
-	SharedObject p = Mngr.MakeShared(Type_of<Point>);
+	SharedObject p = Mngr->MakeShared(Type_of<Point>);
 	p.Var("x") = 1.f;
 	p.Var("y") = 2.f;
 
