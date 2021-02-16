@@ -210,14 +210,16 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 		//
+		// - 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
+		// - 'B' means basic
+		// - 'D' means default
+		// - 'M' means memory
 		// - auto search methods in bases
 		// - support overload
 		// - require IsCompatible()
-		// - MInvoke's 'M' means 'memory' (use a memory resource)
 		// - MInvoke will allocate buffer for result, and move to SharedObject
 		// - if result is a reference, SharedObject is a ObjectView actually
 		// - if result is ObjectView or SharedObject, then MInvoke's result is it.
-		// - DMInvoke's 'D' means 'default' (use the default memory resource)
 		//
 
 		// parameter <- argument
@@ -243,7 +245,7 @@ namespace Ubpa::UDRefl {
 
 		Type IsInvocable(Type type, Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 
-		Type Invoke(
+		Type BInvoke(
 			ObjectView obj,
 			Name method_name,
 			void* result_buffer = nullptr,
@@ -261,7 +263,7 @@ namespace Ubpa::UDRefl {
 			ArgPtrBuffer argptr_buffer = nullptr,
 			MethodFlag flag = MethodFlag::All) const;
 
-		SharedObject DMInvoke(
+		SharedObject Invoke(
 			ObjectView obj,
 			Name method_name,
 			std::span<const Type> argTypes = {},
@@ -275,19 +277,13 @@ namespace Ubpa::UDRefl {
 		Type IsInvocable(Type type, Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
-		T InvokeRet(Type      type, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
-		template<typename T>
-		T InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
+		T BInvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
-		Type InvokeArgs(Type      type, Name method_name, void* result_buffer, Args&&... args) const;
-		template<typename... Args>
-		Type InvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const;
+		Type BInvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(Type      type, Name method_name, Args&&... args) const;
-		template<typename T, typename... Args>
-		T Invoke(ObjectView obj, Name method_name, Args&&... args) const;
+		T BInvoke(ObjectView obj, Name method_name, Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
@@ -298,7 +294,7 @@ namespace Ubpa::UDRefl {
 			Args&&... args) const;
 
 		template<typename... Args>
-		SharedObject DMInvoke(
+		SharedObject Invoke(
 			ObjectView obj,
 			Name method_name,
 			Args&&... args) const;

@@ -94,7 +94,7 @@ namespace Ubpa::UDRefl::details {
 		return {};
 	}
 
-	static Type Invoke(
+	static Type BInvoke(
 		bool is_priority,
 		std::pmr::memory_resource* args_rsrc,
 		ObjectView obj,
@@ -146,7 +146,7 @@ namespace Ubpa::UDRefl::details {
 
 
 		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = Invoke(
+			auto rst = BInvoke(
 				is_priority, args_rsrc,
 				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
 				method_name, result_buffer, argTypes, argptr_buffer,
@@ -860,7 +860,7 @@ Type ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> ar
 	return details::IsInvocable(false, type, method_name, argTypes, flag);
 }
 
-Type ReflMngr::Invoke(
+Type ReflMngr::BInvoke(
 	ObjectView obj,
 	Name method_name,
 	void* result_buffer,
@@ -895,10 +895,10 @@ Type ReflMngr::Invoke(
 	if (!obj.GetPtr())
 		flag = enum_within(flag, MethodFlag::Static);
 
-	if (auto priority_rst = details::Invoke(true, temp_args_rsrc, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag))
+	if (auto priority_rst = details::BInvoke(true, temp_args_rsrc, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag))
 		return priority_rst;
 
-	return details::Invoke(false, temp_args_rsrc, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag);
+	return details::BInvoke(false, temp_args_rsrc, rawObj, method_name, result_buffer, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ReflMngr::MInvoke(

@@ -16,6 +16,9 @@
     - `AddTrivialConstructor` 
     - `AddZeroConstructor` 
   - refactoring memory-aware APIs
+  - rename invoke APIs
+    - `Invoke` -> `BInvoke` 
+    - `DMInvoke` -> `Invoke` 
 - 0.8.1
   - support
     - pointer, array

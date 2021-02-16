@@ -10,19 +10,19 @@
 template<typename Arg>                         \
 SharedObject operator op (Arg&& rhs) const
 
-#define OBJECT_VIEW_DEFINE_CMP_OPERATOR(op, name)                                    \
-template<typename Arg>                                                               \
-bool operator op (const Arg& rhs) const {                                            \
-    return static_cast<bool>(ADMInvoke(NameIDRegistry::Meta::operator_##name, rhs)); \
+#define OBJECT_VIEW_DEFINE_CMP_OPERATOR(op, name)                                  \
+template<typename Arg>                                                             \
+bool operator op (const Arg& rhs) const {                                          \
+    return static_cast<bool>(AInvoke(NameIDRegistry::Meta::operator_##name, rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                           \
-template<typename Arg>                                                            \
-ObjectView operator op (Arg&& rhs) const {                                        \
-    if(GetType().IsReadOnly())                                                    \
-        return *this;                                                             \
-    AInvoke<void>(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
-    return AddLValueReference();                                                  \
+#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                            \
+template<typename Arg>                                                             \
+ObjectView operator op (Arg&& rhs) const {                                         \
+    if(GetType().IsReadOnly())                                                     \
+        return {};                                                                 \
+    ABInvoke<void>(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
+    return AddLValueReference();                                                   \
 }
 
 #define OBJECT_VIEW_DECLARE_META(name) \
@@ -93,7 +93,7 @@ namespace Ubpa::UDRefl {
 
 		Type IsInvocable(Name method_name, std::span<const Type> argTypes = {}, MethodFlag flag = MethodFlag::All) const;
 
-		Type Invoke(
+		Type BInvoke(
 			Name method_name,
 			void* result_buffer = nullptr,
 			std::span<const Type> argTypes = {},
@@ -108,7 +108,7 @@ namespace Ubpa::UDRefl {
 			ArgPtrBuffer argptr_buffer = nullptr,
 			MethodFlag flag = MethodFlag::All) const;
 
-		SharedObject DMInvoke(
+		SharedObject Invoke(
 			Name method_name,
 			std::span<const Type> argTypes = {},
 			ArgPtrBuffer argptr_buffer = nullptr,
@@ -120,13 +120,13 @@ namespace Ubpa::UDRefl {
 		Type IsInvocable(Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
-		T InvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
+		T BInvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename... Args>
-		Type InvokeArgs(Name method_name, void* result_buffer, Args&&... args) const;
+		Type BInvokeArgs(Name method_name, void* result_buffer, Args&&... args) const;
 
 		template<typename T, typename... Args>
-		T Invoke(Name method_name, Args&&... args) const;
+		T BInvoke(Name method_name, Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
@@ -137,15 +137,13 @@ namespace Ubpa::UDRefl {
 			Args&&... args) const;
 
 		template<typename... Args>
-		SharedObject DMInvoke(
+		SharedObject Invoke(
 			Name method_name,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		template<typename T, typename... Args>
-		T AInvoke(Name method_name, Args&&... args) const;
+		T ABInvoke(Name method_name, Args&&... args) const;
 
-		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		template<typename... Args>
 		SharedObject AMInvoke(
 			Name method_name,
@@ -154,9 +152,8 @@ namespace Ubpa::UDRefl {
 			MethodFlag flag,
 			Args&&... args) const;
 
-		// 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		template<typename... Args>
-		SharedObject ADMInvoke(
+		SharedObject AInvoke(
 			Name method_name,
 			Args&&... args) const;
 
@@ -229,7 +226,7 @@ namespace Ubpa::UDRefl {
 
 		template<typename Arg> requires NonObjectAndView<std::decay_t<Arg>>
 		ObjectView operator=(Arg&& rhs) const {
-			AInvoke<void>(NameIDRegistry::Meta::operator_assign, std::forward<Arg>(rhs));
+			ABInvoke<void>(NameIDRegistry::Meta::operator_assign, std::forward<Arg>(rhs));
 			return AddLValueReference();    
 		}
 
@@ -261,7 +258,7 @@ namespace Ubpa::UDRefl {
 
 		template<typename T>
 		T& operator>>(T& out) const {
-			Invoke<void>(NameIDRegistry::Meta::operator_rshift, out);
+			BInvoke<void>(NameIDRegistry::Meta::operator_rshift, out);
 			return out;
 		}
 

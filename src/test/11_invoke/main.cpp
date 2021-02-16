@@ -46,8 +46,8 @@ int main() {
 	}
 
 	auto w0 = v.MInvoke(NameIDRegistry::Meta::operator_add, std::pmr::get_default_resource(), std::pmr::get_default_resource(), MethodFlag::All, v.As<Vec>());
-	auto w1 = v.DMInvoke(NameIDRegistry::Meta::operator_add, v.As<Vec>());
-	auto w2 = v.ADMInvoke(NameIDRegistry::Meta::operator_add, v);
+	auto w1 = v.Invoke(NameIDRegistry::Meta::operator_add, v.As<Vec>());
+	auto w2 = v.AInvoke(NameIDRegistry::Meta::operator_add, v);
 
 	std::array arr_w = { w0,w1,w2 };
 	for (auto w : arr_w) {

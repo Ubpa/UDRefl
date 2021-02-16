@@ -43,15 +43,15 @@ int main() {
 
 	std::uint8_t i = 1;
 	const std::uint8_t ci = 1;
-	funcs.Invoke<void>("f", 1.);
-	funcs.Invoke<void>("f", 1.f);
-	funcs.Invoke<void>("f", 1);
-	funcs.Invoke<void>("f", i);
-	funcs.Invoke<void>("f", ci);
-	funcs.Invoke<void>("f", std::move(i));
-	funcs.Invoke<void>("f", static_cast<const std::uint8_t&&>(ci));
+	funcs.BInvoke<void>("f", 1.);
+	funcs.BInvoke<void>("f", 1.f);
+	funcs.BInvoke<void>("f", 1);
+	funcs.BInvoke<void>("f", i);
+	funcs.BInvoke<void>("f", ci);
+	funcs.BInvoke<void>("f", std::move(i));
+	funcs.BInvoke<void>("f", static_cast<const std::uint8_t&&>(ci));
 
 	int arr_i[5];
-	funcs.Invoke<void>("g", "hello"); // const char(&)[6]
-	funcs.Invoke<void>("g", arr_i);   // int(&)[5]
+	funcs.BInvoke<void>("g", "hello"); // const char(&)[6]
+	funcs.BInvoke<void>("g", arr_i);   // int(&)[5]
 }

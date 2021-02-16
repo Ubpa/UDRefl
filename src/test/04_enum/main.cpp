@@ -31,7 +31,7 @@ int main() {
 		return field.info->fieldptr.Var() == c;
 	});
 
-	std::cout << "name of " << static_cast<int>(c) << " : " << c_field.value().name.GetView() << std::endl;
+	std::cout << "name of " << static_cast<int>(c) << " : " << c_field.name.GetView() << std::endl;
 
 	// name -> enumerator
 	std::string_view name = "Green";
@@ -39,5 +39,5 @@ int main() {
 		return field.name.GetView() == name;
 	});
 
-	std::cout << "value of " << name << " : " << static_cast<int>(name_field.value().info->fieldptr.Var().As<Color>()) << std::endl;
+	std::cout << "value of " << name << " : " << static_cast<int>(name_field.info->fieldptr.Var().As<Color>()) << std::endl;
 }

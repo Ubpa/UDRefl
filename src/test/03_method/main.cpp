@@ -45,7 +45,7 @@ int main() {
 	v.Invoke("NormalizeSelf");
 	std::cout << v.Var("x") << ", " << v.Var("y") << std::endl;
 
-	std::cout << v.DMInvoke("Norm2") << std::endl;
+	std::cout << v.Invoke("Norm2") << std::endl;
 
 	auto w = v += Vec{ 10.f,10.f };
 	std::cout << w.Var("x") << ", " << w.Var("y") << std::endl;

@@ -905,73 +905,38 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::InvokeRet(Type type, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
+	T ReflMngr::BInvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
-			Type result_type = Invoke(type, method_name, result_buffer, argTypes, argptr_buffer, flag);
+			Type result_type = BInvoke(obj, method_name, result_buffer, argTypes, argptr_buffer, flag);
 			assert(result_type.Is<T>());
 			return MoveResult<T>(result_type, result_buffer);
 		}
 		else
-			Invoke(type, method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
-	}
-
-	template<typename T>
-	T ReflMngr::InvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
-		if constexpr (!std::is_void_v<T>) {
-			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
-			std::uint8_t result_buffer[sizeof(U)];
-			Type result_type = Invoke(obj, method_name, result_buffer, argTypes, argptr_buffer, flag);
-			assert(result_type.Is<T>());
-			return MoveResult<T>(result_type, result_buffer);
-		}
-		else
-			Invoke(obj, method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
+			BInvoke(obj, method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
 	}
 
 	template<typename... Args>
-	Type ReflMngr::InvokeArgs(Type type, Name method_name, void* result_buffer, Args&&... args) const {
+	Type ReflMngr::BInvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(type, method_name, result_buffer, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return BInvoke(obj, method_name, result_buffer, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return Invoke(type, method_name, result_buffer);
-	}
-
-	template<typename... Args>
-	Type ReflMngr::InvokeArgs(ObjectView obj, Name method_name, void* result_buffer, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(obj, method_name, result_buffer, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return Invoke(obj, method_name, result_buffer);
+			return BInvoke(obj, method_name, result_buffer);
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::Invoke(Type type, Name method_name, Args&&... args) const {
+	T ReflMngr::BInvoke(ObjectView obj, Name method_name, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return InvokeRet<T>(type, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return BInvokeRet<T>(obj, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return InvokeRet<T>(type, method_name);
-	}
-
-	template<typename T, typename... Args>
-	T ReflMngr::Invoke(ObjectView obj, Name method_name, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr std::array argTypes = { Type_of<decltype(args)>... };
-			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return InvokeRet<T>(obj, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
-		}
-		else
-			return InvokeRet<T>(obj, method_name);
+			return BInvokeRet<T>(obj, method_name);
 	}
 
 	template<typename... Args>
@@ -992,7 +957,7 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ReflMngr::DMInvoke(
+	SharedObject ReflMngr::Invoke(
 		ObjectView obj,
 		Name method_name,
 		Args&&... args) const
@@ -1000,10 +965,10 @@ namespace Ubpa::UDRefl {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return DMInvoke(obj, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return Invoke(obj, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return DMInvoke(obj, method_name);
+			return Invoke(obj, method_name);
 	}
 
 	//

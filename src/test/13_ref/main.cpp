@@ -87,12 +87,12 @@ int main() {
 	std::cout << "f: " << f.value << std::endl;
 	std::cout << "g: " << g.value << std::endl;
 
-	std::cout << "a.get_r(): " << a.DMInvoke("get_r").Var("value") << std::endl;
-	std::cout << "a.get_c(): " << a.DMInvoke("get_r").Var("value") << std::endl;
+	std::cout << "a.get_r(): " << a.Invoke("get_r").Var("value") << std::endl;
+	std::cout << "a.get_c(): " << a.Invoke("get_r").Var("value") << std::endl;
 
-	a.Invoke<void>("set", g);
-	a.Invoke<void>("set_r", std::move(g));
-	std::cout << "a.lref: " << a.DMInvoke("get_r").Var("value") << std::endl;
-	std::cout << "a.get_c(): " << a.DMInvoke("get_c").Var("value") << std::endl;
+	a.BInvoke<void>("set", g);
+	a.BInvoke<void>("set_r", std::move(g));
+	std::cout << "a.lref: " << a.Invoke("get_r").Var("value") << std::endl;
+	std::cout << "a.get_c(): " << a.Invoke("get_c").Var("value") << std::endl;
 	return 0;
 }

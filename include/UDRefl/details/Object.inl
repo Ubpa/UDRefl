@@ -2,28 +2,28 @@
 
 #include <array>
 
-#define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                      \
-template<typename Arg>                                                               \
-SharedObject ObjectView::operator op (Arg&& rhs) const {                             \
-    return ADMInvoke(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                    \
+template<typename Arg>                                                             \
+SharedObject ObjectView::operator op (Arg&& rhs) const {                           \
+    return AInvoke(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_META_T(prefix, name)                                      \
-template<typename Arg>                                                               \
-SharedObject ObjectView::name (Arg&& rhs) const {                                    \
-    return ADMInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_VIEW_DEFINE_META_T(prefix, name)                                    \
+template<typename Arg>                                                             \
+SharedObject ObjectView::name (Arg&& rhs) const {                                  \
+    return AInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_META_RET_T(prefix, name, ret)                                \
-template<typename Arg>                                                                  \
-ret ObjectView::name (Arg&& rhs) const {                                                \
-    return AInvoke<ret>(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_VIEW_DEFINE_META_RET_T(prefix, name, ret)                                 \
+template<typename Arg>                                                                   \
+ret ObjectView::name (Arg&& rhs) const {                                                 \
+    return ABInvoke<ret>(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(name)                                          \
-template<typename... Args>                                                                 \
-SharedObject ObjectView::name (Args&&... args) const {                                     \
-    return ADMInvoke(NameIDRegistry::Meta::container_##name, std::forward<Args>(args)...); \
+#define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(name)                                        \
+template<typename... Args>                                                               \
+SharedObject ObjectView::name (Args&&... args) const {                                   \
+    return AInvoke(NameIDRegistry::Meta::container_##name, std::forward<Args>(args)...); \
 }
 
 #define DEFINE_OPERATOR_LSHIFT(Lhs, Rhs)            \
@@ -68,7 +68,7 @@ namespace Ubpa::UDRefl {
 			else {
 				if (auto rst = IsInvocable(NameIDRegistry::Meta::operator_bool)) {
 					assert(rst.Is<bool>());
-					return Invoke<bool>(NameIDRegistry::Meta::operator_bool);
+					return BInvoke<bool>(NameIDRegistry::Meta::operator_bool);
 				}
 				else
 					return true;
@@ -85,38 +85,38 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ObjectView::InvokeRet(Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
+	T ObjectView::BInvokeRet(Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::uint8_t result_buffer[sizeof(U)];
-			Type result_type = Invoke(method_name, result_buffer, argTypes, argptr_buffer, flag);
+			Type result_type = BInvoke(method_name, result_buffer, argTypes, argptr_buffer, flag);
 			assert(result_type.Is<T>());
 			return MoveResult<T>(result_type, result_buffer);
 		}
 		else
-			Invoke(method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
+			BInvoke(method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
 	}
 
 	template<typename... Args>
-	Type ObjectView::InvokeArgs(Name method_name, void* result_buffer, Args&&... args) const {
+	Type ObjectView::BInvokeArgs(Name method_name, void* result_buffer, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return Invoke(method_name, result_buffer, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return BInvoke(method_name, result_buffer, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return Invoke(method_name, result_buffer);
+			return BInvoke(method_name, result_buffer);
 	}
 
 	template<typename T, typename... Args>
-	T ObjectView::Invoke(Name method_name, Args&&... args) const {
+	T ObjectView::BInvoke(Name method_name, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return InvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return BInvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return InvokeRet<T>(method_name);
+			return BInvokeRet<T>(method_name);
 	}
 
 	template<typename... Args>
@@ -137,28 +137,28 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ObjectView::DMInvoke(
+	SharedObject ObjectView::Invoke(
 		Name method_name,
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr std::array argTypes = { Type_of<decltype(args)>... };
 			const std::array argptr_buffer{ const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return DMInvoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return Invoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return DMInvoke(method_name);
+			return Invoke(method_name);
 	}
 
 	template<typename T, typename... Args>
-	T ObjectView::AInvoke(Name method_name, Args&&... args) const {
+	T ObjectView::ABInvoke(Name method_name, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypes = { details::ArgType<decltype(args)>(args)... };
 			const std::array argptr_buffer{ details::ArgPtr(args)... };
-			return InvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return BInvokeRet<T>(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return InvokeRet<T>(method_name);
+			return BInvokeRet<T>(method_name);
 	}
 
 	template<typename... Args>
@@ -179,17 +179,17 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	SharedObject ObjectView::ADMInvoke(
+	SharedObject ObjectView::AInvoke(
 		Name method_name,
 		Args&&... args) const
 	{
 		if constexpr (sizeof...(Args) > 0) {
 			std::array argTypes = { details::ArgType<decltype(args)>(args)... };
 			const std::array argptr_buffer{ details::ArgPtr(args)... };
-			return DMInvoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
+			return Invoke(method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer.data()));
 		}
 		else
-			return DMInvoke(method_name, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr));
+			return Invoke(method_name, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr));
 	}
 	
 	OBJECT_VIEW_DEFINE_OPERATOR_T(+, add)
@@ -205,12 +205,12 @@ namespace Ubpa::UDRefl {
 
 	template<typename... Args>
 	SharedObject ObjectView::operator()(Args&&... args) const {
-		return DMInvoke(NameIDRegistry::Meta::operator_call, std::forward<Args>(args)...);
+		return Invoke(NameIDRegistry::Meta::operator_call, std::forward<Args>(args)...);
 	}
 
 	template<typename T>
 	SharedObject ObjectView::operator<<(T&& in) const {
-		return ADMInvoke(NameIDRegistry::Meta::operator_lshift, std::forward<T>(in));
+		return AInvoke(NameIDRegistry::Meta::operator_lshift, std::forward<T>(in));
 	}
 
 	//
@@ -219,7 +219,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename Arg>
 	void ObjectView::advance (Arg&& rhs) const {
-		AInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<Arg>(rhs));
+		ABInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<Arg>(rhs));
 	}
 	OBJECT_VIEW_DEFINE_META_RET_T(iterator, distance, std::size_t);
 	OBJECT_VIEW_DEFINE_META_T(iterator, next);
@@ -279,13 +279,13 @@ namespace std {
 
 namespace Ubpa::UDRefl {
 	inline bool operator== (const ObjectView& lhs, const ObjectView& rhs) {
-    	return static_cast<bool>(lhs.ADMInvoke(NameIDRegistry::Meta::operator_eq, rhs))
-		|| static_cast<bool>(rhs.ADMInvoke(NameIDRegistry::Meta::operator_eq, lhs));
+    	return static_cast<bool>(lhs.AInvoke(NameIDRegistry::Meta::operator_eq, rhs))
+		|| static_cast<bool>(rhs.AInvoke(NameIDRegistry::Meta::operator_eq, lhs));
 	}
 
 	inline bool operator!= (const ObjectView& lhs, const ObjectView& rhs) {
-    	return static_cast<bool>(lhs.ADMInvoke(NameIDRegistry::Meta::operator_ne, rhs))
-		|| static_cast<bool>(rhs.ADMInvoke(NameIDRegistry::Meta::operator_ne, lhs));
+    	return static_cast<bool>(lhs.AInvoke(NameIDRegistry::Meta::operator_ne, rhs))
+		|| static_cast<bool>(rhs.AInvoke(NameIDRegistry::Meta::operator_ne, lhs));
 	}
 
 	template<NonObjectAndView T>

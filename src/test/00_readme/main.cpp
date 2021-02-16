@@ -26,7 +26,7 @@ int main() {
 	v.Var("y") = 4;
 
 	std::cout << "x: " << v.Var("x") << std::endl;
-	std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
+	std::cout << "norm: " << v.Invoke("norm") << std::endl;
 
 	for (auto&& field : Mngr->GetFields(Type_of<Vec>))
 		std::cout << field.name.GetView() << std::endl;

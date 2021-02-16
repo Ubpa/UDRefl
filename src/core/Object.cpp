@@ -17,14 +17,14 @@ ObjectView ObjectView::Var(Type base, Name field_name, FieldFlag flag) const {
 	return Mngr->Var(*this, base, field_name, flag);
 }
 
-Type ObjectView::Invoke(
+Type ObjectView::BInvoke(
 	Name method_name,
 	void* result_buffer,
 	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
 	MethodFlag flag) const
 {
-	return Mngr->Invoke(*this, method_name, result_buffer, argTypes, argptr_buffer, flag);
+	return Mngr->BInvoke(*this, method_name, result_buffer, argTypes, argptr_buffer, flag);
 }
 
 SharedObject ObjectView::MInvoke(
@@ -38,13 +38,13 @@ SharedObject ObjectView::MInvoke(
 	return Mngr->MInvoke(*this, method_name, rst_rsrc, temp_args_rsrc, argTypes, argptr_buffer, flag);
 }
 
-SharedObject ObjectView::DMInvoke(
+SharedObject ObjectView::Invoke(
 	Name method_name,
 	std::span<const Type> argTypes,
 	ArgPtrBuffer argptr_buffer,
 	MethodFlag flag) const
 {
-	return Mngr->DMInvoke(*this, method_name, argTypes, argptr_buffer, flag);
+	return Mngr->Invoke(*this, method_name, argTypes, argptr_buffer, flag);
 }
 
 void ObjectView::ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag) const {
@@ -176,135 +176,135 @@ ObjectView ObjectView::DynamicCast(Type type) const {
 }
 
 SharedObject ObjectView::operator+() const {
-	return DMInvoke(NameIDRegistry::Meta::operator_plus);
+	return Invoke(NameIDRegistry::Meta::operator_plus);
 }
 
 SharedObject ObjectView::operator-() const {
-	return DMInvoke(NameIDRegistry::Meta::operator_minus);
+	return Invoke(NameIDRegistry::Meta::operator_minus);
 }
 
 SharedObject ObjectView::operator~() const {
-	return DMInvoke(NameIDRegistry::Meta::operator_bnot);
+	return Invoke(NameIDRegistry::Meta::operator_bnot);
 }
 
 SharedObject ObjectView::operator[](std::size_t n) const {
-	return DMInvoke(NameIDRegistry::Meta::operator_subscript, std::move(n));
+	return Invoke(NameIDRegistry::Meta::operator_subscript, std::move(n));
 }
 
 SharedObject ObjectView::operator*() const {
-	return DMInvoke(NameIDRegistry::Meta::operator_deref);
+	return Invoke(NameIDRegistry::Meta::operator_deref);
 }
 
 SharedObject ObjectView::operator++() const {
-	return DMInvoke(NameIDRegistry::Meta::operator_pre_inc);
+	return Invoke(NameIDRegistry::Meta::operator_pre_inc);
 }
 
 SharedObject ObjectView::operator++(int) const {
-	return DMInvoke<int>(NameIDRegistry::Meta::operator_post_inc, 0);
+	return Invoke<int>(NameIDRegistry::Meta::operator_post_inc, 0);
 }
 
 SharedObject ObjectView::operator--() const {
-	return DMInvoke(NameIDRegistry::Meta::operator_pre_dec);
+	return Invoke(NameIDRegistry::Meta::operator_pre_dec);
 }
 
 SharedObject ObjectView::operator--(int) const {
-	return DMInvoke<int>(NameIDRegistry::Meta::operator_post_dec, 0);
+	return Invoke<int>(NameIDRegistry::Meta::operator_post_dec, 0);
 }
 
 ObjectView ObjectView::tuple_get(std::size_t i) const {
-	return Mngr->Invoke<ObjectView>(*this, NameIDRegistry::Meta::tuple_get, std::move(i));
+	return Mngr->BInvoke<ObjectView>(*this, NameIDRegistry::Meta::tuple_get, std::move(i));
 }
 
 SharedObject ObjectView::begin() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_begin);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_begin);
 }
 
 SharedObject ObjectView::end() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_end);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_end);
 }
 
 SharedObject ObjectView::rbegin() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_rbegin);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_rbegin);
 }
 
 SharedObject ObjectView::rend() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_rend);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_rend);
 }
 
 SharedObject ObjectView::data() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_data);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_data);
 }
 
 SharedObject ObjectView::front() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_front);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_front);
 }
 
 SharedObject ObjectView::back() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_back);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_back);
 }
 
 std::size_t ObjectView::tuple_size() const {
-	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::tuple_size);
+	return Mngr->BInvoke<std::size_t>(*this, NameIDRegistry::Meta::tuple_size);
 }
 
 SharedObject ObjectView::next() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::iterator_next);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::iterator_next);
 }
 
 SharedObject ObjectView::prev() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::iterator_prev);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::iterator_prev);
 }
 
 SharedObject ObjectView::cbegin() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_cbegin);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_cbegin);
 }
 
 SharedObject ObjectView::cend() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_cend);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_cend);
 }
 
 SharedObject ObjectView::crbegin() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_crbegin);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_crbegin);
 }
 
 SharedObject ObjectView::crend() const {
-	return Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_crend);
+	return Mngr->Invoke(*this, NameIDRegistry::Meta::container_crend);
 }
 
 // - element access
 
 bool ObjectView::empty() const {
-	return Mngr->Invoke<bool>(*this, NameIDRegistry::Meta::container_empty);
+	return Mngr->BInvoke<bool>(*this, NameIDRegistry::Meta::container_empty);
 }
 
 std::size_t ObjectView::size() const {
-	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_size);
+	return Mngr->BInvoke<std::size_t>(*this, NameIDRegistry::Meta::container_size);
 }
 
 std::size_t ObjectView::capacity() const {
-	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_capacity);
+	return Mngr->BInvoke<std::size_t>(*this, NameIDRegistry::Meta::container_capacity);
 }
 
 std::size_t ObjectView::bucket_count() const {
-	return Mngr->Invoke<std::size_t>(*this, NameIDRegistry::Meta::container_bucket_count);
+	return Mngr->BInvoke<std::size_t>(*this, NameIDRegistry::Meta::container_bucket_count);
 }
 
 void ObjectView::reserve(std::size_t n) const {
-	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_reserve, std::move(n));
+	Mngr->Invoke(*this, NameIDRegistry::Meta::container_reserve, std::move(n));
 }
 
 void ObjectView::shrink_to_fit() const {
-	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_shrink_to_fit);
+	Mngr->Invoke(*this, NameIDRegistry::Meta::container_shrink_to_fit);
 }
 
 void ObjectView::clear() const {
-	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_clear);
+	Mngr->Invoke(*this, NameIDRegistry::Meta::container_clear);
 }
 
 void ObjectView::pop_front() const {
-	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_pop_front);
+	Mngr->Invoke(*this, NameIDRegistry::Meta::container_pop_front);
 }
 
 void ObjectView::pop_back() const {
-	Mngr->DMInvoke(*this, NameIDRegistry::Meta::container_pop_back);
+	Mngr->Invoke(*this, NameIDRegistry::Meta::container_pop_back);
 }
