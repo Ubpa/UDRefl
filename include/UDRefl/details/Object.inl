@@ -55,27 +55,6 @@ namespace Ubpa::UDRefl::details {
 }
 
 namespace Ubpa::UDRefl {
-	//
-	// ObjectView
-	//////////////////
-
-	inline ObjectView::operator bool() const noexcept {
-		if (ptr) {
-			if (type.Is<bool>())
-				return As<bool>();
-			else {
-				if (auto rst = IsInvocable(NameIDRegistry::Meta::operator_bool)) {
-					assert(rst.Is<bool>());
-					return BInvoke<bool>(NameIDRegistry::Meta::operator_bool);
-				}
-				else
-					return true;
-			}
-		}
-		else
-			return false;
-	}
-
 	template<typename... Args>
 	Type ObjectView::IsInvocable(Name method_name, MethodFlag flag) const {
 		constexpr Type argTypes[] = { Type_of<Args>... };

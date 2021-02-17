@@ -19,6 +19,7 @@
   - rename invoke APIs
     - `Invoke` -> `BInvoke` 
     - `DMInvoke` -> `Invoke` 
+  - simplify some typenames of std template types with default arguments
 - 0.8.1
   - support
     - pointer, array

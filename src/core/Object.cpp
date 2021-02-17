@@ -5,6 +5,23 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
+ObjectView::operator bool() const noexcept {
+	if (ptr && type) {
+		if (type.Is<bool>())
+			return As<bool>();
+		else {
+			if (auto rst = IsInvocable(NameIDRegistry::Meta::operator_bool)) {
+				assert(rst.Is<bool>());
+				return BInvoke<bool>(NameIDRegistry::Meta::operator_bool);
+			}
+			else
+				return true;
+		}
+	}
+	else
+		return false;
+}
+
 ObjectView ObjectView::Var(Name field_name, FieldFlag flag) const {
 	return Mngr->Var(*this, field_name, flag);
 }

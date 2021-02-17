@@ -1,5 +1,11 @@
 #pragma once
 
+#include <UTemplate/Func.h>
+
+#include <cstdint>
+#include <functional>
+#include <iterator>
+
 #define UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(Name)                      \
 constexpr Name operator & (const Name& lhs, const Name& rhs) noexcept {  \
     static_assert(std::is_enum_v<Name>);                                 \
@@ -28,12 +34,6 @@ constexpr Name& operator |= (Name& lhs, const Name& rhs) noexcept {      \
     lhs = static_cast<Name>(static_cast<T>(lhs) | static_cast<T>(rhs));  \
     return lhs;                                                          \
 }
-
-#include <UTemplate/Func.h>
-
-#include <cstdint>
-#include <functional>
-#include <iterator>
 
 namespace Ubpa::UDRefl {
 	using Offsetor = std::function<void*(void*)>;

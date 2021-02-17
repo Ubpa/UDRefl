@@ -17,6 +17,10 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   list(APPEND defines "")
 endif()
 
+if(Ubpa_UDRefl_include_all_StdName)
+  list(APPEND defines "UBPA_UDREFL_INCLUDE_ALL_STD_NAME")
+endif()
+
 Ubpa_AddTarget(
   MODE STATIC
   SOURCE
