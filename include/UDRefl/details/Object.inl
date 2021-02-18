@@ -1,15 +1,15 @@
 #pragma once
 
-#define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                    \
-template<typename Arg>                                                             \
-SharedObject ObjectView::operator op (Arg&& rhs) const {                           \
-    return AInvoke(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                  \
+template<typename T>                                                             \
+SharedObject ObjectView::operator op (T&& rhs) const {                           \
+    return AInvoke(NameIDRegistry::Meta::operator_##name, std::forward<T>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_META_T(prefix, name)                                    \
-template<typename Arg>                                                             \
-SharedObject ObjectView::name (Arg&& rhs) const {                                  \
-    return AInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
+#define OBJECT_VIEW_DEFINE_META_T(prefix, name)                                  \
+template<typename T>                                                             \
+SharedObject ObjectView::name (T&& arg) const {                                  \
+    return AInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<T>(arg)); \
 }
 
 #define OBJECT_VIEW_DEFINE_META_VARS_T(prefix, name)                                    \
@@ -152,6 +152,10 @@ namespace Ubpa::UDRefl {
 			return Invoke(method_name, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr));
 	}
 	
+	//
+	// Meta
+	/////////
+
 	OBJECT_VIEW_DEFINE_OPERATOR_T(+, add)
 	OBJECT_VIEW_DEFINE_OPERATOR_T(-, sub)
 	OBJECT_VIEW_DEFINE_OPERATOR_T(*, mul)
@@ -166,6 +170,12 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	SharedObject ObjectView::operator()(Args&&... args) const {
 		return Invoke(NameIDRegistry::Meta::operator_call, std::forward<Args>(args)...);
+	}
+
+	template<typename T>
+	T& ObjectView::operator>>(T& out) const {
+		BInvoke<void>(NameIDRegistry::Meta::operator_rshift, out);
+		return out;
 	}
 
 	template<typename T>
@@ -201,6 +211,33 @@ namespace Ubpa::UDRefl {
 	OBJECT_VIEW_DEFINE_META_T(container, lower_bound)
 	OBJECT_VIEW_DEFINE_META_T(container, upper_bound)
 	OBJECT_VIEW_DEFINE_META_T(container, equal_range)
+
+	//
+	// Inline
+	///////////
+
+	inline SharedObject ObjectView::operator+() const { return Invoke(NameIDRegistry::Meta::operator_plus); }
+	inline SharedObject ObjectView::operator-() const { return Invoke(NameIDRegistry::Meta::operator_minus); }
+	inline SharedObject ObjectView::operator~() const { return Invoke(NameIDRegistry::Meta::operator_bnot); }
+	inline SharedObject ObjectView::operator[](std::size_t n) const { return Invoke(NameIDRegistry::Meta::operator_subscript, std::move(n)); }
+	inline SharedObject ObjectView::operator*() const { return Invoke(NameIDRegistry::Meta::operator_deref); }
+	inline SharedObject ObjectView::operator++() const { return Invoke(NameIDRegistry::Meta::operator_pre_inc); }
+	inline SharedObject ObjectView::operator++(int) const { return Invoke(NameIDRegistry::Meta::operator_post_inc, 0); }
+	inline SharedObject ObjectView::operator--() const { return Invoke(NameIDRegistry::Meta::operator_pre_dec); }
+	inline SharedObject ObjectView::operator--(int) const { return Invoke(NameIDRegistry::Meta::operator_post_dec, 0); }
+	inline SharedObject ObjectView::begin() const { return Invoke(NameIDRegistry::Meta::container_begin); }
+	inline SharedObject ObjectView::end() const { return Invoke(NameIDRegistry::Meta::container_end); }
+	inline SharedObject ObjectView::rbegin() const { return Invoke(NameIDRegistry::Meta::container_rbegin); }
+	inline SharedObject ObjectView::rend() const { return Invoke(NameIDRegistry::Meta::container_rend); }
+	inline SharedObject ObjectView::data() const { return Invoke(NameIDRegistry::Meta::container_data); }
+	inline SharedObject ObjectView::front() const { return Invoke(NameIDRegistry::Meta::container_front); }
+	inline SharedObject ObjectView::back() const { return Invoke(NameIDRegistry::Meta::container_back); }
+	inline SharedObject ObjectView::next() const { return Invoke(NameIDRegistry::Meta::iterator_next); }
+	inline SharedObject ObjectView::prev() const { return Invoke(NameIDRegistry::Meta::iterator_prev); }
+	inline SharedObject ObjectView::cbegin() const { return Invoke(NameIDRegistry::Meta::container_cbegin); }
+	inline SharedObject ObjectView::cend() const { return Invoke(NameIDRegistry::Meta::container_cend); }
+	inline SharedObject ObjectView::crbegin() const { return Invoke(NameIDRegistry::Meta::container_crbegin); }
+	inline SharedObject ObjectView::crend() const { return Invoke(NameIDRegistry::Meta::container_crend); }
 }
 
 template<>
