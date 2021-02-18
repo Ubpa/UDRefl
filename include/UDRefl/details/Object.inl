@@ -234,6 +234,7 @@ namespace Ubpa::UDRefl {
 	inline SharedObject ObjectView::data() const { return Invoke(NameIDRegistry::Meta::container_data); }
 	inline SharedObject ObjectView::front() const { return Invoke(NameIDRegistry::Meta::container_front); }
 	inline SharedObject ObjectView::back() const { return Invoke(NameIDRegistry::Meta::container_back); }
+	inline SharedObject ObjectView::top() const { return Invoke(NameIDRegistry::Meta::container_top); }
 	inline SharedObject ObjectView::next() const { return Invoke(NameIDRegistry::Meta::iterator_next); }
 	inline SharedObject ObjectView::prev() const { return Invoke(NameIDRegistry::Meta::iterator_prev); }
 	inline SharedObject ObjectView::cbegin() const { return Invoke(NameIDRegistry::Meta::container_cbegin); }

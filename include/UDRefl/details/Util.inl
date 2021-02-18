@@ -254,12 +254,6 @@ template<typename T>
 struct Ubpa::UDRefl::get_container_size_type<T&> : Ubpa::UDRefl::get_container_size_type<T> {};
 template<typename T>
 struct Ubpa::UDRefl::get_container_size_type<T&&> : Ubpa::UDRefl::get_container_size_type<T> {};
-template<typename T>
-struct Ubpa::UDRefl::get_container_size_type<const T> : Ubpa::UDRefl::get_container_size_type<T> {};
-template<typename T>
-struct Ubpa::UDRefl::get_container_size_type<volatile T> : Ubpa::UDRefl::get_container_size_type<T> {};
-template<typename T>
-struct Ubpa::UDRefl::get_container_size_type<const volatile T> : Ubpa::UDRefl::get_container_size_type<T> {};
 template<typename T, std::size_t N>
 struct Ubpa::UDRefl::get_container_size_type<T[N]> : std::type_identity<std::size_t> {};
 template<typename T>

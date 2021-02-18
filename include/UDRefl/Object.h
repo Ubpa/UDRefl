@@ -271,6 +271,7 @@ namespace Ubpa::UDRefl {
 		template<typename T> SharedObject at(T&& rhs) const;
 		SharedObject front() const;
 		SharedObject back() const;
+		SharedObject top() const;
 		SharedObject data() const;
 
 		// - modifiers
@@ -285,6 +286,8 @@ namespace Ubpa::UDRefl {
 		template<typename T> void push_back(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_push_back, std::forward<T>(arg)); };
 		void pop_front() const { BInvoke<void>(NameIDRegistry::Meta::container_pop_front); }
 		void pop_back() const { BInvoke<void>(NameIDRegistry::Meta::container_pop_back); }
+		template<typename T> void push(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_push, std::forward<T>(arg)); };
+		void pop() const { BInvoke<void>(NameIDRegistry::Meta::container_pop); }
 		template<typename T> void swap(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_swap, std::forward<T>(arg)); };
 		template<typename T> void merge(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_merge, std::forward<T>(arg)); };
 		template<typename T> SharedObject extract(T&& rhs) const;
