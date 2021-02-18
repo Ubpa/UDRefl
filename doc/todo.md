@@ -6,7 +6,7 @@
   - [x] simplify
   - [x]  -> concept
   - [ ] container
-    - [ ] list, forward_list
+    - [x] list, forward_list
     - [x] multi set/map
     - [ ] stack, queue, priority_queue
     - [ ] span, variant, optional
@@ -32,7 +32,6 @@
   - [x] array
   - [x] string
 - [ ] iterator API
-  - [ ] adaptors: make_reverse_iterator, make_move_iterator, front_inserter, back_inserter, inserter
   - [x] operations: advance, distance, next, prev
   - [x] range access: `[c][l/r]begin`, `[c][l/r]end` 
 - [x] type alias for AttrSet

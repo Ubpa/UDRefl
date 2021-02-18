@@ -201,8 +201,10 @@ namespace Ubpa::UDRefl {
 	// - modifiers
 
 	OBJECT_VIEW_DEFINE_META_VARS_T(container, insert)
+	OBJECT_VIEW_DEFINE_META_VARS_T(container, insert_after)
 	OBJECT_VIEW_DEFINE_META_VARS_T(container, insert_or_assign)
-	OBJECT_VIEW_DEFINE_META_T(container, erase)
+	OBJECT_VIEW_DEFINE_META_VARS_T(container, erase)
+	OBJECT_VIEW_DEFINE_META_VARS_T(container, erase_after)
 	OBJECT_VIEW_DEFINE_META_T(container, extract)
 
 	// - lookup

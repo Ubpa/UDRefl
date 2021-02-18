@@ -10,39 +10,39 @@ struct Ubpa::UDRefl::SpecializeIsSet<std::set<Key, Compare, Allocator>> : std::t
 namespace Ubpa::UDRefl {
 	template<typename T>
 	concept IsRawArray = true
-		&& container_begin<T>
-		&& container_begin<const T>
-		&& container_cbegin<T>
+		&& container_begin<T&>
+		&& container_begin<const T&>
+		&& container_cbegin<T&>
 
-		&& container_end<T>
-		&& container_end<const T>
-		&& container_cend<T>
+		&& container_end<T&>
+		&& container_end<const T&>
+		&& container_cend<T&>
 
-		&& container_rbegin<T>
-		&& container_rbegin<const T>
-		&& container_crbegin<T>
+		&& container_rbegin<T&>
+		&& container_rbegin<const T&>
+		&& container_crbegin<T&>
 
-		&& container_rend<T>
-		&& container_rend<const T>
-		&& container_crend<T>
+		&& container_rend<T&>
+		&& container_rend<const T&>
+		&& container_crend<T&>
 
-		&& container_at_size<T>
-		&& container_at_size<const T>
+		&& container_subscript_size<T&>
+		&& container_subscript_size<const T&>
 
-		&& container_subscript_size<T>
-		&& container_subscript_size<const T>
-
-		&& container_data<T>
-		&& container_data<const T>
+		&& container_data<T&>
+		&& container_data<const T&>
 
 		&& container_empty<T>
 		&& container_size<T>
 
-		&& container_swap<T>
+		&& container_swap<T&>
 		;
 
 	template<typename T>
 	concept IsArray = IsRawArray<T>
+		&& container_at_size<T>
+		&& container_at_size<const T>
+
 		&& container_front<T>
 		&& container_front<const T>
 
@@ -52,6 +52,8 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	concept IsVector = IsArray<T>
+		&& container_assign<T>
+
 		&& container_resize_cnt<T>
 		&& container_resize_cnt_value<T>
 		&& container_capacity<T>
@@ -61,7 +63,7 @@ namespace Ubpa::UDRefl {
 		&& container_clear<T>
 		&& container_insert_citer_clvalue<T>
 		&& container_insert_citer_rvalue<T>
-		&& container_insert_citer_size_value<T>
+		&& container_insert_citer_cnt<T>
 		&& container_erase_citer<T>
 		&& container_erase_range_citer<T>
 		&& container_push_back_clvalue<T>
@@ -71,6 +73,8 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	concept IsDeque = true
+		&& container_assign<T>
+
 		&& container_begin<T>
 		&& container_begin<const T>
 		&& container_cbegin<T>
@@ -108,7 +112,7 @@ namespace Ubpa::UDRefl {
 		&& container_clear<T>
 		&& container_insert_citer_clvalue<T>
 		&& container_insert_citer_rvalue<T>
-		&& container_insert_citer_size_value<T>
+		&& container_insert_citer_cnt<T>
 		&& container_erase_citer<T>
 		&& container_erase_range_citer<T>
 		&& container_push_front_clvalue<T>
@@ -121,13 +125,105 @@ namespace Ubpa::UDRefl {
 		&& container_swap<T>
 		;
 
-	// TODO : list
+	template<typename T>
+	concept IsForwardList = true
+		&& container_assign<T>
+
+		&& container_begin<T>
+		&& container_begin<const T>
+		&& container_cbegin<T>
+
+		&& container_end<T>
+		&& container_end<const T>
+		&& container_cend<T>
+
+		&& container_front<T>
+		&& container_front<const T>
+		&& container_empty<T>
+		&& container_resize_cnt<T>
+		&& container_resize_cnt_value<T>
+
+		&& container_clear<T>
+		&& container_insert_after_clvalue<T>
+		&& container_insert_after_rvalue<T>
+		&& container_insert_after_cnt<T>
+		&& container_erase_after<T>
+		&& container_erase_after_range<T>
+		&& container_push_front_clvalue<T>
+		&& container_push_front_rvalue<T>
+		&& container_pop_front<T>
+		&& container_swap<T>
+		&& container_merge_l<T>
+		&& container_merge_r<T>
+
+		&& container_splice_after_l<T>
+		&& container_splice_after_r<T>
+		&& container_splice_after_it_l<T>
+		&& container_splice_after_it_r<T>
+		&& container_splice_after_range_l<T>
+		&& container_splice_after_range_r<T>
+		&& container_remove<T>
+		&& container_reverse<T>
+		&& container_unique<T>
+		&& container_sort<T>
+		;
 
 	template<typename T>
-	concept IsList = false;
+	concept IsList = true
+		&& container_assign<T>
 
-	template<typename T>
-	concept IsForwardList = false;
+		&& container_begin<T>
+		&& container_begin<const T>
+		&& container_cbegin<T>
+
+		&& container_end<T>
+		&& container_end<const T>
+		&& container_cend<T>
+
+		&& container_rbegin<T>
+		&& container_rbegin<const T>
+		&& container_crbegin<T>
+
+		&& container_rend<T>
+		&& container_rend<const T>
+		&& container_crend<T>
+
+		&& container_front<T>
+		&& container_front<const T>
+		&& container_back<T>
+		&& container_back<const T>
+		&& container_empty<T>
+		&& container_size<T>
+		&& container_resize_cnt<T>
+		&& container_resize_cnt_value<T>
+
+		&& container_clear<T>
+		&& container_insert_citer_clvalue<T>
+		&& container_insert_citer_rvalue<T>
+		&& container_insert_citer_cnt<T>
+		&& container_erase_citer<T>
+		&& container_erase_range_citer<T>
+		&& container_push_front_clvalue<T>
+		&& container_push_front_rvalue<T>
+		&& container_pop_front<T>
+		&& container_push_back_clvalue<T>
+		&& container_push_back_rvalue<T>
+		&& container_pop_back<T>
+		&& container_swap<T>
+		&& container_merge_l<T>
+		&& container_merge_r<T>
+
+		&& container_splice_l<T>
+		&& container_splice_r<T>
+		&& container_splice_it_l<T>
+		&& container_splice_it_r<T>
+		&& container_splice_range_l<T>
+		&& container_splice_range_r<T>
+		&& container_remove<T>
+		&& container_reverse<T>
+		&& container_unique<T>
+		&& container_sort<T>
+		;
 
 	template<typename T>
 	concept IsMultiSet = true
@@ -156,7 +252,6 @@ namespace Ubpa::UDRefl {
 		&& container_insert_rnode<T>
 		&& container_insert_citer_clvalue<T>
 		&& container_insert_citer_rvalue<T>
-		&& container_insert_citer_size_value<T>
 		&& container_insert_citer_rnode<T>
 
 		&& container_erase_citer<T>

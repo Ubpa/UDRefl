@@ -146,8 +146,10 @@ namespace Ubpa::UDRefl {
 
 			static constexpr Name container_clear{ "UDRefl::container_clear" };
 			static constexpr Name container_insert{ "UDRefl::container_insert" };
+			static constexpr Name container_insert_after{ "UDRefl::container_insert_after" };
 			static constexpr Name container_insert_or_assign{ "UDRefl::container_insert_or_assign" };
 			static constexpr Name container_erase{ "UDRefl::container_erase" };
+			static constexpr Name container_erase_after{ "UDRefl::container_erase_after" };
 			static constexpr Name container_push_front{ "UDRefl::container_push_front" };
 			static constexpr Name container_pop_front{ "UDRefl::container_pop_front" };
 			static constexpr Name container_push_back{ "UDRefl::container_push_back" };
@@ -155,6 +157,13 @@ namespace Ubpa::UDRefl {
 			static constexpr Name container_swap{ "UDRefl::container_swap" };
 			static constexpr Name container_merge{ "UDRefl::container_merge" };
 			static constexpr Name container_extract{ "UDRefl::container_extract" };
+
+			static constexpr Name container_splice_after{ "UDRefl::container_splice_after" };
+			static constexpr Name container_splice{ "UDRefl::container_splice" };
+			static constexpr Name container_remove{ "UDRefl::container_remove" };
+			static constexpr Name container_reverse{ "UDRefl::container_reverse" };
+			static constexpr Name container_unique{ "UDRefl::container_unique" };
+			static constexpr Name container_sort{ "UDRefl::container_sort" };
 
 			static constexpr Name container_count{ "UDRefl::container_count" };
 			static constexpr Name container_find{ "UDRefl::container_find" };
