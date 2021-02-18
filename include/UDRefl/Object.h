@@ -231,8 +231,8 @@ namespace Ubpa::UDRefl {
 		// Iterator
 		/////////////
 
-		template<typename T> void advance(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_advance, std::forward<T>(arg)); };
-		template<typename T> std::size_t distance(T&& arg) const { return ABInvoke<std::size_t>(NameIDRegistry::Meta::container_distance, std::forward<T>(arg)); };
+		template<typename T> void advance(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<T>(arg)); };
+		template<typename T> std::size_t distance(T&& arg) const { return ABInvoke<std::size_t>(NameIDRegistry::Meta::iterator_distance, std::forward<T>(arg)); };
 		template<typename T> SharedObject next(T&& arg) const;
 		template<typename T> SharedObject prev(T&& arg) const;
 		SharedObject next() const;
