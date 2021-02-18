@@ -274,6 +274,9 @@ namespace Ubpa::UDRefl::details {
 
 			// container
 
+			if constexpr (container_assign<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_assign, [](T& lhs, const typename T::size_type& s, const typename T::value_type& v) { lhs.assign(s, v); });
+
 			// - iterator
 
 			if constexpr (container_begin<T&>)
@@ -909,7 +912,6 @@ namespace Ubpa::UDRefl {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::aligned_storage_t<sizeof(U), alignof(U)> result_buffer;
 			Type result_type = BInvoke(obj, method_name, static_cast<void*>(&result_buffer), argTypes, argptr_buffer, flag);
-			assert(result_type.Is<T>());
 			return MoveResult<T>(result_type, &result_buffer);
 		}
 		else

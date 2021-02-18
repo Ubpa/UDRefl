@@ -12,16 +12,10 @@ SharedObject ObjectView::name (Arg&& rhs) const {                               
     return AInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
 }
 
-#define OBJECT_VIEW_DEFINE_META_RET_T(prefix, name, ret)                                 \
-template<typename Arg>                                                                   \
-ret ObjectView::name (Arg&& rhs) const {                                                 \
-    return ABInvoke<ret>(NameIDRegistry::Meta::prefix##_##name, std::forward<Arg>(rhs)); \
-}
-
-#define OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(name)                                        \
-template<typename... Args>                                                               \
-SharedObject ObjectView::name (Args&&... args) const {                                   \
-    return AInvoke(NameIDRegistry::Meta::container_##name, std::forward<Args>(args)...); \
+#define OBJECT_VIEW_DEFINE_META_VARS_T(prefix, name)                                    \
+template<typename... Args>                                                              \
+SharedObject ObjectView::name (Args&&... args) const {                                  \
+    return AInvoke(NameIDRegistry::Meta::prefix##_##name, std::forward<Args>(args)...); \
 }
 
 #define DEFINE_OPERATOR_LSHIFT(Lhs, Rhs)            \
@@ -183,11 +177,6 @@ namespace Ubpa::UDRefl {
 	// iterator
 	/////////////
 
-	template<typename Arg>
-	void ObjectView::advance (Arg&& rhs) const {
-		ABInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<Arg>(rhs));
-	}
-	OBJECT_VIEW_DEFINE_META_RET_T(iterator, distance, std::size_t);
 	OBJECT_VIEW_DEFINE_META_T(iterator, next);
 	OBJECT_VIEW_DEFINE_META_T(iterator, prev);
 
@@ -199,24 +188,15 @@ namespace Ubpa::UDRefl {
 
 	OBJECT_VIEW_DEFINE_META_T(container, at)
 
-	// - capacity
-
-	OBJECT_VIEW_DEFINE_META_RET_T(container, resize, void)
-
 	// - modifiers
 
-	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(insert)
-	OBJECT_VIEW_DEFINE_CONTAINER_VARS_T(insert_or_assign)
+	OBJECT_VIEW_DEFINE_META_VARS_T(container, insert)
+	OBJECT_VIEW_DEFINE_META_VARS_T(container, insert_or_assign)
 	OBJECT_VIEW_DEFINE_META_T(container, erase)
-	OBJECT_VIEW_DEFINE_META_RET_T(container, push_front, void)
-	OBJECT_VIEW_DEFINE_META_RET_T(container, push_back, void)
-	OBJECT_VIEW_DEFINE_META_RET_T(container, swap, void)
-	OBJECT_VIEW_DEFINE_META_RET_T(container, merge, void)
 	OBJECT_VIEW_DEFINE_META_T(container, extract)
 
 	// - lookup
 	
-	OBJECT_VIEW_DEFINE_META_RET_T(container, count, std::size_t)
 	OBJECT_VIEW_DEFINE_META_T(container, find)
 	OBJECT_VIEW_DEFINE_META_T(container, lower_bound)
 	OBJECT_VIEW_DEFINE_META_T(container, upper_bound)
@@ -296,7 +276,6 @@ namespace Ubpa::UDRefl {
 
 #undef OBJECT_VIEW_DEFINE_OPERATOR_T
 #undef OBJECT_VIEW_DEFINE_META_T
-#undef OBJECT_VIEW_DEFINE_META_RET_T
-#undef OBJECT_VIEW_DEFINE_CONTAINER_VARS_T
+#undef OBJECT_VIEW_DEFINE_META_VARS_T
 #undef DEFINE_OPERATOR_LSHIFT
 #undef DEFINE_OPERATOR_RSHIFT
