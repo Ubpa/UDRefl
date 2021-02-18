@@ -362,13 +362,38 @@ namespace Ubpa::UDRefl {
 		&& pair_second<T>
 		;
 
-	// TODO : Stack, Queue
+	template<typename T>
+	concept IsStack = true
+		&& container_top<T>
+		&& container_top<const T>
+		&& container_empty<T>
+		&& container_size<T>
+
+		&& container_push_clvalue<T>
+		&& container_push_rvalue<T>
+		&& container_pop<T>
+		&& container_swap<T>
+		;
 
 	template<typename T>
-	concept IsStack = false;
+	concept IsPriorityQueue = IsStack<T>
+		&& requires{ typename T::value_compare; }
+		;
 
 	template<typename T>
-	concept IsQueue = false;
+	concept IsQueue = true
+		&& container_front<T>
+		&& container_front<const T>
+		&& container_back<T>
+		&& container_back<const T>
+		&& container_empty<T>
+		&& container_size<T>
+
+		&& container_pop<T>
+		&& container_push_clvalue<T>
+		&& container_push_rvalue<T>
+		&& container_swap<T>
+		;
 
 	template<typename T>
 	concept IsContainerType = false

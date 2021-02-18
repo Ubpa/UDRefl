@@ -342,6 +342,11 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (container_back<const T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_back, [](const T& lhs) -> decltype(auto) { return lhs.back(); });
 
+			if constexpr (container_top<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_top, [](T& lhs) -> decltype(auto) { return lhs.top(); });
+			if constexpr (container_top<const T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_top, [](const T& lhs) -> decltype(auto) { return lhs.top(); });
+
 			if constexpr (container_empty<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_empty, [](const T& lhs) -> bool { return static_cast<bool>(std::empty(lhs)); });
 
@@ -433,6 +438,15 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (container_pop_back<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_pop_back, [](T& lhs) { lhs.pop_back(); });
+
+			if constexpr (container_push_clvalue<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_push, [](T& lhs, const typename T::value_type& value) { lhs.push(value); });
+
+			if constexpr (container_push_rvalue<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_push, [](T& lhs, typename T::value_type&& value) { lhs.push(std::move(value)); });
+
+			if constexpr (container_pop<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_pop, [](T& lhs) { lhs.pop(); });
 
 			if constexpr (container_swap<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_swap, [](T& lhs, T& rhs) { std::swap(lhs, rhs); });
@@ -552,14 +566,16 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedSet));
 			else if constexpr (IsUnorderedMultiSet<T>)
 				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::UnorderedMultiSet));
+			else if constexpr (IsStack<T>)
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Stack));
+			else if constexpr (IsPriorityQueue<T>)
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::PriorityQueue));
+			else if constexpr (IsQueue<T>)
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Queue));
 			else if constexpr (IsPair<T>)
 				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Pair));
 			else if constexpr (IsTuple<T>)
 				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Tuple));
-			else if constexpr (IsStack<T>)
-				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Stack));
-			else if constexpr (IsQueue<T>)
-				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Queue));
 
 			// - type
 

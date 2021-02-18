@@ -134,6 +134,7 @@ namespace Ubpa::UDRefl {
 			static constexpr Name container_data{ "UDRefl::container_data" };
 			static constexpr Name container_front{ "UDRefl::container_front" };
 			static constexpr Name container_back{ "UDRefl::container_back" };
+			static constexpr Name container_top{ "UDRefl::container_top" };
 
 			static constexpr Name container_empty{ "UDRefl::container_empty" };
 			static constexpr Name container_size{ "UDRefl::container_size" };
@@ -154,6 +155,8 @@ namespace Ubpa::UDRefl {
 			static constexpr Name container_pop_front{ "UDRefl::container_pop_front" };
 			static constexpr Name container_push_back{ "UDRefl::container_push_back" };
 			static constexpr Name container_pop_back{ "UDRefl::container_pop_back" };
+			static constexpr Name container_push{ "UDRefl::container_push" };
+			static constexpr Name container_pop{ "UDRefl::container_pop" };
 			static constexpr Name container_swap{ "UDRefl::container_swap" };
 			static constexpr Name container_merge{ "UDRefl::container_merge" };
 			static constexpr Name container_extract{ "UDRefl::container_extract" };

@@ -91,6 +91,7 @@ NameIDRegistry::NameIDRegistry() {
 	RegisterUnmanaged(Meta::container_data.GetID(), Meta::container_data.GetView());
 	RegisterUnmanaged(Meta::container_front.GetID(), Meta::container_front.GetView());
 	RegisterUnmanaged(Meta::container_back.GetID(), Meta::container_back.GetView());
+	RegisterUnmanaged(Meta::container_top.GetID(), Meta::container_top.GetView());
 
 	RegisterUnmanaged(Meta::container_empty.GetID(), Meta::container_empty.GetView());
 	RegisterUnmanaged(Meta::container_size.GetID(), Meta::container_size.GetView());
@@ -111,6 +112,8 @@ NameIDRegistry::NameIDRegistry() {
 	RegisterUnmanaged(Meta::container_pop_front.GetID(), Meta::container_pop_front.GetView());
 	RegisterUnmanaged(Meta::container_push_back.GetID(), Meta::container_push_back.GetView());
 	RegisterUnmanaged(Meta::container_pop_back.GetID(), Meta::container_pop_back.GetView());
+	RegisterUnmanaged(Meta::container_push.GetID(), Meta::container_push.GetView());
+	RegisterUnmanaged(Meta::container_pop.GetID(), Meta::container_pop.GetView());
 	RegisterUnmanaged(Meta::container_swap.GetID(), Meta::container_swap.GetView());
 	RegisterUnmanaged(Meta::container_merge.GetID(), Meta::container_merge.GetView());
 	RegisterUnmanaged(Meta::container_extract.GetID(), Meta::container_extract.GetView());

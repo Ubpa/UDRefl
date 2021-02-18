@@ -8,7 +8,7 @@
   - [ ] container
     - [x] list, forward_list
     - [x] multi set/map
-    - [ ] stack, queue, priority_queue
+    - [x] stack, queue, priority_queue
     - [ ] span, variant, optional
 - [x] improve test
 - [ ] introduction

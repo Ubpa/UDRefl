@@ -22,6 +22,7 @@
   - simplify some typenames of std template types with default arguments
   - support more containers
     - forwardlist, list
+    - stack, priority_queue, queue
 - 0.8.1
   - support
     - pointer, array

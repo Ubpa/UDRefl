@@ -19,6 +19,7 @@ void Ubpa::UDRefl::details::ReflMngrInitUtil_0(ReflMngr& mngr) {
 	mngr.AddField<ContainerType::UnorderedMap>("UnorderedMap");
 	mngr.AddField<ContainerType::UnorderedMultiMap>("UnorderedMultiMap");
 	mngr.AddField<ContainerType::Stack>("Stack");
+	mngr.AddField<ContainerType::PriorityQueue>("PriorityQueue");
 	mngr.AddField<ContainerType::Queue>("Queue");
 	mngr.AddField<ContainerType::Tuple>("Tuple");
 	mngr.AddField<ContainerType::Pair>("Pair");
