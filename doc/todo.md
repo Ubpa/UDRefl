@@ -9,7 +9,9 @@
     - [x] list, forward_list
     - [x] multi set/map
     - [x] stack, queue, priority_queue
-    - [ ] span, variant, optional
+    - [x] span
+    - [ ] variant
+    - [ ] optional
 - [x] improve test
 - [ ] introduction
 - [ ] doc

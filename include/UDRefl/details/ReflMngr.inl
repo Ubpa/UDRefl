@@ -315,6 +315,19 @@ namespace Ubpa::UDRefl::details {
 
 			// container
 
+			// - ctor
+
+			if constexpr (container_ctor_cnt<T>)
+				mngr.AddConstructor<T, const typename T::size_type&>();
+			if constexpr (container_ctor_cnt_value<T>)
+				mngr.AddConstructor<T, const typename T::size_type&, const typename T::value_type&>();
+			if constexpr (container_ctor_ptr_cnt<T>)
+				mngr.AddConstructor<T, const typename T::pointer_type&, const typename T::size_type&>();
+			if constexpr (container_ctor_ptr_ptr<T>)
+				mngr.AddConstructor<T, const typename T::pointer_type&, const typename T::pointer_type&>();
+
+			// - assign
+
 			if constexpr (container_assign<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_assign, [](T& lhs, const typename T::size_type& s, const typename T::value_type& v) { lhs.assign(s, v); });
 
@@ -393,6 +406,9 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (container_size<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_size, [](const T& lhs) -> std::size_t { return static_cast<std::size_t>(std::size(lhs)); });
+
+			if constexpr (container_size_bytes<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_size_bytes, [](const T& lhs) -> std::size_t { return static_cast<std::size_t>(lhs.size_bytes()); });
 
 			if constexpr (container_resize_cnt<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_resize, [](T& lhs, const typename T::size_type& n) { lhs.resize(n); });
@@ -617,6 +633,8 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Pair));
 			else if constexpr (IsTuple<T>)
 				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Tuple));
+			else if constexpr (IsSpan<T>)
+				mngr.AddTypeAttr(Type_of<T>, mngr.MakeShared(Type_of<ContainerType>, ContainerType::Span));
 
 			// - type
 

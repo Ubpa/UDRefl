@@ -23,6 +23,7 @@
   - support more containers
     - forwardlist, list
     - stack, priority_queue, queue
+    - span
 - 0.8.1
   - support
     - pointer, array

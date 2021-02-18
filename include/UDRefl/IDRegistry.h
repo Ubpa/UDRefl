@@ -139,6 +139,7 @@ namespace Ubpa::UDRefl {
 
 			static constexpr Name container_empty{ "UDRefl::container_empty" };
 			static constexpr Name container_size{ "UDRefl::container_size" };
+			static constexpr Name container_size_bytes{ "UDRefl::container_size_bytes" };
 			static constexpr Name container_max_size{ "UDRefl::container_max_size" };
 			static constexpr Name container_resize{ "UDRefl::container_resize" };
 			static constexpr Name container_capacity{ "UDRefl::container_capacity" };

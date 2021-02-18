@@ -25,4 +25,5 @@ void Ubpa::UDRefl::ext::Bootstrap() {
 	details::Bootstrap_helper_ptr();
 	details::Bootstrap_helper_reflmngr_0();
 	details::Bootstrap_helper_reflmngr_1();
+	details::Bootstrap_helper_reflmngr_2();
 }

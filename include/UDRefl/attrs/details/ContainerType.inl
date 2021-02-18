@@ -396,6 +396,37 @@ namespace Ubpa::UDRefl {
 		;
 
 	template<typename T>
+	concept IsSpan = true
+		&& container_begin<T>
+		&& container_begin<const T>
+
+		&& container_end<T>
+		&& container_end<const T>
+
+		&& container_rbegin<T>
+		&& container_rbegin<const T>
+
+		&& container_rend<T>
+		&& container_rend<const T>
+
+		&& container_front<T>
+		&& container_front<const T>
+
+		&& container_back<T>
+		&& container_back<const T>
+
+		&& container_subscript_size<T>
+		&& container_subscript_size<const T>
+
+		&& container_data<T>
+		&& container_data<const T>
+
+		&& container_size<T>
+		&& container_size_bytes<T>
+		&& container_empty<T>
+		;
+
+	template<typename T>
 	concept IsContainerType = false
 		|| IsRawArray<T>
 		|| IsDeque<T>
@@ -406,5 +437,6 @@ namespace Ubpa::UDRefl {
 		|| IsStack<T>
 		|| IsQueue<T>
 		|| IsTuple<T>
+		|| IsSpan<T>
 		;
 }

@@ -36,6 +36,7 @@ namespace Ubpa::UDRefl {
 		PriorityQueue,
 		Queue,
 		Pair,
+		Span
 	};
 		
 	// SpecializeIsSet<std::set<...>> is std::true_type

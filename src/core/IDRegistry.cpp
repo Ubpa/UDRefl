@@ -96,6 +96,7 @@ NameIDRegistry::NameIDRegistry() {
 
 	RegisterUnmanaged(Meta::container_empty.GetID(), Meta::container_empty.GetView());
 	RegisterUnmanaged(Meta::container_size.GetID(), Meta::container_size.GetView());
+	RegisterUnmanaged(Meta::container_size_bytes.GetID(), Meta::container_size_bytes.GetView());
 	RegisterUnmanaged(Meta::container_max_size.GetID(), Meta::container_max_size.GetView());
 	RegisterUnmanaged(Meta::container_resize.GetID(), Meta::container_resize.GetView());
 	RegisterUnmanaged(Meta::container_capacity.GetID(), Meta::container_capacity.GetView());
