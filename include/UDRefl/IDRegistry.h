@@ -111,6 +111,22 @@ namespace Ubpa::UDRefl {
 			static constexpr Name tuple_get{ "UDRefl::tuple_get" };
 			static constexpr Name tuple_element{ "UDRefl::tuple_element" };
 
+			// variant
+
+			static constexpr Name variant_index{ "UDRefl::variant_index" };
+			static constexpr Name variant_valueless_by_exception{ "UDRefl::variant_valueless_by_exception" };
+			static constexpr Name variant_holds_alternative{ "UDRefl::variant_holds_alternative" };
+			static constexpr Name variant_get{ "UDRefl::variant_get" };
+			static constexpr Name variant_get_if{ "UDRefl::variant_get_if" };
+			static constexpr Name variant_size{ "UDRefl::variant_size" };
+			static constexpr Name variant_alternative{ "UDRefl::variant_alternative" };
+
+			// optional
+
+			static constexpr Name optional_has_value{ "UDRefl::optional_has_value" };
+			static constexpr Name optional_value{ "UDRefl::optional_value" };
+			static constexpr Name optional_reset{ "UDRefl::optional_reset" };
+
 			// iterator
 
 			static constexpr Name iterator_advance{ "UDRefl::iterator_advance" };

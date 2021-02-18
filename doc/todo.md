@@ -2,16 +2,16 @@
 
 - [x] `TypeIDRegistry` Type Computation
 - [x] cast (reference) more
-- [ ] traits
+- [x] traits
   - [x] simplify
   - [x]  -> concept
-  - [ ] container
+  - [x] container
     - [x] list, forward_list
     - [x] multi set/map
     - [x] stack, queue, priority_queue
     - [x] span
-    - [ ] variant
-    - [ ] optional
+    - [x] variant
+    - [x] optional
 - [x] improve test
 - [ ] introduction
 - [ ] doc

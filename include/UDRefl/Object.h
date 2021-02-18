@@ -230,6 +230,24 @@ namespace Ubpa::UDRefl {
 		Type tuple_element(std::size_t i) const { return BInvoke<Type>(NameIDRegistry::Meta::tuple_element, std::move(i)); }
 
 		//
+		// Variant
+		////////////
+
+		std::size_t variant_size() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::variant_size); }
+		bool variant_holds_alternative(Type type) const { return BInvoke<bool>(NameIDRegistry::Meta::variant_holds_alternative, std::move(type)); }
+		ObjectView variant_get(std::size_t i) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_get, std::move(i)); }
+		ObjectView variant_get(Type type) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_get, std::move(type)); }
+		Type variant_alternative(std::size_t i) const { return BInvoke<Type>(NameIDRegistry::Meta::variant_alternative, std::move(i)); }
+
+		//
+		// Optional
+		/////////////
+
+		bool optional_has_value() const { return BInvoke<bool>(NameIDRegistry::Meta::optional_has_value); }
+		ObjectView optional_value() const { return BInvoke<ObjectView>(NameIDRegistry::Meta::optional_value); }
+		void optional_reset() const { BInvoke<void>(NameIDRegistry::Meta::optional_reset); }
+
+		//
 		// Iterator
 		/////////////
 

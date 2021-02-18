@@ -24,4 +24,6 @@ void Ubpa::UDRefl::details::ReflMngrInitUtil_0(ReflMngr& mngr) {
 	mngr.AddField<ContainerType::Tuple>("Tuple");
 	mngr.AddField<ContainerType::Pair>("Pair");
 	mngr.AddField<ContainerType::Span>("Span");
+	mngr.AddField<ContainerType::Variant>("Variant");
+	mngr.AddField<ContainerType::Optional>("Optional");
 }

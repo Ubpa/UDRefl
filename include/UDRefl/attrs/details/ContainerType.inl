@@ -427,6 +427,20 @@ namespace Ubpa::UDRefl {
 		;
 
 	template<typename T>
+	concept IsVariant = true
+		&& variant_size<T>
+		&& variant_index<T>
+		&& variant_valueless_by_exception<T>
+		;
+
+	template<typename T>
+	concept IsOptional = true
+		&& optional_has_value<T>
+		&& optional_value<T>
+		&& optional_reset<T>
+		;
+
+	template<typename T>
 	concept IsContainerType = false
 		|| IsRawArray<T>
 		|| IsDeque<T>
@@ -438,5 +452,7 @@ namespace Ubpa::UDRefl {
 		|| IsQueue<T>
 		|| IsTuple<T>
 		|| IsSpan<T>
+		|| IsVariant<T>
+		|| IsOptional<T>
 		;
 }

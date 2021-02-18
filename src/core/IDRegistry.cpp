@@ -68,6 +68,22 @@ NameIDRegistry::NameIDRegistry() {
 	RegisterUnmanaged(Meta::tuple_get.GetID(), Meta::tuple_get.GetView());
 	RegisterUnmanaged(Meta::tuple_element.GetID(), Meta::tuple_element.GetView());
 
+	// variant
+
+	RegisterUnmanaged(Meta::variant_index.GetID(), Meta::variant_index.GetView());
+	RegisterUnmanaged(Meta::variant_valueless_by_exception.GetID(), Meta::variant_valueless_by_exception.GetView());
+	RegisterUnmanaged(Meta::variant_holds_alternative.GetID(), Meta::variant_holds_alternative.GetView());
+	RegisterUnmanaged(Meta::variant_get.GetID(), Meta::variant_get.GetView());
+	RegisterUnmanaged(Meta::variant_get_if.GetID(), Meta::variant_get_if.GetView());
+	RegisterUnmanaged(Meta::variant_size.GetID(), Meta::variant_size.GetView());
+	RegisterUnmanaged(Meta::variant_alternative.GetID(), Meta::variant_alternative.GetView());
+
+	// optional
+
+	RegisterUnmanaged(Meta::optional_has_value.GetID(), Meta::optional_has_value.GetView());
+	RegisterUnmanaged(Meta::optional_value.GetID(), Meta::optional_value.GetView());
+	RegisterUnmanaged(Meta::optional_reset.GetID(), Meta::optional_reset.GetView());
+
 	// iterator
 
 	RegisterUnmanaged(Meta::iterator_advance.GetID(), Meta::iterator_advance.GetView());

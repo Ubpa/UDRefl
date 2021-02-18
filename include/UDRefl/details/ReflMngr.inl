@@ -64,68 +64,106 @@ namespace Ubpa::UDRefl::details {
 		}
 	};
 
-	template<std::size_t TargetIdx, typename T>
+	template<template<typename>class get_size, std::size_t TargetIdx, typename T>
 	ObjectView runtime_get_impl(T&& obj, std::size_t i) {
 		using U = std::remove_cvref_t<T>;
-		if constexpr (TargetIdx == std::tuple_size_v<U>)
+		if constexpr (TargetIdx == get_size<U>::value)
 			return nullptr;
 		else {
 			if (i == TargetIdx)
 				return ObjectView{ std::get<TargetIdx>(std::forward<T>(obj)) };
 			else
-				return runtime_get_impl<TargetIdx + 1>(std::forward<T>(obj), i);
+				return runtime_get_impl<get_size, TargetIdx + 1>(std::forward<T>(obj), i);
 		}
 	}
 
-	template<typename T>
+	template<template<typename>class get_size, typename T>
 	ObjectView runtime_get(T&& obj, std::size_t i) {
 		using U = std::remove_cvref_t<T>;
-		assert(i < std::tuple_size_v<U>);
-		return runtime_get_impl<0>(std::forward<T>(obj), i);
+		assert(i < get_size<U>::value);
+		return runtime_get_impl<get_size, 0>(std::forward<T>(obj), i);
 	}
 
-	template<std::size_t TargetIdx, typename T>
+	template<template<typename>class get_size, template<std::size_t, typename>class get_type, std::size_t TargetIdx, typename T>
 	ObjectView runtime_get_impl(T&& obj, const Type & type) {
 		using U = std::remove_cvref_t<T>;
-		if constexpr (TargetIdx == std::tuple_size_v<U>)
+		if constexpr (TargetIdx == get_size<U>::value)
 			return nullptr;
 		else {
-			if (type == Type_of<std::tuple_element_t<TargetIdx, U>>)
+			if (type == Type_of<typename get_type<TargetIdx, U>::type>)
 				return ObjectView{ std::get<TargetIdx>(std::forward<T>(obj)) };
 			else
-				return runtime_get_impl<TargetIdx + 1>(std::forward<T>(obj), type);
+				return runtime_get_impl<get_size, get_type, TargetIdx + 1>(std::forward<T>(obj), type);
 		}
 	}
 
-	template<typename T>
+	template<template<typename>class get_size, template<std::size_t, typename>class get_type, typename T>
 	ObjectView runtime_get(T&& obj, const Type& type) {
-		using U = std::remove_cvref_t<T>;
-		return runtime_get_impl<0>(std::forward<T>(obj), type);
+		return runtime_get_impl<get_size, get_type, 0>(std::forward<T>(obj), type);
 	}
 
 	template<std::size_t TargetIdx, typename T>
-	Type runtime_tuple_element_impl(T&& obj, std::size_t i) {
-		using U = std::remove_cvref_t<T>;
-		if constexpr (TargetIdx == std::tuple_size_v<U>)
+	Type runtime_tuple_element_impl(std::size_t i) noexcept {
+		if constexpr (TargetIdx == std::tuple_size_v<T>)
 			return {};
 		else {
 			if (i == TargetIdx)
-				return Type_of<std::tuple_element_t<TargetIdx, U>>;
+				return Type_of<std::tuple_element_t<TargetIdx, T>>;
 			else
-				return runtime_tuple_element_impl<TargetIdx + 1>(std::forward<T>(obj), i);
+				return runtime_tuple_element_impl<TargetIdx + 1, T>(i);
 		}
 	}
 
 	template<typename T>
-	Type runtime_tuple_element(T&& obj, std::size_t i) {
-		using U = std::remove_cvref_t<T>;
-		assert(i < std::tuple_size_v<U>);
-		return runtime_tuple_element_impl<0>(std::forward<T>(obj), i);
+	Type runtime_tuple_element(std::size_t i) noexcept {
+		assert(i < std::tuple_size_v<T>);
+		return runtime_tuple_element_impl<0, T>(i);
 	}
 
 	template<typename T, std::size_t... Ns>
 	void register_tuple_elements(ReflMngr& mngr, std::index_sequence<Ns...>) {
 		(mngr.RegisterType<std::tuple_element_t<Ns, T>>(), ...);
+	}
+
+	template<std::size_t TargetIdx, typename T>
+	bool runtime_variant_holds_alternative_impl(const T& obj, const Type& type) noexcept {
+		if constexpr (TargetIdx == std::variant_size_v<T>)
+			return false;
+		else {
+			using Elem = std::variant_alternative_t<TargetIdx, T>;
+			if (type == Type_of<Elem>)
+				return std::holds_alternative<Elem>(obj);
+			else
+				return runtime_variant_holds_alternative_impl<TargetIdx + 1>(obj, type);
+		}
+	}
+
+	template<typename T>
+	ObjectView runtime_variant_holds_alternative(const T& obj, const Type& type) noexcept {
+		return runtime_variant_holds_alternative_impl<0>(obj, type);
+	}
+
+	template<std::size_t TargetIdx, typename T>
+	Type runtime_variant_alternative_impl(std::size_t i) {
+		if constexpr (TargetIdx == std::variant_size_v<T>)
+			return {};
+		else {
+			if (i == TargetIdx)
+				return Type_of<std::variant_alternative_t<TargetIdx, T>>;
+			else
+				return runtime_variant_alternative_impl<TargetIdx + 1, T>(i);
+		}
+	}
+
+	template<typename T>
+	Type runtime_variant_alternative(std::size_t i) {
+		assert(i < std::variant_size_v<T>);
+		return runtime_variant_alternative_impl<0, T>(i);
+	}
+
+	template<typename T, std::size_t... Ns>
+	void register_variant_alternatives(ReflMngr& mngr, std::index_sequence<Ns...>) {
+		(mngr.RegisterType<std::variant_alternative_t<Ns, T>>(), ...);
 	}
 
 	template<typename T>
@@ -237,17 +275,17 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assign_rshift, [](T& lhs, const T& rhs) -> decltype(auto) { return lhs >>= rhs; });
 
 			if constexpr (!IsContainerType<T> && operator_eq<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs == rhs); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs == rhs); });
 			if constexpr (!IsContainerType<T> && operator_ne<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ne, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs != rhs); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ne, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs != rhs); });
 			if constexpr (!IsContainerType<T> && operator_lt<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_lt, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs < rhs); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_lt, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs < rhs); });
 			if constexpr (!IsContainerType<T> && operator_gt<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_gt, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs > rhs); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_gt, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs > rhs); });
 			if constexpr (!IsContainerType<T> && operator_le<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_le, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs <= rhs); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_le, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs <= rhs); });
 			if constexpr (!IsContainerType<T> && operator_ge<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) -> bool { return static_cast<bool>(lhs >= rhs); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs >= rhs); });
 
 			if constexpr (operator_subscript<T, const std::size_t>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_subscript, [](T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs[rhs]; });
@@ -275,7 +313,7 @@ namespace Ubpa::UDRefl::details {
 				if constexpr (std::is_convertible_v<std::iter_difference_t<T>, std::size_t>) {
 					mngr.AddMemberMethod(
 						NameIDRegistry::Meta::iterator_distance,
-						[](const T& lhs, const T& rhs) -> std::size_t { return static_cast<std::size_t>(std::distance(lhs, rhs)); }
+						[](const T& lhs, const T& rhs) { return static_cast<std::size_t>(std::distance(lhs, rhs)); }
 					);
 				}
 				if constexpr (std::random_access_iterator<T>) {
@@ -304,14 +342,45 @@ namespace Ubpa::UDRefl::details {
 			// tuple
 
 			if constexpr (IsTuple<T> && !IsArray<T>) {
-				mngr.AddStaticMethod(Type_of<T>, NameIDRegistry::Meta::tuple_size, []() { return std::tuple_size_v<T>; });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get(t, i); });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get(t, i); });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const Type& type) { return runtime_get(t, type); });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const Type& type) { return runtime_get(t, type); });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_element, [](const T& t, const std::size_t& i) { return runtime_tuple_element(t, i); });
+				mngr.AddStaticMethod(Type_of<T>, NameIDRegistry::Meta::tuple_size, []() { return static_cast<std::size_t>(std::tuple_size_v<T>); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get<std::tuple_size>(t, i); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<std::tuple_size>(t, i); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const Type& type) { return runtime_get<std::tuple_size, std::tuple_element>(t, type); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const Type& type) { return runtime_get<std::tuple_size, std::tuple_element>(t, type); });
+				mngr.AddStaticMethod(Type_of<T>, NameIDRegistry::Meta::tuple_element, [](const std::size_t& i) { return runtime_tuple_element<T>(i); });
 				register_tuple_elements<T>(mngr, std::make_index_sequence<std::tuple_size_v<T>>{});
 			}
+
+			// variant
+
+			if constexpr (variant_index<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_index, [](const T& t) { return static_cast<std::size_t>(t.index()); });
+			if constexpr (variant_valueless_by_exception<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_valueless_by_exception, [](const T& t) { return static_cast<bool>(t.valueless_by_exception()); });
+			if constexpr (IsVariant<T>) {
+				mngr.AddStaticMethod(Type_of<T>, NameIDRegistry::Meta::variant_size, []() { return static_cast<std::size_t>(std::variant_size_v<T>); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_get, [](T& t, const std::size_t& i) { return runtime_get<std::variant_size>(t, i); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_get, [](const T& t, const std::size_t& i) { return runtime_get<std::variant_size>(t, i); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_holds_alternative, [](const T& t, const Type& type) { return runtime_variant_holds_alternative(t, type); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_get, [](T& t, const Type& type) { return runtime_get<std::variant_size, std::variant_alternative>(t, type); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::variant_get, [](const T& t, const Type& type) { return runtime_get<std::variant_size, std::variant_alternative>(t, type); });
+				mngr.AddStaticMethod(Type_of<T>, NameIDRegistry::Meta::variant_alternative, [](const std::size_t& i) { return runtime_variant_alternative<T>(i); });
+				register_variant_alternatives<T>(mngr, std::make_index_sequence<std::variant_size_v<T>>{});
+			}
+
+			// optional
+
+			if constexpr (optional_has_value<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_has_value, [](const T& t) { return static_cast<bool>(t.has_value()); });
+
+			if constexpr (optional_value<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_value, [](T& t) { return ObjectView{ t.value() }; });
+
+			if constexpr (optional_value<const T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_value, [](const T& t) { return ObjectView{ t.value() }; });
+
+			if constexpr (optional_reset<T>)
+				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_reset, [](T& t) { t.reset(); });
 
 			// container
 
@@ -319,6 +388,10 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (container_ctor_cnt<T>)
 				mngr.AddConstructor<T, const typename T::size_type&>();
+			if constexpr (container_ctor_clvalue<T>)
+				mngr.AddConstructor<T, const typename T::value_type&>();
+			if constexpr (container_ctor_rvalue<T>)
+				mngr.AddConstructor<T, typename T::value_type&&>();
 			if constexpr (container_ctor_cnt_value<T>)
 				mngr.AddConstructor<T, const typename T::size_type&, const typename T::value_type&>();
 			if constexpr (container_ctor_ptr_cnt<T>)
@@ -402,13 +475,13 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_top, [](const T& lhs) -> decltype(auto) { return lhs.top(); });
 
 			if constexpr (container_empty<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_empty, [](const T& lhs) -> bool { return static_cast<bool>(std::empty(lhs)); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_empty, [](const T& lhs) { return static_cast<bool>(std::empty(lhs)); });
 
 			if constexpr (container_size<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_size, [](const T& lhs) -> std::size_t { return static_cast<std::size_t>(std::size(lhs)); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_size, [](const T& lhs) { return static_cast<std::size_t>(std::size(lhs)); });
 
 			if constexpr (container_size_bytes<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_size_bytes, [](const T& lhs) -> std::size_t { return static_cast<std::size_t>(lhs.size_bytes()); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_size_bytes, [](const T& lhs) { return static_cast<std::size_t>(lhs.size_bytes()); });
 
 			if constexpr (container_resize_cnt<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_resize, [](T& lhs, const typename T::size_type& n) { lhs.resize(n); });
@@ -417,10 +490,10 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_resize, [](T& lhs, const typename T::size_type& n, const typename T::value_type& value) { lhs.resize(n, value); });
 
 			if constexpr (container_capacity<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_capacity, [](const T& lhs) -> std::size_t { return static_cast<std::size_t>(lhs.capacity()); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_capacity, [](const T& lhs) { return static_cast<std::size_t>(lhs.capacity()); });
 
 			if constexpr (container_bucket_count<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_bucket_count, [](const T& lhs) -> std::size_t { return static_cast<std::size_t>(lhs.bucket_count()); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_bucket_count, [](const T& lhs) { return static_cast<std::size_t>(lhs.bucket_count()); });
 
 			if constexpr (container_reserve<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_reserve, [](T& lhs, const typename T::size_type& n) { lhs.reserve(n); });
@@ -559,13 +632,13 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_splice, [](T& lhs, const typename T::const_iterator& pos, T&& other, const typename T::const_iterator& first, const typename T::const_iterator& last) { lhs.splice(pos, std::move(other), first, last); });
 
 			if constexpr (container_remove<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_remove, [](T& lhs, const typename T::value_type& v) -> std::size_t { return static_cast<std::size_t>(lhs.remove(v)); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_remove, [](T& lhs, const typename T::value_type& v) { return static_cast<std::size_t>(lhs.remove(v)); });
 
 			if constexpr (container_reverse<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_reverse, [](T& lhs) { lhs.reverse(); });
 
 			if constexpr (container_unique<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_unique, [](T& lhs) -> std::size_t { return static_cast<std::size_t>(lhs.unique()); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_unique, [](T& lhs) { return static_cast<std::size_t>(lhs.unique()); });
 
 			if constexpr (container_sort<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_sort, [](T& lhs) { lhs.sort(); });
@@ -573,7 +646,7 @@ namespace Ubpa::UDRefl::details {
 			// - lookup
 
 			if constexpr (container_count<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::container_count, [](const T& lhs, const typename T::key_type& rhs) -> std::size_t { return static_cast<std::size_t>(lhs.count(rhs)); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::container_count, [](const T& lhs, const typename T::key_type& rhs) { return static_cast<std::size_t>(lhs.count(rhs)); });
 
 			if constexpr (container_find<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::container_find, [](T& lhs, const typename T::key_type& rhs) -> decltype(auto) { return lhs.find(rhs); });

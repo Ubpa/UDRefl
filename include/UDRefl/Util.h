@@ -35,6 +35,11 @@ constexpr Name& operator |= (Name& lhs, const Name& rhs) noexcept {      \
     return lhs;                                                          \
 }
 
+namespace std {
+	template<typename T>
+	struct variant_size;
+}
+
 namespace Ubpa::UDRefl {
 	using Offsetor = std::function<void*(void*)>;
 	using Destructor = std::function<void(const void*)>;
@@ -371,10 +376,33 @@ namespace Ubpa::UDRefl {
 	//
 	// tuple
 	//////////
+
 	template<typename T>
 	concept tuple_size = requires() { std::tuple_size<T>::value; };
-	template<typename T, std::size_t Idx>
-	concept tuple_element = requires() { typename std::tuple_element<Idx, T>::type; };
+
+	//
+	// variant
+	////////////
+
+	template<typename T>
+	concept variant_size = requires() { std::variant_size<T>::value; };
+
+	template<typename T>
+	concept variant_index = requires(const T & t) { {t.index()}->std::convertible_to<T>; };
+
+	template<typename T>
+	concept variant_valueless_by_exception = requires(const T & t) { {t.valueless_by_exception()}->std::convertible_to<bool>; };
+
+	//
+	// optional
+	/////////////
+
+	template<typename T>
+	concept optional_has_value = requires(const T & t) { {t.has_value}->std::convertible_to<bool>; };
+	template<typename T>
+	concept optional_value = requires(T t) { t.value(); };
+	template<typename T>
+	concept optional_reset = requires(T t) { t.reset(); };
 
 	//
 	// container
@@ -450,6 +478,14 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	concept container_ctor_cnt = container_size_type<T>
 		&& requires(const typename T::size_type & cnt) { T{ cnt }; };
+
+	template<typename T>
+	concept container_ctor_clvalue = container_value_type<T>
+		&& requires(const typename T::value_type & v) { T{ v }; };
+
+	template<typename T>
+	concept container_ctor_rvalue = container_value_type<T>
+		&& requires(typename T::value_type && v) { T{ std::move(v) }; };
 
 	template<typename T>
 	concept container_ctor_cnt_value = container_size_type<T> && container_value_type<T>
