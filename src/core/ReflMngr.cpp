@@ -46,6 +46,91 @@ namespace Ubpa::UDRefl::details {
 		AddConvertCtor<T, double>(mngr);
 	}
 
+	static ObjectView StaticCast_DerivedToBase(ObjectView obj, Type type) {
+		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
+
+		if (obj.GetType() == type)
+			return obj;
+
+		auto target = Mngr->typeinfos.find(obj.GetType());
+		if (target == Mngr->typeinfos.end())
+			return nullptr;
+
+		const auto& typeinfo = target->second;
+
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto ptr = StaticCast_DerivedToBase(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, type);
+			if (ptr.GetType())
+				return ptr;
+		}
+
+		return nullptr;
+	}
+
+	static ObjectView StaticCast_BaseToDerived(ObjectView obj, Type type) {
+		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
+
+		if (obj.GetType() == type)
+			return obj;
+
+		auto target = Mngr->typeinfos.find(type);
+		if (target == Mngr->typeinfos.end())
+			return nullptr;
+
+		const auto& typeinfo = target->second;
+
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto ptr = StaticCast_BaseToDerived(obj, base);
+			if (ptr.GetType())
+				return { base, baseinfo.IsVirtual() ? nullptr : baseinfo.StaticCast_BaseToDerived(obj.GetPtr()) };
+		}
+
+		return nullptr;
+	}
+
+	static ObjectView DynamicCast_BaseToDerived(ObjectView obj, Type type) {
+		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
+
+		if (obj.GetType() == type)
+			return obj;
+
+		auto target = Mngr->typeinfos.find(obj.GetType());
+		if (target == Mngr->typeinfos.end())
+			return nullptr;
+
+		const auto& typeinfo = target->second;
+
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto ptr = DynamicCast_BaseToDerived(ObjectView{ base, baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) }, type);
+			if (ptr.GetType())
+				return { base, baseinfo.IsPolymorphic() ? baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) : nullptr };
+		}
+
+		return nullptr;
+	}
+
+	static ObjectView Var(ObjectView obj, Name field_name, FieldFlag flag) {
+		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
+
+		auto ttarget = Mngr->typeinfos.find(obj.GetType());
+		if (ttarget == Mngr->typeinfos.end())
+			return nullptr;
+
+		auto& typeinfo = ttarget->second;
+
+		auto ftarget = typeinfo.fieldinfos.find(field_name);
+		if (ftarget != typeinfo.fieldinfos.end() && enum_contain(flag, ftarget->second.fieldptr.GetFieldFlag()))
+			return ftarget->second.fieldptr.Var(obj.GetPtr());
+
+		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
+			auto bptr = Var(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, field_name, flag);
+			if (bptr.GetType())
+				return bptr;
+		}
+
+		return nullptr;
+	}
+
 	static Type IsInvocable(
 		bool is_priority,
 		Type type,
@@ -357,6 +442,49 @@ namespace Ubpa::UDRefl::details {
 
 		return true;
 	}
+
+	static bool ContainsField(Type type, Name field_name, FieldFlag flag) {
+		assert(type.GetCVRefMode() == CVRefMode::None);
+
+		auto ttarget = Mngr->typeinfos.find(type);
+		if (ttarget == Mngr->typeinfos.end())
+			return false;
+
+		auto& typeinfo = ttarget->second;
+
+		auto ftarget = typeinfo.fieldinfos.find(field_name);
+		if (ftarget != typeinfo.fieldinfos.end() && enum_contain(flag, ftarget->second.fieldptr.GetFieldFlag()))
+			return true;
+
+		for (const auto& [basetype, baseinfo] : typeinfo.baseinfos) {
+			if (ContainsField(basetype, field_name, flag))
+				return true;
+		}
+		return false;
+	}
+
+	static bool ContainsMethod(Type type, Name method_name, MethodFlag flag) {
+		assert(type.GetCVRefMode() == CVRefMode::None);
+
+		auto ttarget = Mngr->typeinfos.find(type);
+		if (ttarget == Mngr->typeinfos.end())
+			return false;
+
+		auto& typeinfo = ttarget->second;
+
+		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
+		for (auto iter = begin_iter; iter != end_iter; ++iter) {
+			if (enum_contain(flag, iter->second.methodptr.GetMethodFlag()))
+				return true;
+		}
+
+		for (const auto& [basetype, baseinfo] : typeinfo.baseinfos) {
+			if (ContainsMethod(basetype, method_name, flag))
+				return true;
+		}
+
+		return false;
+	}
 }
 
 ReflMngr::ReflMngr() {
@@ -581,123 +709,72 @@ SharedObject ReflMngr::MMakeShared(Type type, std::pmr::memory_resource* rsrc, s
 }
 
 ObjectView ReflMngr::StaticCast_DerivedToBase(ObjectView obj, Type type) const {
+	if (obj.GetPtr() == nullptr)
+		return { type, nullptr };
+
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left:
-		return StaticCast_DerivedToBase(obj.RemoveLValueReference(), type).AddLValueReference();
+		return details::StaticCast_DerivedToBase(obj.RemoveLValueReference(), type).AddLValueReference();
 	case CVRefMode::Right:
-		return StaticCast_DerivedToBase(obj.RemoveRValueReference(), type).AddRValueReference();
+		return details::StaticCast_DerivedToBase(obj.RemoveRValueReference(), type).AddRValueReference();
 	case CVRefMode::Const:
-		return StaticCast_DerivedToBase(obj.RemoveConst(), type).AddConst();
+		return details::StaticCast_DerivedToBase(obj.RemoveConst(), type).AddConst();
 	case CVRefMode::ConstLeft:
-		return StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstLValueReference();
+		return details::StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstLValueReference();
 	case CVRefMode::ConstRight:
-		return StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstRValueReference();
+		return details::StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
-		break;
+		return details::StaticCast_DerivedToBase(obj, type);
 	}
-
-	if (obj.GetType() == type)
-		return obj;
-
-	if (obj.GetPtr() == nullptr)
-		return { type, nullptr };
-
-	auto target = typeinfos.find(obj.GetType());
-	if (target == typeinfos.end())
-		return nullptr;
-
-	const auto& typeinfo = target->second;
-
-	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-		auto ptr = StaticCast_DerivedToBase(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, type);
-		if (ptr.GetType())
-			return ptr;
-	}
-
-	return nullptr;
 }
 
 ObjectView ReflMngr::StaticCast_BaseToDerived(ObjectView obj, Type type) const {
+	if (obj.GetPtr() == nullptr)
+		return { type, nullptr };
+
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left:
-		return StaticCast_BaseToDerived(obj.RemoveLValueReference(), type).AddLValueReference();
+		return details::StaticCast_BaseToDerived(obj.RemoveLValueReference(), type).AddLValueReference();
 	case CVRefMode::Right:
-		return StaticCast_BaseToDerived(obj.RemoveRValueReference(), type).AddRValueReference();
+		return details::StaticCast_BaseToDerived(obj.RemoveRValueReference(), type).AddRValueReference();
 	case CVRefMode::Const:
-		return StaticCast_BaseToDerived(obj.RemoveConst(), type).AddConst();
+		return details::StaticCast_BaseToDerived(obj.RemoveConst(), type).AddConst();
 	case CVRefMode::ConstLeft:
-		return StaticCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstLValueReference();
+		return details::StaticCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstLValueReference();
 	case CVRefMode::ConstRight:
-		return StaticCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstRValueReference();
+		return details::StaticCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
-		break;
+		return details::StaticCast_BaseToDerived(obj, type);
 	}
-
-	if (obj.GetType() == type)
-		return obj;
-
-	if (obj.GetPtr() == nullptr)
-		return { type, nullptr };
-
-	auto target = typeinfos.find(type);
-	if (target == typeinfos.end())
-		return nullptr;
-
-	const auto& typeinfo = target->second;
-
-	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-		auto ptr = StaticCast_BaseToDerived(obj, base);
-		if (ptr.GetType())
-			return { base, baseinfo.IsVirtual() ? nullptr : baseinfo.StaticCast_BaseToDerived(obj.GetPtr()) };
-	}
-	
-	return nullptr;
 }
 
 ObjectView ReflMngr::DynamicCast_BaseToDerived(ObjectView obj, Type type) const {
+	if (obj.GetPtr() == nullptr)
+		return { type, nullptr };
+
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left:
-		return DynamicCast_BaseToDerived(obj.RemoveLValueReference(), type).AddLValueReference();
+		return details::DynamicCast_BaseToDerived(obj.RemoveLValueReference(), type).AddLValueReference();
 	case CVRefMode::Right:
-		return DynamicCast_BaseToDerived(obj.RemoveRValueReference(), type).AddRValueReference();
+		return details::DynamicCast_BaseToDerived(obj.RemoveRValueReference(), type).AddRValueReference();
 	case CVRefMode::Const:
-		return DynamicCast_BaseToDerived(obj.RemoveConst(), type).AddConst();
+		return details::DynamicCast_BaseToDerived(obj.RemoveConst(), type).AddConst();
 	case CVRefMode::ConstLeft:
-		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstLValueReference();
+		return details::DynamicCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstLValueReference();
 	case CVRefMode::ConstRight:
-		return DynamicCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstRValueReference();
+		return details::DynamicCast_BaseToDerived(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
-		break;
+		return details::DynamicCast_BaseToDerived(obj, type);
 	}
-
-	if (obj.GetType() == type)
-		return obj;
-
-	if (obj.GetPtr() == nullptr)
-		return { type, nullptr };
-
-	auto target = typeinfos.find(obj.GetType());
-	if (target == typeinfos.end())
-		return nullptr;
-
-	const auto& typeinfo = target->second;
-
-	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-		auto ptr = DynamicCast_BaseToDerived(ObjectView{ base, baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) }, type);
-		if (ptr.GetType())
-			return { base, baseinfo.IsPolymorphic() ? baseinfo.DynamicCast_BaseToDerived(obj.GetPtr()) : nullptr };
-	}
-
-	return nullptr;
 }
 
 ObjectView ReflMngr::StaticCast(ObjectView obj, Type type) const {
@@ -725,44 +802,26 @@ ObjectView ReflMngr::DynamicCast(ObjectView obj, Type type) const {
 }
 
 ObjectView ReflMngr::Var(ObjectView obj, Name field_name, FieldFlag flag) {
+	if (!obj.GetPtr())
+		flag = enum_within(flag, FieldFlag::Unowned);
+
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left:
-		return Var(obj.RemoveLValueReference(), field_name, flag).AddLValueReference();
+		return details::Var(obj.RemoveLValueReference(), field_name, flag).AddLValueReference();
 	case CVRefMode::Right:
-		return Var(obj.RemoveRValueReference(), field_name, flag).AddRValueReference();
+		return details::Var(obj.RemoveRValueReference(), field_name, flag).AddRValueReference();
 	case CVRefMode::Const:
-		return Var(obj.RemoveConst(), field_name, flag).AddConst();
+		return details::Var(obj.RemoveConst(), field_name, flag).AddConst();
 	case CVRefMode::ConstLeft:
-		return Var(obj.RemoveConstReference(), field_name, flag).AddConstLValueReference();
+		return details::Var(obj.RemoveConstReference(), field_name, flag).AddConstLValueReference();
 	case CVRefMode::ConstRight:
-		return Var(obj.RemoveConstReference(), field_name, flag).AddConstRValueReference();
+		return details::Var(obj.RemoveConstReference(), field_name, flag).AddConstRValueReference();
 	default:
-		break;
+		return details::Var(obj, field_name, flag);
 	}
-
-	if (!obj.GetPtr())
-		flag = enum_within(flag, FieldFlag::Unowned);
-
-	auto ttarget = typeinfos.find(obj.GetType());
-	if (ttarget == typeinfos.end())
-		return nullptr;
-
-	auto& typeinfo = ttarget->second;
-
-	auto ftarget = typeinfo.fieldinfos.find(field_name);
-	if (ftarget != typeinfo.fieldinfos.end() && enum_contain(flag, ftarget->second.fieldptr.GetFieldFlag()))
-		return ftarget->second.fieldptr.Var(obj.GetPtr());
-
-	for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-		auto bptr = Var(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, field_name);
-		if (bptr.GetType())
-			return bptr;
-	}
-
-	return nullptr;
 }
 
 ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag flag) {
@@ -843,25 +902,33 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 }
 
 Type ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
+	Type rawtype;
+	MethodFlag newflag;
 	const CVRefMode cvref_mode = type.GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
-		return IsInvocable(type.RemoveReference(), method_name, argTypes, flag);
+		rawtype = type.RemoveReference();
+		newflag = flag;
+		break;
 	case CVRefMode::Const: [[fallthrough]];
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		return IsInvocable(type.RemoveCVRef(), method_name, argTypes, enum_remove(flag, MethodFlag::Variable));
+		rawtype = type.RemoveCVRef();
+		newflag = enum_remove(flag, MethodFlag::Variable);
+		break;
 	default:
+		rawtype = type;
+		newflag = flag;
 		break;
 	}
 
-	if (auto priority_rst = details::IsInvocable(true, type, method_name, argTypes, flag))
+	if (auto priority_rst = details::IsInvocable(true, rawtype, method_name, argTypes, newflag))
 		return priority_rst;
 
-	return details::IsInvocable(false, type, method_name, argTypes, flag);
+	return details::IsInvocable(false, rawtype, method_name, argTypes, newflag);
 }
 
 Type ReflMngr::BInvoke(
@@ -1347,38 +1414,39 @@ bool ReflMngr::ContainsBase(Type type, Type base) const {
 }
 
 bool ReflMngr::ContainsField(Type type, Name field_name, FieldFlag flag) const {
-	auto target = typeinfos.find(type.RemoveCVRef());
-	if (target == typeinfos.end())
-		return false;
-
-	const auto& info = target->second;
-	auto ftarget = info.fieldinfos.find(field_name);
-	if (ftarget != info.fieldinfos.end() && enum_contain(flag, ftarget->second.fieldptr.GetFieldFlag()))
-		return true;
-
-	for (const auto& [basetype, baseinfo] : info.baseinfos) {
-		if (ContainsField(basetype, field_name))
-			return true;
+	const CVRefMode cvref_mode = type.GetCVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
+	{
+	case CVRefMode::Left:
+		return details::ContainsField(type.RemoveLValueReference(), field_name, flag);
+	case CVRefMode::Right:
+		return details::ContainsField(type.RemoveRValueReference(), field_name, flag);
+	case CVRefMode::Const:
+		return details::ContainsField(type.RemoveConst(), field_name, flag);
+	case CVRefMode::ConstLeft:
+	case CVRefMode::ConstRight:
+		return details::ContainsField(type.RemoveCVRef(), field_name, flag);
+	default:
+		return details::ContainsField(type, field_name, flag);
 	}
-	return false;
 }
 
 bool ReflMngr::ContainsMethod(Type type, Name method_name, MethodFlag flag) const {
-	auto target = typeinfos.find(type.RemoveCVRef());
-	if (target == typeinfos.end())
-		return false;
-
-	const auto& info = target->second;
-	auto [begin_iter, end_iter] = info.methodinfos.equal_range(method_name);
-	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (enum_contain(flag, iter->second.methodptr.GetMethodFlag()))
-			return true;
+	const CVRefMode cvref_mode = type.GetCVRefMode();
+	assert(!CVRefMode_IsVolatile(cvref_mode));
+	switch (cvref_mode)
+	{
+	case CVRefMode::Left:
+		return details::ContainsMethod(type.RemoveLValueReference(), method_name, flag);
+	case CVRefMode::Right:
+		return details::ContainsMethod(type.RemoveRValueReference(), method_name, flag);
+	case CVRefMode::Const:
+		return details::ContainsMethod(type.RemoveConst(), method_name, flag);
+	case CVRefMode::ConstLeft:
+	case CVRefMode::ConstRight:
+		return details::ContainsMethod(type.RemoveCVRef(), method_name, flag);
+	default:
+		return details::ContainsMethod(type, method_name, flag);
 	}
-
-	for (const auto& [basetype, baseinfo] : info.baseinfos) {
-		if (ContainsMethod(basetype, method_name, flag))
-			return true;
-	}
-
-	return false;
 }

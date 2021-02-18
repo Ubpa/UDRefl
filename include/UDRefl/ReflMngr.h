@@ -379,7 +379,7 @@ namespace Ubpa::UDRefl {
 
 		std::vector<InfoTypeFieldPair>                                   GetTypeFields   (Type      type, FieldFlag  flag = FieldFlag ::All);
 		std::vector<InfoTypeMethodPair>                                  GetTypeMethods  (Type      type, MethodFlag flag = MethodFlag::All);
-		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag  flag = FieldFlag::All);
+		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(ObjectView obj, FieldFlag  flag = FieldFlag ::All);
 
 		std::vector<InfoTypePair>   GetTypes  (Type      type);
 		std::vector<InfoFieldPair>  GetFields (Type      type, FieldFlag  flag = FieldFlag ::All);
