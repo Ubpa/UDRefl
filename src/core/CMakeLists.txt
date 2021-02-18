@@ -7,6 +7,15 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   list(APPEND c_options "-Wno-attributes")
 endif()
 
+set(c_options_private "")
+if(MSVC)
+  list(APPEND c_options_private "/MP")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  #
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  #
+endif()
+
 set(defines "")
 if(MSVC)
   list(APPEND defines "_SILENCE_STDEXT_HASH_LOWER_BOUND_DEPRECATION_WARNING")
@@ -29,6 +38,8 @@ Ubpa_AddTarget(
     "${PROJECT_SOURCE_DIR}/include"
   C_OPTION
     ${c_options}
+  C_OPTION_PRIVATE
+    ${c_options_private}
   LIB
     Ubpa::UTemplate_core
   DEFINE

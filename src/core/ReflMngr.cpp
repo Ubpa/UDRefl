@@ -2,6 +2,8 @@
 
 #include "InvokeUtil.h"
 
+#include "ReflMngrInitUtil/ReflMngrInitUtil.h"
+
 #include <string>
 
 using namespace Ubpa;
@@ -16,34 +18,6 @@ namespace Ubpa::UDRefl::details {
 			Mngr->Destruct(ObjectView{ type, ptr });
 			result_rsrc->deallocate(ptr, size, alignment);
 		};
-	}
-
-	template<typename To, typename From>
-	void AddConvertCtor(ReflMngr& mngr) {
-		static_assert(std::is_convertible_v<From, To>);
-		if constexpr (!std::is_same_v<To, From>) {
-			mngr.AddMemberMethod(
-				NameIDRegistry::Meta::ctor,
-				[](To& obj, const From& value) {
-					new(&obj)To{ static_cast<To>(value) };
-				}
-			);
-		}
-	}
-
-	template<typename T>
-	void RegisterArithmeticConvertion(ReflMngr& mngr) {
-		AddConvertCtor<T, bool>(mngr);
-		AddConvertCtor<T, std::int8_t>(mngr);
-		AddConvertCtor<T, std::int16_t>(mngr);
-		AddConvertCtor<T, std::int32_t>(mngr);
-		AddConvertCtor<T, std::int64_t>(mngr);
-		AddConvertCtor<T, std::uint8_t>(mngr);
-		AddConvertCtor<T, std::uint16_t>(mngr);
-		AddConvertCtor<T, std::uint32_t>(mngr);
-		AddConvertCtor<T, std::uint64_t>(mngr);
-		AddConvertCtor<T, float>(mngr);
-		AddConvertCtor<T, double>(mngr);
 	}
 
 	static ObjectView StaticCast_DerivedToBase(ObjectView obj, Type type) {
@@ -490,59 +464,13 @@ namespace Ubpa::UDRefl::details {
 ReflMngr::ReflMngr() {
 	RegisterType(GlobalType, 0, 0);
 
-	RegisterType<ContainerType>();
-	AddField<ContainerType::RawArray>("RawArray");
-	AddField<ContainerType::Array>("Array");
-	AddField<ContainerType::Vector>("Vector");
-	AddField<ContainerType::Deque>("Deque");
-	AddField<ContainerType::ForwardList>("ForwardList");
-	AddField<ContainerType::List>("List");
-	AddField<ContainerType::Set>("Set");
-	AddField<ContainerType::MultiSet>("MultiSet");
-	AddField<ContainerType::Map>("Map");
-	AddField<ContainerType::MultiMap>("MultiMap");
-	AddField<ContainerType::UnorderedSet>("UnorderedSet");
-	AddField<ContainerType::UnorderedMultiSet>("UnorderedMultiSet");
-	AddField<ContainerType::UnorderedMap>("UnorderedMap");
-	AddField<ContainerType::UnorderedMultiMap>("UnorderedMultiMap");
-	AddField<ContainerType::Stack>("Stack");
-	AddField<ContainerType::Queue>("Queue");
-	AddField<ContainerType::Tuple>("Tuple");
-	AddField<ContainerType::Pair>("Pair");
-
-	RegisterType<bool>();
-	RegisterType<std::int8_t>();
-	RegisterType<std::int16_t>();
-	RegisterType<std::int32_t>();
-	RegisterType<std::int64_t>();
-	RegisterType<std::uint8_t>();
-	RegisterType<std::uint16_t>();
-	RegisterType<std::uint32_t>();
-	RegisterType<std::uint64_t>();
-	RegisterType<float>();
-	RegisterType<double>();
-
-	details::RegisterArithmeticConvertion<bool>(*this);
-	details::RegisterArithmeticConvertion<std::int8_t>(*this);
-	details::RegisterArithmeticConvertion<std::int16_t>(*this);
-	details::RegisterArithmeticConvertion<std::int32_t>(*this);
-	details::RegisterArithmeticConvertion<std::int64_t>(*this);
-	details::RegisterArithmeticConvertion<std::uint8_t>(*this);
-	details::RegisterArithmeticConvertion<std::uint16_t>(*this);
-	details::RegisterArithmeticConvertion<std::uint32_t>(*this);
-	details::RegisterArithmeticConvertion<std::uint64_t>(*this);
-	details::RegisterArithmeticConvertion<float>(*this);
-	details::RegisterArithmeticConvertion<double>(*this);
-
-	// string
-	RegisterType<std::string_view>();
-	AddConstructor<std::string_view, const char* const&>();
-	AddConstructor<std::string_view, const char* const&, const std::string_view::size_type&>();
-	AddConstructor<std::string_view, std::string>();
-	RegisterType<std::string>();
-	AddConstructor<std::string, const std::string_view&>();
-	AddConstructor<std::string, const char* const &>();
-	AddConstructor<std::string, const char* const&, const std::string::size_type&>();
+	details::ReflMngrInitUtil_0(*this);
+	details::ReflMngrInitUtil_1(*this);
+	details::ReflMngrInitUtil_2(*this);
+	details::ReflMngrInitUtil_3(*this);
+	details::ReflMngrInitUtil_4(*this);
+	details::ReflMngrInitUtil_5(*this);
+	details::ReflMngrInitUtil_6(*this);
 }
 
 TypeInfo* ReflMngr::GetTypeInfo(Type type) {
