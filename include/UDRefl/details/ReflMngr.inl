@@ -64,8 +64,8 @@ namespace Ubpa::UDRefl::details {
 		}
 	};
 
-	template<typename Rst, std::size_t TargetIdx, typename T>
-	Rst runtime_get_impl(T&& obj, std::size_t i) {
+	template<std::size_t TargetIdx, typename T>
+	ObjectView runtime_get_impl(T&& obj, std::size_t i) {
 		using U = std::remove_cvref_t<T>;
 		if constexpr (TargetIdx == std::tuple_size_v<U>)
 			return nullptr;
@@ -73,15 +73,54 @@ namespace Ubpa::UDRefl::details {
 			if (i == TargetIdx)
 				return ObjectView{ std::get<TargetIdx>(std::forward<T>(obj)) };
 			else
-				return runtime_get_impl<Rst, TargetIdx + 1>(std::forward<T>(obj), i);
+				return runtime_get_impl<TargetIdx + 1>(std::forward<T>(obj), i);
 		}
 	}
 
-	template<typename Rst, typename T>
-	Rst runtime_get(T&& obj, std::size_t i) {
+	template<typename T>
+	ObjectView runtime_get(T&& obj, std::size_t i) {
 		using U = std::remove_cvref_t<T>;
 		assert(i < std::tuple_size_v<U>);
-		return runtime_get_impl<Rst, 0>(std::forward<T>(obj), i);
+		return runtime_get_impl<0>(std::forward<T>(obj), i);
+	}
+
+	template<std::size_t TargetIdx, typename T>
+	ObjectView runtime_get_impl(T&& obj, const Type & type) {
+		using U = std::remove_cvref_t<T>;
+		if constexpr (TargetIdx == std::tuple_size_v<U>)
+			return nullptr;
+		else {
+			if (type == Type_of<std::tuple_element_t<TargetIdx, U>>)
+				return ObjectView{ std::get<TargetIdx>(std::forward<T>(obj)) };
+			else
+				return runtime_get_impl<TargetIdx + 1>(std::forward<T>(obj), type);
+		}
+	}
+
+	template<typename T>
+	ObjectView runtime_get(T&& obj, const Type& type) {
+		using U = std::remove_cvref_t<T>;
+		return runtime_get_impl<0>(std::forward<T>(obj), type);
+	}
+
+	template<std::size_t TargetIdx, typename T>
+	Type runtime_tuple_element_impl(T&& obj, std::size_t i) {
+		using U = std::remove_cvref_t<T>;
+		if constexpr (TargetIdx == std::tuple_size_v<U>)
+			return {};
+		else {
+			if (i == TargetIdx)
+				return Type_of<std::tuple_element_t<TargetIdx, U>>;
+			else
+				return runtime_tuple_element_impl<TargetIdx + 1>(std::forward<T>(obj), i);
+		}
+	}
+
+	template<typename T>
+	Type runtime_tuple_element(T&& obj, std::size_t i) {
+		using U = std::remove_cvref_t<T>;
+		assert(i < std::tuple_size_v<U>);
+		return runtime_tuple_element_impl<0>(std::forward<T>(obj), i);
 	}
 
 	template<typename T, std::size_t... Ns>
@@ -264,12 +303,14 @@ namespace Ubpa::UDRefl::details {
 
 			// tuple
 
-			if constexpr (tuple_size<T>) {
+			if constexpr (IsTuple<T> && !IsArray<T>) {
 				mngr.AddStaticMethod(Type_of<T>, NameIDRegistry::Meta::tuple_size, []() { return std::tuple_size_v<T>; });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get<ObjectView>(t, i); });
-				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get<ObjectView>(t, i); });
-				if constexpr (!IsArray<T> && std::is_array_v<T>)
-					register_tuple_elements<T>(mngr, std::make_index_sequence<std::tuple_size_v<T>>{});
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const std::size_t& i) { return runtime_get(t, i); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const std::size_t& i) { return runtime_get(t, i); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](T& t, const Type& type) { return runtime_get(t, type); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_get, [](const T& t, const Type& type) { return runtime_get(t, type); });
+				mngr.AddMemberMethod(NameIDRegistry::Meta::tuple_element, [](const T& t, const std::size_t& i) { return runtime_tuple_element(t, i); });
+				register_tuple_elements<T>(mngr, std::make_index_sequence<std::tuple_size_v<T>>{});
 			}
 
 			// container

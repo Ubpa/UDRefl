@@ -226,6 +226,8 @@ namespace Ubpa::UDRefl {
 
 		std::size_t tuple_size() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::tuple_size); }
 		ObjectView tuple_get(std::size_t i) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::tuple_get, std::move(i)); }
+		ObjectView tuple_get(Type type) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::tuple_get, std::move(type)); }
+		Type tuple_element(std::size_t i) const { return BInvoke<Type>(NameIDRegistry::Meta::tuple_element, std::move(i)); }
 
 		//
 		// Iterator

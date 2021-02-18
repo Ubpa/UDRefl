@@ -19,7 +19,12 @@ int main() {
 		v.tuple_get(i) = i;
 
 	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)
-		std::cout << i << ": " << v.tuple_get(i) << std::endl;
+		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.tuple_get(i) << std::endl;
+
+	v.tuple_get(Type_of<float>) = 512;
+
+	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)
+		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.tuple_get(i) << std::endl;
 
 	return 0;
 }

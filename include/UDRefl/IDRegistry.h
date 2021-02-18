@@ -109,6 +109,7 @@ namespace Ubpa::UDRefl {
 
 			static constexpr Name tuple_size{ "UDRefl::tuple_size" };
 			static constexpr Name tuple_get{ "UDRefl::tuple_get" };
+			static constexpr Name tuple_element{ "UDRefl::tuple_element" };
 
 			// iterator
 

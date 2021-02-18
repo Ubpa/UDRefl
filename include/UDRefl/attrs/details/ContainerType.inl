@@ -39,7 +39,12 @@ namespace Ubpa::UDRefl {
 		;
 
 	template<typename T>
-	concept IsArray = IsRawArray<T>
+	concept IsTuple = true
+		&& tuple_size<T>
+		;
+
+	template<typename T>
+	concept IsArray = IsRawArray<T> && IsTuple<T>
 		&& container_at_size<T>
 		&& container_at_size<const T>
 
@@ -349,11 +354,6 @@ namespace Ubpa::UDRefl {
 		&& container_at_key<const T>
 		&& container_subscript_key_cl<T>
 		&& container_subscript_key_r<T>
-		;
-
-	template<typename T>
-	concept IsTuple = true
-		&& tuple_size<T>
 		;
 
 	template<typename T>
