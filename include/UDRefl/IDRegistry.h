@@ -120,6 +120,7 @@ namespace Ubpa::UDRefl {
 			static constexpr Name variant_get_if{ "UDRefl::variant_get_if" };
 			static constexpr Name variant_size{ "UDRefl::variant_size" };
 			static constexpr Name variant_alternative{ "UDRefl::variant_alternative" };
+			static constexpr Name variant_visit_get{ "UDRefl::variant_visit_get" };
 
 			// optional
 

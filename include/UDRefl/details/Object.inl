@@ -61,7 +61,6 @@ namespace Ubpa::UDRefl {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::aligned_storage_t<sizeof(U), alignof(U)> result_buffer;
 			Type result_type = BInvoke(method_name, static_cast<void*>(&result_buffer), argTypes, argptr_buffer, flag);
-			assert(result_type.Is<T>());
 			return MoveResult<T>(result_type, &result_buffer);
 		}
 		else

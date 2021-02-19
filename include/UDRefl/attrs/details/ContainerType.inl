@@ -437,6 +437,7 @@ namespace Ubpa::UDRefl {
 	concept IsOptional = true
 		&& optional_has_value<T>
 		&& optional_value<T>
+		&& optional_value<const T>
 		&& optional_reset<T>
 		;
 

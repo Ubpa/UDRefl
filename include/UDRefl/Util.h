@@ -270,12 +270,15 @@ namespace Ubpa::UDRefl {
 	// Traits //
 	////////////
 
+	template<typename From, typename To>
+	concept static_castable_to = requires(From from) { static_cast<To>(from); };
+
 	//
 	// operation
 	//////////////
 
 	template<typename T>
-	concept operator_bool = std::convertible_to<T, bool>;
+	concept operator_bool = static_castable_to<T, bool>;
 
 	template<typename T>
 	concept operator_plus = requires(T t) { +t; };
@@ -315,10 +318,12 @@ namespace Ubpa::UDRefl {
 	template<typename T>
 	concept operator_post_dec = !std::is_same_v<T, bool> && requires(T t) { t--; };
 
+	template<typename T, typename U>
+	concept operator_assign = requires(T lhs, U rhs) { {lhs = std::forward<U>(rhs)}->std::same_as<T&>; };
 	template<typename T>
-	concept operator_assign_copy = std::is_copy_assignable_v<T> && requires(T lhs, const T & rhs) { {lhs = rhs}->std::same_as<T&>; };
+	concept operator_assign_copy = std::is_copy_assignable_v<T> && operator_assign<T, const T&>;
 	template<typename T>
-	concept operator_assign_move = std::is_move_assignable_v<T> && requires(T lhs, T rhs) { {lhs = std::move(rhs) }->std::same_as<T&>; };
+	concept operator_assign_move = std::is_move_assignable_v<T> && operator_assign<T, T&&>;
 	template<typename T>
 	concept operator_assign_add = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs += rhs }->std::same_as<T&>; };
 	template<typename T>
@@ -341,17 +346,17 @@ namespace Ubpa::UDRefl {
 	concept operator_assign_rshift = !std::is_same_v<T, bool> && requires(T lhs, const T & rhs) { {lhs >>= rhs }->std::same_as<T&>; };
 
 	template<typename T>
-	concept operator_eq = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs == rhs }->std::convertible_to<bool>; };
+	concept operator_eq = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs == rhs }->static_castable_to<bool>; };
 	template<typename T>
-	concept operator_ne = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs != rhs }->std::convertible_to<bool>; };
+	concept operator_ne = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs != rhs }->static_castable_to<bool>; };
 	template<typename T>
-	concept operator_lt = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs <  rhs }->std::convertible_to<bool>; };
+	concept operator_lt = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs <  rhs }->static_castable_to<bool>; };
 	template<typename T>
-	concept operator_le = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs <= rhs }->std::convertible_to<bool>; };
+	concept operator_le = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs <= rhs }->static_castable_to<bool>; };
 	template<typename T>
-	concept operator_gt = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs >  rhs }->std::convertible_to<bool>; };
+	concept operator_gt = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs >  rhs }->static_castable_to<bool>; };
 	template<typename T>
-	concept operator_ge = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs >= rhs }->std::convertible_to<bool>; };
+	concept operator_ge = !std::is_array_v<T> && requires(const T & lhs, const T & rhs) { {lhs >= rhs }->static_castable_to<bool>; };
 
 	template<typename T, typename U>
 	concept operator_subscript = !std::is_void_v<std::remove_pointer_t<T>> && requires(T lhs, const U & rhs) { lhs[rhs]; };
@@ -388,17 +393,17 @@ namespace Ubpa::UDRefl {
 	concept variant_size = requires() { std::variant_size<T>::value; };
 
 	template<typename T>
-	concept variant_index = requires(const T & t) { {t.index()}->std::convertible_to<T>; };
+	concept variant_index = requires(const T & t) { {t.index()}->static_castable_to<std::size_t>; };
 
 	template<typename T>
-	concept variant_valueless_by_exception = requires(const T & t) { {t.valueless_by_exception()}->std::convertible_to<bool>; };
+	concept variant_valueless_by_exception = requires(const T & t) { {t.valueless_by_exception()}->static_castable_to<bool>; };
 
 	//
 	// optional
 	/////////////
 
 	template<typename T>
-	concept optional_has_value = requires(const T & t) { {t.has_value}->std::convertible_to<bool>; };
+	concept optional_has_value = requires(const T & t) { {t.has_value}->static_castable_to<bool>; };
 	template<typename T>
 	concept optional_value = requires(T t) { t.value(); };
 	template<typename T>
@@ -475,29 +480,33 @@ namespace Ubpa::UDRefl {
 
 	// ctor
 
+	template<typename T, typename... Args>
+	concept type_ctor = std::is_constructible_v<T, Args...> && requires(Args... args) { T{ std::forward<Args>(args)... }; };
 	template<typename T>
-	concept container_ctor_cnt = container_size_type<T>
-		&& requires(const typename T::size_type & cnt) { T{ cnt }; };
+	concept type_ctor_copy = std::is_copy_constructible_v<T> && type_ctor<T, const T&>;
+	template<typename T>
+	concept type_ctor_move = std::is_move_constructible_v<T> && type_ctor<T, const T&>;
 
 	template<typename T>
-	concept container_ctor_clvalue = container_value_type<T>
-		&& requires(const typename T::value_type & v) { T{ v }; };
+	concept container_ctor_cnt = container_size_type<T> && type_ctor<const typename T::size_type&>;
 
 	template<typename T>
-	concept container_ctor_rvalue = container_value_type<T>
-		&& requires(typename T::value_type && v) { T{ std::move(v) }; };
+	concept container_ctor_clvalue = container_value_type<T> && type_ctor<const typename T::value_type&>;
+
+	template<typename T>
+	concept container_ctor_rvalue = container_value_type<T> && type_ctor<typename T::value_type&&>;
 
 	template<typename T>
 	concept container_ctor_cnt_value = container_size_type<T> && container_value_type<T>
-		&& requires(const typename T::size_type& cnt, const typename T::value_type& v) { T{ cnt, v }; };
+		&& type_ctor<const typename T::size_type&, const typename T::value_type&>;
 
 	template<typename T>
 	concept container_ctor_ptr_cnt = container_pointer_type<T> && container_size_type<T>
-		&& requires(const typename T::pointer_type & first, const typename T::size_type & cnt) { T{ first, cnt }; };
+		&& type_ctor<const typename T::pointer_type&, const typename T::size_type&>;
 
 	template<typename T>
 	concept container_ctor_ptr_ptr = container_pointer_type<T>
-		&& requires(const typename T::pointer_type & first, const typename T::pointer_type & last) { T{ first, last }; };
+		&& type_ctor<const typename T::pointer_type&, const typename T::pointer_type&>;
 
 	// assign
 
@@ -551,20 +560,20 @@ namespace Ubpa::UDRefl {
 	// - capacity
 
 	template<typename T>
-	concept container_empty = requires(const T & t) { {std::empty(t)}->std::convertible_to<bool>; };
+	concept container_empty = requires(const T & t) { {std::empty(t)}->static_castable_to<bool>; };
 	template<typename T>
-	concept container_size = requires(const T & t) { {std::size(t)}->std::convertible_to<std::size_t>; };
+	concept container_size = requires(const T & t) { {std::size(t)}->static_castable_to<std::size_t>; };
 	template<typename T>
-	concept container_size_bytes = requires(const T & t) { {t.size_bytes()}->std::convertible_to<std::size_t>; };
+	concept container_size_bytes = requires(const T & t) { {t.size_bytes()}->static_castable_to<std::size_t>; };
 	template<typename T>
 	concept container_resize_cnt = container_size_type<T> && requires(T t, const typename T::size_type& cnt) { t.resize(cnt); };
 	template<typename T>
 	concept container_resize_cnt_value = container_size_type<T> && container_value_type<T>
 		&& requires(T t, const typename T::size_type & cnt, const typename T::value_type& value) { t.resize(cnt, value); };
 	template<typename T>
-	concept container_capacity = requires(const T & t) { {t.capacity()}->std::convertible_to<std::size_t>; };
+	concept container_capacity = requires(const T & t) { {t.capacity()}->static_castable_to<std::size_t>; };
 	template<typename T>
-	concept container_bucket_count = requires(const T & t) { {t.bucket_count()}->std::convertible_to<std::size_t>; };
+	concept container_bucket_count = requires(const T & t) { {t.bucket_count()}->static_castable_to<std::size_t>; };
 	template<typename T>
 	concept container_reserve = container_size_type<T> && requires(T t, const typename T::size_type & cnt) { t.reserve(cnt); };
 	template<typename T>
@@ -696,13 +705,13 @@ namespace Ubpa::UDRefl {
 	// - lookup
 
 	template<typename T>
-	concept container_count = container_key_type<T> && requires(const T& t, const typename T::key_type & u) { {t.count(u)}->std::convertible_to<std::size_t>; };
+	concept container_count = container_key_type<T> && requires(const T& t, const typename T::key_type & u) { {t.count(u)}->static_castable_to<std::size_t>; };
 
 	template<typename T>
 	concept container_find = container_key_type<T> && requires(T t, const typename T::key_type & u) { t.find(u); };
 
 	template<typename T>
-	concept container_contains = container_key_type<T> && requires(const T & t, const typename T::key_type & u) { {t.count(u)}->std::convertible_to<bool>; };
+	concept container_contains = container_key_type<T> && requires(const T & t, const typename T::key_type & u) { {t.count(u)}->static_castable_to<bool>; };
 
 	template<typename T>
 	concept container_lower_bound = container_key_type<T> && requires(T t, const typename T::key_type & u) { t.lower_bound(u); };
@@ -776,13 +785,13 @@ namespace Ubpa::UDRefl {
 	concept container_splice_range_r = container_splice_range<T, T&&>;
 
 	template<typename T>
-	concept container_remove = container_value_type<T> && requires(T t, const typename T::value_type & v) { {t.remove(v)}->std::convertible_to<std::size_t>; };
+	concept container_remove = container_value_type<T> && requires(T t, const typename T::value_type & v) { {t.remove(v)}->static_castable_to<std::size_t>; };
 
 	template<typename T>
 	concept container_reverse = requires(T t) { t.reverse(); };
 
 	template<typename T>
-	concept container_unique = requires(T t) { {t.unique()}->std::convertible_to<std::size_t>; };
+	concept container_unique = requires(T t) { {t.unique()}->static_castable_to<std::size_t>; };
 
 	template<typename T>
 	concept container_sort = requires(T t) { t.sort(); };

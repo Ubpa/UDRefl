@@ -551,11 +551,30 @@ Name ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
 	return new_method_name;
 }
 
-Name ReflMngr::AddTrivialConstructor(Type type) {
+Name ReflMngr::AddTrivialDefaultConstructor(Type type) {
 	return AddMethod(
 		type,
 		NameIDRegistry::Meta::ctor,
 		MethodInfo{ {[](void*, void*, ArgsView) {}, MethodFlag::Variable} }
+	);
+}
+
+Name ReflMngr::AddTrivialCopyConstructor(Type type) {
+	auto* typeinfo = GetTypeInfo(type);
+	if (!typeinfo)
+		return {};
+	std::size_t size = typeinfo->size;
+	return AddMethod(
+		type,
+		NameIDRegistry::Meta::ctor,
+		MethodInfo{ {
+			[size](void* obj, void*, ArgsView args) {
+				memcpy(obj, args.At(0).GetPtr(), size);
+			},
+			MethodFlag::Variable,
+			{}, // result type
+			{ tregistry.RegisterAddConstLValueReference(type) } // paramlist
+		} }
 	);
 }
 

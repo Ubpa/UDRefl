@@ -219,6 +219,12 @@ namespace Ubpa::UDRefl {
 
 		template<typename T> T& operator>>(T& out) const;
 		template<typename T> SharedObject operator<<(T&& in) const;
+		
+		////////////////////////
+		// General Containers //
+		////////////////////////
+
+		ContainerType get_container_type() const;
 
 		//
 		// Tuple
@@ -233,11 +239,13 @@ namespace Ubpa::UDRefl {
 		// Variant
 		////////////
 
+		std::size_t variant_index() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::variant_index); }
 		std::size_t variant_size() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::variant_size); }
 		bool variant_holds_alternative(Type type) const { return BInvoke<bool>(NameIDRegistry::Meta::variant_holds_alternative, std::move(type)); }
 		ObjectView variant_get(std::size_t i) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_get, std::move(i)); }
 		ObjectView variant_get(Type type) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_get, std::move(type)); }
 		Type variant_alternative(std::size_t i) const { return BInvoke<Type>(NameIDRegistry::Meta::variant_alternative, std::move(i)); }
+		ObjectView variant_visit_get() const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_visit_get); }
 
 		//
 		// Optional
@@ -259,7 +267,7 @@ namespace Ubpa::UDRefl {
 		SharedObject prev() const;
 
 		//
-		// container
+		// Container
 		//////////////
 
 		template<typename... Args> void assign(Args&&... args) const { ABInvoke<void>(NameIDRegistry::Meta::container_assign, std::forward<Args>(args)...); };

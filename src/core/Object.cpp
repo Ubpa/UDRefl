@@ -143,3 +143,15 @@ ObjectView ObjectView::StaticCast(Type type) const {
 ObjectView ObjectView::DynamicCast(Type type) const {
 	return Mngr->DynamicCast(*this, type);
 }
+
+ContainerType ObjectView::get_container_type() const {
+	auto* typeinfo = Mngr->GetTypeInfo(type);
+	if (!typeinfo)
+		return ContainerType::None;
+
+	auto target = typeinfo->attrs.find(Type_of<ContainerType>);
+	if(target == typeinfo->attrs.end())
+		return ContainerType::None;
+
+	return target->As<ContainerType>();
+}
