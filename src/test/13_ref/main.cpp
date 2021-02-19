@@ -90,8 +90,8 @@ int main() {
 	std::cout << "a.get_r(): " << a.Invoke("get_r").Var("value") << std::endl;
 	std::cout << "a.get_c(): " << a.Invoke("get_r").Var("value") << std::endl;
 
-	a.BInvoke<void>("set", g);
-	a.BInvoke<void>("set_r", std::move(g));
+	a.BInvoke<void>("set", MethodFlag::All, g);
+	a.BInvoke<void>("set_r", MethodFlag::All, std::move(g));
 	std::cout << "a.lref: " << a.Invoke("get_r").Var("value") << std::endl;
 	std::cout << "a.get_c(): " << a.Invoke("get_c").Var("value") << std::endl;
 	return 0;

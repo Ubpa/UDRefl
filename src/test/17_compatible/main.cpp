@@ -43,15 +43,15 @@ int main() {
 
 	std::uint8_t i = 1;
 	const std::uint8_t ci = 1;
-	funcs.BInvoke<void>("f", 1.);
-	funcs.BInvoke<void>("f", 1.f);
-	funcs.BInvoke<void>("f", 1);
-	funcs.BInvoke<void>("f", i);
-	funcs.BInvoke<void>("f", ci);
-	funcs.BInvoke<void>("f", std::move(i));
-	funcs.BInvoke<void>("f", static_cast<const std::uint8_t&&>(ci));
+	funcs.BInvoke<void>("f", MethodFlag::All, 1.);
+	funcs.BInvoke<void>("f", MethodFlag::All, 1.f);
+	funcs.BInvoke<void>("f", MethodFlag::All, 1);
+	funcs.BInvoke<void>("f", MethodFlag::All, i);
+	funcs.BInvoke<void>("f", MethodFlag::All, ci);
+	funcs.BInvoke<void>("f", MethodFlag::All, std::move(i));
+	funcs.BInvoke<void>("f", MethodFlag::All, static_cast<const std::uint8_t&&>(ci));
 
 	int arr_i[5];
-	funcs.BInvoke<void>("g", "hello"); // const char(&)[6]
-	funcs.BInvoke<void>("g", arr_i);   // int(&)[5]
+	funcs.BInvoke<void>("g", MethodFlag::All, "hello"); // const char(&)[6]
+	funcs.BInvoke<void>("g", MethodFlag::All, arr_i);   // int(&)[5]
 }

@@ -109,6 +109,8 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - [pointer](src/test/19_pointer/main.cpp) 
 - [array](src/test/20_array/main.cpp) 
 - [string](src/test/21_string/main.cpp) 
+- [variant](src/test/22_variant/main.cpp) 
+- [optional](src/test/23_optional/main.cpp) 
 - [bootstrap](src/test/ext/00_bootstrap/main.cpp) 
 
 ## Features

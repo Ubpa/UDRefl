@@ -435,6 +435,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	concept IsOptional = true
+		&& container_value_type<T>
 		&& optional_has_value<T>
 		&& optional_value<T>
 		&& optional_value<const T>

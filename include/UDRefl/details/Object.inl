@@ -1,5 +1,12 @@
 #pragma once
 
+#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                                                  \
+template<typename Arg>                                                                                   \
+ObjectView ObjectView::operator op (Arg&& rhs) const {                                                   \
+    ABInvoke<void>(NameIDRegistry::Meta::operator_##name, MethodFlag::Variable, std::forward<Arg>(rhs)); \
+    return AddLValueReference();                                                                         \
+}
+
 #define OBJECT_VIEW_DEFINE_OPERATOR_T(op, name)                                  \
 template<typename T>                                                             \
 SharedObject ObjectView::operator op (T&& rhs) const {                           \
@@ -207,16 +214,27 @@ namespace Ubpa::UDRefl {
 	ObjectView ObjectView::operator=(Arg&& rhs) const {
 		SharedObject rst = AInvoke(NameIDRegistry::Meta::operator_assign, MethodFlag::Variable, std::forward<Arg>(rhs));
 		assert(rst.IsObjectView());
-		return SharedObject;
+		return { rst.GetType(), rst.GetPtr() };
 	}
+
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(+=, assign_add);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(-=, assign_sub);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(*=, assign_mul);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(/=, assign_div);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(%=, assign_mod);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(&=, assign_band);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(|=, assign_bor);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(^=, assign_bxor);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(<<=, assign_lshift);
+	OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(>>=, assign_rshift);
 
 	template<typename... Args>
 	SharedObject ObjectView::operator()(Args&&... args) const
-	{ return Invoke(NameIDRegistry::Meta::operator_call, std::forward<Args>(args)...); }
+	{ return AInvoke(NameIDRegistry::Meta::operator_call, std::forward<Args>(args)...); }
 
 	template<typename T>
 	T& ObjectView::operator>>(T& out) const {
-		BInvoke<void>(NameIDRegistry::Meta::operator_rshift, MethodFlag::Const, out);
+		ABInvoke<void>(NameIDRegistry::Meta::operator_rshift, MethodFlag::Const, out);
 		return out;
 	}
 
@@ -388,30 +406,12 @@ namespace Ubpa::UDRefl {
 		|| static_cast<bool>(rhs.AInvoke(NameIDRegistry::Meta::operator_ne, lhs));
 	}
 
-	template<NonObjectAndView T>
-	bool operator==(const T& lhs, ObjectView ptr) {
-		return ObjectView{ lhs } == ptr;
-	}
-
-	template<NonObjectAndView T>
-	bool operator!=(const T& lhs, ObjectView ptr) {
-		return ObjectView{ lhs }  != ptr;
-	}
-
-	template<NonObjectAndView T>
-	bool operator<(const T& lhs, ObjectView ptr) {
-		return ObjectView{ lhs }  < ptr;
-	}
-
-	template<NonObjectAndView T>
-	bool operator>(const T& lhs, ObjectView ptr) {
-		return ObjectView{ lhs }  > ptr;
-	}
-
-	template<NonObjectAndView T>
-	bool operator<=(const T& lhs, ObjectView ptr) {
-		return ObjectView{ lhs }  <= ptr;
-	}
+	template<NonObjectAndView T> bool operator==(const T& lhs, ObjectView ptr) { return ObjectView{ lhs } == ptr; }
+	template<NonObjectAndView T> bool operator!=(const T& lhs, ObjectView ptr) { return ObjectView{ lhs } != ptr; }
+	template<NonObjectAndView T> bool operator< (const T& lhs, ObjectView ptr) { return ObjectView{ lhs } <  ptr; }
+	template<NonObjectAndView T> bool operator<=(const T& lhs, ObjectView ptr) { return ObjectView{ lhs } <= ptr; }
+	template<NonObjectAndView T> bool operator> (const T& lhs, ObjectView ptr) { return ObjectView{ lhs } >  ptr; }
+	template<NonObjectAndView T> bool operator>=(const T& lhs, ObjectView ptr) { return ObjectView{ lhs } >= ptr; }
 
 	DEFINE_OPERATOR_LSHIFT(std::ostream, ObjectView)
 	DEFINE_OPERATOR_LSHIFT(std::ostringstream, ObjectView)
@@ -428,6 +428,7 @@ namespace Ubpa::UDRefl {
 	DEFINE_OPERATOR_RSHIFT(std::fstream, ObjectView)
 }
 
+#undef OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR
 #undef OBJECT_VIEW_DEFINE_OPERATOR_T
 #undef OBJECT_VIEW_DEFINE_META_T
 #undef OBJECT_VIEW_DEFINE_META_VARS_T

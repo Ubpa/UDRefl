@@ -214,7 +214,7 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddConstructor<T>();
 			if constexpr (type_ctor_copy<T>)
 				mngr.AddConstructor<T, const T&>();
-			if constexpr (type_ctor_move<T>)
+			if constexpr (!std::is_fundamental_v<T> && type_ctor_move<T>)
 				mngr.AddConstructor<T, T&&>();
 			if constexpr (std::is_destructible_v<T> && !std::is_trivially_destructible_v<T>)
 				mngr.AddDestructor<T>();
@@ -301,7 +301,7 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (operator_assign_copy<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assign, [](T& lhs, const T& rhs) -> T& { return lhs = rhs; });
-			if constexpr (operator_assign_move<T>)
+			if constexpr (!std::is_fundamental_v<T> && operator_assign_move<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assign, [](T& lhs, T&& rhs) -> T& { return lhs = std::move(rhs); });
 			if constexpr (operator_assign_add<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assign_add, [](T& lhs, const T& rhs) -> T& { return lhs += rhs; });
@@ -423,6 +423,19 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_value, [](T& t) { return ObjectView{ t.value() }; });
 				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_value, [](const T& t) { return ObjectView{ t.value() }; });
 				mngr.AddMemberMethod(NameIDRegistry::Meta::optional_reset, [](T& t) { t.reset(); });
+
+				using Elem = typename T::value_type;
+				if constexpr (type_ctor<T, const Elem&>)
+					mngr.AddConstructor<T, const Elem&>();
+				if constexpr (operator_assign<T, const Elem&>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::container_assign, [](T& t, const Elem& elem) -> T& { return t = elem; });
+
+				if constexpr (!std::is_fundamental_v<Elem>) {
+					if constexpr (type_ctor<T, Elem&&>)
+						mngr.AddConstructor<T, Elem&&>();
+					if constexpr (operator_assign<T, Elem&&>)
+						mngr.AddMemberMethod(NameIDRegistry::Meta::container_assign, [](T& t, Elem&& elem) -> T& { return t = std::move(elem); });
+				}
 			}
 
 			// container
