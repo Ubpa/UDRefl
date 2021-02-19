@@ -8,37 +8,37 @@ namespace Ubpa::UDRefl {
 	// TODO: list, forward_list, stack, queue
 
 	// RawArray -> Array -> Vector
+	// Stack -> PriorityQueue
 	// Tuple -> Array
 	// Tuple -> Pair
 	// MultiSet -> Set
 	// MultiSet -> MultiMap -> Map
 	// UnorderedMultiSet -> UnorderedSet
 	// UnorderedMultiSet -> UnorderedMultiMap -> UnorderedMap
-	// Stack -> PriorityQueue
 	enum class ContainerType {
 		None,
-		RawArray,
-		Tuple,
 		Array,
-		Vector,
 		Deque,
 		ForwardList,
 		List,
-		Set,
-		MultiSet,
 		Map,
 		MultiMap,
-		UnorderedSet,
-		UnorderedMultiSet,
-		UnorderedMap,
-		UnorderedMultiMap,
-		Stack,
+		MultiSet,
+		Optional,
+		Pair,
 		PriorityQueue,
 		Queue,
-		Pair,
+		RawArray,
+		Set,
 		Span,
+		Stack,
+		Tuple,
+		UnorderedMap,
+		UnorderedMultiSet,
+		UnorderedMultiMap,
+		UnorderedSet,
 		Variant,
-		Optional
+		Vector
 	};
 		
 	// SpecializeIsSet<std::set<...>> is std::true_type

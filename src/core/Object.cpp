@@ -10,9 +10,9 @@ ObjectView::operator bool() const noexcept {
 		if (type.Is<bool>())
 			return As<bool>();
 		else {
-			if (auto rst = IsInvocable(NameIDRegistry::Meta::operator_bool)) {
+			if (auto rst = IsInvocable(NameIDRegistry::Meta::operator_bool, MethodFlag::Const)) {
 				assert(rst.Is<bool>());
-				return BInvoke<bool>(NameIDRegistry::Meta::operator_bool);
+				return BInvoke<bool>(NameIDRegistry::Meta::operator_bool, MethodFlag::Const);
 			}
 			else
 				return true;

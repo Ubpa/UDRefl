@@ -5,13 +5,11 @@
 
 //#include <span>
 
-#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                            \
-template<typename Arg>                                                             \
-ObjectView operator op (Arg&& rhs) const {                                         \
-    if(GetType().IsReadOnly())                                                     \
-        return {};                                                                 \
-    ABInvoke<void>(NameIDRegistry::Meta::operator_##name, std::forward<Arg>(rhs)); \
-    return AddLValueReference();                                                   \
+#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                                                  \
+template<typename Arg>                                                                                   \
+ObjectView operator op (Arg&& rhs) const {                                                               \
+    ABInvoke<void>(NameIDRegistry::Meta::operator_##name, MethodFlag::Variable, std::forward<Arg>(rhs)); \
+    return AddLValueReference();                                                                         \
 }
 
 namespace Ubpa::UDRefl {
@@ -34,20 +32,10 @@ namespace Ubpa::UDRefl {
 		explicit operator bool() const noexcept;
 
 		template<typename T>
-		constexpr auto* AsPtr() const noexcept {
-			assert(type.Is<T>());
-			return reinterpret_cast<std::add_pointer_t<T>>(ptr);
-		}
+		constexpr auto* AsPtr() const noexcept;
 
 		template<typename T>
-		constexpr decltype(auto) As() const noexcept {
-			assert(ptr);
-			auto* ptr = AsPtr<T>();
-			if constexpr (std::is_reference_v<T>)
-				return std::forward<T>(*ptr);
-			else
-				return *ptr;
-		}
+		constexpr decltype(auto) As() const noexcept;
 
 		//////////////
 		// ReflMngr //
@@ -99,7 +87,7 @@ namespace Ubpa::UDRefl {
 		T BInvokeRet(Name method_name, std::span<const Type> argTypes = {}, ArgPtrBuffer argptr_buffer = nullptr, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T, typename... Args>
-		T BInvoke(Name method_name, Args&&... args) const;
+		T BInvoke(Name method_name, MethodFlag flag, Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject MInvoke(
@@ -115,7 +103,7 @@ namespace Ubpa::UDRefl {
 			Args&&... args) const;
 
 		template<typename T, typename... Args>
-		T ABInvoke(Name method_name, Args&&... args) const;
+		T ABInvoke(Name method_name, MethodFlag flag, Args&&... args) const;
 
 		template<typename... Args>
 		SharedObject AMInvoke(
@@ -148,11 +136,11 @@ namespace Ubpa::UDRefl {
 		void ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(FieldFlag flag = FieldFlag::All) const;
 		std::vector<ObjectView> GetVars(FieldFlag flag = FieldFlag::All) const;
-		ObjectView FindVar(const std::function<bool(ObjectView)>& func, FieldFlag  flag = FieldFlag::All) const;
+		ObjectView FindVar(const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
 
 		//
 		// Type
-		/////////
+		//////////
 
 		ObjectView RemoveConst() const;
 		ObjectView RemoveLValueReference() const;
@@ -167,9 +155,9 @@ namespace Ubpa::UDRefl {
 		ObjectView AddConstLValueReference() const;
 		ObjectView AddConstRValueReference() const;
 
-		//
-		// Meta
-		/////////
+		//////////
+		// Meta //
+		//////////
 
 		template<typename T> SharedObject operator+(T&& rhs) const;
 		template<typename T> SharedObject operator-(T&& rhs) const;
@@ -180,16 +168,13 @@ namespace Ubpa::UDRefl {
 		template<typename T> SharedObject operator|(T&& rhs) const;
 		template<typename T> SharedObject operator^(T&& rhs) const;
 
-		template<typename T> bool operator< (const T& rhs) const { return ABInvoke<bool>(NameIDRegistry::Meta::operator_lt, rhs); }
-		template<typename T> bool operator<=(const T& rhs) const { return ABInvoke<bool>(NameIDRegistry::Meta::operator_le, rhs); }
-		template<typename T> bool operator> (const T& rhs) const { return ABInvoke<bool>(NameIDRegistry::Meta::operator_gt, rhs); }
-		template<typename T> bool operator>=(const T& rhs) const { return ABInvoke<bool>(NameIDRegistry::Meta::operator_ge, rhs); }
+		template<typename T> bool operator< (const T& rhs) const;
+		template<typename T> bool operator<=(const T& rhs) const;
+		template<typename T> bool operator> (const T& rhs) const;
+		template<typename T> bool operator>=(const T& rhs) const;
 
 		template<typename Arg> requires NonObjectAndView<std::decay_t<Arg>>
-		ObjectView operator=(Arg&& rhs) const {
-			ABInvoke<void>(NameIDRegistry::Meta::operator_assign, std::forward<Arg>(rhs));
-			return AddLValueReference();    
-		}
+		ObjectView operator=(Arg&& rhs) const;
 
 		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(+=, assign_add);
 		OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(-=, assign_sub);
@@ -230,37 +215,37 @@ namespace Ubpa::UDRefl {
 		// Tuple
 		//////////
 
-		std::size_t tuple_size() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::tuple_size); }
-		ObjectView tuple_get(std::size_t i) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::tuple_get, std::move(i)); }
-		ObjectView tuple_get(Type type) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::tuple_get, std::move(type)); }
-		Type tuple_element(std::size_t i) const { return BInvoke<Type>(NameIDRegistry::Meta::tuple_element, std::move(i)); }
+		std::size_t tuple_size() const;
+		ObjectView tuple_get(std::size_t i) const;
+		ObjectView tuple_get(Type type) const;
+		Type tuple_element(std::size_t i) const;
 
 		//
 		// Variant
 		////////////
 
-		std::size_t variant_index() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::variant_index); }
-		std::size_t variant_size() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::variant_size); }
-		bool variant_holds_alternative(Type type) const { return BInvoke<bool>(NameIDRegistry::Meta::variant_holds_alternative, std::move(type)); }
-		ObjectView variant_get(std::size_t i) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_get, std::move(i)); }
-		ObjectView variant_get(Type type) const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_get, std::move(type)); }
-		Type variant_alternative(std::size_t i) const { return BInvoke<Type>(NameIDRegistry::Meta::variant_alternative, std::move(i)); }
-		ObjectView variant_visit_get() const { return BInvoke<ObjectView>(NameIDRegistry::Meta::variant_visit_get); }
+		std::size_t variant_index() const;
+		std::size_t variant_size() const;
+		bool variant_holds_alternative(Type type) const;
+		ObjectView variant_get(std::size_t i) const;
+		ObjectView variant_get(Type type) const;
+		Type variant_alternative(std::size_t i) const;
+		ObjectView variant_visit_get() const;
 
 		//
 		// Optional
 		/////////////
 
-		bool optional_has_value() const { return BInvoke<bool>(NameIDRegistry::Meta::optional_has_value); }
-		ObjectView optional_value() const { return BInvoke<ObjectView>(NameIDRegistry::Meta::optional_value); }
-		void optional_reset() const { BInvoke<void>(NameIDRegistry::Meta::optional_reset); }
+		bool optional_has_value() const;
+		ObjectView optional_value() const;
+		void optional_reset() const;
 
 		//
 		// Iterator
 		/////////////
 
-		template<typename T> void advance(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::iterator_advance, std::forward<T>(arg)); };
-		template<typename T> std::size_t distance(T&& arg) const { return ABInvoke<std::size_t>(NameIDRegistry::Meta::iterator_distance, std::forward<T>(arg)); };
+		template<typename T> void advance(T&& arg) const;
+		template<typename T> std::size_t distance(T&& arg) const;
 		template<typename T> SharedObject next(T&& arg) const;
 		template<typename T> SharedObject prev(T&& arg) const;
 		SharedObject next() const;
@@ -270,67 +255,66 @@ namespace Ubpa::UDRefl {
 		// Container
 		//////////////
 
-		template<typename... Args> void assign(Args&&... args) const { ABInvoke<void>(NameIDRegistry::Meta::container_assign, std::forward<Args>(args)...); };
+		template<typename... Args> void assign(Args&&... args) const;
 
 		// - iterator
 
+		SharedObject begin() const;
+		SharedObject end() const;
 		SharedObject cbegin() const;
 		SharedObject cend() const;
+		SharedObject rbegin() const;
+		SharedObject rend() const;
 		SharedObject crbegin() const;
 		SharedObject crend() const;
 
-		SharedObject begin() const;
-		SharedObject end() const;
-		SharedObject rbegin() const;
-		SharedObject rend() const;
-
 		// - capacity
 
-		bool empty() const { return BInvoke<bool>(NameIDRegistry::Meta::container_empty); }
-		std::size_t size() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::container_size); }
-		std::size_t capacity() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::container_capacity); }
-		std::size_t bucket_count() const { return BInvoke<std::size_t>(NameIDRegistry::Meta::container_bucket_count); }
-		template<typename T> void resize(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_resize, std::forward<T>(arg)); };
-		void reserve(std::size_t n) const { BInvoke<void>(NameIDRegistry::Meta::container_reserve, std::move(n)); }
-		void shrink_to_fit() const { BInvoke<void>(NameIDRegistry::Meta::container_shrink_to_fit); }
+		bool empty() const;
+		std::size_t size() const;
+		std::size_t capacity() const;
+		std::size_t bucket_count() const;
+		template<typename... Args> void resize(Args&&... args) const;
+		void reserve(std::size_t n) const;
+		void shrink_to_fit() const;
 
 		// - element access
 
 		template<typename T> SharedObject at(T&& rhs) const;
+		SharedObject data() const;
 		SharedObject front() const;
 		SharedObject back() const;
 		SharedObject top() const;
-		SharedObject data() const;
 
 		// - modifiers
 
-		void clear() const { BInvoke<void>(NameIDRegistry::Meta::container_clear); }
+		void clear() const;
 		template<typename... Args> SharedObject insert(Args&&... args) const;
 		template<typename... Args> SharedObject insert_after(Args&&... args) const;
 		template<typename... Args> SharedObject insert_or_assign(Args&&... args) const;
 		template<typename... Args> SharedObject erase(Args&&... args) const;
 		template<typename... Args> SharedObject erase_after(Args&&... args) const;
-		template<typename T> void push_front(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_push_front, std::forward<T>(arg)); };
-		template<typename T> void push_back(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_push_back, std::forward<T>(arg)); };
-		void pop_front() const { BInvoke<void>(NameIDRegistry::Meta::container_pop_front); }
-		void pop_back() const { BInvoke<void>(NameIDRegistry::Meta::container_pop_back); }
-		template<typename T> void push(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_push, std::forward<T>(arg)); };
-		void pop() const { BInvoke<void>(NameIDRegistry::Meta::container_pop); }
-		template<typename T> void swap(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_swap, std::forward<T>(arg)); };
-		template<typename T> void merge(T&& arg) const { ABInvoke<void>(NameIDRegistry::Meta::container_merge, std::forward<T>(arg)); };
+		template<typename T> void push_front(T&& arg) const;
+		template<typename T> void push_back(T&& arg) const;
+		void pop_front() const;
+		void pop_back() const;
+		template<typename T> void push(T&& arg) const;
+		void pop() const;
+		template<typename T> void swap(T&& arg) const;
+		template<typename T> void merge(T&& arg) const;
 		template<typename T> SharedObject extract(T&& rhs) const;
 
 		// - list operations
 
-		template<typename... Args> void splice_after(Args&&... args) const { ABInvoke<void>(NameIDRegistry::Meta::container_splice_after, std::forward<Args>(args)...); };
-		template<typename... Args> void splice(Args&&... args) const { ABInvoke<void>(NameIDRegistry::Meta::container_splice, std::forward<Args>(args)...); };
-		template<typename T> std::size_t remove(T&& arg) const { ABInvoke<std::size_t>(NameIDRegistry::Meta::container_remove, std::forward<T>(arg)); };
-		void reverse() const { BInvoke<void>(NameIDRegistry::Meta::container_reverse); }
-		template<typename T> std::size_t unique(T&& arg) const { ABInvoke<std::size_t>(NameIDRegistry::Meta::container_unique, std::forward<T>(arg)); };
-		void sort() const { BInvoke<void>(NameIDRegistry::Meta::container_sort); }
+		template<typename... Args> void splice_after(Args&&... args) const;
+		template<typename... Args> void splice(Args&&... args) const;
+		template<typename T> std::size_t remove(T&& arg) const;
+		void reverse() const;
+		template<typename T> std::size_t unique(T&& arg) const;
+		void sort() const;
 
 		// - lookup
-		template<typename T> std::size_t count(T&& arg) const { return ABInvoke<std::size_t>(NameIDRegistry::Meta::container_count, std::forward<T>(arg)); };
+		template<typename T> std::size_t count(T&& arg) const;
 		template<typename T> SharedObject find(T&& rhs) const;
 		template<typename T> SharedObject lower_bound(T&& rhs) const;
 		template<typename T> SharedObject upper_bound(T&& rhs) const;

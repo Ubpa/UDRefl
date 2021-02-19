@@ -11,6 +11,8 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_basic() {
 	Mngr->AddField<MethodFlag::Const>("Const");
 	Mngr->AddField<MethodFlag::Static>("Static");
 	Mngr->AddField<MethodFlag::None>("None");
+	Mngr->AddField<MethodFlag::Member>("Member");
+	Mngr->AddField<MethodFlag::Priority>("Priority");
 	Mngr->AddField<MethodFlag::All>("All");
 
 	Mngr->RegisterType<FieldFlag>();

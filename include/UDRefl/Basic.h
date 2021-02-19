@@ -38,6 +38,8 @@ namespace Ubpa::UDRefl {
 		Static   = 0b100,
 
 		None     = 0b000,
+		Member   = 0b011,
+		Priority = 0b101,
 		All      = 0b111
 	};
 	UBPA_UDREFL_ENUM_BOOL_OPERATOR_DEFINE(MethodFlag)

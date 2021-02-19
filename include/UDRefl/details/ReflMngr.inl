@@ -1152,26 +1152,32 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename T>
-	T ReflMngr::BInvokeRet(ObjectView obj, Name method_name, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer, MethodFlag flag) const {
+	T ReflMngr::BInvokeRet(
+		ObjectView obj,
+		Name method_name,
+		std::span<const Type> argTypes,
+		ArgPtrBuffer argptr_buffer,
+		MethodFlag flag,
+		std::pmr::memory_resource* temp_args_rsrc) const {
 		if constexpr (!std::is_void_v<T>) {
 			using U = std::conditional_t<std::is_reference_v<T>, std::add_pointer_t<T>, T>;
 			std::aligned_storage_t<sizeof(U), alignof(U)> result_buffer;
-			Type result_type = BInvoke(obj, method_name, static_cast<void*>(&result_buffer), argTypes, argptr_buffer, flag);
+			Type result_type = BInvoke(obj, method_name, static_cast<void*>(&result_buffer), argTypes, argptr_buffer, flag, temp_args_rsrc);
 			return MoveResult<T>(result_type, &result_buffer);
 		}
 		else
-			BInvoke(obj, method_name, (void*)nullptr, argTypes, argptr_buffer, flag);
+			BInvoke(obj, method_name, (void*)nullptr, argTypes, argptr_buffer, flag, temp_args_rsrc);
 	}
 
 	template<typename T, typename... Args>
-	T ReflMngr::BInvoke(ObjectView obj, Name method_name, Args&&... args) const {
+	T ReflMngr::BInvoke(ObjectView obj, Name method_name, MethodFlag flag, std::pmr::memory_resource* temp_args_rsrc, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
 			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return BInvokeRet<T>(obj, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
+			return BInvokeRet<T>(obj, method_name, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer), flag, temp_args_rsrc);
 		}
 		else
-			return BInvokeRet<T>(obj, method_name);
+			return BInvokeRet<T>(obj, method_name, std::span<const Type>{}, static_cast<ArgPtrBuffer>(nullptr), flag, temp_args_rsrc);
 	}
 
 	template<typename... Args>

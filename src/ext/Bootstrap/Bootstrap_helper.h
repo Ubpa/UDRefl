@@ -6,6 +6,7 @@
 
 namespace Ubpa::UDRefl::ext::details {
 	void Bootstrap_helper_utemplate();
+	void Bootstrap_helper_attrs_ContainerType();
 	void Bootstrap_helper_basic();
 	void Bootstrap_helper_registry();
 	void Bootstrap_helper_info_0();
