@@ -359,10 +359,10 @@ namespace Ubpa::UDRefl {
 	template<typename... Args> void ObjectView::splice(Args&&... args) const
 	{ ABInvoke<void>(NameIDRegistry::Meta::container_splice, MethodFlag::Variable, std::forward<Args>(args)...); };
 	template<typename T> std::size_t ObjectView::remove(T&& arg) const
-	{ ABInvoke<std::size_t>(NameIDRegistry::Meta::container_remove, MethodFlag::Variable, std::forward<T>(arg)); };
+	{ return ABInvoke<std::size_t>(NameIDRegistry::Meta::container_remove, MethodFlag::Variable, std::forward<T>(arg)); };
 	inline void ObjectView::reverse() const { BInvoke<void>(NameIDRegistry::Meta::container_reverse, MethodFlag::Variable); }
 	template<typename T> std::size_t ObjectView::unique(T&& arg) const
-	{ ABInvoke<std::size_t>(NameIDRegistry::Meta::container_unique, MethodFlag::Variable, std::forward<T>(arg)); };
+	{ return ABInvoke<std::size_t>(NameIDRegistry::Meta::container_unique, MethodFlag::Variable, std::forward<T>(arg)); };
 	inline void ObjectView::sort() const { BInvoke<void>(NameIDRegistry::Meta::container_sort, MethodFlag::Variable); }
 
 	// - lookup
