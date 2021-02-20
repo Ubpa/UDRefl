@@ -6,12 +6,15 @@
 //#include <unordered_map>
 #include <memory_resource>
 
+#include <shared_mutex>
+
 #ifndef NDEBUG
 #include <unordered_set>
 #endif // !NDEBUG
 
 namespace Ubpa::UDRefl {
-	// name must end with '\0'
+	// name must end with 0
+	// thread-safe
 	template<typename T, typename U>
 	class IDRegistry {
 	public:
@@ -23,14 +26,15 @@ namespace Ubpa::UDRefl {
 		U Register(std::string_view name);
 
 		bool IsRegistered(T ID) const;
-		std::string_view Nameof(T ID) const;
+		std::string_view Viewof(T ID) const;
 
 		void UnregisterUnmanaged(T ID);
 		void Clear() noexcept;
 
 	protected:
 		std::pmr::polymorphic_allocator<char> get_allocator() { return &resource; }
-
+		mutable std::shared_mutex smutex;
+		
 	private:
 		std::pmr::monotonic_buffer_resource resource;
 		std::pmr::unordered_map<T, std::string_view> id2name;
@@ -205,6 +209,7 @@ namespace Ubpa::UDRefl {
 		using IDRegistry<NameID, Name>::Register;
 
 		Name Register(Name n) { return Register(n.GetID(), n.GetView()); }
+		Name Nameof(NameID ID) const;
 	};
 
 	class TypeIDRegistry : public IDRegistry<TypeID, Type> {
@@ -227,6 +232,8 @@ namespace Ubpa::UDRefl {
 
 		template<typename T>
 		bool IsRegistered() const;
+
+		Type Typeof(TypeID ID) const;
 
 		//
 		// Type Computation

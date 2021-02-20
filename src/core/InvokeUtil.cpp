@@ -105,7 +105,7 @@ bool details::IsNonCopiedArgCompatible(std::span<const Type> params, std::span<c
 #ifndef NDEBUG
 		// because rhs(arg)'s ID maybe have no name in the registry
 		// so we use type_name_add_*_hash(...) to avoid it
-		auto rhs = Mngr->tregistry.Nameof(argTypeIDs[i]);
+		auto rhs = Mngr->tregistry.Viewof(argTypeIDs[i]);
 #endif // !NDEBUG
 		const std::size_t rhs_hash = argTypeIDs[i].GetValue();
 

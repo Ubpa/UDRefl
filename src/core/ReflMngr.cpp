@@ -748,7 +748,7 @@ ObjectView ReflMngr::DynamicCast(ObjectView obj, Type type) const {
 	return nullptr;
 }
 
-ObjectView ReflMngr::Var(ObjectView obj, Name field_name, FieldFlag flag) {
+ObjectView ReflMngr::Var(ObjectView obj, Name field_name, FieldFlag flag) const {
 	if (!obj.GetPtr())
 		flag = enum_within(flag, FieldFlag::Unowned);
 
@@ -771,7 +771,7 @@ ObjectView ReflMngr::Var(ObjectView obj, Name field_name, FieldFlag flag) {
 	}
 }
 
-ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag flag) {
+ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag flag) const {
 	auto base_obj = StaticCast_DerivedToBase(obj, base);
 	if (!base_obj.GetType())
 		return nullptr;

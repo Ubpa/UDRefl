@@ -23,8 +23,8 @@ namespace Ubpa::UDRefl {
 		// enum is a special type (all member is static)
 		//
 
-		NameIDRegistry nregistry;
-		TypeIDRegistry tregistry;
+		mutable NameIDRegistry nregistry;
+		mutable TypeIDRegistry tregistry;
 
 		std::unordered_map<Type, TypeInfo> typeinfos;
 
@@ -81,9 +81,11 @@ namespace Ubpa::UDRefl {
 		template<auto funcptr>
 		static MethodPtr GenerateMethodPtr();
 
+		// void(T&, Args...)
 		template<typename T, typename... Args>
 		static MethodPtr GenerateConstructorPtr();
 
+		// void(const T&)
 		template<typename T>
 		static MethodPtr GenerateDestructorPtr();
 
@@ -201,9 +203,9 @@ namespace Ubpa::UDRefl {
 		// - result type of Var maintains the CVRefMode of the input
 		//
 
-		ObjectView Var(ObjectView obj,            Name field_name, FieldFlag flag = FieldFlag::All);
+		ObjectView Var(ObjectView obj,            Name field_name, FieldFlag flag = FieldFlag::All) const;
 		// for diamond inheritance
-		ObjectView Var(ObjectView obj, Type base, Name field_name, FieldFlag flag = FieldFlag::All);
+		ObjectView Var(ObjectView obj, Type base, Name field_name, FieldFlag flag = FieldFlag::All) const;
 
 		//
 		// Invoke

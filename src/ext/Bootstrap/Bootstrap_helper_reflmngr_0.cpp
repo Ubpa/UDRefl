@@ -25,9 +25,9 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_reflmngr_0() {
 	Mngr->AddMethod<&ReflMngr::DynamicCast_BaseToDerived>("DynamicCast_BaseToDerived");
 	Mngr->AddMethod<&ReflMngr::StaticCast>("StaticCast");
 	Mngr->AddMethod<&ReflMngr::DynamicCast>("DynamicCast");
-	Mngr->AddMethod<MemFuncOf<ReflMngr, ObjectView(ObjectView, Name, FieldFlag)>::get(&ReflMngr::Var)>("Var");
+	Mngr->AddMethod<MemFuncOf<ReflMngr, ObjectView(ObjectView, Name, FieldFlag)const>::get(&ReflMngr::Var)>("Var");
 	Mngr->AddMemberMethod("Var", [](ReflMngr& mngr, ObjectView obj, Name field_name) {return mngr.Var(obj, field_name); });
-	Mngr->AddMethod<MemFuncOf<ReflMngr, ObjectView(ObjectView, Type, Name, FieldFlag)>::get(&ReflMngr::Var)>("Var");
+	Mngr->AddMethod<MemFuncOf<ReflMngr, ObjectView(ObjectView, Type, Name, FieldFlag)const>::get(&ReflMngr::Var)>("Var");
 	Mngr->AddMemberMethod("Var", [](ReflMngr& mngr, ObjectView obj, Type base, Name field_name) {return mngr.Var(obj, base, field_name); });
 
 	Mngr->AddMethod<&ReflMngr::GetTypes>("GetTypes");

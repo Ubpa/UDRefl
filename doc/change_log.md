@@ -24,6 +24,7 @@
     - forwardlist, list
     - stack, priority_queue, queue
     - span
+  - make IDRegistry thread-safe
 - 0.8.1
   - support
     - pointer, array

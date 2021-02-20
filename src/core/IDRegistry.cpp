@@ -157,9 +157,23 @@ NameIDRegistry::NameIDRegistry() {
 	RegisterUnmanaged(Meta::container_get_allocator.GetID(), Meta::container_get_allocator.GetView());
 }
 
+Name NameIDRegistry::Nameof(NameID ID) const {
+	auto view = Viewof(ID);
+	if (view.empty())
+		return {};
+	return { view, ID };
+}
+
 TypeIDRegistry::TypeIDRegistry() {
 	RegisterUnmanaged(Meta::global.GetID(), Meta::global.GetName());
 	RegisterUnmanaged(Meta::t_void.GetID(), Meta::t_void.GetName());
+}
+
+Type TypeIDRegistry::Typeof(TypeID ID) const {
+	auto view = Viewof(ID);
+	if (view.empty())
+		return {};
+	return { view, ID };
 }
 
 //
@@ -172,10 +186,14 @@ Type TypeIDRegistry::RegisterAddConst(Type type) {
 		return {};
 
 	TypeID ref_ID{ type_name_add_const_hash(name) };
-	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+	if (auto ref_name = Viewof(ref_ID); !ref_name.empty())
 		return { ref_name, ref_ID };
 
-	auto rst_name = type_name_add_const(name, get_allocator());
+	std::string_view rst_name;
+	{
+		std::lock_guard wlock{ smutex }; // write resource
+		rst_name = type_name_add_const(name, get_allocator());
+	}
 
 	RegisterUnmanaged(ref_ID, rst_name);
 	return { rst_name, ref_ID };
@@ -187,10 +205,14 @@ Type TypeIDRegistry::RegisterAddLValueReference(Type type) {
 		return {};
 
 	TypeID ref_ID{ type_name_add_lvalue_reference_hash(name) };
-	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+	if (auto ref_name = Viewof(ref_ID); !ref_name.empty())
 		return { ref_name, ref_ID };
 
-	auto rst_name = type_name_add_lvalue_reference(name, get_allocator());
+	std::string_view rst_name;
+	{
+		std::lock_guard wlock{ smutex }; // write resource
+		rst_name = type_name_add_lvalue_reference(name, get_allocator());
+	}
 
 	RegisterUnmanaged(ref_ID, rst_name);
 	return { rst_name, ref_ID };
@@ -202,10 +224,14 @@ Type TypeIDRegistry::RegisterAddLValueReferenceWeak(Type type) {
 		return {};
 
 	TypeID ref_ID{ type_name_add_lvalue_reference_weak_hash(name) };
-	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+	if (auto ref_name = Viewof(ref_ID); !ref_name.empty())
 		return { ref_name, ref_ID };
 
-	auto rst_name = type_name_add_lvalue_reference_weak(name, get_allocator());
+	std::string_view rst_name;
+	{
+		std::lock_guard wlock{ smutex }; // write resource
+		rst_name = type_name_add_lvalue_reference_weak(name, get_allocator());
+	}
 
 	RegisterUnmanaged(ref_ID, rst_name);
 
@@ -218,10 +244,14 @@ Type TypeIDRegistry::RegisterAddRValueReference(Type type) {
 		return {};
 
 	TypeID ref_ID{ type_name_add_rvalue_reference_hash(name) };
-	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+	if (auto ref_name = Viewof(ref_ID); !ref_name.empty())
 		return { ref_name, ref_ID };
 
-	auto rst_name = type_name_add_rvalue_reference(name, get_allocator());
+	std::string_view rst_name;
+	{
+		std::lock_guard wlock{ smutex }; // write resource
+		rst_name = type_name_add_rvalue_reference(name, get_allocator());
+	}
 
 	RegisterUnmanaged(ref_ID, rst_name);
 
@@ -234,10 +264,14 @@ Type TypeIDRegistry::RegisterAddConstLValueReference(Type type) {
 		return {};
 
 	TypeID ref_ID{ type_name_add_const_lvalue_reference_hash(name) };
-	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+	if (auto ref_name = Viewof(ref_ID); !ref_name.empty())
 		return { ref_name, ref_ID };
 
-	auto rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
+	std::string_view rst_name;
+	{
+		std::lock_guard wlock{ smutex }; // write resource
+		rst_name = type_name_add_const_lvalue_reference(name, get_allocator());
+	}
 
 	RegisterUnmanaged(ref_ID, rst_name);
 
@@ -250,10 +284,14 @@ Type TypeIDRegistry::RegisterAddConstRValueReference(Type type) {
 		return {};
 
 	TypeID ref_ID{ type_name_add_const_rvalue_reference_hash(name) };
-	if (auto ref_name = Nameof(ref_ID); !ref_name.empty())
+	if (auto ref_name = Viewof(ref_ID); !ref_name.empty())
 		return { ref_name, ref_ID };
 
-	auto rst_name = type_name_add_const_rvalue_reference(name, get_allocator());
+	std::string_view rst_name;
+	{
+		std::lock_guard wlock{ smutex }; // write resource
+		rst_name = type_name_add_const_rvalue_reference(name, get_allocator());
+	}
 
 	RegisterUnmanaged(ref_ID, rst_name);
 	return { rst_name, ref_ID };
