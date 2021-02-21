@@ -4,7 +4,7 @@
 
 namespace Ubpa::UDRefl {
 	constexpr Type GlobalType = TypeIDRegistry::Meta::global;
-	constexpr ObjectView Global = { GlobalType };
+	constexpr ObjectView Global = { GlobalType, nullptr };
 
 	extern ReflMngr* Mngr;
 	extern const ObjectView MngrView;

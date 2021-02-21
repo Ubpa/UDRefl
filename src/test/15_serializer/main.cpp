@@ -11,8 +11,9 @@ void Serializer(ObjectView obj) {
 		std::cout << obj;
 	else {
 		std::cout << "{" << "\"TYPE\":\"" << obj.GetType().GetName() << "\",";
-		auto iter = Mngr->GetTypeInfo(obj.GetType())->attrs.find(Type_of<ContainerType>);
-		if (iter != Mngr->GetTypeInfo(obj.GetType())->attrs.end()) {
+		auto* info = Mngr->GetTypeInfo(obj.GetType());
+		auto iter = info->attrs.find(Type_of<ContainerType>);
+		if (iter != info->attrs.end()) {
 			if (*iter == ContainerType::Vector) {
 				std::cout << "\"Vector\":[";
 				for (size_t i = 0; i < obj.size(); i++) {

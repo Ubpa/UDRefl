@@ -18,7 +18,7 @@ int main() {
 	Mngr->AddField<Color::Blue>("Blue");
 
 
-	for (const auto& [type, field, var] : Mngr->GetTypeFieldVars(Type_of<Color>)) {
+	for (const auto& [type, field, var] : Mngr->GetTypeFieldVars(ObjectView_of<Color>)) {
 		std::cout
 			<< field.name.GetView()
 			<< ": " << static_cast<int>(var.As<Color>())

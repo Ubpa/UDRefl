@@ -32,7 +32,7 @@ int main() {
 		<< "//" << std::endl
 		<< "// unowned var" << std::endl
 		<< "////////////////" << std::endl;
-	for (const auto& [type, field, var] : Mngr->GetTypeFieldVars(Type_of<A>))
+	for (const auto& [type, field, var] : Mngr->GetTypeFieldVars(ObjectView_of<A>))
 		std::cout << field.name.GetView() << ": " << var << std::endl;
 
 	std::cout
