@@ -498,7 +498,7 @@ void ReflMngr::Clear() noexcept {
 			auto cur = iter;
 			++iter;
 
-			if (cur->second.fieldptr.IsDynamicShared())
+			if (cur->second.fieldptr.GetFieldFlag() == FieldFlag::DynamicShared)
 				typeinfo.fieldinfos.erase(cur);
 		}
 	}

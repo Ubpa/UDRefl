@@ -8,17 +8,9 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_ptr() {
 
 	Mngr->RegisterType<FieldPtr>();
 	Mngr->AddConstructor<FieldPtr, Type, std::size_t>();
-	Mngr->AddConstructor<FieldPtr, Type, void*>();
 	Mngr->AddConstructor<FieldPtr, ObjectView>();
 	Mngr->AddConstructor<FieldPtr, SharedObject>();
 	Mngr->AddMethod<&FieldPtr::GetType>("GetType");
-	Mngr->AddMethod<&FieldPtr::IsBasic>("IsBasic");
-	Mngr->AddMethod<&FieldPtr::IsVirtual>("IsVirtual");
-	Mngr->AddMethod<&FieldPtr::IsStatic>("IsStatic");
-	Mngr->AddMethod<&FieldPtr::IsDynamicShared>("IsDynamicShared");
-	Mngr->AddMethod<&FieldPtr::IsDyanmicBuffer>("IsDyanmicBuffer");
-	Mngr->AddMethod<&FieldPtr::IsOwned>("IsOwned");
-	Mngr->AddMethod<&FieldPtr::IsUnowned>("IsUnowned");
 	Mngr->AddMethod<&FieldPtr::GetFieldFlag>("GetFieldFlag");
 	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView()noexcept>::get(&FieldPtr::Var)>("Var");
 	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView(void*)>::get(&FieldPtr::Var)>("Var");
