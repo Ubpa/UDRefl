@@ -920,22 +920,38 @@ namespace Ubpa::UDRefl {
 			using Obj = std::remove_pointer_t<ObjPtr>;
 			static_assert(!std::is_const_v<Obj>);
 
-			using ValuePtr = typename Traits::Return;
-			static_assert(std::is_pointer_v<ValuePtr>);
-			using Value = std::remove_pointer_t<ValuePtr>;
-			static_assert(!std::is_void_v<Value> && !std::is_volatile_v<Value>);
+			using Ret = typename Traits::Return;
+			if constexpr (std::is_pointer_v<Ret>) {
+				using Value = std::remove_pointer_t<Ret>;
+				static_assert(!std::is_void_v<Value>);
 
-			tregistry.Register<Value>();
-			RegisterType<Value>();
+				tregistry.Register<Value>();
+				RegisterType<Value>();
 
-			auto offsetor = [f=std::forward<T>(data)](void* obj) -> void* {
-				return f(reinterpret_cast<Obj*>(obj));
-			};
+				auto offsetor = [f = std::forward<T>(data)](void* obj) -> void* {
+					return f(reinterpret_cast<Obj*>(obj));
+				};
 
-			return {
-				Type_of<Value>,
-				offsetor
-			};
+				return {
+					Type_of<Value>,
+					offsetor
+				};
+			}
+			else if constexpr (std::is_reference_v<Ret>) {
+				tregistry.Register<Ret>();
+				RegisterType<Ret>();
+
+				auto offsetor = [f = std::forward<T>(data)](void* obj) -> void* {
+					return &f(reinterpret_cast<Obj*>(obj));
+				};
+
+				return {
+					Type_of<Ret>,
+					offsetor
+				};
+			}
+			else
+				static_assert(always_false<T>);
 		}
 	}
 

@@ -53,7 +53,7 @@ namespace Ubpa::UDRefl {
 
 		// field_data can be:
 		// - static field: pointer to **non-void** type
-		// - member object pointer: pointer to **non-void** type
+		// - member object pointer
 		// - enumerator
 		template<auto field_data>
 		FieldPtr GenerateFieldPtr();
@@ -61,8 +61,7 @@ namespace Ubpa::UDRefl {
 		// data can be:
 		// 1. member object pointer
 		// 2. pointer to **non-void** and **non-function** type
-		// 3. functor : Value*(Object*)
-		// > - result must be an pointer of **non-void** type
+		// 3. functor : Value*(Object*)  / Value&(Object*)
 		// 4. enumerator
 		template<typename T>
 		FieldPtr GenerateFieldPtr(T&& data);
@@ -136,8 +135,7 @@ namespace Ubpa::UDRefl {
 		// 1. member object pointer
 		// 2. enumerator
 		// 3. pointer to **non-void** and **non-function** type
-		// 4. functor : Value*(Object*)
-		// > - result must be an pointer of **non-void** type
+		// 4. functor : Value*(Object*) / Value&(Object*)
 		template<typename T,
 			std::enable_if_t<!std::is_same_v<std::decay_t<T>, FieldInfo>, int> = 0>
 		bool AddField(Type type, Name name, T&& data, AttrSet attrs = {})
@@ -174,7 +172,7 @@ namespace Ubpa::UDRefl {
 		template<typename T>
 		bool AddDestructor(AttrSet attrs = {});
 
-		// Func: Ret(const? volatile? Object&, Args...)
+		// Func: Ret(const? Object&, Args...)
 		template<typename Func>
 		bool AddMemberMethod(Name name, Func&& func, AttrSet attrs = {});
 
@@ -321,6 +319,10 @@ namespace Ubpa::UDRefl {
 		//
 		// Make
 		/////////
+		//
+		// - if the type doesn't contains any ctor, then we use trivial ctor (do nothing)
+		// - if the type doesn't contains any dtor, then we use trivial dtor (do nothing)
+		//
 
 		bool IsNonCopiedArgConstructible(Type type, std::span<const Type  > argTypes   = {}) const;
 		bool IsNonCopiedArgConstructible(Type type, std::span<const TypeID> argTypeIDs = {}) const;

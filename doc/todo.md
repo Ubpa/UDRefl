@@ -14,7 +14,7 @@
     - [x] optional
 - [x] improve test
 - [ ] introduction
-- [ ] doc
+- [ ] manual
 - [x] `Get{R|RW}OwnedVars` 
 - [x] improve method ptr
 - [x] perfect forwarding when invoking (auto copy)
@@ -33,11 +33,12 @@
   - [x] pointer
   - [x] array
   - [x] string
-- [ ] iterator API
+- [x] iterator API
   - [x] operations: advance, distance, next, prev
   - [x] range access: `[c][l/r]begin`, `[c][l/r]end` 
 - [x] type alias for AttrSet
 - [x] speed up `ReflMngr.cpp` compiltation
 - [x] rename invoke APIs
 - [x] simplify `MethodPtr::func` 
+- [ ] property
 

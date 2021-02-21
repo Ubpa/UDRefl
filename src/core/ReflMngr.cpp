@@ -1037,6 +1037,8 @@ bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const Type> argT
 		return false;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypes.empty())
+		return true;
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypes))
 			return true;
@@ -1050,6 +1052,8 @@ bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const TypeID> ar
 		return false;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypeIDs.empty())
+		return true;
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypeIDs))
 			return true;
@@ -1063,6 +1067,8 @@ bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const 
 		return false;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypes.empty())
+		return true;
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (IsCompatible(iter->second.methodptr.GetParamList(), argTypes))
 			return true;
@@ -1089,6 +1095,8 @@ bool ReflMngr::IsDestructible(Type type) const {
 	const auto& typeinfo = target->second;
 
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
+	if (begin_iter == end_iter)
+		return true;
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() != MethodFlag::Variable
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
@@ -1105,6 +1113,8 @@ bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTy
 	const auto& typeinfo = target->second;
 
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypes.empty())
+		return true;// trivial ctor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
 			&& details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypes))
@@ -1122,6 +1132,8 @@ bool ReflMngr::Construct(ObjectView obj, std::span<const Type> argTypes, ArgPtrB
 		return false;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypes.empty())
+		return true;// trivial ctor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable) {
 			details::NewArgsGuard guard{
@@ -1143,6 +1155,8 @@ void ReflMngr::Destruct(ObjectView obj) const {
 		return;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
+	if (begin_iter == end_iter)
+		return;// trivial dtor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
