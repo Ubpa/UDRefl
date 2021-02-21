@@ -26,6 +26,7 @@ Extremely **fast** and **powerful** C++20 dynamic reflection library
 - [change log](doc/change_log.md) 
 - manual (TODO)
 - introduction
+  - [English](doc/introduction_en_US.md) 
   - [中文](doc/introduction_zh_CN.md) 
 
 ## How to Use

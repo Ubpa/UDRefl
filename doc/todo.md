@@ -14,6 +14,10 @@
     - [x] optional
 - [x] improve test
 - [ ] introduction
+  - [x] zh_CN
+  - [x] en_us
+    - [x] machine translation
+    - [ ] optimize
 - [ ] manual
 - [x] `Get{R|RW}OwnedVars` 
 - [x] improve method ptr
