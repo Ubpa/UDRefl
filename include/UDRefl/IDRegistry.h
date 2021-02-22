@@ -51,157 +51,151 @@ namespace Ubpa::UDRefl {
 	class NameIDRegistry : public IDRegistry<NameID, Name> {
 	public:
 		struct Meta {
-			static constexpr Name ctor{ "UDRefl::ctor" };
-			static constexpr Name dtor{ "UDRefl::dtor" };
+			static constexpr Name ctor{ ".ctor" };
+			static constexpr Name dtor{ ".dtor" };
 
-			static constexpr Name operator_bool{ "UDRefl::operator_bool" };
+			static constexpr Name operator_bool{ ".operator_bool" };
 
-			static constexpr Name operator_plus{ "UDRefl::operator+" };
-			static constexpr Name operator_minus{ "UDRefl::operator-" };
+			static constexpr Name operator_plus{ ".operator+" };
+			static constexpr Name operator_minus{ ".operator-" };
 
-			static constexpr Name operator_add{ "UDRefl::operator+" };
-			static constexpr Name operator_sub{ "UDRefl::operator-" };
-			static constexpr Name operator_mul{ "UDRefl::operator*" };
-			static constexpr Name operator_div{ "UDRefl::operator/" };
-			static constexpr Name operator_mod{ "UDRefl::operator%" };
+			static constexpr Name operator_add{ ".operator+" };
+			static constexpr Name operator_sub{ ".operator-" };
+			static constexpr Name operator_mul{ ".operator*" };
+			static constexpr Name operator_div{ ".operator/" };
+			static constexpr Name operator_mod{ ".operator%" };
 
-			static constexpr Name operator_bnot{ "UDRefl::operator~" };
-			static constexpr Name operator_band{ "UDRefl::operator&" };
-			static constexpr Name operator_bor{ "UDRefl::operator|" };
-			static constexpr Name operator_bxor{ "UDRefl::operator^" };
-			static constexpr Name operator_lshift{ "UDRefl::operator<<" };
-			static constexpr Name operator_rshift{ "UDRefl::operator>>" };
+			static constexpr Name operator_bnot{ ".operator~" };
+			static constexpr Name operator_band{ ".operator&" };
+			static constexpr Name operator_bor{ ".operator|" };
+			static constexpr Name operator_bxor{ ".operator^" };
+			static constexpr Name operator_lshift{ ".operator<<" };
+			static constexpr Name operator_rshift{ ".operator>>" };
 
-			static constexpr Name operator_pre_inc{ "UDRefl::operator++" };
-			static constexpr Name operator_pre_dec{ "UDRefl::operator--" };
-			static constexpr Name operator_post_inc{ "UDRefl::operator++" };
-			static constexpr Name operator_post_dec{ "UDRefl::operator--" };
+			static constexpr Name operator_pre_inc{ ".operator++" };
+			static constexpr Name operator_pre_dec{ ".operator--" };
+			static constexpr Name operator_post_inc{ ".operator++" };
+			static constexpr Name operator_post_dec{ ".operator--" };
 
-			static constexpr Name operator_assign{ "UDRefl::operator=" };
-			static constexpr Name operator_assign_add{ "UDRefl::operator+=" };
-			static constexpr Name operator_assign_sub{ "UDRefl::operator-=" };
-			static constexpr Name operator_assign_mul{ "UDRefl::operator*=" };
-			static constexpr Name operator_assign_div{ "UDRefl::operator/=" };
-			static constexpr Name operator_assign_mod{ "UDRefl::operator%=" };
-			static constexpr Name operator_assign_band{ "UDRefl::operator&=" };
-			static constexpr Name operator_assign_bor{ "UDRefl::operator|=" };
-			static constexpr Name operator_assign_bxor{ "UDRefl::operator^=" };
-			static constexpr Name operator_assign_lshift{ "UDRefl::operator<<=" };
-			static constexpr Name operator_assign_rshift{ "UDRefl::operator>>=" };
+			static constexpr Name operator_assign{ ".operator=" };
+			static constexpr Name operator_assign_add{ ".operator+=" };
+			static constexpr Name operator_assign_sub{ ".operator-=" };
+			static constexpr Name operator_assign_mul{ ".operator*=" };
+			static constexpr Name operator_assign_div{ ".operator/=" };
+			static constexpr Name operator_assign_mod{ ".operator%=" };
+			static constexpr Name operator_assign_band{ ".operator&=" };
+			static constexpr Name operator_assign_bor{ ".operator|=" };
+			static constexpr Name operator_assign_bxor{ ".operator^=" };
+			static constexpr Name operator_assign_lshift{ ".operator<<=" };
+			static constexpr Name operator_assign_rshift{ ".operator>>=" };
 
-			static constexpr Name operator_eq{ "UDRefl::operator==" };
-			static constexpr Name operator_ne{ "UDRefl::operator!=" };
-			static constexpr Name operator_lt{ "UDRefl::operator<" };
-			static constexpr Name operator_le{ "UDRefl::operator<=" };
-			static constexpr Name operator_gt{ "UDRefl::operator>" };
-			static constexpr Name operator_ge{ "UDRefl::operator>=" };
+			static constexpr Name operator_eq{ ".operator==" };
+			static constexpr Name operator_ne{ ".operator!=" };
+			static constexpr Name operator_lt{ ".operator<" };
+			static constexpr Name operator_le{ ".operator<=" };
+			static constexpr Name operator_gt{ ".operator>" };
+			static constexpr Name operator_ge{ ".operator>=" };
 
-			static constexpr Name operator_and{ "UDRefl::operator&&" };
-			static constexpr Name operator_or{ "UDRefl::operator||" };
-			static constexpr Name operator_not{ "UDRefl::operator!" };
+			static constexpr Name operator_and{ ".operator&&" };
+			static constexpr Name operator_or{ ".operator||" };
+			static constexpr Name operator_not{ ".operator!" };
 
-			static constexpr Name operator_subscript{ "UDRefl::operator[]" };
-			static constexpr Name operator_deref{ "UDRefl::operator*" };
-			static constexpr Name operator_ref{ "UDRefl::operator&" };
-			static constexpr Name operator_member{ "UDRefl::operator->" };
-			static constexpr Name operator_member_of_pointer{ "UDRefl::operator->*" };
+			static constexpr Name operator_subscript{ ".operator[]" };
+			static constexpr Name operator_deref{ ".operator*" };
+			static constexpr Name operator_ref{ ".operator&" };
+			static constexpr Name operator_member{ ".operator->" };
+			static constexpr Name operator_member_of_pointer{ ".operator->*" };
 
-			static constexpr Name operator_call{ "UDRefl::operator()" };
-			static constexpr Name operator_comma{ "UDRefl::operator," };
+			static constexpr Name operator_call{ ".operator()" };
+			static constexpr Name operator_comma{ ".operator," };
 
 			// tuple
 
-			static constexpr Name tuple_size{ "UDRefl::tuple_size" };
-			static constexpr Name tuple_get{ "UDRefl::tuple_get" };
-			static constexpr Name tuple_element{ "UDRefl::tuple_element" };
+			static constexpr Name tuple_size{ ".tuple_size" };
+			static constexpr Name tuple_get{ ".tuple_get" };
+			static constexpr Name tuple_element{ ".tuple_element" };
 
 			// variant
 
-			static constexpr Name variant_index{ "UDRefl::variant_index" };
-			static constexpr Name variant_valueless_by_exception{ "UDRefl::variant_valueless_by_exception" };
-			static constexpr Name variant_holds_alternative{ "UDRefl::variant_holds_alternative" };
-			static constexpr Name variant_get{ "UDRefl::variant_get" };
-			static constexpr Name variant_get_if{ "UDRefl::variant_get_if" };
-			static constexpr Name variant_size{ "UDRefl::variant_size" };
-			static constexpr Name variant_alternative{ "UDRefl::variant_alternative" };
-			static constexpr Name variant_visit_get{ "UDRefl::variant_visit_get" };
+			static constexpr Name variant_index{ ".variant_index" };
+			static constexpr Name variant_valueless_by_exception{ ".variant_valueless_by_exception" };
+			static constexpr Name variant_holds_alternative{ ".variant_holds_alternative" };
+			static constexpr Name variant_get{ ".variant_get" };
+			static constexpr Name variant_get_if{ ".variant_get_if" };
+			static constexpr Name variant_size{ ".variant_size" };
+			static constexpr Name variant_alternative{ ".variant_alternative" };
+			static constexpr Name variant_visit_get{ ".variant_visit_get" };
 
 			// optional
 
-			static constexpr Name optional_has_value{ "UDRefl::optional_has_value" };
-			static constexpr Name optional_value{ "UDRefl::optional_value" };
-			static constexpr Name optional_reset{ "UDRefl::optional_reset" };
+			static constexpr Name optional_has_value{ ".optional_has_value" };
+			static constexpr Name optional_value{ ".optional_value" };
+			static constexpr Name optional_reset{ ".optional_reset" };
 
 			// iterator
 
-			static constexpr Name iterator_advance{ "UDRefl::iterator_advance" };
-			static constexpr Name iterator_distance{ "UDRefl::iterator_distance" };
-			static constexpr Name iterator_next{ "UDRefl::iterator_next" };
-			static constexpr Name iterator_prev{ "UDRefl::iterator_prev" };
+			static constexpr Name iterator_advance{ ".iterator_advance" };
+			static constexpr Name iterator_distance{ ".iterator_distance" };
+			static constexpr Name iterator_next{ ".iterator_next" };
+			static constexpr Name iterator_prev{ ".iterator_prev" };
 
 			// container
 
-			static constexpr Name container_assign{ "UDRefl::container_assign" };
+			static constexpr Name container_assign{ ".container_assign" };
 
-			static constexpr Name container_begin{ "UDRefl::container_begin" };
-			static constexpr Name container_cbegin{ "UDRefl::container_cbegin" };
-			static constexpr Name container_end{ "UDRefl::container_end" };
-			static constexpr Name container_cend{ "UDRefl::container_cend" };
-			static constexpr Name container_rbegin{ "UDRefl::container_rbegin" };
-			static constexpr Name container_crbegin{ "UDRefl::container_crbegin" };
-			static constexpr Name container_rend{ "UDRefl::container_rend" };
-			static constexpr Name container_crend{ "UDRefl::container_crend" };
+			static constexpr Name container_begin{ ".container_begin" };
+			static constexpr Name container_cbegin{ ".container_cbegin" };
+			static constexpr Name container_end{ ".container_end" };
+			static constexpr Name container_cend{ ".container_cend" };
+			static constexpr Name container_rbegin{ ".container_rbegin" };
+			static constexpr Name container_crbegin{ ".container_crbegin" };
+			static constexpr Name container_rend{ ".container_rend" };
+			static constexpr Name container_crend{ ".container_crend" };
 
-			static constexpr Name container_at{ "UDRefl::container_at" };
-			static constexpr Name container_data{ "UDRefl::container_data" };
-			static constexpr Name container_front{ "UDRefl::container_front" };
-			static constexpr Name container_back{ "UDRefl::container_back" };
-			static constexpr Name container_top{ "UDRefl::container_top" };
+			static constexpr Name container_at{ ".container_at" };
+			static constexpr Name container_data{ ".container_data" };
+			static constexpr Name container_front{ ".container_front" };
+			static constexpr Name container_back{ ".container_back" };
+			static constexpr Name container_top{ ".container_top" };
 
-			static constexpr Name container_empty{ "UDRefl::container_empty" };
-			static constexpr Name container_size{ "UDRefl::container_size" };
-			static constexpr Name container_size_bytes{ "UDRefl::container_size_bytes" };
-			static constexpr Name container_max_size{ "UDRefl::container_max_size" };
-			static constexpr Name container_resize{ "UDRefl::container_resize" };
-			static constexpr Name container_capacity{ "UDRefl::container_capacity" };
-			static constexpr Name container_bucket_count{ "UDRefl::container_bucket_count" };
-			static constexpr Name container_reserve{ "UDRefl::container_reserve" };
-			static constexpr Name container_shrink_to_fit{ "UDRefl::container_shrink_to_fit" };
+			static constexpr Name container_empty{ ".container_empty" };
+			static constexpr Name container_size{ ".container_size" };
+			static constexpr Name container_size_bytes{ ".container_size_bytes" };
+			static constexpr Name container_max_size{ ".container_max_size" };
+			static constexpr Name container_resize{ ".container_resize" };
+			static constexpr Name container_capacity{ ".container_capacity" };
+			static constexpr Name container_bucket_count{ ".container_bucket_count" };
+			static constexpr Name container_reserve{ ".container_reserve" };
+			static constexpr Name container_shrink_to_fit{ ".container_shrink_to_fit" };
 
-			static constexpr Name container_clear{ "UDRefl::container_clear" };
-			static constexpr Name container_insert{ "UDRefl::container_insert" };
-			static constexpr Name container_insert_after{ "UDRefl::container_insert_after" };
-			static constexpr Name container_insert_or_assign{ "UDRefl::container_insert_or_assign" };
-			static constexpr Name container_erase{ "UDRefl::container_erase" };
-			static constexpr Name container_erase_after{ "UDRefl::container_erase_after" };
-			static constexpr Name container_push_front{ "UDRefl::container_push_front" };
-			static constexpr Name container_pop_front{ "UDRefl::container_pop_front" };
-			static constexpr Name container_push_back{ "UDRefl::container_push_back" };
-			static constexpr Name container_pop_back{ "UDRefl::container_pop_back" };
-			static constexpr Name container_push{ "UDRefl::container_push" };
-			static constexpr Name container_pop{ "UDRefl::container_pop" };
-			static constexpr Name container_swap{ "UDRefl::container_swap" };
-			static constexpr Name container_merge{ "UDRefl::container_merge" };
-			static constexpr Name container_extract{ "UDRefl::container_extract" };
+			static constexpr Name container_clear{ ".container_clear" };
+			static constexpr Name container_insert{ ".container_insert" };
+			static constexpr Name container_insert_after{ ".container_insert_after" };
+			static constexpr Name container_insert_or_assign{ ".container_insert_or_assign" };
+			static constexpr Name container_erase{ ".container_erase" };
+			static constexpr Name container_erase_after{ ".container_erase_after" };
+			static constexpr Name container_push_front{ ".container_push_front" };
+			static constexpr Name container_pop_front{ ".container_pop_front" };
+			static constexpr Name container_push_back{ ".container_push_back" };
+			static constexpr Name container_pop_back{ ".container_pop_back" };
+			static constexpr Name container_push{ ".container_push" };
+			static constexpr Name container_pop{ ".container_pop" };
+			static constexpr Name container_swap{ ".container_swap" };
+			static constexpr Name container_merge{ ".container_merge" };
+			static constexpr Name container_extract{ ".container_extract" };
 
-			static constexpr Name container_splice_after{ "UDRefl::container_splice_after" };
-			static constexpr Name container_splice{ "UDRefl::container_splice" };
-			static constexpr Name container_remove{ "UDRefl::container_remove" };
-			static constexpr Name container_reverse{ "UDRefl::container_reverse" };
-			static constexpr Name container_unique{ "UDRefl::container_unique" };
-			static constexpr Name container_sort{ "UDRefl::container_sort" };
+			static constexpr Name container_splice_after{ ".container_splice_after" };
+			static constexpr Name container_splice{ ".container_splice" };
+			static constexpr Name container_remove{ ".container_remove" };
+			static constexpr Name container_reverse{ ".container_reverse" };
+			static constexpr Name container_unique{ ".container_unique" };
+			static constexpr Name container_sort{ ".container_sort" };
 
-			static constexpr Name container_count{ "UDRefl::container_count" };
-			static constexpr Name container_find{ "UDRefl::container_find" };
-			static constexpr Name container_lower_bound{ "UDRefl::container_lower_bound" };
-			static constexpr Name container_upper_bound{ "UDRefl::container_upper_bound" };
-			static constexpr Name container_equal_range{ "UDRefl::container_equal_range" };
-
-			static constexpr Name container_key_comp{ "UDRefl::container_key_comp" };
-			static constexpr Name container_value_comp{ "UDRefl::container_value_comp" };
-			static constexpr Name container_hash_function{ "UDRefl::container_hash_function" };
-			static constexpr Name container_key_eq{ "UDRefl::container_key_eq" };
-			static constexpr Name container_get_allocator{ "UDRefl::container_get_allocator" };
+			static constexpr Name container_count{ ".container_count" };
+			static constexpr Name container_find{ ".container_find" };
+			static constexpr Name container_lower_bound{ ".container_lower_bound" };
+			static constexpr Name container_upper_bound{ ".container_upper_bound" };
+			static constexpr Name container_equal_range{ ".container_equal_range" };
 		};
 
 		NameIDRegistry();
@@ -215,8 +209,7 @@ namespace Ubpa::UDRefl {
 	class TypeIDRegistry : public IDRegistry<TypeID, Type> {
 	public:
 		struct Meta {
-			static constexpr Type global{ "UDRefl::global" };
-			static constexpr Type t_void{ "void" };
+			static constexpr Type global{ ".global" };
 		};
 
 		using IDRegistry<TypeID, Type>::Register;
