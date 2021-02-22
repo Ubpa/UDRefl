@@ -82,7 +82,7 @@ std::cout << "x: " << v.Var("x") << std::endl;
 ### Invoke Methods
 
 ```c++
-std::cout << "norm: " << v.DMInvoke("norm") << std::endl;
+std::cout << "norm: " << v.Invoke("norm") << std::endl;
 ```
 
 ### Iterate over variables
@@ -145,6 +145,16 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - Clang/LLVM >= 10.0
 - GCC >= 10.0
 - MSVC >= 1926
+
+> Tested platforms:
+>
+> - Windows 10: VS2019 16.8.5
+>
+> - Ubuntu 20: GCC 10.2, Clang 11.0
+>
+> - MacOS 11.0 : GCC 10.2
+>
+>   > AppleClang 12 and Clang 11 is not supported
 
 ## Licensing
 

@@ -50,6 +50,8 @@ UDRefl 库的核心类型为 `ReflMngr`，它管理了所有数据，并提供�
 
 - 共享对象 `SharedObject`：对象视图 `ObjectView` 的子类，多了 `std::shared_ptr<void>` 来存储对象
 
+- 属性 `Attr`：域，方法或类的附加信息，它是一个共享对象
+
 ## 1. 注册
 
 我们需要注册的是类信息 `TypeInfo`，其包含
@@ -58,7 +60,7 @@ UDRefl 库的核心类型为 `ReflMngr`，它管理了所有数据，并提供�
 - 类型对齐
 
 - 域信息 map
-- 方法信息 multimap
+- 方法信息 multi-map
 - 基类信息 map
 - 属性集
 
@@ -66,7 +68,7 @@ UDRefl 库的核心类型为 `ReflMngr`，它管理了所有数据，并提供�
 
 ### 1.1 注册类型
 
-注册类型可使用
+类型注册可使用如下接口
 
 ```c++
 Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment)
@@ -79,11 +81,11 @@ template<typename T>
 void ReflMngr::RegisterType();
 ```
 
-其中自动获取了类型的名字，大小，对齐，并且通过 `template<T> void details::TypeAutoRegister<T>::run()` 自动注册了一些相关的类型与函数（构造，析构，赋值，标准容器相关接口等等），非常方便。
+其中自动获取了类型的名字，大小和对齐，并且通过 `template<T> void details::TypeAutoRegister<T>::run()` 自动注册了一些相关的类型与函数（构造，析构，赋值，标准容器相关接口等等），非常方便。
 
 ### 1.2 注册域
 
-域关键就是域指针，通过它和相应对象，可以得到其域的指针，总共分为 5 类
+域关键就是域指针。通过它和相应对象，可以得到其域的指针。总共分为 5 类：
 
 - :star:前向偏移量：`size_t` 类型，通过偏移对象指针得到变量指针，对应基础域
 - 偏移函数：`Offsetor = std::function<void*(void*)>`，用于含虚基类的类型，对应虚拟域

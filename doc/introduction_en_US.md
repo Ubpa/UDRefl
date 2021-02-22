@@ -50,6 +50,8 @@ The use of dynamic library is mainly divided into two steps: registration, use.
 
 - Shared Object `SharedObject`: a derived class of object view `ObjectView`, contains a `std::shared_ptr<void>` to store the object.
 
+- Attribute `Attr`: additional information about fields, methods or type, which is a shared object
+
 ## 1. Registration
 
 What we need to register is the class information `TypeInfo`, it contains
@@ -58,7 +60,7 @@ What we need to register is the class information `TypeInfo`, it contains
 - alignment of type
 
 - field info map
-- method info multimap
+- method info multi-map
 - base info map
 - attribute set
 
@@ -66,7 +68,7 @@ Details on how to register various information will be provided below.
 
 ### 1.1 Type Registration
 
-Registration types are available
+Type registration can be done using the following interface
 
 ```c++
 Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment)
@@ -79,14 +81,14 @@ template<typename T>
 void ReflMngr::RegisterType();
 ```
 
-Which automatically obtained the name of the type, size, alignment, and through ` template<T> void details::TypeAutoRegister<T>::run() ` automatically registered some of the relevant type and function, structure, destructor, assignment, standard container related interface, etc.), is very convenient.
+which automatically gets the type name, size and alignment, and automatically registers some related types and functions (constructor, destructor, assignment, standard container-related interfaces, etc.) via `template<T> void details::TypeAutoRegister<T>::run()`, which is very convenient.
 
 ### 1.2 Field Registration
 
-The field key is the field pointer, through it and the corresponding object, can get its field pointer, a total of 5 categories
+The key of field is the field pointer. Through it and the corresponding object, you can get the pointer to its domain. In total, there are 5 categories:
 
-- :star: forward offset: `size_t` type, which offsets the object pointer to a variable corresponding to the underlying field
-- Offsetor: `Offsetor = std::function<void*(void*)>`, for types with virtual base classes, corresponding to virtual fields
+- :star: Forward offset value: `size_t` type, which offsets the object pointer to a variable corresponding to the underlying field
+- Offset function: `Offsetor = std::function<void*(void*)>`, for types with virtual base classes, corresponding to virtual fields
 - Static pointer: `void*` for static members, corresponding to static fields
 - Dynamic shared pointer: `std::shared_ptr<void>`, for the shared dynamic member, corresponding to the dynamic shared field
 - Dynamic Buffer: `FieldPtr::Buffer = std::aligned_storage_t<64>`, stored in the dynamic member of the Buffer, corresponding to the dynamic Buffer field
