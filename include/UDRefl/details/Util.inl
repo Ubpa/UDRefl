@@ -248,6 +248,50 @@ constexpr auto Ubpa::UDRefl::wrap_function() noexcept {
 		static_assert(always_false<decltype(func_ptr)>);
 }
 
+constexpr bool Ubpa::UDRefl::is_ref_compatible(Type lhs, Type rhs) noexcept {
+	if (lhs == rhs)
+		return true;
+
+	if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
+		const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
+		if (type_name_is_const(unref_lhs)) { // &{const{T}}
+			if (unref_lhs == rhs.Name_RemoveRValueReference())
+				return true; // &{const{T}} <- &&{const{T}} | const{T}
+
+			const auto raw_lhs = type_name_remove_const(unref_lhs); // T
+
+			if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
+				return true; // &{const{T}} <- T | &{T} | &&{T}
+		}
+	}
+	else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
+		const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
+
+		if (type_name_is_const(unref_lhs)) { // &&{const{T}}
+			if (rhs.Is(unref_lhs))
+				return true; // &&{const{T}} <- const{T}
+
+			const auto raw_lhs = type_name_remove_const(unref_lhs); // T
+
+			if (rhs.Is(raw_lhs))
+				return true; // &&{const{T}} <- T
+
+			if (raw_lhs == rhs.Name_RemoveRValueReference())
+				return true; // &&{const{T}} <- &&{T}
+		}
+		else {
+			if (rhs.Is(unref_lhs))
+				return true; // &&{T} <- T
+		}
+	}
+	else { // T
+		if (lhs.Is(rhs.Name_RemoveRValueReference()))
+			return true; // T <- &&{T}
+	}
+
+	return false;
+}
+
 template<typename T>
 struct Ubpa::UDRefl::get_container_size_type : std::type_identity<typename T::size_type> {};
 template<typename T>

@@ -778,10 +778,6 @@ ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag f
 	return Var(base_obj, field_name);
 }
 
-bool ReflMngr::IsNonCopiedArgCompatible(std::span<const Type> paramTypes, std::span<const Type> argTypes) {
-	return details::IsNonCopiedArgCompatible(paramTypes, argTypes);
-}
-
 bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> argTypes) const {
 	if (params.size() != argTypes.size())
 		return false;
@@ -804,7 +800,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 				if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
 					continue; // &{const{T}} <- T | &{T} | &&{T}
 
-				if (IsNonCopiedArgConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
+				if (details::IsRefConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &{const{T}} <- T{arg}
 			}
 		}
@@ -820,14 +816,14 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 				if (raw_lhs == rhs.Name_RemoveRValueReference()) // &&{const{T}}
 					continue; // &&{const{T}} <- &&{T}
 
-				if (IsNonCopiedArgConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
+				if (details::IsRefConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &&{const{T}} <- T{arg}
 			}
 			else {
 				if (rhs.Is(unref_lhs))
 					continue; // &&{T} <- T
 
-				if (IsNonCopiedArgConstructible(unref_lhs, std::span<const Type>{&rhs, 1}))
+				if (details::IsRefConstructible(unref_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &&{T} <- T{arg}
 			}
 		}
@@ -835,7 +831,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 			if (lhs.Is(rhs.Name_RemoveRValueReference()))
 				continue; // T <- &&{T}
 
-			if (IsNonCopiedArgConstructible(lhs, std::span<const Type>{&rhs, 1}))
+			if (details::IsRefConstructible(lhs, std::span<const Type>{&rhs, 1}))
 				continue; // T <- T{arg}
 		}
 
@@ -963,26 +959,6 @@ SharedObject ReflMngr::MInvoke(
 	return details::MInvoke(false, temp_args_rsrc, rawObj, method_name, rst_rsrc, argTypes, argptr_buffer, flag);
 }
 
-ObjectView ReflMngr::MNonCopiedArgNew(Type type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
-	assert(rsrc);
-
-	if (!IsConstructible(type, argTypes))
-		return {};
-
-	const auto& typeinfo = typeinfos.at(type);
-
-	void* buffer = rsrc->allocate(typeinfo.size, typeinfo.alignment);
-
-	if (!buffer)
-		return {};
-
-	ObjectView obj{ type, buffer };
-	bool success = NonCopiedArgConstruct(obj, argTypes, argptr_buffer);
-	assert(success);
-
-	return obj;
-}
-
 ObjectView ReflMngr::MNew(Type type, std::pmr::memory_resource* rsrc, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
 	assert(rsrc);
 
@@ -1015,12 +991,8 @@ bool ReflMngr::MDelete(ObjectView obj, std::pmr::memory_resource* rsrc) const {
 	return true;
 }
 
-ObjectView ReflMngr::NonCopiedArgNew(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
-	return MNonCopiedArgNew(type, &object_resource, argTypes, argptr_buffer);
-}
-
 ObjectView ReflMngr::New(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
-	return MNonCopiedArgNew(type, &object_resource, argTypes, argptr_buffer);
+	return MNew(type, &object_resource, argTypes, argptr_buffer);
 }
 
 bool ReflMngr::Delete(ObjectView obj) const {
@@ -1029,36 +1001,6 @@ bool ReflMngr::Delete(ObjectView obj) const {
 
 SharedObject ReflMngr::MakeShared(Type type, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
 	return MMakeShared(type, &object_resource, argTypes, argptr_buffer);
-}
-
-bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const Type> argTypes) const {
-	auto target = typeinfos.find(type);
-	if (target == typeinfos.end())
-		return false;
-	const auto& typeinfo = target->second;
-	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && argTypes.empty())
-		return true;
-	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypes))
-			return true;
-	}
-	return false;
-}
-
-bool ReflMngr::IsNonCopiedArgConstructible(Type type, std::span<const TypeID> argTypeIDs) const {
-	auto target = typeinfos.find(type);
-	if (target == typeinfos.end())
-		return false;
-	const auto& typeinfo = target->second;
-	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && argTypeIDs.empty())
-		return true;
-	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypeIDs))
-			return true;
-	}
-	return false;
 }
 
 bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const {
@@ -1077,13 +1019,13 @@ bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const 
 }
 
 bool ReflMngr::IsCopyConstructible(Type type) const {
-	const TypeID clref_typeID = type.ID_AddConstLValueReference();
-	return IsNonCopiedArgConstructible(type, std::span<const TypeID>{&clref_typeID, 1});
+	const Type clref_type = tregistry.RegisterAddConstLValueReference(type);
+	return details::IsRefConstructible(type, std::span<const Type>{&clref_type, 1});
 }
 
 bool ReflMngr::IsMoveConstructible(Type type) const {
-	const TypeID rref_typeID = type.ID_AddRValueReference();
-	return IsNonCopiedArgConstructible(type, std::span<const TypeID>{&rref_typeID, 1});
+	const Type rref_type = tregistry.RegisterAddRValueReference(type);
+	return details::IsRefConstructible(type, std::span<const Type>{&rref_type, 1});
 }
 
 bool ReflMngr::IsDestructible(Type type) const {
@@ -1101,27 +1043,6 @@ bool ReflMngr::IsDestructible(Type type) const {
 		if (iter->second.methodptr.GetMethodFlag() != MethodFlag::Variable
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
 			return true;
-	}
-	return false;
-}
-
-bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) const {
-	auto target = typeinfos.find(obj.GetType());
-	if (target == typeinfos.end())
-		return false;
-
-	const auto& typeinfo = target->second;
-
-	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && argTypes.empty())
-		return true;// trivial ctor
-	for (auto iter = begin_iter; iter != end_iter; ++iter) {
-		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
-			&& details::IsNonCopiedArgCompatible(iter->second.methodptr.GetParamList(), argTypes))
-		{
-			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
-			return true;
-		}
 	}
 	return false;
 }

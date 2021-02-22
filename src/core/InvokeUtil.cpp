@@ -38,126 +38,6 @@ bool details::IsPriorityCompatible(std::span<const Type> params, std::span<const
 	return true;
 }
 
-bool details::IsNonCopiedArgCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
-	if (params.size() != argTypes.size())
-		return false;
-
-	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i] == argTypes[i])
-			continue;
-
-		const auto& lhs = params[i];
-		const auto& rhs = argTypes[i];
-
-		if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
-			const auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
-			if (type_name_is_const(unref_lhs)) { // &{const{T}}
-				if (unref_lhs == rhs.Name_RemoveRValueReference())
-					continue; // &{const{T}} <- &&{const{T}} | const{T}
-
-				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
-
-				if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
-					continue; // &{const{T}} <- T | &{T} | &&{T}
-			}
-		}
-		else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
-			const auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
-			assert(!type_name_is_volatile(unref_lhs));
-
-			if (type_name_is_const(unref_lhs)) { // &&{const{T}}
-				if (rhs.Is(unref_lhs))
-					continue; // &&{const{T}} <- const{T}
-
-				const auto raw_lhs = type_name_remove_const(unref_lhs); // T
-
-				if (rhs.Is(raw_lhs))
-					continue; // &&{const{T}} <- T
-
-				if (raw_lhs == rhs.Name_RemoveRValueReference())
-					continue; // &&{const{T}} <- &&{T}
-			}
-			else {
-				if (rhs.Is(unref_lhs))
-					continue; // &&{T} <- T
-			}
-		}
-		else { // T
-			if (lhs.Is(rhs.Name_RemoveRValueReference()))
-				continue; // T <- &&{T}
-		}
-
-		return false;
-	}
-
-	return true;
-}
-
-bool details::IsNonCopiedArgCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs) {
-	if (params.size() != argTypeIDs.size())
-		return false;
-
-	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i] == argTypeIDs[i])
-			continue;
-
-		const auto& lhs = params[i];
-#ifndef NDEBUG
-		// because rhs(arg)'s ID maybe have no name in the registry
-		// so we use type_name_add_*_hash(...) to avoid it
-		auto rhs = Mngr->tregistry.Viewof(argTypeIDs[i]);
-#endif // !NDEBUG
-		const std::size_t rhs_hash = argTypeIDs[i].GetValue();
-
-		if (lhs.IsLValueReference()) { // &{T} | &{const{T}}
-			auto unref_lhs = lhs.Name_RemoveLValueReference(); // T | const{T}
-			if (type_name_is_const(unref_lhs)) { // &{const{T}}
-				if (type_name_add_rvalue_reference_hash(unref_lhs) == rhs_hash)
-					continue; // &{const{T}} <- &&{const{T}}
-
-				if (string_hash(unref_lhs) == rhs_hash)
-					continue; // &{const{T}} <- const{T}
-
-				auto raw_lhs = type_name_remove_const(unref_lhs); // T
-
-				if (TypeID{ raw_lhs }.GetValue() == rhs_hash
-					|| type_name_add_lvalue_reference_hash(raw_lhs) == rhs_hash
-					|| type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash)
-					continue; // &{const{T}} <- T | &{T} | &&{T}
-			}
-		}
-		else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
-			auto unref_lhs = lhs.Name_RemoveRValueReference(); // T | const{T}
-			assert(!type_name_is_volatile(unref_lhs));
-
-			if (type_name_is_const(unref_lhs)) { // &&{const{T}}
-				auto raw_lhs = type_name_remove_const(unref_lhs); // T
-
-				if (TypeID{ raw_lhs }.GetValue() == rhs_hash)
-					continue; // &&{const{T}} <- T
-
-				if(TypeID{unref_lhs}.GetValue() == rhs_hash)
-					continue; // &&{const{T}} <- const{T}
-
-				if (type_name_add_rvalue_reference_hash(raw_lhs) == rhs_hash) // &&{const{T}}
-					continue; // &&{const{T}} <- &&{T}
-			}
-			else {
-				if (TypeID{ unref_lhs }.GetValue() == rhs_hash)
-					continue; // &&{T} <- T
-			}
-		}
-		else { // T
-			if (type_name_add_rvalue_reference_hash(lhs) == rhs_hash)
-				continue; // T <- &&{T}
-		}
-
-		return false;
-	}
-
-	return true;
-}
-
 bool details::IsPointerAndArrayCompatible(std::string_view lhs, std::string_view rhs) {
 	assert(!type_name_is_reference(lhs) && !type_name_is_const(lhs));
 	assert(!type_name_is_reference(rhs) && !type_name_is_const(rhs));
@@ -182,6 +62,54 @@ bool details::IsPointerAndArrayCompatible(std::string_view lhs, std::string_view
 		return false;
 
 	return lhs_ele == rhs_ele || type_name_remove_const(lhs_ele) == rhs_ele;
+}
+
+bool details::IsRefCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
+	if (params.size() != argTypes.size())
+		return false;
+
+	for (size_t i = 0; i < params.size(); i++) {
+		if (!is_ref_compatible(params[i], argTypes[i]))
+			return false;
+	}
+
+	return true;
+}
+
+bool details::IsRefConstructible(Type type, std::span<const Type> argTypes) {
+	auto target = Mngr->typeinfos.find(type);
+	if (target == Mngr->typeinfos.end())
+		return false;
+	const auto& typeinfo = target->second;
+	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypes.empty())
+		return true;
+	for (auto iter = begin_iter; iter != end_iter; ++iter) {
+		if (IsRefCompatible(iter->second.methodptr.GetParamList(), argTypes))
+			return true;
+	}
+	return false;
+}
+
+bool details::RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) {
+	auto target = Mngr->typeinfos.find(obj.GetType());
+	if (target == Mngr->typeinfos.end())
+		return false;
+
+	const auto& typeinfo = target->second;
+
+	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
+	if (begin_iter == end_iter && argTypes.empty())
+		return true;// trivial ctor
+	for (auto iter = begin_iter; iter != end_iter; ++iter) {
+		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
+			&& IsRefCompatible(iter->second.methodptr.GetParamList(), argTypes))
+		{
+			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
+			return true;
+		}
+	}
+	return false;
 }
 
 details::NewArgsGuard::NewArgsGuard(
@@ -227,7 +155,7 @@ details::NewArgsGuard::NewArgsGuard(
 					continue; // &{const{T}} <- T | &{T} | &&{T}
 
 				Type raw_lhs_type{ raw_lhs };
-				if (Mngr->IsNonCopiedArgConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
+				if (IsRefConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
 					auto& info = info_copiedargs[num_copiedargs++];
 					assert(num_copiedargs <= MaxArgNum);
 
@@ -256,7 +184,7 @@ details::NewArgsGuard::NewArgsGuard(
 					continue; // &&{const{T}} <- &&{T}
 
 				Type raw_lhs_type{ raw_lhs };
-				if (Mngr->IsNonCopiedArgConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
+				if (IsRefConstructible(raw_lhs_type, std::span<const Type>{&rhs, 1})) {
 					auto& info = info_copiedargs[num_copiedargs++];
 					assert(num_copiedargs <= MaxArgNum);
 
@@ -278,7 +206,7 @@ details::NewArgsGuard::NewArgsGuard(
 			if (lhs.Is(rhs.Name_RemoveRValueReference()))
 				continue; // T <- &&{T}
 
-			if (Mngr->IsNonCopiedArgConstructible(lhs, std::span<const Type>{&rhs, 1})) {
+			if (IsRefConstructible(lhs, std::span<const Type>{&rhs, 1})) {
 				auto& info = info_copiedargs[num_copiedargs++];
 				assert(num_copiedargs <= MaxArgNum);
 
@@ -370,7 +298,7 @@ details::NewArgsGuard::NewArgsGuard(
 		if (info.is_pointer_or_array)
 			buffer_as<void*>(arg_buffer) = orig_argptr_buffer[i];
 		else {
-			bool success = Mngr->NonCopiedArgConstruct(
+			bool success = RefConstruct(
 				ObjectView{ info.GetType(), arg_buffer },
 				std::span<const Type>{&argTypes[i], 1},
 				static_cast<ArgPtrBuffer>(&orig_argptr_buffer[i])

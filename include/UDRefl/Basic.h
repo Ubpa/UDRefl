@@ -26,10 +26,7 @@
 #include <UTemplate/StdName/Name_unordered_set.h>
 #endif // UBPA_UDREFL_INCLUDE_ALL_STD_NAME
 
-#include <UTemplate/Type.h>
-
 //#include <memory>
-#include <cassert>
 
 namespace Ubpa::UDRefl {
 	enum class MethodFlag {

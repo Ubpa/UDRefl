@@ -1253,17 +1253,6 @@ namespace Ubpa::UDRefl {
 	}
 
 	template<typename... Args>
-	bool ReflMngr::NonCopiedArgConstruct(ObjectView obj, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
-			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return NonCopiedArgConstruct(obj, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
-		}
-		else
-			return NonCopiedArgConstruct(obj);
-	}
-
-	template<typename... Args>
 	bool ReflMngr::Construct(ObjectView obj, Args&&... args) const {
 		if constexpr (sizeof...(Args) > 0) {
 			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
@@ -1272,17 +1261,6 @@ namespace Ubpa::UDRefl {
 		}
 		else
 			return Construct(obj);
-	}
-
-	template<typename... Args>
-	ObjectView ReflMngr::MNonCopiedArgNew(Type type, std::pmr::memory_resource* rsrc, Args&&... args) const {
-		if constexpr (sizeof...(Args) > 0) {
-			constexpr Type argTypes[] = { Type_of<decltype(args)>... };
-			void* const argptr_buffer[] = { const_cast<void*>(reinterpret_cast<const void*>(&args))... };
-			return MNonCopiedArgNew(type, rsrc, std::span<const Type>{ argTypes }, static_cast<ArgPtrBuffer>(argptr_buffer));
-		}
-		else
-			return MNonCopiedArgNew(type, rsrc);
 	}
 
 	template<typename... Args>
@@ -1305,11 +1283,6 @@ namespace Ubpa::UDRefl {
 		}
 		else
 			return MMakeShared(type, rsrc);
-	}
-	
-	template<typename... Args>
-	ObjectView ReflMngr::NonCopiedArgNew(Type type, Args&&... args) const {
-		return MNonCopiedArgNew(type, &object_resource, std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
