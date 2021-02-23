@@ -47,19 +47,6 @@ namespace Ubpa::UDRefl::details {
 	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
 	bool IsRefCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs);
 
-	// parameter <- argument
-	// - require: param and arg is non cvref
-	// - 0 (invalid), 1 (convertible)
-	// - true : 1
-	// - false: 0, 2
-	// - table
-	//     |     -     | T * | const T * | T[] | const T[] |
-	//     |       T * |  -  |     0     |  1  |     0     |
-	//     | const T * |  1  |     -     |  1  |     1     |
-	//     |       T[] |  1  |     0     | -/1 |     0     |
-	//     | const T[] |  1  |     1     |  1  |    -/1    |
-	bool IsPointerAndArrayCompatible(std::string_view param, std::string_view arg);
-
 	bool IsRefConstructible(Type type, std::span<const Type> argTypes);
 	bool RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer);
 

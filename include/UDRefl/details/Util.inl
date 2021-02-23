@@ -292,6 +292,36 @@ constexpr bool Ubpa::UDRefl::is_ref_compatible(Type lhs, Type rhs) noexcept {
 	return false;
 }
 
+constexpr bool Ubpa::UDRefl::is_pointer_array_compatible(std::string_view lhs, std::string_view rhs) noexcept {
+	if (type_name_is_reference(lhs)) {
+		lhs = type_name_remove_reference(lhs);
+		if (type_name_is_const(lhs))
+			return false;
+	}
+	rhs = type_name_remove_cvref(rhs);
+
+	if (lhs == rhs)
+		return true;
+
+	std::string_view lhs_ele;
+	if (type_name_is_pointer(lhs))
+		lhs_ele = type_name_remove_pointer(lhs);
+	else if (type_name_is_unbounded_array(lhs))
+		lhs_ele = type_name_remove_extent(lhs);
+	else
+		return false;
+
+	std::string_view rhs_ele;
+	if (type_name_is_pointer(rhs))
+		rhs_ele = type_name_remove_pointer(rhs);
+	else if (type_name_is_array(rhs))
+		rhs_ele = type_name_remove_extent(rhs);
+	else
+		return false;
+
+	return lhs_ele == rhs_ele || type_name_remove_const(lhs_ele) == rhs_ele;
+}
+
 template<typename T>
 struct Ubpa::UDRefl::get_container_size_type : std::type_identity<typename T::size_type> {};
 template<typename T>

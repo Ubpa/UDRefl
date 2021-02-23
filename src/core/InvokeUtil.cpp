@@ -38,32 +38,6 @@ bool details::IsPriorityCompatible(std::span<const Type> params, std::span<const
 	return true;
 }
 
-bool details::IsPointerAndArrayCompatible(std::string_view lhs, std::string_view rhs) {
-	assert(!type_name_is_reference(lhs) && !type_name_is_const(lhs));
-	assert(!type_name_is_reference(rhs) && !type_name_is_const(rhs));
-
-	if (lhs == rhs)
-		return true;
-
-	std::string_view lhs_ele;
-	if (type_name_is_pointer(lhs))
-		lhs_ele = type_name_remove_pointer(lhs);
-	else if (type_name_is_unbounded_array(lhs))
-		lhs_ele = type_name_remove_extent(lhs);
-	else
-		return false;
-
-	std::string_view rhs_ele;
-	if (type_name_is_pointer(rhs))
-		rhs_ele = type_name_remove_pointer(rhs);
-	else if (type_name_is_array(rhs))
-		rhs_ele = type_name_remove_extent(rhs);
-	else
-		return false;
-
-	return lhs_ele == rhs_ele || type_name_remove_const(lhs_ele) == rhs_ele;
-}
-
 bool details::IsRefCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
 	if (params.size() != argTypes.size())
 		return false;
@@ -220,8 +194,8 @@ details::NewArgsGuard::NewArgsGuard(
 			}
 		}
 
-		auto raw_lhs = lhs.Name_RemoveCVRef();
-		if (!(lhs.IsLValueReference() && !lhs.IsReadOnly()) && IsPointerAndArrayCompatible(raw_lhs, rhs.Name_RemoveCVRef())) {
+		if (is_pointer_array_compatible(lhs, rhs)) {
+			auto raw_lhs = lhs.Name_RemoveCVRef();
 			auto& info = info_copiedargs[num_copiedargs++];
 			assert(num_copiedargs <= MaxArgNum);
 			info.idx = i;

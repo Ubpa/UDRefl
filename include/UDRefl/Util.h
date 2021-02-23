@@ -280,6 +280,18 @@ namespace Ubpa::UDRefl {
 	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
 	constexpr bool is_ref_compatible(Type to, Type from) noexcept;
 
+	// to <- copy from
+	// to can't be non-const reference
+	// remove_cvref for to and from, and then use below table
+	// - 0 (invalid), 1 (convertible)
+	// - table
+	//     |     -     | T * | const T * | T[] | const T[] |
+	//     |       T * |  -  |     0     |  1  |     0     |
+	//     | const T * |  1  |     -     |  1  |     1     |
+	//     |       T[] |  1  |     0     |  -  |     0     |
+	//     | const T[] |  1  |     1     |  1  |     -     |
+	constexpr bool is_pointer_array_compatible(std::string_view to, std::string_view from) noexcept;
+
 	////////////
 	// Traits //
 	////////////

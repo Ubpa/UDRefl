@@ -835,7 +835,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> params, std::span<const Type> 
 				continue; // T <- T{arg}
 		}
 
-		if (!(lhs.IsLValueReference() && !lhs.IsReadOnly()) && details::IsPointerAndArrayCompatible(lhs.Name_RemoveCVRef(), rhs.Name_RemoveCVRef()))
+		if (is_pointer_array_compatible(lhs, rhs))
 			continue;
 
 		return false;
