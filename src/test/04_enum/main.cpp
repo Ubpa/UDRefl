@@ -31,6 +31,7 @@ int main() {
 		return field.info->fieldptr.Var() == c;
 	});
 
+	assert(c_field.name.GetView() == "Red");
 	std::cout << "name of " << static_cast<int>(c) << " : " << c_field.name.GetView() << std::endl;
 
 	// name -> enumerator
@@ -38,6 +39,6 @@ int main() {
 	auto name_field = Mngr->FindField(Type_of<Color>, [name](auto field) {
 		return field.name.GetView() == name;
 	});
-
+	assert(name_field.info && name_field.info->fieldptr.Var() == Color::Green);
 	std::cout << "value of " << name << " : " << static_cast<int>(name_field.info->fieldptr.Var().As<Color>()) << std::endl;
 }

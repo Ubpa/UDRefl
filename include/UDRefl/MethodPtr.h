@@ -3,7 +3,6 @@
 #include "Object.h"
 
 //#include <vector>
-#include <variant>
 
 namespace Ubpa::UDRefl {
 	using ParamList = std::vector<Type>;
