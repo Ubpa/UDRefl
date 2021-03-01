@@ -3,152 +3,144 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
+#define UBPA_UDREFL_META_GET_ID_VIEW(meta) meta.GetID(), meta.GetView()
+#define UBPA_UDREFL_META_GET_ID_NAME(meta) meta.GetID(), meta.GetName()
+
 NameIDRegistry::NameIDRegistry() {
-	RegisterUnmanaged(Meta::ctor.GetID(), Meta::ctor.GetView());
-	RegisterUnmanaged(Meta::dtor.GetID(), Meta::dtor.GetView());
+	// operators
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_bool));
 
-	RegisterUnmanaged(Meta::operator_bool.GetID(), Meta::operator_bool.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_add));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_sub));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_mul));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_div));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_mod));
 
-	RegisterUnmanaged(Meta::operator_plus.GetID(), Meta::operator_plus.GetView());
-	RegisterUnmanaged(Meta::operator_minus.GetID(), Meta::operator_minus.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_bnot));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_band));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_bor));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_bxor));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_shl));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_shr));
 
-	RegisterUnmanaged(Meta::operator_add.GetID(), Meta::operator_add.GetView());
-	RegisterUnmanaged(Meta::operator_sub.GetID(), Meta::operator_sub.GetView());
-	RegisterUnmanaged(Meta::operator_mul.GetID(), Meta::operator_mul.GetView());
-	RegisterUnmanaged(Meta::operator_div.GetID(), Meta::operator_div.GetView());
-	RegisterUnmanaged(Meta::operator_mod.GetID(), Meta::operator_mod.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_pre_inc));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_pre_dec));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_post_inc));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_post_dec));
 
-	RegisterUnmanaged(Meta::operator_bnot.GetID(), Meta::operator_bnot.GetView());
-	RegisterUnmanaged(Meta::operator_band.GetID(), Meta::operator_band.GetView());
-	RegisterUnmanaged(Meta::operator_bor.GetID(), Meta::operator_bor.GetView());
-	RegisterUnmanaged(Meta::operator_bxor.GetID(), Meta::operator_bxor.GetView());
-	RegisterUnmanaged(Meta::operator_lshift.GetID(), Meta::operator_lshift.GetView());
-	RegisterUnmanaged(Meta::operator_rshift.GetID(), Meta::operator_rshift.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_add));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_sub));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_mul));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_div));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_mod));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_band));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_bor));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_bxor));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_shl));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_assignment_shr));
 
-	RegisterUnmanaged(Meta::operator_pre_inc.GetID(), Meta::operator_pre_inc.GetView());
-	RegisterUnmanaged(Meta::operator_pre_dec.GetID(), Meta::operator_pre_dec.GetView());
-	RegisterUnmanaged(Meta::operator_post_inc.GetID(), Meta::operator_post_inc.GetView());
-	RegisterUnmanaged(Meta::operator_post_dec.GetID(), Meta::operator_post_dec.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_eq));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_ne));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_lt));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_le));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_gt));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_ge));
 
-	RegisterUnmanaged(Meta::operator_assign.GetID(), Meta::operator_assign.GetView());
-	RegisterUnmanaged(Meta::operator_assign_add.GetID(), Meta::operator_assign_add.GetView());
-	RegisterUnmanaged(Meta::operator_assign_sub.GetID(), Meta::operator_assign_sub.GetView());
-	RegisterUnmanaged(Meta::operator_assign_mul.GetID(), Meta::operator_assign_mul.GetView());
-	RegisterUnmanaged(Meta::operator_assign_div.GetID(), Meta::operator_assign_div.GetView());
-	RegisterUnmanaged(Meta::operator_assign_mod.GetID(), Meta::operator_assign_mod.GetView());
-	RegisterUnmanaged(Meta::operator_assign_band.GetID(), Meta::operator_assign_band.GetView());
-	RegisterUnmanaged(Meta::operator_assign_bor.GetID(), Meta::operator_assign_bor.GetView());
-	RegisterUnmanaged(Meta::operator_assign_bxor.GetID(), Meta::operator_assign_bxor.GetView());
-	RegisterUnmanaged(Meta::operator_assign_lshift.GetID(), Meta::operator_assign_lshift.GetView());
-	RegisterUnmanaged(Meta::operator_assign_rshift.GetID(), Meta::operator_assign_rshift.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_and));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_or));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_not));
 
-	RegisterUnmanaged(Meta::operator_eq.GetID(), Meta::operator_eq.GetView());
-	RegisterUnmanaged(Meta::operator_ne.GetID(), Meta::operator_ne.GetView());
-	RegisterUnmanaged(Meta::operator_lt.GetID(), Meta::operator_lt.GetView());
-	RegisterUnmanaged(Meta::operator_le.GetID(), Meta::operator_le.GetView());
-	RegisterUnmanaged(Meta::operator_gt.GetID(), Meta::operator_gt.GetView());
-	RegisterUnmanaged(Meta::operator_ge.GetID(), Meta::operator_ge.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_subscript));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_indirection));
 
-	RegisterUnmanaged(Meta::operator_and.GetID(), Meta::operator_and.GetView());
-	RegisterUnmanaged(Meta::operator_or.GetID(), Meta::operator_or.GetView());
-	RegisterUnmanaged(Meta::operator_not.GetID(), Meta::operator_not.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::operator_call));
 
-	RegisterUnmanaged(Meta::operator_subscript.GetID(), Meta::operator_subscript.GetView());
-	RegisterUnmanaged(Meta::operator_deref.GetID(), Meta::operator_deref.GetView());
-	RegisterUnmanaged(Meta::operator_ref.GetID(), Meta::operator_ref.GetView());
-	RegisterUnmanaged(Meta::operator_member.GetID(), Meta::operator_member.GetView());
-	RegisterUnmanaged(Meta::operator_member_of_pointer.GetID(), Meta::operator_member_of_pointer.GetView());
+	// non-member functions
 
-	RegisterUnmanaged(Meta::operator_call.GetID(), Meta::operator_call.GetView());
-	RegisterUnmanaged(Meta::operator_comma.GetID(), Meta::operator_comma.GetView());
 
-	// tuple
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::ctor));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::dtor));
 
-	RegisterUnmanaged(Meta::tuple_size.GetID(), Meta::tuple_size.GetView());
-	RegisterUnmanaged(Meta::tuple_get.GetID(), Meta::tuple_get.GetView());
-	RegisterUnmanaged(Meta::tuple_element.GetID(), Meta::tuple_element.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::get));
 
-	// variant
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::tuple_size));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::tuple_element));
 
-	RegisterUnmanaged(Meta::variant_index.GetID(), Meta::variant_index.GetView());
-	RegisterUnmanaged(Meta::variant_valueless_by_exception.GetID(), Meta::variant_valueless_by_exception.GetView());
-	RegisterUnmanaged(Meta::variant_holds_alternative.GetID(), Meta::variant_holds_alternative.GetView());
-	RegisterUnmanaged(Meta::variant_get.GetID(), Meta::variant_get.GetView());
-	RegisterUnmanaged(Meta::variant_get_if.GetID(), Meta::variant_get_if.GetView());
-	RegisterUnmanaged(Meta::variant_size.GetID(), Meta::variant_size.GetView());
-	RegisterUnmanaged(Meta::variant_alternative.GetID(), Meta::variant_alternative.GetView());
-	RegisterUnmanaged(Meta::variant_visit_get.GetID(), Meta::variant_visit_get.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::holds_alternative));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::get_if));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::variant_size));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::variant_alternative));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::variant_visit_get));
 
-	// optional
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::advance));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::distance));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::next));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::prev));
 
-	RegisterUnmanaged(Meta::optional_has_value.GetID(), Meta::optional_has_value.GetView());
-	RegisterUnmanaged(Meta::optional_value.GetID(), Meta::optional_value.GetView());
-	RegisterUnmanaged(Meta::optional_reset.GetID(), Meta::optional_reset.GetView());
+	// member functions
 
-	// iterator
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_assign));
 
-	RegisterUnmanaged(Meta::iterator_advance.GetID(), Meta::iterator_advance.GetView());
-	RegisterUnmanaged(Meta::iterator_distance.GetID(), Meta::iterator_distance.GetView());
-	RegisterUnmanaged(Meta::iterator_next.GetID(), Meta::iterator_next.GetView());
-	RegisterUnmanaged(Meta::iterator_prev.GetID(), Meta::iterator_prev.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_begin));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_cbegin));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_end));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_cend));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_rbegin));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_crbegin));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_rend));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_crend));
 
-	// container
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_at));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_data));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_front));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_back));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_top));
 
-	RegisterUnmanaged(Meta::container_assign.GetID(), Meta::container_assign.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_empty));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_size));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_size_bytes));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_resize));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_capacity));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_bucket_count));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_reserve));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_shrink_to_fit));
 
-	RegisterUnmanaged(Meta::container_begin.GetID(), Meta::container_begin.GetView());
-	RegisterUnmanaged(Meta::container_cbegin.GetID(), Meta::container_cbegin.GetView());
-	RegisterUnmanaged(Meta::container_end.GetID(), Meta::container_end.GetView());
-	RegisterUnmanaged(Meta::container_cend.GetID(), Meta::container_cend.GetView());
-	RegisterUnmanaged(Meta::container_rbegin.GetID(), Meta::container_rbegin.GetView());
-	RegisterUnmanaged(Meta::container_crbegin.GetID(), Meta::container_crbegin.GetView());
-	RegisterUnmanaged(Meta::container_rend.GetID(), Meta::container_rend.GetView());
-	RegisterUnmanaged(Meta::container_crend.GetID(), Meta::container_crend.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_clear));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_insert));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_insert_after));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_insert_or_assign));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_erase));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_erase_after));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_push_front));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_pop_front));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_push_back));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_pop_back));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_push));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_pop));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_swap));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_merge));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_extract));
 
-	RegisterUnmanaged(Meta::container_at.GetID(), Meta::container_at.GetView());
-	RegisterUnmanaged(Meta::container_data.GetID(), Meta::container_data.GetView());
-	RegisterUnmanaged(Meta::container_front.GetID(), Meta::container_front.GetView());
-	RegisterUnmanaged(Meta::container_back.GetID(), Meta::container_back.GetView());
-	RegisterUnmanaged(Meta::container_top.GetID(), Meta::container_top.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_splice_after));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_splice));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_remove));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_reverse));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_unique));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_sort));
 
-	RegisterUnmanaged(Meta::container_empty.GetID(), Meta::container_empty.GetView());
-	RegisterUnmanaged(Meta::container_size.GetID(), Meta::container_size.GetView());
-	RegisterUnmanaged(Meta::container_size_bytes.GetID(), Meta::container_size_bytes.GetView());
-	RegisterUnmanaged(Meta::container_max_size.GetID(), Meta::container_max_size.GetView());
-	RegisterUnmanaged(Meta::container_resize.GetID(), Meta::container_resize.GetView());
-	RegisterUnmanaged(Meta::container_capacity.GetID(), Meta::container_capacity.GetView());
-	RegisterUnmanaged(Meta::container_bucket_count.GetID(), Meta::container_bucket_count.GetView());
-	RegisterUnmanaged(Meta::container_reserve.GetID(), Meta::container_reserve.GetView());
-	RegisterUnmanaged(Meta::container_shrink_to_fit.GetID(), Meta::container_shrink_to_fit.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_count));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_find));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_lower_bound));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_upper_bound));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::container_equal_range));
 
-	RegisterUnmanaged(Meta::container_clear.GetID(), Meta::container_clear.GetView());
-	RegisterUnmanaged(Meta::container_insert.GetID(), Meta::container_insert.GetView());
-	RegisterUnmanaged(Meta::container_insert_after.GetID(), Meta::container_insert_after.GetView());
-	RegisterUnmanaged(Meta::container_insert_or_assign.GetID(), Meta::container_insert_or_assign.GetView());
-	RegisterUnmanaged(Meta::container_erase.GetID(), Meta::container_erase.GetView());
-	RegisterUnmanaged(Meta::container_erase_after.GetID(), Meta::container_erase_after.GetView());
-	RegisterUnmanaged(Meta::container_push_front.GetID(), Meta::container_push_front.GetView());
-	RegisterUnmanaged(Meta::container_pop_front.GetID(), Meta::container_pop_front.GetView());
-	RegisterUnmanaged(Meta::container_push_back.GetID(), Meta::container_push_back.GetView());
-	RegisterUnmanaged(Meta::container_pop_back.GetID(), Meta::container_pop_back.GetView());
-	RegisterUnmanaged(Meta::container_push.GetID(), Meta::container_push.GetView());
-	RegisterUnmanaged(Meta::container_pop.GetID(), Meta::container_pop.GetView());
-	RegisterUnmanaged(Meta::container_swap.GetID(), Meta::container_swap.GetView());
-	RegisterUnmanaged(Meta::container_merge.GetID(), Meta::container_merge.GetView());
-	RegisterUnmanaged(Meta::container_extract.GetID(), Meta::container_extract.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::variant_index));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::variant_valueless_by_exception));
 
-	RegisterUnmanaged(Meta::container_splice_after.GetID(), Meta::container_splice_after.GetView());
-	RegisterUnmanaged(Meta::container_splice.GetID(), Meta::container_splice.GetView());
-	RegisterUnmanaged(Meta::container_remove.GetID(), Meta::container_remove.GetView());
-	RegisterUnmanaged(Meta::container_reverse.GetID(), Meta::container_reverse.GetView());
-	RegisterUnmanaged(Meta::container_unique.GetID(), Meta::container_unique.GetView());
-	RegisterUnmanaged(Meta::container_sort.GetID(), Meta::container_sort.GetView());
-
-	RegisterUnmanaged(Meta::container_count.GetID(), Meta::container_count.GetView());
-	RegisterUnmanaged(Meta::container_find.GetID(), Meta::container_find.GetView());
-	RegisterUnmanaged(Meta::container_lower_bound.GetID(), Meta::container_lower_bound.GetView());
-	RegisterUnmanaged(Meta::container_upper_bound.GetID(), Meta::container_upper_bound.GetView());
-	RegisterUnmanaged(Meta::container_equal_range.GetID(), Meta::container_equal_range.GetView());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::optional_has_value));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::optional_value));
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_VIEW(Meta::optional_reset));
 }
 
 Name NameIDRegistry::Nameof(NameID ID) const {
@@ -159,7 +151,7 @@ Name NameIDRegistry::Nameof(NameID ID) const {
 }
 
 TypeIDRegistry::TypeIDRegistry() {
-	RegisterUnmanaged(Meta::global.GetID(), Meta::global.GetName());
+	RegisterUnmanaged(UBPA_UDREFL_META_GET_ID_NAME(Meta::global));
 }
 
 Type TypeIDRegistry::Typeof(TypeID ID) const {
@@ -289,3 +281,6 @@ Type TypeIDRegistry::RegisterAddConstRValueReference(Type type) {
 	RegisterUnmanaged(ref_ID, rst_name);
 	return { rst_name, ref_ID };
 }
+
+#undef UBPA_UDREFL_META_GET_ID_VIEW
+#undef UBPA_UDREFL_META_GET_ID_NAME

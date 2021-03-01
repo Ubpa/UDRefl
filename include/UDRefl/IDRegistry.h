@@ -51,151 +51,140 @@ namespace Ubpa::UDRefl {
 	class NameIDRegistry : public IDRegistry<NameID, Name> {
 	public:
 		struct Meta {
-			static constexpr Name ctor{ ".ctor" };
-			static constexpr Name dtor{ ".dtor" };
+			// operators
 
-			static constexpr Name operator_bool{ ".operator_bool" };
+			static constexpr Name operator_bool{ "__bool" };
 
-			static constexpr Name operator_plus{ ".operator+" };
-			static constexpr Name operator_minus{ ".operator-" };
+			static constexpr Name operator_add{ "__add" };
+			static constexpr Name operator_sub{ "__sub" };
+			static constexpr Name operator_mul{ "__mul" };
+			static constexpr Name operator_div{ "__div" };
+			static constexpr Name operator_mod{ "__mod" };
 
-			static constexpr Name operator_add{ ".operator+" };
-			static constexpr Name operator_sub{ ".operator-" };
-			static constexpr Name operator_mul{ ".operator*" };
-			static constexpr Name operator_div{ ".operator/" };
-			static constexpr Name operator_mod{ ".operator%" };
+			static constexpr Name operator_bnot{ "__bnot" };
+			static constexpr Name operator_band{ "__band" };
+			static constexpr Name operator_bor{ "__bor" };
+			static constexpr Name operator_bxor{ "__bxor" };
+			static constexpr Name operator_shl{ "__shl" };
+			static constexpr Name operator_shr{ "__shr" };
 
-			static constexpr Name operator_bnot{ ".operator~" };
-			static constexpr Name operator_band{ ".operator&" };
-			static constexpr Name operator_bor{ ".operator|" };
-			static constexpr Name operator_bxor{ ".operator^" };
-			static constexpr Name operator_lshift{ ".operator<<" };
-			static constexpr Name operator_rshift{ ".operator>>" };
+			static constexpr Name operator_pre_inc{ "__pre_inc" };
+			static constexpr Name operator_pre_dec{ "__pre_dec" };
+			static constexpr Name operator_post_inc{ "__post_inc" };
+			static constexpr Name operator_post_dec{ "__post_dec" };
 
-			static constexpr Name operator_pre_inc{ ".operator++" };
-			static constexpr Name operator_pre_dec{ ".operator--" };
-			static constexpr Name operator_post_inc{ ".operator++" };
-			static constexpr Name operator_post_dec{ ".operator--" };
+			static constexpr Name operator_assignment{ "__assignment" };
+			static constexpr Name operator_assignment_add{ "__assignment_add" };
+			static constexpr Name operator_assignment_sub{ "__assignment_sub" };
+			static constexpr Name operator_assignment_mul{ "__assignment_mul" };
+			static constexpr Name operator_assignment_div{ "__assignment_div" };
+			static constexpr Name operator_assignment_mod{ "__assignment_mod" };
+			static constexpr Name operator_assignment_band{ "__assignment_band" };
+			static constexpr Name operator_assignment_bor{ "__assignment_bor" };
+			static constexpr Name operator_assignment_bxor{ "__assignment_bxor" };
+			static constexpr Name operator_assignment_shl{ "__assignment_shl" };
+			static constexpr Name operator_assignment_shr{ "__assignment_shr" };
 
-			static constexpr Name operator_assign{ ".operator=" };
-			static constexpr Name operator_assign_add{ ".operator+=" };
-			static constexpr Name operator_assign_sub{ ".operator-=" };
-			static constexpr Name operator_assign_mul{ ".operator*=" };
-			static constexpr Name operator_assign_div{ ".operator/=" };
-			static constexpr Name operator_assign_mod{ ".operator%=" };
-			static constexpr Name operator_assign_band{ ".operator&=" };
-			static constexpr Name operator_assign_bor{ ".operator|=" };
-			static constexpr Name operator_assign_bxor{ ".operator^=" };
-			static constexpr Name operator_assign_lshift{ ".operator<<=" };
-			static constexpr Name operator_assign_rshift{ ".operator>>=" };
+			static constexpr Name operator_eq{ "__eq" };
+			static constexpr Name operator_ne{ "__ne" };
+			static constexpr Name operator_lt{ "__lt" };
+			static constexpr Name operator_le{ "__le" };
+			static constexpr Name operator_gt{ "__gt" };
+			static constexpr Name operator_ge{ "__ge" };
 
-			static constexpr Name operator_eq{ ".operator==" };
-			static constexpr Name operator_ne{ ".operator!=" };
-			static constexpr Name operator_lt{ ".operator<" };
-			static constexpr Name operator_le{ ".operator<=" };
-			static constexpr Name operator_gt{ ".operator>" };
-			static constexpr Name operator_ge{ ".operator>=" };
+			static constexpr Name operator_and{ "__and" };
+			static constexpr Name operator_or{ "__or" };
+			static constexpr Name operator_not{ "__not" };
 
-			static constexpr Name operator_and{ ".operator&&" };
-			static constexpr Name operator_or{ ".operator||" };
-			static constexpr Name operator_not{ ".operator!" };
+			static constexpr Name operator_subscript{ "__subscript" };
+			static constexpr Name operator_indirection{ "__indirection" };
 
-			static constexpr Name operator_subscript{ ".operator[]" };
-			static constexpr Name operator_deref{ ".operator*" };
-			static constexpr Name operator_ref{ ".operator&" };
-			static constexpr Name operator_member{ ".operator->" };
-			static constexpr Name operator_member_of_pointer{ ".operator->*" };
+			static constexpr Name operator_call{ "__call" };
 
-			static constexpr Name operator_call{ ".operator()" };
-			static constexpr Name operator_comma{ ".operator," };
+			// non-member functions
 
-			// tuple
+			static constexpr Name ctor{ "__ctor" };
+			static constexpr Name dtor{ "__dtor" };
 
-			static constexpr Name tuple_size{ ".tuple_size" };
-			static constexpr Name tuple_get{ ".tuple_get" };
-			static constexpr Name tuple_element{ ".tuple_element" };
+			static constexpr Name get{ "__get" };
+			static constexpr Name variant_visit_get{ "__variant_visit_get" }; // std::visit + std::get
 
-			// variant
+			static constexpr Name tuple_size{ "__tuple_size" };
+			static constexpr Name tuple_element{ "__tuple_element" };
 
-			static constexpr Name variant_index{ ".variant_index" };
-			static constexpr Name variant_valueless_by_exception{ ".variant_valueless_by_exception" };
-			static constexpr Name variant_holds_alternative{ ".variant_holds_alternative" };
-			static constexpr Name variant_get{ ".variant_get" };
-			static constexpr Name variant_get_if{ ".variant_get_if" };
-			static constexpr Name variant_size{ ".variant_size" };
-			static constexpr Name variant_alternative{ ".variant_alternative" };
-			static constexpr Name variant_visit_get{ ".variant_visit_get" };
+			static constexpr Name get_if{ "__get_if" };
+			static constexpr Name holds_alternative{ "__holds_alternative" };
+			static constexpr Name variant_size{ "__variant_size" };
+			static constexpr Name variant_alternative{ "__variant_alternative" };
 
-			// optional
+			static constexpr Name advance{ "__advance" };
+			static constexpr Name distance{ "__distance" };
+			static constexpr Name next{ "__next" };
+			static constexpr Name prev{ "__prev" };
 
-			static constexpr Name optional_has_value{ ".optional_has_value" };
-			static constexpr Name optional_value{ ".optional_value" };
-			static constexpr Name optional_reset{ ".optional_reset" };
+			// member functions
 
-			// iterator
+			static constexpr Name container_assign{ "assign" };
 
-			static constexpr Name iterator_advance{ ".iterator_advance" };
-			static constexpr Name iterator_distance{ ".iterator_distance" };
-			static constexpr Name iterator_next{ ".iterator_next" };
-			static constexpr Name iterator_prev{ ".iterator_prev" };
+			static constexpr Name container_begin{ "begin" };
+			static constexpr Name container_cbegin{ "cbegin" };
+			static constexpr Name container_end{ "end" };
+			static constexpr Name container_cend{ "cend" };
+			static constexpr Name container_rbegin{ "rbegin" };
+			static constexpr Name container_crbegin{ "crbegin" };
+			static constexpr Name container_rend{ "rend" };
+			static constexpr Name container_crend{ "crend" };
 
-			// container
+			static constexpr Name container_at{ "at" };
+			static constexpr Name container_data{ "data" };
+			static constexpr Name container_front{ "front" };
+			static constexpr Name container_back{ "back" };
+			static constexpr Name container_top{ "top" };
 
-			static constexpr Name container_assign{ ".container_assign" };
+			static constexpr Name container_empty{ "empty" };
+			static constexpr Name container_size{ "size" };
+			static constexpr Name container_size_bytes{ "size_bytes" };
+			static constexpr Name container_resize{ "resize" };
+			static constexpr Name container_capacity{ "capacity" };
+			static constexpr Name container_bucket_count{ "bucket_count" };
+			static constexpr Name container_reserve{ "reserve" };
+			static constexpr Name container_shrink_to_fit{ "shrink_to_fit" };
 
-			static constexpr Name container_begin{ ".container_begin" };
-			static constexpr Name container_cbegin{ ".container_cbegin" };
-			static constexpr Name container_end{ ".container_end" };
-			static constexpr Name container_cend{ ".container_cend" };
-			static constexpr Name container_rbegin{ ".container_rbegin" };
-			static constexpr Name container_crbegin{ ".container_crbegin" };
-			static constexpr Name container_rend{ ".container_rend" };
-			static constexpr Name container_crend{ ".container_crend" };
+			static constexpr Name container_clear{ "clear" };
+			static constexpr Name container_insert{ "insert" };
+			static constexpr Name container_insert_after{ "insert_after" };
+			static constexpr Name container_insert_or_assign{ "insert_or_assign" };
+			static constexpr Name container_erase{ "erase" };
+			static constexpr Name container_erase_after{ "erase_after" };
+			static constexpr Name container_push_front{ "push_front" };
+			static constexpr Name container_pop_front{ "pop_front" };
+			static constexpr Name container_push_back{ "push_back" };
+			static constexpr Name container_pop_back{ "pop_back" };
+			static constexpr Name container_push{ "push" };
+			static constexpr Name container_pop{ "pop" };
+			static constexpr Name container_swap{ "swap" };
+			static constexpr Name container_merge{ "merge" };
+			static constexpr Name container_extract{ "extract" };
 
-			static constexpr Name container_at{ ".container_at" };
-			static constexpr Name container_data{ ".container_data" };
-			static constexpr Name container_front{ ".container_front" };
-			static constexpr Name container_back{ ".container_back" };
-			static constexpr Name container_top{ ".container_top" };
+			static constexpr Name container_splice_after{ "splice_after" };
+			static constexpr Name container_splice{ "splice" };
+			static constexpr Name container_remove{ "remove" };
+			static constexpr Name container_reverse{ "reverse" };
+			static constexpr Name container_unique{ "unique" };
+			static constexpr Name container_sort{ "sort" };
 
-			static constexpr Name container_empty{ ".container_empty" };
-			static constexpr Name container_size{ ".container_size" };
-			static constexpr Name container_size_bytes{ ".container_size_bytes" };
-			static constexpr Name container_max_size{ ".container_max_size" };
-			static constexpr Name container_resize{ ".container_resize" };
-			static constexpr Name container_capacity{ ".container_capacity" };
-			static constexpr Name container_bucket_count{ ".container_bucket_count" };
-			static constexpr Name container_reserve{ ".container_reserve" };
-			static constexpr Name container_shrink_to_fit{ ".container_shrink_to_fit" };
+			static constexpr Name container_count{ "count" };
+			static constexpr Name container_find{ "find" };
+			static constexpr Name container_lower_bound{ "lower_bound" };
+			static constexpr Name container_upper_bound{ "upper_bound" };
+			static constexpr Name container_equal_range{ "equal_range" };
 
-			static constexpr Name container_clear{ ".container_clear" };
-			static constexpr Name container_insert{ ".container_insert" };
-			static constexpr Name container_insert_after{ ".container_insert_after" };
-			static constexpr Name container_insert_or_assign{ ".container_insert_or_assign" };
-			static constexpr Name container_erase{ ".container_erase" };
-			static constexpr Name container_erase_after{ ".container_erase_after" };
-			static constexpr Name container_push_front{ ".container_push_front" };
-			static constexpr Name container_pop_front{ ".container_pop_front" };
-			static constexpr Name container_push_back{ ".container_push_back" };
-			static constexpr Name container_pop_back{ ".container_pop_back" };
-			static constexpr Name container_push{ ".container_push" };
-			static constexpr Name container_pop{ ".container_pop" };
-			static constexpr Name container_swap{ ".container_swap" };
-			static constexpr Name container_merge{ ".container_merge" };
-			static constexpr Name container_extract{ ".container_extract" };
+			static constexpr Name variant_index{ "index" };
+			static constexpr Name variant_valueless_by_exception{ "valueless_by_exception" };
 
-			static constexpr Name container_splice_after{ ".container_splice_after" };
-			static constexpr Name container_splice{ ".container_splice" };
-			static constexpr Name container_remove{ ".container_remove" };
-			static constexpr Name container_reverse{ ".container_reverse" };
-			static constexpr Name container_unique{ ".container_unique" };
-			static constexpr Name container_sort{ ".container_sort" };
-
-			static constexpr Name container_count{ ".container_count" };
-			static constexpr Name container_find{ ".container_find" };
-			static constexpr Name container_lower_bound{ ".container_lower_bound" };
-			static constexpr Name container_upper_bound{ ".container_upper_bound" };
-			static constexpr Name container_equal_range{ ".container_equal_range" };
+			static constexpr Name optional_has_value{ "has_value" };
+			static constexpr Name optional_value{ "value" };
+			static constexpr Name optional_reset{ "reset" };
 		};
 
 		NameIDRegistry();
@@ -209,7 +198,7 @@ namespace Ubpa::UDRefl {
 	class TypeIDRegistry : public IDRegistry<TypeID, Type> {
 	public:
 		struct Meta {
-			static constexpr Type global{ ".global" };
+			static constexpr Type global{ "__global" };
 		};
 
 		using IDRegistry<TypeID, Type>::Register;

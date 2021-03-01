@@ -4,6 +4,8 @@
 
 ## 0.8
 
+- 0.8.3
+  - rename meta
 - 0.8.2
   - use concept for traits (operations, container API and flag)
   - let some APIs return fundamental type (`void`, `std::size_t`, `bool`)
@@ -24,6 +26,7 @@
     - forwardlist, list
     - stack, priority_queue, queue
     - span
+    - variant, optional
   - make IDRegistry thread-safe
 - 0.8.1
   - support

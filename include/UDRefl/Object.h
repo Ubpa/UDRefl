@@ -152,14 +152,21 @@ namespace Ubpa::UDRefl {
 		// Meta //
 		//////////
 
+		//
+		// operators
+		//////////////
+
 		template<typename T> SharedObject operator+(T&& rhs) const;
 		template<typename T> SharedObject operator-(T&& rhs) const;
 		template<typename T> SharedObject operator*(T&& rhs) const;
 		template<typename T> SharedObject operator/(T&& rhs) const;
 		template<typename T> SharedObject operator%(T&& rhs) const;
+
 		template<typename T> SharedObject operator&(T&& rhs) const;
 		template<typename T> SharedObject operator|(T&& rhs) const;
 		template<typename T> SharedObject operator^(T&& rhs) const;
+		template<typename T> SharedObject operator<<(T&& rhs) const;
+		template<typename T> SharedObject operator>>(T&& rhs) const;
 
 		template<typename T> bool operator< (const T& rhs) const;
 		template<typename T> bool operator<=(const T& rhs) const;
@@ -190,52 +197,37 @@ namespace Ubpa::UDRefl {
 		SharedObject operator*() const;
 
 		template<typename T> SharedObject operator[](T&& rhs) const;
-		SharedObject operator[](std::size_t n) const;
 
 		template<typename... Args>
 		SharedObject operator()(Args&&... args) const;
-
-		template<typename T> T& operator>>(T& out) const;
-		template<typename T> SharedObject operator<<(T&& in) const;
 		
-		////////////////////////
-		// General Containers //
-		////////////////////////
+		//
+		// attrs
+		//////////
 
 		ContainerType get_container_type() const;
 
 		//
-		// Tuple
-		//////////
+		// non-member functions
+		/////////////////////////
+
+		// tuple & variant
+
+		ObjectView get(std::size_t i) const;
+		ObjectView get(Type type) const;
+
+		// - tuple
 
 		std::size_t tuple_size() const;
-		ObjectView tuple_get(std::size_t i) const;
-		ObjectView tuple_get(Type type) const;
 		Type tuple_element(std::size_t i) const;
 
-		//
-		// Variant
-		////////////
+		// - variant
 
-		std::size_t variant_index() const;
 		std::size_t variant_size() const;
-		bool variant_holds_alternative(Type type) const;
-		ObjectView variant_get(std::size_t i) const;
-		ObjectView variant_get(Type type) const;
 		Type variant_alternative(std::size_t i) const;
 		ObjectView variant_visit_get() const;
 
-		//
-		// Optional
-		/////////////
-
-		bool optional_has_value() const;
-		ObjectView optional_value() const;
-		void optional_reset() const;
-
-		//
-		// Iterator
-		/////////////
+		// - iterator
 
 		template<typename T> void advance(T&& arg) const;
 		template<typename T> std::size_t distance(T&& arg) const;
@@ -307,11 +299,23 @@ namespace Ubpa::UDRefl {
 		void sort() const;
 
 		// - lookup
+
 		template<typename T> std::size_t count(T&& arg) const;
 		template<typename T> SharedObject find(T&& rhs) const;
 		template<typename T> SharedObject lower_bound(T&& rhs) const;
 		template<typename T> SharedObject upper_bound(T&& rhs) const;
 		template<typename T> SharedObject equal_range(T&& rhs) const;
+
+		// - variant
+
+		std::size_t index() const;
+		bool holds_alternative(Type type) const;
+
+		// - optional
+
+		bool has_value() const;
+		ObjectView value() const;
+		void reset() const;
 
 	protected:
 		Type type;
@@ -342,7 +346,7 @@ namespace Ubpa::UDRefl {
 
 		long UseCount() const noexcept { return buffer.use_count(); }
 
-		bool IsObjectView() const noexcept { return ptr && !buffer; }
+		bool IsObjectView() const noexcept { return !buffer; }
 
 		void Swap(SharedObject& rhs) noexcept {
 			std::swap(type, rhs.type);
@@ -351,7 +355,7 @@ namespace Ubpa::UDRefl {
 		}
 
 	private:
-		SharedBuffer buffer; // if type is reference, buffer is empty
+		SharedBuffer buffer; // if type is reference/void, buffer is empty
 	};
 
 	template<typename T>

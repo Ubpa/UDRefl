@@ -39,18 +39,18 @@ int main() {
 	std::cout << v.GetType().GetName() << std::endl;
 
 	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)
-		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.tuple_get(i) << std::endl;
+		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.get(i) << std::endl;
 
 	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)
-		v.tuple_get(i) = i;
+		v.get(i) = i;
 
 	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)
-		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.tuple_get(i) << std::endl;
+		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.get(i) << std::endl;
 
-	v.tuple_get(Type_of<float>) = 512;
+	v.get(Type_of<float>) = 512;
 
 	for (std::size_t i{ 0 }; i < v.tuple_size(); i++)
-		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.tuple_get(i) << std::endl;
+		std::cout << v.tuple_element(i).GetName() << " (" << i << "): " << v.get(i) << std::endl;
 
 	return 0;
 }

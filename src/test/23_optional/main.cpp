@@ -8,7 +8,6 @@ using namespace Ubpa::UDRefl;
 
 int main() {
 	Mngr->RegisterType<std::optional<float>>();
-
 	for (auto&& method : Mngr->GetMethods(Type_of<std::optional<float>>)) {
 		std::cout << method.name.GetView() << ": ";
 
@@ -38,10 +37,10 @@ int main() {
 	SharedObject v = Mngr->MakeShared(Type_of<std::optional<float>>, 3);
 	std::cout << v.GetType().GetName() << std::endl;
 
-	std::cout << v.optional_has_value() << std::endl;
-	std::cout << v.optional_value() << std::endl;
-	v.optional_reset();
-	std::cout << v.optional_has_value() << std::endl;
+	std::cout << v.has_value() << std::endl;
+	std::cout << v.value() << std::endl;
+	v.reset();
+	std::cout << v.has_value() << std::endl;
 
 	return 0;
 }

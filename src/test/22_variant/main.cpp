@@ -40,9 +40,9 @@ int main() {
 		std::cout << v.GetType().GetName() << std::endl;
 		std::cout << v.variant_visit_get().GetType().GetName() << std::endl;
 
-		std::cout << v.variant_index() << std::endl;
-		std::cout << v.variant_holds_alternative(Type_of<double>) << std::endl;
-		std::cout << v.variant_holds_alternative(Type_of<float>) << std::endl;
+		std::cout << v.index() << std::endl;
+		std::cout << v.holds_alternative(Type_of<double>) << std::endl;
+		std::cout << v.holds_alternative(Type_of<float>) << std::endl;
 
 		for (size_t i = 0; i < v.variant_size(); ++i)
 			std::cout << v.variant_alternative(i).GetName() << std::endl;
