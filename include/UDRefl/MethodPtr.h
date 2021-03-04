@@ -13,7 +13,8 @@ namespace Ubpa::UDRefl {
 		ArgPtrBuffer GetBuffer() const noexcept { return buffer; }
 		const ParamList& GetParamList() const noexcept { return paramList; }
 
-		ObjectView At(size_t idx) const noexcept {
+		ObjectView At(size_t idx) const { return { paramList.at(idx), buffer[idx] }; }
+		ObjectView operator[](size_t idx) const noexcept {
 			assert(idx < paramList.size());
 			return { paramList[idx], buffer[idx] };
 		}

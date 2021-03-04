@@ -513,12 +513,25 @@ ReflMngr::~ReflMngr() {
 	Clear();
 }
 
-Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment) {
+bool ReflMngr::ContainsVirtualBase(Type type) const {
+	auto* info = GetTypeInfo(type);
+	if (!info)
+		return false;
+
+	for (const auto& [base, baseinfo] : info->baseinfos) {
+		if (baseinfo.IsVirtual() || ContainsVirtualBase(base))
+			return true;
+	}
+	
+	return false;
+}
+
+Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment, bool is_polymorphic) {
 	auto target = typeinfos.find(type.RemoveCVRef());
 	if (target != typeinfos.end())
 		return {};
 	Type new_type = { tregistry.Register(type.GetID(), type.GetName()),type.GetID() };
-	typeinfos.emplace_hint(target, new_type, TypeInfo{ size,alignment });
+	typeinfos.emplace_hint(target, new_type, TypeInfo{ size,alignment,is_polymorphic });
 	return new_type;
 }
 
@@ -552,18 +565,38 @@ Name ReflMngr::AddMethod(Type type, Name method_name, MethodInfo methodinfo) {
 }
 
 Name ReflMngr::AddTrivialDefaultConstructor(Type type) {
+	auto target = typeinfos.find(type);
+	if (target == typeinfos.end() || target->second.is_polymorphic || ContainsVirtualBase(type))
+		return {};
+	for (const auto& [basetype, baseinfo] : target->second.baseinfos) {
+		assert(!baseinfo.IsPolymorphic()); // type isn't polymorphic => bases aren't polymorphic
+		if (baseinfo.IsVirtual() || !IsConstructible(basetype))
+			return {};
+	}
+	const auto& t = target->first;
 	return AddMethod(
 		type,
 		NameIDRegistry::Meta::ctor,
-		MethodInfo{ {[](void*, void*, ArgsView) {}, MethodFlag::Variable} }
+		MethodInfo{ {
+			[t](void* obj, void*, ArgsView) {
+				auto& typeinfo = Mngr->typeinfos.at(t);
+				for (const auto& [basetype, baseinfo] : typeinfo.baseinfos) {
+					void* baseptr = baseinfo.StaticCast_DerivedToBase(obj);
+					bool success = Mngr->Construct(ObjectView{ basetype, baseptr });
+					assert(success);
+				}
+			},
+			MethodFlag::Variable
+		} }
 	);
 }
 
 Name ReflMngr::AddTrivialCopyConstructor(Type type) {
-	auto* typeinfo = GetTypeInfo(type);
-	if (!typeinfo)
+	auto target = typeinfos.find(type);
+	if (target == typeinfos.end())
 		return {};
-	std::size_t size = typeinfo->size;
+	auto& typeinfo = target->second;
+	std::size_t size = typeinfo.size;
 	return AddMethod(
 		type,
 		NameIDRegistry::Meta::ctor,
@@ -579,14 +612,30 @@ Name ReflMngr::AddTrivialCopyConstructor(Type type) {
 }
 
 Name ReflMngr::AddZeroConstructor(Type type) {
-	auto* typeinfo = GetTypeInfo(type);
-	if (!typeinfo)
+	auto target = typeinfos.find(type);
+	if (target == typeinfos.end() || target->second.is_polymorphic || ContainsVirtualBase(type))
 		return {};
-	std::size_t size;
+	for (const auto& [basetype, baseinfo] : target->second.baseinfos) {
+		assert(!baseinfo.IsPolymorphic()); // type isn't polymorphic => bases aren't polymorphic
+		if (baseinfo.IsVirtual() || !IsConstructible(basetype))
+			return {};
+	}
+	const auto& t = target->first;
 	return AddMethod(
 		type,
 		NameIDRegistry::Meta::ctor,
-		MethodInfo{ {[size](void* obj, void*, ArgsView) {std::memset(obj,0,size); }, MethodFlag::Variable} }
+		MethodInfo{ {
+			[t](void* obj, void*, ArgsView) {
+				auto& typeinfo = Mngr->typeinfos.at(t);
+				std::memset(obj, 0, typeinfo.size);
+				for (const auto& [basetype, baseinfo] : typeinfo.baseinfos) {
+					void* baseptr = baseinfo.StaticCast_DerivedToBase(obj);
+					bool success = Mngr->Construct(ObjectView{ basetype, baseptr });
+					assert(success);
+				}
+			},
+			MethodFlag::Variable
+		} }
 	);
 }
 

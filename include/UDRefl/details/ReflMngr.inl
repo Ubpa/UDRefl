@@ -1065,7 +1065,7 @@ namespace Ubpa::UDRefl {
 				if (target != typeinfos.end())
 					return;
 				tregistry.Register<T>();
-				typeinfos.emplace_hint(target, Type_of<T>, TypeInfo{ sizeof(T),alignof(T) });
+				typeinfos.emplace_hint(target, Type_of<T>, TypeInfo{ sizeof(T), alignof(T), std::is_polymorphic_v<T> });
 
 				details::TypeAutoRegister<T>::run(*this);
 			}
@@ -1164,11 +1164,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename Derived, typename Base>
 	BaseInfo ReflMngr::GenerateBaseInfo() {
-		return {
-			inherit_cast_functions<Derived, Base>(),
-			std::is_polymorphic_v<Base>,
-			is_virtual_base_of_v<Base, Derived>
-		};
+		return { inherit_cast_functions<Derived, Base>() };
 	}
 
 	template<typename Derived, typename... Bases>

@@ -10,7 +10,9 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_reflmngr_0() {
 	Mngr->AddStaticMethod(Type_of<ReflMngr>, "Instance", &ReflMngr::Instance);
 	Mngr->AddMethod<&ReflMngr::GetTypeInfo>("GetTypeInfo");
 	Mngr->AddMethod<&ReflMngr::Clear>("Clear");
-	Mngr->AddMethod<MemFuncOf<ReflMngr, Type(Type, std::size_t, std::size_t)>::get(&ReflMngr::RegisterType)>("RegisterType");
+	Mngr->AddMethod<&ReflMngr::ContainsVirtualBase>("ContainsVirtualBase");
+	Mngr->AddMethod<MemFuncOf<ReflMngr, Type(Type, std::size_t, std::size_t, bool)>::get(&ReflMngr::RegisterType)>("RegisterType");
+	Mngr->AddMemberMethod("RegisterType", [](ReflMngr& mngr, Type type, std::size_t size, std::size_t alignment) { return mngr.RegisterType(type, size, alignment); });
 	Mngr->AddMethod<MemFuncOf<ReflMngr, Name(Type, Name, FieldInfo)>::get(&ReflMngr::AddField)>("AddField");
 	Mngr->AddMethod<MemFuncOf<ReflMngr, Name(Type, Name, MethodInfo)>::get(&ReflMngr::AddMethod)>("AddMethod");
 	Mngr->AddMethod<MemFuncOf<ReflMngr, Type(Type, Type, BaseInfo)>::get(&ReflMngr::AddBase)>("AddBase");

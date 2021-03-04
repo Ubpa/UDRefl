@@ -58,7 +58,7 @@ What we need to register is the class information `TypeInfo`, it contains
 
 - size of type
 - alignment of type
-
+- is polymorphic
 - field info map
 - method info multi-map
 - base info map
