@@ -8,6 +8,7 @@
   - rename meta
   - refactor `BaseInfo` 
   - `TypeInfo` += `bool is_polymorphic` 
+  - data-driven `RegisterType` 
 - 0.8.2
   - use concept for traits (operations, container API and flag)
   - let some APIs return fundamental type (`void`, `std::size_t`, `bool`)
