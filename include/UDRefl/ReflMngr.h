@@ -118,7 +118,20 @@ namespace Ubpa::UDRefl {
 		
 		Name AddTrivialDefaultConstructor(Type type);
 		Name AddTrivialCopyConstructor   (Type type);
-		Name AddZeroConstructor          (Type type);
+		Name AddZeroDefaultConstructor   (Type type);
+		Name AddDefaultConstructor       (Type type);
+		Name AddDestructor               (Type type);
+
+		// - data-driven
+
+		// require
+		// - all bases aren't polymorphic and don't contain any virtual base
+		// - field_types.size() == field_names.size()
+		// auto compute
+		// - size & alignment of type
+		// - baseinfos
+		// - fields' forward offset value
+		Type RegisterType(Type type, std::span<const Type> bases, std::span<const Type> field_types, std::span<const Name> field_names);
 
 		// -- template --
 

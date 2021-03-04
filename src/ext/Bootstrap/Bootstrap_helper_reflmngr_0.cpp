@@ -21,7 +21,8 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_reflmngr_0() {
 	Mngr->AddMethod<&ReflMngr::AddMethodAttr>("AddMethodAttr");
 	Mngr->AddMethod<&ReflMngr::AddTrivialDefaultConstructor>("AddTrivialDefaultConstructor");
 	Mngr->AddMethod<&ReflMngr::AddTrivialCopyConstructor>("AddTrivialCopyConstructor");
-	Mngr->AddMethod<&ReflMngr::AddZeroConstructor>("AddZeroConstructor");
+	Mngr->AddMethod<&ReflMngr::AddZeroDefaultConstructor>("AddZeroDefaultConstructor");
+	Mngr->AddMethod<&ReflMngr::AddDefaultConstructor>("AddDefaultConstructor");
 	Mngr->AddMethod<&ReflMngr::StaticCast_DerivedToBase>("StaticCast_DerivedToBase");
 	Mngr->AddMethod<&ReflMngr::StaticCast_BaseToDerived>("StaticCast_BaseToDerived");
 	Mngr->AddMethod<&ReflMngr::DynamicCast_BaseToDerived>("DynamicCast_BaseToDerived");

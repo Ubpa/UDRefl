@@ -12,8 +12,10 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_ptr() {
 	Mngr->AddConstructor<FieldPtr, SharedObject>();
 	Mngr->AddMethod<&FieldPtr::GetType>("GetType");
 	Mngr->AddMethod<&FieldPtr::GetFieldFlag>("GetFieldFlag");
-	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView()noexcept>::get(&FieldPtr::Var)>("Var");
+	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView()>::get(&FieldPtr::Var)>("Var");
 	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView(void*)>::get(&FieldPtr::Var)>("Var");
+	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView()const>::get(&FieldPtr::Var)>("Var");
+	Mngr->AddMethod<MemFuncOf<FieldPtr, ObjectView(void*)const>::get(&FieldPtr::Var)>("Var");
 
 	// MethodPtr.h
 

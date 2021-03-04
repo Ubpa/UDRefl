@@ -214,7 +214,7 @@ namespace Ubpa::UDRefl::details {
 				mngr.AddConstructor<T>();
 			if constexpr (type_ctor_copy<T>)
 				mngr.AddConstructor<T, const T&>();
-			if constexpr (!std::is_fundamental_v<T> && type_ctor_move<T>)
+			if constexpr (type_ctor_move<T> && (!std::is_trivially_move_constructible_v<T> || !std::is_trivially_copy_constructible_v<T>))
 				mngr.AddConstructor<T, T&&>();
 			if constexpr (std::is_destructible_v<T> && !std::is_trivially_destructible_v<T>)
 				mngr.AddDestructor<T>();
@@ -301,7 +301,7 @@ namespace Ubpa::UDRefl::details {
 
 			if constexpr (operator_assignment_copy<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assignment, [](T& lhs, const T& rhs) -> T& { return lhs = rhs; });
-			if constexpr (!std::is_fundamental_v<T> && operator_assignment_move<T>)
+			if constexpr (operator_assignment_move<T> && (!std::is_trivially_move_assignable_v<T> || !std::is_trivially_copy_assignable_v<T>))
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assignment, [](T& lhs, T&& rhs) -> T& { return lhs = std::move(rhs); });
 			if constexpr (operator_assignment_add<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assignment_add, [](T& lhs, const T& rhs) -> T& { return lhs += rhs; });
@@ -1065,7 +1065,7 @@ namespace Ubpa::UDRefl {
 				if (target != typeinfos.end())
 					return;
 				tregistry.Register<T>();
-				typeinfos.emplace_hint(target, Type_of<T>, TypeInfo{ sizeof(T), alignof(T), std::is_polymorphic_v<T> });
+				typeinfos.emplace_hint(target, Type_of<T>, TypeInfo{ std::is_empty_v<T> ? 0 : sizeof(T), alignof(T), std::is_polymorphic_v<T> });
 
 				details::TypeAutoRegister<T>::run(*this);
 			}

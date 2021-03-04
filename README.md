@@ -116,6 +116,7 @@ for (auto&& [type, field, var] : v.GetTypeFieldVars())
 - [variant](src/test/22_variant/main.cpp) 
 - [optional](src/test/23_optional/main.cpp) 
 - [bootstrap](src/test/ext/00_bootstrap/main.cpp) 
+- [[data-driven] `RegisterType`](src/test/24_dd_type/main.cpp) 
 
 ## Features
 

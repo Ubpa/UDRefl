@@ -50,6 +50,32 @@ namespace Ubpa::UDRefl::details {
 	bool IsRefConstructible(Type type, std::span<const Type> argTypes);
 	bool RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer);
 
+	class BufferGuard {
+	public:
+		BufferGuard() : rsrc{ nullptr }, size{ 0 }, alignment{ 0 }, buffer{ nullptr }{}
+		BufferGuard(std::pmr::memory_resource* rsrc, std::size_t size, std::size_t alignment) :
+			rsrc{ rsrc },
+			size{ size },
+			alignment{ alignment },
+			buffer{ rsrc->allocate(size, alignment) } {}
+
+		~BufferGuard() {
+			if (rsrc)
+				rsrc->deallocate(buffer, size, alignment);
+		}
+
+		void* Get() const noexcept { return buffer; }
+		operator void* () const noexcept { return Get(); }
+
+		BufferGuard(const BufferGuard&) = delete;
+		BufferGuard& operator=(BufferGuard&&) noexcept = delete;
+	private:
+		std::pmr::memory_resource* rsrc;
+		std::size_t size;
+		std::size_t alignment;
+		void* buffer;
+	};
+
 	class NewArgsGuard {
 		struct ArgInfo {
 			const char* name;
@@ -85,11 +111,8 @@ namespace Ubpa::UDRefl::details {
 		}
 
 	private:
-		std::pmr::memory_resource* rsrc;
 		bool is_compatible{ false };
-		std::uint32_t buffer_size{ 0 };
-		std::uint32_t max_alignment{ alignof(std::max_align_t) };
-		void* buffer{ nullptr };
+		BufferGuard buffer;
 		ArgInfo* new_nonptr_arg_info_buffer{ nullptr };
 		std::uint8_t num_copied_nonptr_args{ 0 };
 		ArgPtrBuffer argptr_buffer{ nullptr };
