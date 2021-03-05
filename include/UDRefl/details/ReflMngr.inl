@@ -5,62 +5,214 @@
 #include <fstream>
 
 namespace Ubpa::UDRefl::details {
-	template<typename ArgList>
-	struct GenerateMethodPtr_Helper;
-	template<typename... Args>
-	struct GenerateMethodPtr_Helper<TypeList<Args...>> {
-		static ParamList GenerateParamList()
-			noexcept(sizeof...(Args) == 0)
-		{
-			return ReflMngr::GenerateParamList<Args...>();
-		}
+	template<typename F>
+	struct WrapFuncTraits;
 
-		template<auto funcptr, size_t... Ns>
-		static constexpr auto GenerateFunction(std::index_sequence<Ns...>) noexcept {
-			using FuncPtr = decltype(funcptr);
-			using Traits = FuncTraits<decltype(funcptr)>;
-			if constexpr (std::is_member_function_pointer_v<FuncPtr>) {
-				constexpr auto wrapped_func = [](void* obj, void* result_buffer, ArgsView args) {
-					assert(((args.GetParamList()[Ns] == Type_of<Args>)&&...));
-					constexpr auto f = wrap_function<funcptr>();
-					f(obj, result_buffer, args.GetBuffer());
-				};
-				constexpr auto decayed_wrapped_func = DecayLambda(wrapped_func);
-				return decayed_wrapped_func;
+	template<typename Func, typename Obj>
+	struct WrapFuncTraits<Func Obj::*> : FuncTraits<Func Obj::*> {
+	private:
+		using Traits = FuncTraits<Func>;
+	public:
+		using Object = Obj;
+		using ArgList = typename Traits::ArgList;
+		using Return = typename Traits::Return;
+		static constexpr bool is_const = Traits::is_const;
+	};
+
+	template<typename F>
+	struct WrapFuncTraits {
+	private:
+		using Traits = FuncTraits<F>;
+		using ObjectArgList = typename Traits::ArgList;
+		static_assert(!IsEmpty_v<ObjectArgList>);
+		using CVObjRef = Front_t<ObjectArgList>;
+		using CVObj = std::remove_reference_t<CVObjRef>;
+	public:
+		using ArgList = PopFront_t<ObjectArgList>;
+		using Object = std::remove_cv_t<CVObj>;
+		using Return = typename Traits::Return;
+		static constexpr bool is_const = std::is_const_v<CVObj>;
+		static_assert(is_const || !std::is_rvalue_reference_v<CVObjRef>);
+	};
+
+	template<typename ArgList>
+	struct wrap_function_call;
+
+	template<typename T>
+	decltype(auto) auto_get_arg(ObjectView obj) {
+		if constexpr (std::is_same_v<T, ObjectView>)
+			return obj;
+		else
+			return obj.As<T>();
+	}
+
+	template<typename... Args>
+	struct wrap_function_call<TypeList<Args...>> {
+		template<typename Obj, auto func_ptr, typename MaybeConstVoidPtr, std::size_t... Ns>
+		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, ArgsView args, std::index_sequence<Ns...>) {
+			return (buffer_as<Obj>(ptr).*func_ptr)(auto_get_arg<Args>(args[Ns])...);
+		}
+		template<auto func_ptr, std::size_t... Ns>
+		static constexpr decltype(auto) run(ArgsView args, std::index_sequence<Ns...>) {
+			return func_ptr(auto_get_arg<Args>(args[Ns])...);
+		}
+		template<typename Obj, typename Func, typename MaybeConstVoidPtr, std::size_t... Ns>
+		static constexpr decltype(auto) run(MaybeConstVoidPtr ptr, Func&& func, ArgsView args, std::index_sequence<Ns...>) {
+			if constexpr (std::is_member_function_pointer_v<std::decay_t<Func>>)
+				return (buffer_as<Obj>(ptr).*func)(auto_get_arg<Args>(args[Ns])...);
+			else {
+				return std::forward<Func>(func)(
+					buffer_as<Obj>(ptr),
+					auto_get_arg<Args>(args[Ns])...
+				);
 			}
-			else if constexpr (is_function_pointer_v<FuncPtr>) {
-				constexpr auto wrapped_func = [](void*, void* result_buffer, ArgsView args) {
-					assert(((args.GetParamList()[Ns] == Type_of<Args>)&&...));
-					constexpr auto f = wrap_function<funcptr>();
-					f(nullptr, result_buffer, args.GetBuffer());
-				};
-				constexpr auto decayed_wrapped_func = DecayLambda(wrapped_func);
-				decayed_wrapped_func;
+		}
+		template<typename Func, std::size_t... Ns>
+		static constexpr decltype(auto) run(Func&& func, ArgsView args, std::index_sequence<Ns...>) {
+			return std::forward<Func>(func)(auto_get_arg<Args>(args[Ns])...);
+		}
+	};
+
+	// [func_ptr]
+	// - Func Obj::* : Func isn't && (const && is ok)
+	// - Func*
+	// [result]
+	// - type : void(void* obj, void* result_buffer, ArgsView args)
+	// - size : 1
+	template<auto func_ptr>
+	constexpr auto wrap_member_function() noexcept {
+		using FuncPtr = decltype(func_ptr);
+		static_assert(std::is_member_function_pointer_v<FuncPtr>);
+		using Traits = FuncTraits<FuncPtr>;
+		static_assert(!(Traits::ref == ReferenceMode::Right && !Traits::is_const));
+		using Obj = typename Traits::Object;
+		using Return = typename Traits::Return;
+		using ArgList = typename Traits::ArgList;
+		using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
+		constexpr auto wrapped_function = [](void* obj, void* result_buffer, ArgsView args) {
+			if constexpr (!std::is_void_v<Return>) {
+				using NonCVReturn = std::remove_cv_t<Return>;
+				NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, args, IndexSeq{});
+				if (result_buffer) {
+					if constexpr (std::is_reference_v<Return>)
+						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
+					else
+						buffer_as<NonCVReturn>(result_buffer) = std::move(rst);
+				}
 			}
 			else
-				static_assert(always_false<FuncPtr>);
-		}
+				details::wrap_function_call<ArgList>::template run<Obj, func_ptr>(obj, args, IndexSeq{});
+		};
+		return wrapped_function;
+	}
 
-		template<typename Func, size_t... Ns>
-		static /*constexpr*/ auto GenerateMemberFunction(Func&& func, std::index_sequence<Ns...>) noexcept {
-			using Traits = WrapFuncTraits<std::decay_t<Func>>;
-			/*constexpr*/ auto wrapped_func =
-				[wrapped_f = wrap_member_function(std::forward<Func>(func))](void* obj, void* result_buffer, ArgsView args) mutable {
-					assert(((args.GetParamList()[Ns] == Type_of<Args>)&&...));
-					wrapped_f(obj, result_buffer, args.GetBuffer());
-				};
+	// [func_ptr]
+	// - Func*
+	// [result]
+	// - type : void(void*, void* result_buffer, ArgsView args)
+	// - size : 1
+	template<auto func_ptr>
+	constexpr auto wrap_static_function() noexcept {
+		using FuncPtr = decltype(func_ptr);
+		static_assert(is_function_pointer_v<FuncPtr>);
+		using Traits = FuncTraits<FuncPtr>;
+		using Return = typename Traits::Return;
+		using ArgList = typename Traits::ArgList;
+		using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
+		constexpr auto wrapped_function = [](void*, void* result_buffer, ArgsView args) {
+			if constexpr (!std::is_void_v<Return>) {
+				using NonCVReturn = std::remove_cv_t<Return>;
+				NonCVReturn rst = details::wrap_function_call<ArgList>::template run<func_ptr>(args, IndexSeq{});
+				if (result_buffer) {
+					if constexpr (std::is_reference_v<Return>)
+						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
+					else
+						new(result_buffer)NonCVReturn{ std::move(rst) };
+				}
+			}
+			else
+				details::wrap_function_call<ArgList>::template run<func_ptr>(args, IndexSeq{});
+		};
+		return wrapped_function;
+	}
 
-			return std::function{ wrapped_func };
-		}
+	// static dispatch to
+	// - wrap_member_function
+	// - wrap_static_function
+	template<auto func_ptr>
+	constexpr auto wrap_function() noexcept {
+		using FuncPtr = decltype(func_ptr);
+		if constexpr (is_function_pointer_v<FuncPtr>)
+			return wrap_static_function<func_ptr>();
+		else if constexpr (std::is_member_function_pointer_v<FuncPtr>)
+			return wrap_member_function<func_ptr>();
+		else
+			static_assert(always_false<decltype(func_ptr)>);
+	} 
 
-		template<typename Func, size_t... Ns>
-		static /*constexpr*/ auto GenerateStaticFunction(Func&& func, std::index_sequence<Ns...>) noexcept {
-			/*constexpr*/ auto wrapped_func =
-				[wrapped_f = wrap_static_function(std::forward<Func>(func))](void*, void* result_buffer, ArgsView args) mutable {
-					assert(((args.GetParamList()[Ns] == Type_of<Args>)&&...));
-					wrapped_f(nullptr, result_buffer, args.GetBuffer());
-				};
-			return std::function{ wrapped_func };
+	// Func: Ret(const? volatile? Object&, Args...)
+	// [result]
+	// - type : void(void* obj, void* result_buffer, ArgsView args)
+	// - size : sizeof(Func)
+	template<typename Func>
+	constexpr auto wrap_member_function(Func&& func) noexcept {
+		using Traits = details::WrapFuncTraits<std::decay_t<Func>>;
+		using Return = typename Traits::Return;
+		using Obj = typename Traits::Object;
+		using ArgList = typename Traits::ArgList;
+		using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
+		/*constexpr*/ auto wrapped_function =
+			[f = std::forward<Func>(func)](void* obj, void* result_buffer, ArgsView args) mutable {
+			if constexpr (!std::is_void_v<Return>) {
+				using NonCVReturn = std::remove_cv_t<Return>;
+				NonCVReturn rst = details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), args, IndexSeq{});
+				if (result_buffer) {
+					if constexpr (std::is_reference_v<Return>)
+						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
+					else
+						new(result_buffer)NonCVReturn{ std::move(rst) };
+				}
+			}
+			else
+				details::wrap_function_call<ArgList>::template run<Obj>(obj, std::forward<Func>(f), args, IndexSeq{});
+		};
+		return wrapped_function;
+	}
+
+	// Func: Ret(Args...)
+	// [result]
+	// - type : void(void*, void* result_buffer, ArgsView args)
+	// - size : sizeof(Func)
+	template<typename Func>
+	constexpr auto wrap_static_function(Func&& func) noexcept {
+		using Traits = FuncTraits<std::decay_t<Func>>;
+		using Return = typename Traits::Return;
+		using ArgList = typename Traits::ArgList;
+		using IndexSeq = std::make_index_sequence<Length_v<ArgList>>;
+		/*constexpr*/ auto wrapped_function =
+			[f = std::forward<Func>(func)](void*, void* result_buffer, ArgsView args) mutable {
+			if constexpr (!std::is_void_v<Return>) {
+				using NonCVReturn = std::remove_cv_t<Return>;
+				NonCVReturn rst = details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), args, IndexSeq{});
+				if (result_buffer) {
+					if constexpr (std::is_reference_v<Return>)
+						buffer_as<std::add_pointer_t<Return>>(result_buffer) = &rst;
+					else
+						new(result_buffer)NonCVReturn{ std::move(rst) };
+				}
+			}
+			else
+				details::wrap_function_call<ArgList>::template run(std::forward<Func>(f), args, IndexSeq{});
+		};
+		return wrapped_function;
+	}
+
+	template<typename ArgList>
+	struct GenerateParamListHelper;
+	template<typename... Args>
+	struct GenerateParamListHelper<TypeList<Args...>> {
+		static ParamList get() noexcept(sizeof...(Args) == 0) {
+			return ReflMngr::GenerateParamList<Args...>();
 		}
 	};
 
@@ -992,13 +1144,12 @@ namespace Ubpa::UDRefl {
 		using Traits = FuncTraits<decltype(funcptr)>;
 		using ArgList = typename Traits::ArgList;
 		using Return = typename Traits::Return;
-		using Helper = details::GenerateMethodPtr_Helper<ArgList>;
 		constexpr MethodFlag flag = Traits::is_const ? MethodFlag::Const : MethodFlag::Variable;
 		return {
-			Helper::template GenerateFunction<funcptr>(std::make_index_sequence<Length_v<ArgList>>{}),
+			details::wrap_function<funcptr>(),
 			flag,
 			Type_of<Return>,
-			Helper::GenerateParamList()
+			details::GenerateParamListHelper<ArgList>::get()
 		};
 	}
 
@@ -1022,13 +1173,12 @@ namespace Ubpa::UDRefl {
 		using Traits = details::WrapFuncTraits<std::decay_t<Func>>;
 		using ArgList = typename Traits::ArgList;
 		using Return = typename Traits::Return;
-		using Helper = details::GenerateMethodPtr_Helper<ArgList>;
 		constexpr MethodFlag flag = Traits::is_const ? MethodFlag::Const : MethodFlag::Variable;
 		return {
-			Helper::template GenerateMemberFunction(std::forward<Func>(func), std::make_index_sequence<Length_v<ArgList>>{}),
+			details::wrap_member_function(std::forward<Func>(func)),
 			flag,
 			Type_of<Return>,
-			Helper::GenerateParamList()
+			details::GenerateParamListHelper<ArgList>::get()
 		};
 	}
 
@@ -1037,12 +1187,11 @@ namespace Ubpa::UDRefl {
 		using Traits = FuncTraits<std::decay_t<Func>>;
 		using Return = typename Traits::Return;
 		using ArgList = typename Traits::ArgList;
-		using Helper = details::GenerateMethodPtr_Helper<ArgList>;
 		return {
-			Helper::template GenerateStaticFunction(std::forward<Func>(func), std::make_index_sequence<Length_v<ArgList>>{}),
+			details::wrap_static_function(std::forward<Func>(func)),
 			MethodFlag::Static,
 			Type_of<Return>,
-			Helper::GenerateParamList()
+			details::GenerateParamListHelper<ArgList>::get()
 		};
 	}
 

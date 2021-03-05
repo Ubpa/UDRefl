@@ -5,23 +5,18 @@
 //#include <vector>
 
 namespace Ubpa::UDRefl {
-	using ParamList = std::vector<Type>;
-	
 	class ArgsView {
 	public:
-		ArgsView(ArgPtrBuffer buffer, const ParamList& paramList) : buffer{ buffer }, paramList{ paramList }{}
-		ArgPtrBuffer GetBuffer() const noexcept { return buffer; }
-		const ParamList& GetParamList() const noexcept { return paramList; }
-
-		ObjectView At(size_t idx) const { return { paramList.at(idx), buffer[idx] }; }
-		ObjectView operator[](size_t idx) const noexcept {
-			assert(idx < paramList.size());
-			return { paramList[idx], buffer[idx] };
-		}
+		constexpr ArgsView() noexcept : buffer{ nullptr } {}
+		constexpr ArgsView(ArgPtrBuffer buffer, std::span<const Type> argTypes) noexcept : buffer{ buffer }, argTypes{ argTypes }{}
+		constexpr std::size_t Size() const noexcept { return argTypes.size(); }
+		constexpr ObjectView operator[](size_t idx) const noexcept { return { argTypes[idx], buffer[idx] }; }
 	private:
 		ArgPtrBuffer buffer;
-		const ParamList& paramList;
+		std::span<const Type> argTypes;
 	};
+
+	using ParamList = std::vector<Type>;
 
 	class MethodPtr {
 	public:
@@ -36,13 +31,13 @@ namespace Ubpa::UDRefl {
 
 		bool IsDistinguishableWith(const MethodPtr& rhs) const noexcept { return flag != rhs.flag || paramList != rhs.paramList; }
 
-		void Invoke(      void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
-		void Invoke(const void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const;
-		void Invoke(                 void* result_buffer, ArgPtrBuffer argptr_buffer) const;
+		void Invoke(      void* obj, void* result_buffer, ArgsView args) const;
+		void Invoke(const void* obj, void* result_buffer, ArgsView args) const;
+		void Invoke(                 void* result_buffer, ArgsView args) const;
 
 	private:
 		Func func;
-		MethodFlag flag;
+		MethodFlag flag{ MethodFlag::None };
 		Type result_type;
 		ParamList paramList;
 	};

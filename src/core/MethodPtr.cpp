@@ -6,18 +6,18 @@ MethodPtr::MethodPtr(Func func, MethodFlag flag, Type result_type, ParamList par
 	: func{ std::move(func) }, flag{ flag }, result_type{ result_type }, paramList{ std::move(paramList) }
 { assert(enum_single(flag)); }
 
-void MethodPtr::Invoke(void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const {
-	func(obj, result_buffer, { argptr_buffer,paramList });
+void MethodPtr::Invoke(void* obj, void* result_buffer, ArgsView args) const {
+	func(obj, result_buffer, args);
 };
 
-void MethodPtr::Invoke(const void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer) const {
+void MethodPtr::Invoke(const void* obj, void* result_buffer, ArgsView args) const {
 	if (flag == MethodFlag::Variable)
 		return;
-	func(const_cast<void*>(obj), result_buffer, { argptr_buffer,paramList });
+	func(const_cast<void*>(obj), result_buffer, args);
 };
 
-void MethodPtr::Invoke(void* result_buffer, ArgPtrBuffer argptr_buffer) const {
+void MethodPtr::Invoke(void* result_buffer, ArgsView args) const {
 	if (flag != MethodFlag::Static)
 		return;
-	func(nullptr, result_buffer, { argptr_buffer,paramList });
+	func(nullptr, result_buffer, args);
 };

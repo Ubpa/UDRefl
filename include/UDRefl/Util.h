@@ -202,53 +202,6 @@ namespace Ubpa::UDRefl {
 	constexpr T* ptr_const_cast(const T* ptr) noexcept {
 		return const_cast<T*>(ptr);
 	}
-
-	//
-	// Wrap
-	/////////
-	//
-	// - if result is reference, function will store a pointer in the result buffer
-	//
-
-	// pointer const array type (pointer is const, and pointer to non - const / referenced object)
-	using ArgPtrBuffer = void* const*;
-
-	// [func_ptr]
-	// - Func Obj::* : Func isn't && (const && is ok)
-	// - Func*
-	// [result]
-	// - type : void(void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer)
-	// - size : 1
-	template<auto func_ptr>
-	constexpr auto wrap_member_function() noexcept;
-
-	// [func_ptr]
-	// - Func*
-	// [result]
-	// - type : void(void*, void* result_buffer, ArgPtrBuffer argptr_buffer)
-	// - size : 1
-	template<auto func_ptr>
-	constexpr auto wrap_static_function() noexcept;
-
-	// static dispatch to
-	// - wrap_member_function
-	// - wrap_static_function
-	template<auto func_ptr>
-	constexpr auto wrap_function() noexcept;
-
-	// Func: Ret(const? volatile? Object&, Args...)
-	// [result]
-	// - type : void(void* obj, void* result_buffer, ArgPtrBuffer argptr_buffer)
-	// - size : sizeof(Func)
-	template<typename Func>
-	constexpr auto wrap_member_function(Func&& func) noexcept;
-
-	// Func: Ret(Args...)
-	// [result]
-	// - type : void(void*, void* result_buffer, ArgPtrBuffer argptr_buffer)
-	// - size : sizeof(Func)
-	template<typename Func>
-	constexpr auto wrap_static_function(Func&& func) noexcept;
 	
 	template<typename Enum> requires std::is_enum_v<Enum>
 	constexpr decltype(auto) enum_cast(Enum&& e) noexcept;

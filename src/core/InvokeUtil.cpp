@@ -38,20 +38,20 @@ bool details::IsPriorityCompatible(std::span<const Type> params, std::span<const
 	return true;
 }
 
-bool details::IsRefCompatible(std::span<const Type> params, std::span<const Type> argTypes) {
-	if (params.size() != argTypes.size())
+bool details::IsRefCompatible(std::span<const Type> paramTypes, std::span<const Type> argTypes) {
+	if (paramTypes.size() != argTypes.size())
 		return false;
 
-	for (size_t i = 0; i < params.size(); i++) {
-		if (!is_ref_compatible(params[i], argTypes[i]))
+	for (size_t i = 0; i < paramTypes.size(); i++) {
+		if (!is_ref_compatible(paramTypes[i], argTypes[i]))
 			return false;
 	}
 
 	return true;
 }
 
-bool details::IsRefConstructible(Type type, std::span<const Type> argTypes) {
-	auto target = Mngr->typeinfos.find(type);
+bool details::IsRefConstructible(Type paramType, std::span<const Type> argTypes) {
+	auto target = Mngr->typeinfos.find(paramType);
 	if (target == Mngr->typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
@@ -79,7 +79,7 @@ bool details::RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPt
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
 			&& IsRefCompatible(iter->second.methodptr.GetParamList(), argTypes))
 		{
-			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, argptr_buffer);
+			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, { argptr_buffer,iter->second.methodptr.GetParamList() });
 			return true;
 		}
 	}
@@ -98,7 +98,7 @@ details::NewArgsGuard::NewArgsGuard(
 
 	if (is_priority) {
 		is_compatible = IsPriorityCompatible(paramTypes, argTypes);
-		argptr_buffer = orig_argptr_buffer;
+		args = { orig_argptr_buffer, paramTypes };
 		return;
 	}
 
@@ -109,10 +109,16 @@ details::NewArgsGuard::NewArgsGuard(
 	ArgInfo info_copiedargs[MaxArgNum + 1];
 	std::uint8_t num_copiedargs = 0;
 	std::uint32_t size_copiedargs = 0;
-
+	std::uint8_t num_copied_nonptr_args = 0;
+	bool contains_objview = false;
 	for (std::uint8_t i = 0; i < argTypes.size(); i++) {
 		if (paramTypes[i] == argTypes[i])
 			continue;
+
+		if (paramTypes[i] == Type_of<ObjectView>) {
+			contains_objview = true;
+			continue;
+		}
 
 		const auto& lhs = paramTypes[i];
 		const auto& rhs = argTypes[i];
@@ -210,8 +216,19 @@ details::NewArgsGuard::NewArgsGuard(
 
 	is_compatible = true;
 
+	std::span<const Type> correct_types;
+	if (contains_objview) {
+		new(&type_buffer)BufferGuard{ rsrc, num_args * sizeof(Type), alignof(Type) };
+		auto* types = (Type*)type_buffer.Get();
+		for (std::uint8_t i = 0; i < num_args; i++)
+			types[i] = paramTypes[i].Is<ObjectView>() ? argTypes[i] : paramTypes[i];
+		correct_types = { types,num_args };
+	}
+	else
+		correct_types = paramTypes;
+
 	if (num_copiedargs == 0) {
-		argptr_buffer = orig_argptr_buffer;
+		args = { orig_argptr_buffer, correct_types };
 		return;
 	}
 
@@ -253,7 +270,9 @@ details::NewArgsGuard::NewArgsGuard(
 
 	auto new_arg_buffer = forward_offset(buffer, offset_new_arg_buffer);
 	auto new_argptr_buffer = reinterpret_cast<void**>(forward_offset(buffer, offset_new_argptr_buffer));
-	new_nonptr_arg_info_buffer = reinterpret_cast<ArgInfo*>(forward_offset(buffer, offset_new_nonptr_arg_info_buffer));
+	auto new_nonptr_arg_info_buffer = reinterpret_cast<ArgInfo*>(forward_offset(buffer, offset_new_nonptr_arg_info_buffer));
+
+	nonptr_arg_infos = { new_nonptr_arg_info_buffer,num_copied_nonptr_args };
 
 	info_copiedargs[num_copiedargs].idx = static_cast<std::uint8_t>(-1); // guard
 	std::uint8_t idx_copiedargs = 0, idx_nonptr_args = 0;
@@ -278,7 +297,7 @@ details::NewArgsGuard::NewArgsGuard(
 				static_cast<ArgPtrBuffer>(&orig_argptr_buffer[i])
 			);
 			assert(success);
-			new_nonptr_arg_info_buffer[idx_nonptr_args++] = info;
+			nonptr_arg_infos[idx_nonptr_args++] = info;
 		}
 
 		++idx_copiedargs;
@@ -286,12 +305,12 @@ details::NewArgsGuard::NewArgsGuard(
 	assert(idx_copiedargs == num_copiedargs);
 	assert(idx_nonptr_args == num_copied_nonptr_args);
 
-	argptr_buffer = new_argptr_buffer;
+	args = { new_argptr_buffer, correct_types };
 }
 
 details::NewArgsGuard::~NewArgsGuard() {
 	if (buffer.Get()) {
-		for (const auto& info : std::span<const ArgInfo>{ new_nonptr_arg_info_buffer, num_copied_nonptr_args })
-			Mngr->Destruct({ info.GetType(), argptr_buffer[info.idx] });
+		for (const auto& info : nonptr_arg_infos)
+			Mngr->Destruct({ info.GetType(), args[info.idx].GetPtr() });
 	}
 }

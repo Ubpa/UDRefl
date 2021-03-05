@@ -4,6 +4,9 @@
 
 ## 0.8
 
+- 0.8.4
+  - refactoring invoke
+  - `IsCompatible` += `ObjectView` 
 - 0.8.3
   - rename meta
   - refactor `BaseInfo` 

@@ -32,7 +32,7 @@ namespace Ubpa::UDRefl::details {
 	//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
 	//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
 	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
-	bool IsRefCompatible(std::span<const Type> params, std::span<const Type> argTypes);
+	bool IsRefCompatible(std::span<const Type> paramTypes, std::span<const Type> argTypes);
 
 	// parameter <- argument
 	// - same
@@ -45,9 +45,9 @@ namespace Ubpa::UDRefl::details {
 	//     | const T & | 1 |  1  |     -     |  1  |     1     |    1    |
 	//     |       T&& | 1 |  0  |     0     |  -  |     0     |    0    |
 	//     | const T&& | 1 |  0  |     0     |  1  |     -     |    1    |
-	bool IsRefCompatible(std::span<const Type> params, std::span<const TypeID> argTypeIDs);
+	bool IsRefCompatible(std::span<const Type> paramTypes, std::span<const TypeID> argTypeIDs);
 
-	bool IsRefConstructible(Type type, std::span<const Type> argTypes);
+	bool IsRefConstructible(Type paramType, std::span<const Type> argTypes);
 	bool RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer);
 
 	class BufferGuard {
@@ -105,16 +105,16 @@ namespace Ubpa::UDRefl::details {
 
 		bool IsCompatible() const noexcept { return is_compatible; }
 
-		ArgPtrBuffer GetArgPtrBuffer() const noexcept {
+		ArgsView GetArgsView() const noexcept {
 			assert(IsCompatible());
-			return argptr_buffer;
+			return args;
 		}
 
 	private:
 		bool is_compatible{ false };
 		BufferGuard buffer;
-		ArgInfo* new_nonptr_arg_info_buffer{ nullptr };
-		std::uint8_t num_copied_nonptr_args{ 0 };
-		ArgPtrBuffer argptr_buffer{ nullptr };
+		std::span<ArgInfo> nonptr_arg_infos;
+		ArgsView args;
+		BufferGuard type_buffer;
 	};
 }
