@@ -11,6 +11,35 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_object() {
 	Mngr->AddMethod<&ObjectView::GetType>("GetType");
 	Mngr->AddMethod<&ObjectView::GetPtr>("GetPtr");
 
+	Mngr->AddMethod<&ObjectView::StaticCast_DerivedToBase>("StaticCast_DerivedToBase");
+	Mngr->AddMethod<&ObjectView::StaticCast_BaseToDerived>("StaticCast_BaseToDerived");
+	Mngr->AddMethod<&ObjectView::DynamicCast_BaseToDerived>("DynamicCast_BaseToDerived");
+	Mngr->AddMethod<&ObjectView::StaticCast>("StaticCast");
+	Mngr->AddMethod<&ObjectView::DynamicCast>("DynamicCast");
+
+	Mngr->AddMethod<MemFuncOf<ObjectView, ObjectView(Name, FieldFlag)const>::get(&ObjectView::Var)>("Var");
+	Mngr->AddMethod<MemFuncOf<ObjectView, ObjectView(Type, Name, FieldFlag)const>::get(&ObjectView::Var)>("Var");
+	Mngr->AddMemberMethod("Var", [](const ObjectView& obj, Name field_name) { return obj.Var(field_name); });
+	Mngr->AddMemberMethod("Var", [](const ObjectView& obj, Type base, Name field_name) { return obj.Var(base, field_name); });
+
+	Mngr->AddMethod<&ObjectView::GetTypeFieldVars>("GetTypeFieldVars");
+	Mngr->AddMethod<&ObjectView::GetVars>("GetVars");
+	Mngr->AddMemberMethod("GetTypeFieldVars", [](const ObjectView& obj) { return obj.GetTypeFieldVars(); });
+	Mngr->AddMemberMethod("GetVars", [](const ObjectView& obj) { return obj.GetVars(); });
+
+	Mngr->AddMethod<&ObjectView::RemoveConst>("RemoveConst");
+	Mngr->AddMethod<&ObjectView::RemoveLValueReference>("RemoveLValueReference");
+	Mngr->AddMethod<&ObjectView::RemoveRValueReference>("RemoveRValueReference");
+	Mngr->AddMethod<&ObjectView::RemoveReference>("RemoveReference");
+	Mngr->AddMethod<&ObjectView::RemoveConstReference>("RemoveConstReference");
+
+	Mngr->AddMethod<&ObjectView::AddConst>("AddConst");
+	Mngr->AddMethod<&ObjectView::AddLValueReference>("AddLValueReference");
+	Mngr->AddMethod<&ObjectView::AddLValueReferenceWeak>("AddLValueReferenceWeak");
+	Mngr->AddMethod<&ObjectView::AddRValueReference>("AddRValueReference");
+	Mngr->AddMethod<&ObjectView::AddConstLValueReference>("AddConstLValueReference");
+	Mngr->AddMethod<&ObjectView::AddConstRValueReference>("AddConstRValueReference");
+
 	Mngr->RegisterType<SharedObject>();
 	Mngr->AddConstructor<SharedObject, Type, void*>();
 	Mngr->AddConstructor<SharedObject, Type>();

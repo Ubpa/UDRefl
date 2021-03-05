@@ -131,7 +131,12 @@ namespace Ubpa::UDRefl {
 		// - size & alignment of type
 		// - baseinfos
 		// - fields' forward offset value
-		Type RegisterType(Type type, std::span<const Type> bases, std::span<const Type> field_types, std::span<const Name> field_names);
+		Type RegisterType(
+			Type type,
+			std::span<const Type> bases,
+			std::span<const Type> field_types,
+			std::span<const Name> field_names
+		);
 
 		// -- template --
 
