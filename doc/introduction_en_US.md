@@ -387,7 +387,8 @@ Type ReflMngr::IsInvocable(
   Type type,
   Name method_name,
   std::span<const Type> argTypes = {},
-  MethodFlag flag = MethodFlag::All) const;
+  MethodFlag flag = MethodFlag::All,
+  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
 If the return value `Type` is valid, then the call succeeds, and it is the return value Type of the function. You can use this `Type` to query the size and alignment of the Type to create the return value buffer needed to call the function.
@@ -419,9 +420,9 @@ SharedObject ReflMngr::MInvoke(
   ObjectView obj,
   Name method_name,
   std::pmr::memory_resource* rst_rsrc,
-  std::pmr::memory_resource* temp_args_rsrc,
   ArgsView args = {},
-  MethodFlag flag = MethodFlag::All) const;
+  MethodFlag flag = MethodFlag::All,
+  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
 Just provide a `std::pmr::memory_resource* rst_rsrc` and the return buffer will be automatically allocated according to the return value type and released by the return value `sharedObject`.
@@ -438,62 +439,24 @@ SharedObject Invoke(
   ObjectView obj,
   Name method_name,
   ArgsView args = {},
-  MethodFlag flag = MethodFlag::All) const;
+  MethodFlag flag = MethodFlag::All,
+  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
 This interface uses `ReflMngr`'s built-in resources by default
 
-To simplify parameter construction, the corresponding template functions of the above function interfaces are provided
+To simplify parameter construction, a temporary arguments view `template<size_t N> class TempArgsView` is provided.
 
-```c++
-template<typename... Args>
-Type ReflMngr::IsInvocable(
-  Type type,
-  Name method_name,
-  MethodFlag flag = MethodFlag::All) const;
-
-template<typename T>
-T ReflMngr::BInvokeRet(
-  ObjectView obj,
-  Name method_name,
-  ArgsView args = {},
-  MethodFlag flag = MethodFlag::All,
-  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
-
-template<typename T, typename... Args>
-T ReflMngr::BInvoke(
-  ObjectView obj,
-  Name method_name,
-  MethodFlag flag,
-  std::pmr::memory_resource* temp_args_rsrc,
-  Args&&... args) const;
-
-template<typename... Args>
-SharedObject ReflMngr::MInvoke(
-  ObjectView obj,
-  Name method_name,
-  std::pmr::memory_resource* rst_rsrc,
-  std::pmr::memory_resource* temp_args_rsrc,
-  MethodFlag flag,
-  Args&&... args) const;
-
-template<typename... Args>
-SharedObject ReflMngr::Invoke(
-  ObjectView obj,
-  Name method_name,
-  Args&&... args) const;
-```
+> Example
+>
+> ```c++
+> ReflMngr::Invoke<T>(obj, method_name, TempArgsView{ std::forward<Args>(args)... });
+> ```
 
 It also provides additional functions on type construction and destructing. See the Make section of the `ReflMngr` interface, which is just a brief introduction to the following
 
 ```c++
 SharedObject ReflMngr::MakeShared(Type type, ArgsView args = {}) const;
-
-template<typename... Args>
-SharedObject ReflMngr::MakeShared(Type type, Args&&... args) const;
-
-template<typename T, typename... Args>
-SharedObject ReflMngr::MakeSharedAuto(Args... args);
 ```
 
 Internally, the corresponding constructor of the type is called.
@@ -529,7 +492,7 @@ The relationship between `objectView` and `sharedObject` is like that between `s
 
 `ObjectView` contains four classes of interfaces
 
-- their own interface: ` GetType `, ` GetPtr () `, ` AsPtr < T > () `, ` As < T > () `, etc
+- their own interface: ` GetType `, ` GetPtr() `, ` AsPtr<T>() `, ` As<T>()`, etc
 
 - `ReflMngr` Interface: Similar to `ReflMngr`, some interfaces can be simplified here
 

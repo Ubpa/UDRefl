@@ -12,23 +12,23 @@ struct D : B, C { float d{ 0.f }; };
 
 int main() {
 	{ // register
-		Mngr->RegisterType<A>();
-		Mngr->AddField<&A::a>("a");
+		Mngr.RegisterType<A>();
+		Mngr.AddField<&A::a>("a");
 
-		Mngr->RegisterType<B>();
-		Mngr->AddBases<B, A>();
-		Mngr->AddField<&B::b>("b");
+		Mngr.RegisterType<B>();
+		Mngr.AddBases<B, A>();
+		Mngr.AddField<&B::b>("b");
 
-		Mngr->RegisterType<C>();
-		Mngr->AddBases<C, A>();
-		Mngr->AddField<&C::c>("c");
+		Mngr.RegisterType<C>();
+		Mngr.AddBases<C, A>();
+		Mngr.AddField<&C::c>("c");
 
-		Mngr->RegisterType<D>();
-		Mngr->AddBases<D, B, C>();
-		Mngr->AddField<&D::d>("d");
+		Mngr.RegisterType<D>();
+		Mngr.AddBases<D, B, C>();
+		Mngr.AddField<&D::d>("d");
 	}
 
-	auto d = Mngr->MakeShared(Type_of<D>);
+	auto d = Mngr.MakeShared(Type_of<D>);
 
 	d.Var("a") = 1.f;
 	d.Var("b") = 3.f;

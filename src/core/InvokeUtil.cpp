@@ -51,8 +51,8 @@ bool details::IsRefCompatible(std::span<const Type> paramTypes, std::span<const 
 }
 
 bool details::IsRefConstructible(Type paramType, std::span<const Type> argTypes) {
-	auto target = Mngr->typeinfos.find(paramType);
-	if (target == Mngr->typeinfos.end())
+	auto target = Mngr.typeinfos.find(paramType);
+	if (target == Mngr.typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
@@ -66,8 +66,8 @@ bool details::IsRefConstructible(Type paramType, std::span<const Type> argTypes)
 }
 
 bool details::RefConstruct(ObjectView obj, ArgsView args) {
-	auto target = Mngr->typeinfos.find(obj.GetType());
-	if (target == Mngr->typeinfos.end())
+	auto target = Mngr.typeinfos.find(obj.GetType());
+	if (target == Mngr.typeinfos.end())
 		return false;
 
 	const auto& typeinfo = target->second;
@@ -245,7 +245,7 @@ details::NewArgsGuard::NewArgsGuard(
 		}
 		else {
 			++num_copied_nonptr_args;
-			const auto& typeinfo = Mngr->typeinfos.at(info_copiedargs[k].GetType());
+			const auto& typeinfo = Mngr.typeinfos.at(info_copiedargs[k].GetType());
 			size = static_cast<std::uint32_t>(typeinfo.size);
 			alignment = static_cast<std::uint32_t>(typeinfo.alignment);
 		}
@@ -312,6 +312,6 @@ details::NewArgsGuard::NewArgsGuard(
 details::NewArgsGuard::~NewArgsGuard() {
 	if (buffer.Get()) {
 		for (const auto& info : nonptr_arg_infos)
-			Mngr->Destruct({ info.GetType(), new_args[info.idx].GetPtr() });
+			Mngr.Destruct({ info.GetType(), new_args[info.idx].GetPtr() });
 	}
 }

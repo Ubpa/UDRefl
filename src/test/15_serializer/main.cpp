@@ -11,7 +11,7 @@ void Serializer(ObjectView obj) {
 		std::cout << obj;
 	else {
 		std::cout << "{" << "\"TYPE\":\"" << obj.GetType().GetName() << "\",";
-		auto* info = Mngr->GetTypeInfo(obj.GetType());
+		auto* info = Mngr.GetTypeInfo(obj.GetType());
 		auto iter = info->attrs.find(Type_of<ContainerType>);
 		if (iter != info->attrs.end()) {
 			if (*iter == ContainerType::Vector) {
@@ -41,7 +41,7 @@ void Serializer(ObjectView obj) {
 int main() {
 	RegisterVector();
 
-	auto a = Mngr->MakeShared(Type_of<Vector>);
+	auto a = Mngr.MakeShared(Type_of<Vector>);
 
 	for (size_t i = 0; i < 10; i++) {
 		std::vector<size_t> row;

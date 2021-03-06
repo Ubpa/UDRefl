@@ -55,28 +55,28 @@ struct A {
 };
 
 int main() {
-	Mngr->RegisterType<A>();
-	Mngr->RegisterType<Data>();
-	Mngr->AddField<&Data::value>("value");
-	Mngr->AddConstructor<A, Data&, Data&&>();
-	Mngr->AddField("lref", [](A* a) -> decltype(auto) {
+	Mngr.RegisterType<A>();
+	Mngr.RegisterType<Data>();
+	Mngr.AddField<&Data::value>("value");
+	Mngr.AddConstructor<A, Data&, Data&&>();
+	Mngr.AddField("lref", [](A* a) -> decltype(auto) {
 		return a->lref;
 	});
-	Mngr->AddField("rref", [](A* a) -> decltype(auto) {
+	Mngr.AddField("rref", [](A* a) -> decltype(auto) {
 		return &a->rref;
 	});
-	Mngr->AddMethod<&A::get>("get");
-	Mngr->AddMethod<&A::get_c>("get_c");
-	Mngr->AddMethod<&A::get_l>("get_l");
-	Mngr->AddMethod<&A::get_r>("get_r");
-	Mngr->AddMethod<&A::set>("set");
-	Mngr->AddMethod<&A::set_c>("set_c");
-	Mngr->AddMethod<&A::set_l>("set_l");
-	Mngr->AddMethod<&A::set_r>("set_r");
+	Mngr.AddMethod<&A::get>("get");
+	Mngr.AddMethod<&A::get_c>("get_c");
+	Mngr.AddMethod<&A::get_l>("get_l");
+	Mngr.AddMethod<&A::get_r>("get_r");
+	Mngr.AddMethod<&A::set>("set");
+	Mngr.AddMethod<&A::set_c>("set_c");
+	Mngr.AddMethod<&A::set_l>("set_l");
+	Mngr.AddMethod<&A::set_r>("set_r");
 
 	Data f = 1.f;
 	Data g = 2.f;
-	auto a = Mngr->MakeShared(Type_of<A>, f, std::move(g));
+	auto a = Mngr.MakeShared(Type_of<A>, TempArgsView{ f, std::move(g) });
 	std::cout << "a.rref: " << a.Var("rref").Var("value") << std::endl;
 	std::cout << "a.lref: " << a.Var("lref").Var("value") << std::endl;
 
@@ -90,8 +90,8 @@ int main() {
 	std::cout << "a.get_r(): " << a.Invoke("get_r").Var("value") << std::endl;
 	std::cout << "a.get_c(): " << a.Invoke("get_r").Var("value") << std::endl;
 
-	a.BInvoke<void>("set", MethodFlag::All, g);
-	a.BInvoke<void>("set_r", MethodFlag::All, std::move(g));
+	a.Invoke<void>("set", TempArgsView{ g });
+	a.Invoke<void>("set_r", TempArgsView{ std::move(g) });
 	std::cout << "a.lref: " << a.Invoke("get_r").Var("value") << std::endl;
 	std::cout << "a.get_c(): " << a.Invoke("get_c").Var("value") << std::endl;
 	return 0;

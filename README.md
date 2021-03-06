@@ -48,26 +48,26 @@ struct Vec {
 ### Manual registration
 
 ```c++
-Mngr->RegisterType<Vec>();
-Mngr->AddField<&Vec::x>("x");
-Mngr->AddField<&Vec::y>("y");
-Mngr->AddMethod<&Vec::norm>("norm");
+Mngr.RegisterType<Vec>();
+Mngr.AddField<&Vec::x>("x");
+Mngr.AddField<&Vec::y>("y");
+Mngr.AddMethod<&Vec::norm>("norm");
 ```
 
 ### Iterate over members
 
 ```c++
-for (auto&& field : Mngr->GetFields(Type_of<Vec>))
+for (auto&& field : Mngr.GetFields(Type_of<Vec>))
   std::cout << field.name.GetView() << std::endl;
 
-for (auto&& method : Mngr->GetMethods(Type_of<Vec>))
+for (auto&& method : Mngr.GetMethods(Type_of<Vec>))
   std::cout << method.name.GetView() << std::endl;
 ```
 
 ### Constructing types
 
 ```c++
-SharedObject v = Mngr->MakeShared(Type_of<Vec>);
+SharedObject v = Mngr.MakeShared(Type_of<Vec>);
 std::cout << v.GetType().GetName() << std::endl; // prints "Vec"
 ```
 

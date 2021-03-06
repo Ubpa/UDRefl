@@ -21,6 +21,21 @@ namespace Ubpa::UDRefl {
 		std::span<const Type> argTypes;
 	};
 
+	template<std::size_t N>
+	class TempArgsView {
+	public:
+		template<typename... Args>
+		TempArgsView(Args&&... args) noexcept;
+		operator ArgsView() const && noexcept { return {argptr_buffer, argTypes}; }
+	private:
+		const Type argTypes[N];
+		void* const argptr_buffer[N];
+	};
+	template<typename... Args>
+	TempArgsView(Args&&... args)->TempArgsView<sizeof...(Args)>;
+
+	std::pmr::synchronized_pool_resource* ReflMngr_GetTemporaryResource();
+
 	class ObjectView {
 	public:
 		constexpr ObjectView() noexcept : ptr{ nullptr } {}
@@ -68,19 +83,21 @@ namespace Ubpa::UDRefl {
 			Name method_name,
 			void* result_buffer = nullptr,
 			ArgsView args = {},
-			MethodFlag flag = MethodFlag::All) const;
+			MethodFlag flag = MethodFlag::All,
+			std::pmr::memory_resource* temp_args_rsrc = ReflMngr_GetTemporaryResource()) const;
 
 		SharedObject MInvoke(
 			Name method_name,
 			std::pmr::memory_resource* rst_rsrc,
-			std::pmr::memory_resource* temp_args_rsrc,
 			ArgsView args = {},
-			MethodFlag flag = MethodFlag::All) const;
+			MethodFlag flag = MethodFlag::All,
+			std::pmr::memory_resource* temp_args_rsrc = ReflMngr_GetTemporaryResource()) const;
 
 		SharedObject Invoke(
 			Name method_name,
 			ArgsView args = {},
-			MethodFlag flag = MethodFlag::All) const;
+			MethodFlag flag = MethodFlag::All,
+			std::pmr::memory_resource* temp_args_rsrc = ReflMngr_GetTemporaryResource()) const;
 
 		// -- template --
 
@@ -88,39 +105,11 @@ namespace Ubpa::UDRefl {
 		Type IsInvocable(Name method_name, MethodFlag flag = MethodFlag::All) const;
 
 		template<typename T>
-		T BInvokeRet(Name method_name, ArgsView args = {}, MethodFlag flag = MethodFlag::All) const;
-
-		template<typename T, typename... Args>
-		T BInvoke(Name method_name, MethodFlag flag, Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject MInvoke(
+		T Invoke(
 			Name method_name,
-			std::pmr::memory_resource* rst_rsrc,
-			std::pmr::memory_resource* temp_args_rsrc,
-			MethodFlag flag,
-			Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject Invoke(
-			Name method_name,
-			Args&&... args) const;
-
-		template<typename T, typename... Args>
-		T ABInvoke(Name method_name, MethodFlag flag, Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject AMInvoke(
-			Name method_name,
-			std::pmr::memory_resource* rst_rsrc,
-			std::pmr::memory_resource* temp_args_rsrc,
-			MethodFlag flag,
-			Args&&... args) const;
-
-		template<typename... Args>
-		SharedObject AInvoke(
-			Name method_name,
-			Args&&... args) const;
+			ArgsView args = {},
+			MethodFlag flag = MethodFlag::All,
+			std::pmr::memory_resource* temp_args_rsrc = ReflMngr_GetTemporaryResource()) const;
 
 		//
 		// Var
@@ -184,8 +173,8 @@ namespace Ubpa::UDRefl {
 		template<typename T> bool operator> (const T& rhs) const;
 		template<typename T> bool operator>=(const T& rhs) const;
 
-		template<typename Arg> requires NonObjectAndView<std::decay_t<Arg>>
-		ObjectView operator=(Arg&& rhs) const;
+		template<typename T> requires NonObjectAndView<std::decay_t<T>>
+		ObjectView operator=(T&& rhs) const;
 
 		template<typename T> ObjectView operator+=(T&& rhs) const;
 		template<typename T> ObjectView operator-=(T&& rhs) const;

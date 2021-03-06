@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-project(UDRefl VERSION 0.8.4)
+project(UDRefl VERSION 0.9.0)
 message(STATUS "[Project] ${PROJECT_NAME}")
 
 include(cmake/InitUCMake.cmake)

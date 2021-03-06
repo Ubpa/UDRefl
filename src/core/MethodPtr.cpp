@@ -13,10 +13,10 @@ bool MethodPtr::IsMatch(std::span<const Type> argTypes) const noexcept {
 
 	for (std::size_t i = 0; i < n; i++) {
 		if (paramList[i] == argTypes[i] || paramList[i].Is<ObjectView>())
-			return true;
+			continue;
 	}
 
-	return false;
+	return true;
 }
 
 void MethodPtr::Invoke(void* obj, void* result_buffer, ArgsView args) const {

@@ -55,13 +55,13 @@ struct Vec {
 };
 
 int main() {
-	Mngr->RegisterType<Vec>();
-	Mngr->AddConstructor<Vec, float, float>();
-	Mngr->AddField<&Vec::x>("x");
-	Mngr->AddField<&Vec::y>("y");
-	Mngr->AddMethod<MemFuncOf<Vec, Vec(float)const noexcept>::get(&Vec::operator+)>(NameIDRegistry::Meta::operator_add);
+	Mngr.RegisterType<Vec>();
+	Mngr.AddConstructor<Vec, float, float>();
+	Mngr.AddField<&Vec::x>("x");
+	Mngr.AddField<&Vec::y>("y");
+	Mngr.AddMethod<MemFuncOf<Vec, Vec(float)const noexcept>::get(&Vec::operator+)>(NameIDRegistry::Meta::operator_add);
 
-	SharedObject v = Mngr->MakeShared(Type_of<Vec>, 3.f, 4.f);
+	SharedObject v = Mngr.MakeShared(Type_of<Vec>, TempArgsView{ 3.f, 4.f });
 
 	ObjectView pv = v;
 	SharedObject w0 = v + v;

@@ -419,9 +419,9 @@ SharedObject ReflMngr::MInvoke(
   ObjectView obj,
   Name method_name,
   std::pmr::memory_resource* rst_rsrc,
-  std::pmr::memory_resource* temp_args_rsrc,
   ArgsView args = {},
-  MethodFlag flag = MethodFlag::All) const;
+  MethodFlag flag = MethodFlag::All,
+  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
 只需提供一个 `std::pmr::memory_resource* rst_rsrc`，内部会根据返回值类型自动分配返回值缓冲区，并交由返回值 `SharedObject` 释放。
@@ -438,62 +438,36 @@ SharedObject Invoke(
   ObjectView obj,
   Name method_name,
   ArgsView args = {},
-  MethodFlag flag = MethodFlag::All) const;
+  MethodFlag flag = MethodFlag::All,
+  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
 该接口默认使用 `ReflMngr` 的内置资源
 
-为了简化参数的构造，提供了上述函数接口的相应模板函数
+如果已知返回值类型，还可以用下边的模板函数
 
 ```c++
-template<typename... Args>
-Type ReflMngr::IsInvocable(
-  Type type,
-  Name method_name,
-  MethodFlag flag = MethodFlag::All) const;
-
 template<typename T>
-T ReflMngr::BInvokeRet(
+T Invoke(
   ObjectView obj,
   Name method_name,
   ArgsView args = {},
   MethodFlag flag = MethodFlag::All,
-  std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
-
-template<typename T, typename... Args>
-T ReflMngr::BInvoke(
-  ObjectView obj,
-  Name method_name,
-  MethodFlag flag,
-  std::pmr::memory_resource* temp_args_rsrc,
-  Args&&... args) const;
-
-template<typename... Args>
-SharedObject ReflMngr::MInvoke(
-  ObjectView obj,
-  Name method_name,
-  std::pmr::memory_resource* rst_rsrc,
-  std::pmr::memory_resource* temp_args_rsrc,
-  MethodFlag flag,
-  Args&&... args) const;
-
-template<typename... Args>
-SharedObject ReflMngr::Invoke(
-  ObjectView obj,
-  Name method_name,
-  Args&&... args) const;
+  std::pmr::memory_resource* temp_args_rsrc = Mngr.GetTemporaryResource()) const;
 ```
+
+为了简化参数的构造，提供了临时参数视图 `template<size_t N> class TempArgsView` 
+
+> 示例
+>
+> ```c++
+> ReflMngr::Invoke<T>(obj, method_name, TempArgsView{ std::forward<Args>(args)... });
+> ```
 
 此外还额外提供了关于类型构造和析构的一些函数，可查看 `ReflMngr` 接口的 Make 部分，这里只简单介绍如下接口
 
 ```c++
 SharedObject ReflMngr::MakeShared(Type type, ArgsView args = {}) const;
-
-template<typename... Args>
-SharedObject ReflMngr::MakeShared(Type type, Args&&... args) const;
-
-template<typename T, typename... Args>
-SharedObject ReflMngr::MakeSharedAuto(Args... args);
 ```
 
 其内部调用了类型的相应构造函数。
