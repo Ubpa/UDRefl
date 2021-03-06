@@ -1,10 +1,10 @@
 #pragma once
 
-#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                                                                  \
-template<typename T>                                                                                                     \
-ObjectView ObjectView::operator op (T&& rhs) const {                                                                     \
+#define OBJECT_VIEW_DEFINE_ASSIGN_OP_OPERATOR(op, name)                                                              \
+template<typename T>                                                                                                 \
+ObjectView ObjectView::operator op (T&& rhs) const {                                                                 \
     Invoke<void>(NameIDRegistry::Meta::operator_##name, TempArgsView{ std::forward<T>(rhs) }, MethodFlag::Variable); \
-    return AddLValueReference();                                                                                         \
+    return AddLValueReference();                                                                                     \
 }
 
 #define OBJECT_VIEW_DEFINE_META_T(fname, mname)                                       \
@@ -231,7 +231,7 @@ namespace Ubpa::UDRefl {
 	// - capacity
 
 	inline bool ObjectView::empty() const
-	{  Invoke<bool>(NameIDRegistry::Meta::container_empty, ArgsView{}, MethodFlag::Const); }
+	{ return Invoke<bool>(NameIDRegistry::Meta::container_empty, ArgsView{}, MethodFlag::Const); }
 	inline std::size_t ObjectView::size() const
 	{ return Invoke<std::size_t>(NameIDRegistry::Meta::container_size, ArgsView{}, MethodFlag::Const); }
 	inline std::size_t ObjectView::capacity() const

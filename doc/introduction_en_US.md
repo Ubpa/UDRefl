@@ -526,7 +526,7 @@ The relationship between `objectView` and `sharedObject` is like that between `s
   > for(auto elem : v) { /*...*/ }
   > ```
 
-- Type operation: Similar to the `ReflMngr` :: Tregistry` interface, this can simplify the use of some interfaces
+- Type operation: Similar to the `ReflMngr::tRegistry` interface, this can simplify the use of some interfaces
 
   > **Example** 
   >

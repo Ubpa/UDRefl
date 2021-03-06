@@ -10,13 +10,13 @@ struct A {
 };
 
 int main() {
-	Mngr->RegisterType<A>();
-	Mngr->AddField<&A::data>("data");
+	Mngr.RegisterType<A>();
+	Mngr.AddField<&A::data>("data");
 	ext::Bootstrap();
 	A a;
 	ObjectView{ a }.Var("data") = 3;
 	std::cout << a.data << std::endl;
-	auto data = MngrView.Invoke<ObjectView>("Var", ObjectView{ a }, Name{ "data" }, FieldFlag::All);
+	auto data = MngrView.Invoke<ObjectView>("Var", TempArgsView{ a, Name{ "data" } });
 	data = 4;
 	std::cout << a.data << std::endl;
 
