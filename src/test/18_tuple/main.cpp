@@ -24,6 +24,9 @@ int main() {
 		case MethodFlag::Static:
 			std::cout << "Static";
 			break;
+		default:
+			continue;
+			break;
 		}
 		std::cout << "]";
 

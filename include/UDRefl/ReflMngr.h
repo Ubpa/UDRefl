@@ -227,9 +227,7 @@ namespace Ubpa::UDRefl {
 		// Invoke
 		///////////
 		//
-		// - 'A' means auto, ObjectView/SharedObject will be transformed as type + ptr
 		// - 'B' means basic
-		// - 'D' means default
 		// - 'M' means memory
 		// - auto search methods in bases
 		// - support overload
@@ -299,7 +297,7 @@ namespace Ubpa::UDRefl {
 			Name method_name,
 			ArgsView args = {},
 			MethodFlag flag = MethodFlag::All,
-			std::pmr::memory_resource* temp_args_rsrc = Mngr.GetTemporaryResource()) const;
+			std::pmr::memory_resource* temp_args_rsrc = ReflMngr_GetTemporaryResource()) const;
 
 		//
 		// Make
