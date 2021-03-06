@@ -5,17 +5,6 @@
 //#include <vector>
 
 namespace Ubpa::UDRefl {
-	class ArgsView {
-	public:
-		constexpr ArgsView() noexcept : buffer{ nullptr } {}
-		constexpr ArgsView(ArgPtrBuffer buffer, std::span<const Type> argTypes) noexcept : buffer{ buffer }, argTypes{ argTypes }{}
-		constexpr std::size_t Size() const noexcept { return argTypes.size(); }
-		constexpr ObjectView operator[](size_t idx) const noexcept { return { argTypes[idx], buffer[idx] }; }
-	private:
-		ArgPtrBuffer buffer;
-		std::span<const Type> argTypes;
-	};
-
 	using ParamList = std::vector<Type>;
 
 	class MethodPtr {
@@ -31,6 +20,9 @@ namespace Ubpa::UDRefl {
 
 		bool IsDistinguishableWith(const MethodPtr& rhs) const noexcept { return flag != rhs.flag || paramList != rhs.paramList; }
 
+		// argTypes[i] == paramList[i] || paramList[i].Is<ObjectView>()
+		bool IsMatch(std::span<const Type> argTypes) const noexcept;
+		
 		void Invoke(      void* obj, void* result_buffer, ArgsView args) const;
 		void Invoke(const void* obj, void* result_buffer, ArgsView args) const;
 		void Invoke(                 void* result_buffer, ArgsView args) const;

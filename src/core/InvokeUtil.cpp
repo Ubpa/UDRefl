@@ -65,7 +65,7 @@ bool details::IsRefConstructible(Type paramType, std::span<const Type> argTypes)
 	return false;
 }
 
-bool details::RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPtrBuffer argptr_buffer) {
+bool details::RefConstruct(ObjectView obj, ArgsView args) {
 	auto target = Mngr->typeinfos.find(obj.GetType());
 	if (target == Mngr->typeinfos.end())
 		return false;
@@ -73,13 +73,13 @@ bool details::RefConstruct(ObjectView obj, std::span<const Type> argTypes, ArgPt
 	const auto& typeinfo = target->second;
 
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && argTypes.empty())
+	if (begin_iter == end_iter && args.Types().empty())
 		return true;// trivial ctor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
-			&& IsRefCompatible(iter->second.methodptr.GetParamList(), argTypes))
+			&& IsRefCompatible(iter->second.methodptr.GetParamList(), args.Types()))
 		{
-			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, { argptr_buffer,iter->second.methodptr.GetParamList() });
+			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, { args.Buffer(),iter->second.methodptr.GetParamList() });
 			return true;
 		}
 	}
@@ -90,15 +90,17 @@ details::NewArgsGuard::NewArgsGuard(
 	bool is_priority,
 	std::pmr::memory_resource* rsrc,
 	std::span<const Type> paramTypes,
-	std::span<const Type> argTypes,
-	ArgPtrBuffer orig_argptr_buffer)
+	ArgsView args)
 {
+	auto argTypes = args.Types();
+	auto orig_argptr_buffer = args.Buffer();
+
 	if (argTypes.size() != paramTypes.size())
 		return;
 
 	if (is_priority) {
 		is_compatible = IsPriorityCompatible(paramTypes, argTypes);
-		args = { orig_argptr_buffer, paramTypes };
+		new_args = { orig_argptr_buffer, paramTypes };
 		return;
 	}
 
@@ -228,7 +230,7 @@ details::NewArgsGuard::NewArgsGuard(
 		correct_types = paramTypes;
 
 	if (num_copiedargs == 0) {
-		args = { orig_argptr_buffer, correct_types };
+		new_args = { orig_argptr_buffer, correct_types };
 		return;
 	}
 
@@ -293,8 +295,7 @@ details::NewArgsGuard::NewArgsGuard(
 		else {
 			bool success = RefConstruct(
 				ObjectView{ info.GetType(), arg_buffer },
-				std::span<const Type>{&argTypes[i], 1},
-				static_cast<ArgPtrBuffer>(&orig_argptr_buffer[i])
+				ArgsView{ &orig_argptr_buffer[i], std::span<const Type>{&argTypes[i], 1} }
 			);
 			assert(success);
 			nonptr_arg_infos[idx_nonptr_args++] = info;
@@ -305,12 +306,12 @@ details::NewArgsGuard::NewArgsGuard(
 	assert(idx_copiedargs == num_copiedargs);
 	assert(idx_nonptr_args == num_copied_nonptr_args);
 
-	args = { new_argptr_buffer, correct_types };
+	new_args = { new_argptr_buffer, correct_types };
 }
 
 details::NewArgsGuard::~NewArgsGuard() {
 	if (buffer.Get()) {
 		for (const auto& info : nonptr_arg_infos)
-			Mngr->Destruct({ info.GetType(), args[info.idx].GetPtr() });
+			Mngr->Destruct({ info.GetType(), new_args[info.idx].GetPtr() });
 	}
 }

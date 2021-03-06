@@ -8,6 +8,6 @@
 #endif // UBPA_UDREFL_INCLUDE_ALL_STD_NAME
 
 namespace Ubpa::UDRefl {
-    static constexpr std::size_t MaxArgNum = 64 - 2;
+    static constexpr std::size_t MaxArgNum = 64;
     static_assert(MaxArgNum <= 256 - 2);
 } // namespace Ubpa::UDRefl

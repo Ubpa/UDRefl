@@ -6,6 +6,8 @@
 
 - 0.8.4
   - refactoring invoke
+    - The function signature of `MethodPtr` changes to `void(void*, void*, ArgsView)`  
+    - `std::span<const Type> argTypes + ArgPtrBuffer argptr_buffer` -> `ArgsView args` 
   - `IsCompatible` += `ObjectView` 
 - 0.8.3
   - rename meta

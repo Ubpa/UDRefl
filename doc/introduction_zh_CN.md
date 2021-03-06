@@ -32,9 +32,9 @@ UDRefl 库的核心类型为 `ReflMngr`，它管理了所有数据，并提供�
 
 - 方法指针 `MethodPtr`：用于调用成员函数的类
 
-- 变量方法 `MethodFlag::Variable`：非 const 非 static 的成员函数
+- 变量方法 `MethodFlag::Variable`：非 constant 非 static 的成员函数
 
-- 常量方法 `MethodFlag::Const`：const 的成员函数
+- 常量方法 `MethodFlag::Const`：constant 的成员函数
 
 - 静态方法 `MethodFlag::Static`：static 的成员函数
 
@@ -399,13 +399,12 @@ Type ReflMngr::BInvoke(
   ObjectView obj,
   Name method_name,
   void* result_buffer = nullptr,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All,
   std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
-其中 `ArgPtrBuffer = void* const*`，其值为参数指针数组地址；`MethodFlag flag` 用于指明搜寻函数的范围。
+其中 `ArgsView args` 由参数指针缓冲区和类型数组组成。
 
 `BInvoke` 会搜寻该类及其基类的所有同名函数，并且自动进行参数转换（参数类型自动改变，甚至构造临时对象，与 C++ 的机制类似）。构造临时参数对象时，会进行动态内存分配，该接口的 `temp_args_rsrc` 就用于此目的。默认是使用了一个 `std::pmr::synchronized_pool_resource`，它是有锁的。在多线程的情形下，可以每个线程使用一个无锁的 memory_resource 来提高效率。
 
@@ -421,8 +420,7 @@ SharedObject ReflMngr::MInvoke(
   Name method_name,
   std::pmr::memory_resource* rst_rsrc,
   std::pmr::memory_resource* temp_args_rsrc,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All) const;
 ```
 
@@ -439,8 +437,7 @@ SharedObject ReflMngr::MInvoke(
 SharedObject Invoke(
   ObjectView obj,
   Name method_name,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All) const;
 ```
 
@@ -459,8 +456,7 @@ template<typename T>
 T ReflMngr::BInvokeRet(
   ObjectView obj,
   Name method_name,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All,
   std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 
@@ -491,10 +487,7 @@ SharedObject ReflMngr::Invoke(
 此外还额外提供了关于类型构造和析构的一些函数，可查看 `ReflMngr` 接口的 Make 部分，这里只简单介绍如下接口
 
 ```c++
-SharedObject ReflMngr::MakeShared(
-  Type type,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr) const;
+SharedObject ReflMngr::MakeShared(Type type, ArgsView args = {}) const;
 
 template<typename... Args>
 SharedObject ReflMngr::MakeShared(Type type, Args&&... args) const;

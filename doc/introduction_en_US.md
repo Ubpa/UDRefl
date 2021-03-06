@@ -34,9 +34,9 @@ The use of dynamic library is mainly divided into two steps: registration, use.
 
 - Method Pointer `MethodPtr`: a class used to call a member function.
 
-- Viriable Method `MethodFlag::Variable`: a non-const and non-static member method.
+- Variable Method `MethodFlag::Variable`: a non-constant and non-static member method.
 
-- Const Method `MethodFlag::Const`: a const member method.
+- Constant Method `MethodFlag::Const`: a constant member method.
 
 - Static Method `MethodFlag::Static`: a static member method.
 
@@ -321,7 +321,7 @@ bool ReflMngr::AddBases();
 
 ### 1.5 Attribute Registration
 
-Attribute `Attr` is the SharedObject `sharedObject` and can be created
+Attribute `Attr` is a `SharedObject` and can be created
 
 ```c++
 SharedObject ReflMngr::MakeShared(
@@ -357,7 +357,7 @@ It can be used in two categories
 
 ### 2.1 Use `ReflMngr` 
 
-There are three main aspects to using Reflmngr
+There are three main aspects to using `ReflMngr`
 
 - var: Gets the variable of the object
 - invoke: Call the function of the object
@@ -374,7 +374,7 @@ ObjectView ReflMngr::Var(ObjectView obj, Name field_name, FieldFlag flag = Field
 ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag flag = FieldFlag::All) const;
 ```
 
-Note that the Type `Type` of the result will change according to the Type `Type` of `obj`. For example, if `obj` is an rvalue reference, the Type of the result will change to the corresponding rvalue reference Type.If `obj` is` const `, the result type will also be `const`
+Note that the Type `Type` of the result will change according to the Type `Type` of `obj`. For example, if `obj` is an rvalue reference, the Type of the result will change to the corresponding rvalue reference Type. If `obj` is `const`, the result type will also be `const`
 
 #### 2.1.2 Invoke
 
@@ -390,7 +390,7 @@ Type ReflMngr::IsInvocable(
   MethodFlag flag = MethodFlag::All) const;
 ```
 
-If the return value `Type` is valid, then the call succeeds, and it is the return value Type of the function. You can use this` Type `to query the size and alignment of the Type to create the return value buffer needed to call the function.
+If the return value `Type` is valid, then the call succeeds, and it is the return value Type of the function. You can use this `Type` to query the size and alignment of the Type to create the return value buffer needed to call the function.
 
 The function is called as follows
 
@@ -399,15 +399,14 @@ Type ReflMngr::BInvoke(
   ObjectView obj,
   Name method_name,
   void* result_buffer = nullptr,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All,
   std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 ```
 
-Where `argptrBuffer = void* const*`, the value is the address of the parameter pointer array;`methodFlag` is used to indicate the scope of the search function.
+Where `argptrBuffer = void* const*` consisting of a parameter pointer buffer and a type array.
 
-`BInvoke` searches for all functions of the same name for this class and its base class, and automatically converts arguments (parameter types automatically change and even constructs temporary objects, similar to C++).When temporary parameter objects are constructed, dynamic memory is allocated, and the `temp_args_rsrc` of this interface is used for this purpose.The default is to use a `std::pmr::synchronized_pool_resource`, which is locked.In the case of multiple threads, an unlocked memory_resource can be used per thread to increase efficiency.
+`BInvoke` searches for all functions of the same name for this class and its base class, and automatically converts arguments (parameter types automatically change and even constructs temporary objects, similar to C++).When temporary parameter objects are constructed, dynamic memory is allocated, and the `temp_args_rsrc` of this interface is used for this purpose. The default is to use a `std::pmr::synchronized_pool_resource`, which is locked. In the case of multiple threads, an unlocked memory_resource can be used per thread to increase efficiency.
 
 This interface is the most basic, hence the name **B**Invoke, where `B` means BASIC.
 
@@ -421,32 +420,28 @@ SharedObject ReflMngr::MInvoke(
   Name method_name,
   std::pmr::memory_resource* rst_rsrc,
   std::pmr::memory_resource* temp_args_rsrc,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All) const;
 ```
 
 Just provide a `std::pmr::memory_resource* rst_rsrc` and the return buffer will be automatically allocated according to the return value type and released by the return value `sharedObject`.
-
-
 
 In the following special cases, no additional return value buffers need to be allocated
 
 - is the return value type ` void ` / reference type / ` ObjectView `, the return value ` SharedObject ` will degenerate into a ` ObjectView ` (` SharedObject: : IsObjecView () = = true `)
 - The return value type is` sharedObject `, which returns it directly
 
-Reflmngr has two built-in resources for return buffer construction and temporary parameter object construction by default, so it also provides a minimalist interface
+`ReflMngr` has two built-in resources for return buffer construction and temporary parameter object construction by default, so it also provides a minimalist interface
 
 ```c++
 SharedObject Invoke(
   ObjectView obj,
   Name method_name,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All) const;
 ```
 
-This interface uses ReflMngr`s built-in resources by default
+This interface uses `ReflMngr`'s built-in resources by default
 
 To simplify parameter construction, the corresponding template functions of the above function interfaces are provided
 
@@ -461,8 +456,7 @@ template<typename T>
 T ReflMngr::BInvokeRet(
   ObjectView obj,
   Name method_name,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr,
+  ArgsView args = {},
   MethodFlag flag = MethodFlag::All,
   std::pmr::memory_resource* temp_args_rsrc = Mngr->GetTemporaryResource()) const;
 
@@ -493,10 +487,7 @@ SharedObject ReflMngr::Invoke(
 It also provides additional functions on type construction and destructing. See the Make section of the `ReflMngr` interface, which is just a brief introduction to the following
 
 ```c++
-SharedObject ReflMngr::MakeShared(
-  Type type,
-  std::span<const Type> argTypes = {},
-  ArgPtrBuffer argptr_buffer = nullptr) const;
+SharedObject ReflMngr::MakeShared(Type type, ArgsView args = {}) const;
 
 template<typename... Args>
 SharedObject ReflMngr::MakeShared(Type type, Args&&... args) const;
@@ -530,7 +521,7 @@ void ReflMngr::ForEachVar(ObjectView obj,
 
 Each interface accepts a `std::::function`, which is called for each item in the traversal and returns a value of `bool` to control the traversal, which continues when `true` and stops when `false`.You can also use `flag` to indicate the traversal range.
 
-Some simple interfaces are provided based on traversal algorithms, including `Find`, `Get`, and `Contains`. For details, see the Algorithm section of the source code` Reflmngr `.
+Some simple interfaces are provided based on traversal algorithms, including `Find`, `Get`, and `Contains`. For details, see the Algorithm section of the source code `ReflMngr`.
 
 ### 2.2 Use `ObjectView` 
 
@@ -540,7 +531,7 @@ The relationship between `objectView` and `sharedObject` is like that between `s
 
 - their own interface: ` GetType `, ` GetPtr () `, ` AsPtr < T > () `, ` As < T > () `, etc
 
-- Reflmngr Interface: Similar to Reflmngr, some interfaces can be simplified here
+- `ReflMngr` Interface: Similar to `ReflMngr`, some interfaces can be simplified here
 
   > **Example** 
   >
@@ -572,7 +563,7 @@ The relationship between `objectView` and `sharedObject` is like that between `s
   > for(auto elem : v) { /*...*/ }
   > ```
 
-- Type operation: Similar to the `Reflmngr :: Tregistry` interface, this can simplify the use of some interfaces
+- Type operation: Similar to the `ReflMngr` :: Tregistry` interface, this can simplify the use of some interfaces
 
   > **Example** 
   >
