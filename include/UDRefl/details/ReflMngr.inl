@@ -1162,7 +1162,7 @@ namespace Ubpa::UDRefl {
 
 	template<typename T>
 	MethodPtr ReflMngr::GenerateDestructorPtr() {
-		return GenerateMemberMethodPtr([](const T& obj) {
+		return GenerateMemberMethodPtr([](T& obj) {
 			if constexpr (!std::is_trivially_destructible_v<T>)
 				obj.~T();
 		});

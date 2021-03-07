@@ -6,6 +6,7 @@
 
 - 0.9.1
   - support trivial
+  - dtor: `MethodFlag::Const` -> `MethodFlag::Variable` 
 - 0.9.0
   - refactoring invoke
     - The function signature of `MethodPtr` changes to `void(void*, void*, ArgsView)`  
