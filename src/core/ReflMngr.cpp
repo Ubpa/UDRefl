@@ -172,7 +172,7 @@ namespace Ubpa::UDRefl::details {
 
 		if (enum_contain_any(flag, MethodFlag::Priority)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (enum_contain(MethodFlag::Priority, iter->second.methodptr.GetMethodFlag())) {
+				if (enum_contain_any(flag, iter->second.methodptr.GetMethodFlag())) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), args
@@ -184,7 +184,7 @@ namespace Ubpa::UDRefl::details {
 				}
 			}
 		}
-		if (enum_contain(flag, MethodFlag::Const)) {
+		if (enum_contain_any(flag, MethodFlag::Const)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
 				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const) {
 					NewArgsGuard guard{
@@ -235,9 +235,9 @@ namespace Ubpa::UDRefl::details {
 
 		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
 
-		if (enum_contain(flag, MethodFlag::Priority)) {
+		if (enum_contain_any(flag, MethodFlag::Priority)) {
 			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (enum_contain(MethodFlag::Priority, iter->second.methodptr.GetMethodFlag())) {
+				if (enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
 					NewArgsGuard guard{
 						is_priority, args_rsrc,
 						iter->second.methodptr.GetParamList(), args
