@@ -105,7 +105,8 @@ namespace Ubpa::UDRefl {
 		// Modifier
 		/////////////
 
-		Type RegisterType(Type type, size_t size, size_t alignment, bool is_polymorphic = false);
+		// if is_trivial, register a trivial copy ctor
+		Type RegisterType(Type type, size_t size, size_t alignment, bool is_polymorphic = false, bool is_trivial = false);
 		Name AddField(Type type, Name field_name, FieldInfo fieldinfo);
 		Name AddMethod(Type type, Name method_name, MethodInfo methodinfo);
 		Type AddBase(Type derived, Type base, BaseInfo baseinfo);
@@ -132,13 +133,14 @@ namespace Ubpa::UDRefl {
 			Type type,
 			std::span<const Type> bases,
 			std::span<const Type> field_types,
-			std::span<const Name> field_names
+			std::span<const Name> field_names,
+			bool is_trivial = false
 		);
 
 		// -- template --
 
 		// call
-		// - RegisterType(type_name<T>(), sizeof(T), alignof(T), std::is_polymorphic<T>)
+		// - RegisterType(type_name<T>(), sizeof(T), alignof(T), std::is_polymorphic<T>, std::is_trivial_v<T>)
 		// - details::TypeAutoRegister<T>::run
 		// you can custom type register by specialize details::TypeAutoRegister<T>
 		template<typename T>
@@ -313,7 +315,7 @@ namespace Ubpa::UDRefl {
 		bool IsDestructible     (Type type) const;
 
 		bool Construct(ObjectView obj, ArgsView args = {}) const;
-		void Destruct (ObjectView obj) const;
+		bool Destruct (ObjectView obj) const;
 
 		ObjectView   MNew       (Type      type, std::pmr::memory_resource* rsrc, ArgsView args = {}) const;
 		SharedObject MMakeShared(Type      type, std::pmr::memory_resource* rsrc, ArgsView args = {}) const;

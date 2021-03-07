@@ -4,6 +4,8 @@
 
 ## 0.9
 
+- 0.9.1
+  - support trivial
 - 0.9.0
   - refactoring invoke
     - The function signature of `MethodPtr` changes to `void(void*, void*, ArgsView)`  

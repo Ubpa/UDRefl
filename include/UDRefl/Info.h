@@ -43,10 +43,13 @@ namespace Ubpa::UDRefl {
 		AttrSet attrs;
 	};
 
+	// trivial : https://docs.microsoft.com/en-us/cpp/cpp/trivial-standard-layout-and-pod-types?view=msvc-160
+	// if the type is trivial, it must contains a copy-ctor for type-convertion, and can't register default ctor, dtor
 	struct TypeInfo {
 		size_t size;
 		size_t alignment;
 		bool is_polymorphic;
+		bool is_trivial;
 		std::unordered_map<Name, FieldInfo> fieldinfos;
 		std::unordered_multimap<Name, MethodInfo> methodinfos;
 		std::unordered_map<Type, BaseInfo> baseinfos;

@@ -362,13 +362,13 @@ namespace Ubpa::UDRefl::details {
 	template<typename T>
 	struct TypeAutoRegister_Default {
 		static void run(ReflMngr& mngr) {
-			if constexpr (std::is_default_constructible_v<T>)
+			if constexpr (std::is_default_constructible_v<T> && !std::is_trivial_v<T>)
 				mngr.AddConstructor<T>();
 			if constexpr (type_ctor_copy<T>)
 				mngr.AddConstructor<T, const T&>();
-			if constexpr (type_ctor_move<T> && (!std::is_trivially_move_constructible_v<T> || !std::is_trivially_copy_constructible_v<T>))
+			if constexpr (type_ctor_move<T> && !std::is_trivial_v<T>)
 				mngr.AddConstructor<T, T&&>();
-			if constexpr (std::is_destructible_v<T> && !std::is_trivially_destructible_v<T>)
+			if constexpr (std::is_destructible_v<T> && !std::is_trivial_v<T>)
 				mngr.AddDestructor<T>();
 
 			if constexpr (std::is_pointer_v<T>) {
@@ -1210,11 +1210,16 @@ namespace Ubpa::UDRefl {
 			else if constexpr (std::is_reference_v<T>)
 				RegisterType<std::remove_cvref_t<T>>();
 			else {
-				auto target = typeinfos.find(Type_of<T>);
-				if (target != typeinfos.end())
+				if (typeinfos.contains(Type_of<T>))
 					return;
+
 				tregistry.Register<T>();
-				typeinfos.emplace_hint(target, Type_of<T>, TypeInfo{ std::is_empty_v<T> ? 0 : sizeof(T), alignof(T), std::is_polymorphic_v<T> });
+				RegisterType(
+					Type_of<T>,
+					std::is_empty_v<T> ? 0 : sizeof(T), alignof(T),
+					std::is_polymorphic_v<T>,
+					std::is_trivial_v<T>
+				);
 
 				details::TypeAutoRegister<T>::run(*this);
 			}

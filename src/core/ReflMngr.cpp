@@ -10,13 +10,6 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 namespace Ubpa::UDRefl::details {
-	DeleteFunc GenerateDeleteFunc(Type type, std::pmr::memory_resource* result_rsrc, size_t size, size_t alignment) {
-		return [type, result_rsrc, size, alignment](void* ptr) {
-			Mngr.Destruct(ObjectView{ type, ptr });
-			result_rsrc->deallocate(ptr, size, alignment);
-		};
-	}
-
 	static ObjectView StaticCast_DerivedToBase(ObjectView obj, Type type) {
 		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
 
@@ -269,6 +262,8 @@ namespace Ubpa::UDRefl::details {
 						return buffer;
 					}
 					else {
+						if (!Mngr.IsDestructible(rst_type))
+							return {};
 						auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
 						if (!result_typeinfo)
 							return {};
@@ -276,7 +271,7 @@ namespace Ubpa::UDRefl::details {
 						iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgsView());
 						return {
 							{rst_type, result_buffer},
-							GenerateDeleteFunc(iter->second.methodptr.GetResultType(), rst_rsrc, result_typeinfo->size, result_typeinfo->alignment)
+							[rst_type, rst_rsrc](void* ptr) { Mngr.MDelete({ rst_type, ptr }, rst_rsrc); }
 						};
 					}
 				}
@@ -317,6 +312,8 @@ namespace Ubpa::UDRefl::details {
 						return buffer;
 					}
 					else {
+						if (!Mngr.IsDestructible(rst_type))
+							return {};
 						auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
 						if (!result_typeinfo)
 							return {};
@@ -324,7 +321,7 @@ namespace Ubpa::UDRefl::details {
 						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgsView());
 						return {
 							{rst_type, result_buffer},
-							GenerateDeleteFunc(iter->second.methodptr.GetResultType(), rst_rsrc, result_typeinfo->size, result_typeinfo->alignment)
+							[rst_type, rst_rsrc](void* ptr) { Mngr.MDelete({ rst_type, ptr }, rst_rsrc); }
 						};
 					}
 				}
@@ -457,7 +454,7 @@ namespace Ubpa::UDRefl::details {
 }
 
 ReflMngr::ReflMngr() {
-	RegisterType(GlobalType, 0, 1);
+	RegisterType(GlobalType, 0, 1, false, true);
 
 	details::ReflMngrInitUtil_0(*this);
 	details::ReflMngrInitUtil_1(*this);
@@ -521,17 +518,25 @@ bool ReflMngr::ContainsVirtualBase(Type type) const {
 	return false;
 }
 
-Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment, bool is_polymorphic) {
+Type ReflMngr::RegisterType(Type type, size_t size, size_t alignment, bool is_polymorphic, bool is_trivial) {
 	assert(alignment > 0 && (alignment & (alignment - 1)) == 0);
 	auto target = typeinfos.find(type.RemoveCVRef());
 	if (target != typeinfos.end())
 		return {};
 	Type new_type = { tregistry.Register(type.GetID(), type.GetName()),type.GetID() };
-	typeinfos.emplace_hint(target, new_type, TypeInfo{ size,alignment,is_polymorphic });
+	typeinfos.emplace_hint(target, new_type, TypeInfo{ size,alignment,is_polymorphic,is_trivial });
+	if (is_trivial)
+		AddTrivialCopyConstructor(type);
 	return new_type;
 }
 
-Type ReflMngr::RegisterType(Type type, std::span<const Type> bases, std::span<const Type> field_types, std::span<const Name> field_names) {
+Type ReflMngr::RegisterType(
+	Type type,
+	std::span<const Type> bases,
+	std::span<const Type> field_types,
+	std::span<const Name> field_names,
+	bool is_trivial)
+{
 	assert(field_types.size() == field_names.size());
 
 	if (typeinfos.contains(type))
@@ -551,8 +556,10 @@ Type ReflMngr::RegisterType(Type type, std::span<const Type> bases, std::span<co
 		if (btarget == typeinfos.end())
 			return {};
 		const auto& baseinfo = btarget->second;
-		if (baseinfo.is_polymorphic)
+		if (baseinfo.is_polymorphic || ContainsVirtualBase(basetype))
 			return {};
+		if (!baseinfo.is_trivial)
+			is_trivial = false;
 		assert(baseinfo.alignment > 0 && (baseinfo.alignment & (baseinfo.alignment - 1)) == 0);
 		size = (size + (baseinfo.alignment - 1)) & ~(baseinfo.alignment - 1);
 		base_offsets[i] = size;
@@ -570,6 +577,8 @@ Type ReflMngr::RegisterType(Type type, std::span<const Type> bases, std::span<co
 		if (fttarget == typeinfos.end())
 			return {};
 		const auto& ftinfo = fttarget->second;
+		if (!ftinfo.is_trivial)
+			is_trivial = false;
 		assert(ftinfo.alignment > 0 && (ftinfo.alignment & (ftinfo.alignment - 1)) == 0);
 		size = (size + (ftinfo.alignment - 1)) & ~(ftinfo.alignment - 1);
 		field_offsets[i] = size;
@@ -580,7 +589,7 @@ Type ReflMngr::RegisterType(Type type, std::span<const Type> bases, std::span<co
 	
 	size = (size + (alignment - 1)) & ~(alignment - 1);
 
-	Type newtype = RegisterType(type, size, alignment);
+	Type newtype = RegisterType(type, size, alignment, false, is_trivial);
 	for (size_t i = 0; i < bases.size(); i++) {
 		AddBase(
 			type,
@@ -696,6 +705,9 @@ Name ReflMngr::AddZeroDefaultConstructor(Type type) {
 }
 
 Name ReflMngr::AddDefaultConstructor(Type type) {
+	if (IsConstructible(type))
+		return {};
+
 	auto target = typeinfos.find(type);
 	if (target == typeinfos.end() || target->second.is_polymorphic || ContainsVirtualBase(type))
 		return {};
@@ -741,6 +753,9 @@ Name ReflMngr::AddDefaultConstructor(Type type) {
 }
 
 Name ReflMngr::AddDestructor(Type type) {
+	if (IsDestructible(type))
+		return {};
+
 	auto target = typeinfos.find(type);
 	if (target == typeinfos.end() || target->second.is_polymorphic || ContainsVirtualBase(type))
 		return {};
@@ -839,6 +854,9 @@ bool ReflMngr::AddMethodAttr(Type type, Name name, Attr attr) {
 }
 
 SharedObject ReflMngr::MMakeShared(Type type, std::pmr::memory_resource* rsrc, ArgsView args) const {
+	if (!IsDestructible(type))
+		return {};
+
 	ObjectView obj = MNew(type, rsrc, args);
 
 	if (!obj.GetType().Valid())
@@ -994,7 +1012,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 				if (rhs.Is(raw_lhs) || raw_lhs == rhs.Name_RemoveReference())
 					continue; // &{const{T}} <- T | &{T} | &&{T}
 
-				if (details::IsRefConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
+				if (details::IsRefConstructible(raw_lhs, std::span<const Type>{&rhs, 1}) && IsDestructible(raw_lhs))
 					continue; // &{const{T}} <- T{arg}
 			}
 		}
@@ -1017,7 +1035,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 				if (rhs.Is(unref_lhs))
 					continue; // &&{T} <- T
 
-				if (details::IsRefConstructible(unref_lhs, std::span<const Type>{&rhs, 1}))
+				if (details::IsRefConstructible(unref_lhs, std::span<const Type>{&rhs, 1}) && IsDestructible(unref_lhs))
 					continue; // &&{T} <- T{arg}
 			}
 		}
@@ -1025,7 +1043,7 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 			if (lhs.Is(rhs.Name_RemoveRValueReference()))
 				continue; // T <- &&{T}
 
-			if (details::IsRefConstructible(lhs, std::span<const Type>{&rhs, 1}))
+			if (details::IsRefConstructible(lhs, std::span<const Type>{&rhs, 1}) && IsDestructible(lhs))
 				continue; // T <- T{arg}
 		}
 
@@ -1202,9 +1220,9 @@ bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const 
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && argTypes.empty())
+	if (argTypes.empty() && typeinfo.is_trivial)
 		return true;
+	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (IsCompatible(iter->second.methodptr.GetParamList(), argTypes))
 			return true;
@@ -1229,7 +1247,8 @@ bool ReflMngr::IsDestructible(Type type) const {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-
+	if (typeinfo.is_trivial)
+		return true;
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
 	if (begin_iter == end_iter)
 		return true;
@@ -1246,9 +1265,9 @@ bool ReflMngr::Construct(ObjectView obj, ArgsView args) const {
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
+	if (args.Types().empty() && typeinfo.is_trivial)
+		return true; // trivial ctor
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && args.Types().empty())
-		return true;// trivial ctor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable) {
 			details::NewArgsGuard guard{
@@ -1264,22 +1283,23 @@ bool ReflMngr::Construct(ObjectView obj, ArgsView args) const {
 	return false;
 }
 
-void ReflMngr::Destruct(ObjectView obj) const {
+bool ReflMngr::Destruct(ObjectView obj) const {
 	auto target = typeinfos.find(obj.GetType());
 	if (target == typeinfos.end())
-		return;
+		return false;
 	const auto& typeinfo = target->second;
+	if (typeinfo.is_trivial)
+		return true;// trivial ctor
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::dtor);
-	if (begin_iter == end_iter)
-		return;// trivial dtor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const
 			&& IsCompatible(iter->second.methodptr.GetParamList(), {}))
 		{
 			iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, {});
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
 void ReflMngr::ForEachTypeInfo(Type type, const std::function<bool(InfoTypePair)>& func) const {
