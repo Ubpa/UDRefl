@@ -8,7 +8,7 @@
 
   - :star:use ranges to simplify algorithms (ForEach, Find, Contains, etc)
 
-    > TypeTree, FieldRange, MethodRange, VarRange
+    > ObjectTree, FieldRange, MethodRange, VarRange
 
 ## 0.9
 

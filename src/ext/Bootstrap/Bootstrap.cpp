@@ -17,7 +17,7 @@ void Ubpa::UDRefl::ext::Bootstrap() {
 	details::Bootstrap_helper_object();
 	details::Bootstrap_helper_ptr();
 	details::Bootstrap_helper_ranges_derived();
-	details::Bootstrap_helper_ranges_typetree();
+	details::Bootstrap_helper_ranges_objecttree();
 	details::Bootstrap_helper_ranges_fieldrange();
 	details::Bootstrap_helper_ranges_methodrange();
 	details::Bootstrap_helper_ranges_varrange();

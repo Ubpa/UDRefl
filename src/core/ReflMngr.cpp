@@ -75,28 +75,6 @@ namespace Ubpa::UDRefl::details {
 		return {};
 	}
 
-	static ObjectView Var(ObjectView obj, Name field_name, FieldFlag flag) {
-		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
-
-		auto ttarget = Mngr.typeinfos.find(obj.GetType());
-		if (ttarget == Mngr.typeinfos.end())
-			return {};
-
-		auto& typeinfo = ttarget->second;
-
-		auto ftarget = typeinfo.fieldinfos.find(field_name);
-		if (ftarget != typeinfo.fieldinfos.end() && enum_contain(flag, ftarget->second.fieldptr.GetFieldFlag()))
-			return ftarget->second.fieldptr.Var(obj.GetPtr());
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto bptr = Var(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, field_name, flag);
-			if (bptr.GetType())
-				return bptr;
-		}
-
-		return {};
-	}
-
 	static Type IsInvocable(
 		bool is_priority,
 		Type type,
@@ -896,26 +874,11 @@ ObjectView ReflMngr::DynamicCast(ObjectView obj, Type type) const {
 }
 
 ObjectView ReflMngr::Var(ObjectView obj, Name field_name, FieldFlag flag) const {
-	if (!obj.GetPtr())
-		flag = enum_within(flag, FieldFlag::Unowned);
-
-	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
-	assert(!CVRefMode_IsVolatile(cvref_mode));
-	switch (cvref_mode)
-	{
-	case CVRefMode::Left:
-		return details::Var(obj.RemoveLValueReference(), field_name, flag).AddLValueReference();
-	case CVRefMode::Right:
-		return details::Var(obj.RemoveRValueReference(), field_name, flag).AddRValueReference();
-	case CVRefMode::Const:
-		return details::Var(obj.RemoveConst(), field_name, flag).AddConst();
-	case CVRefMode::ConstLeft:
-		return details::Var(obj.RemoveConstReference(), field_name, flag).AddConstLValueReference();
-	case CVRefMode::ConstRight:
-		return details::Var(obj.RemoveConstReference(), field_name, flag).AddConstRValueReference();
-	default:
-		return details::Var(obj, field_name, flag);
+	for (const auto& [name, var] : VarRange{ obj, flag }) {
+		if (name == field_name)
+			return var;
 	}
+	return {};
 }
 
 ObjectView ReflMngr::Var(ObjectView obj, Type base, Name field_name, FieldFlag flag) const {

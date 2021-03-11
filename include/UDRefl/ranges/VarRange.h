@@ -20,7 +20,7 @@ namespace Ubpa::UDRefl {
 				std::unordered_map<Type, BaseInfo>::iterator curbase;
 			};
 
-			iterator(Type root, void* ptr, bool begin_or_end,
+			iterator(ObjectTree::iterator typeiter,
 				CVRefMode cvref_mode = CVRefMode::None,
 				FieldFlag flag = FieldFlag::All);
 
@@ -35,52 +35,42 @@ namespace Ubpa::UDRefl {
 
 			bool Valid() const noexcept { return mode != -1; }
 
-			std::span<const Ranges::Derived> GetDeriveds() const noexcept
-			{ return { deriveds.begin(), deriveds.end() }; }
+			std::span<const Ranges::Derived> GetDeriveds() const noexcept { return typeiter.GetDeriveds(); }
 
-			const Type& GetType() const { return type; }
-			TypeInfo* GetTypeInfo() const { return typeinfo; }
+			ObjectView GetObjectView() const { return std::get<ObjectView>(*typeiter); }
+			TypeInfo* GetTypeInfo() const { return std::get<TypeInfo*>(*typeiter); }
 			FieldInfo& GetFieldInfo() const { return curfield->second; }
 		private:
 			void update();
 
-			Type root; // fix
 			CVRefMode cvref_mode; // fix
 			FieldFlag flag; // fix
 
-			small_vector<Type, 8> visitedVBs;
-			small_vector<Ranges::Derived, 16> deriveds;
-			bool curbase_valid;
-			Type type;
-			TypeInfo* typeinfo;
-			void* ptr;
+			ObjectTree::iterator typeiter;
 			std::unordered_map<Name, FieldInfo>::iterator curfield;
-			bool visited_curtype;
 			int mode;
 
 			value_type value;
 		};
 
 		constexpr VarRange(ObjectView obj, FieldFlag flag) noexcept :
-			root{ obj.GetType().RemoveCVRef() },
-			cvref_mode{ obj.GetType().GetCVRefMode() },
-			ptr{ obj.GetPtr() },
-			flag{ obj.GetPtr() ? flag : enum_within(flag, FieldFlag::Unowned) } {}
+			objtree{ ObjectTree{obj} },
+			flag{ obj.GetPtr()?flag:enum_within(flag, FieldFlag::Unowned) },
+			cvref_mode{obj.GetType().GetCVRefMode()}
+		{ assert(!CVRefMode_IsVolatile(cvref_mode)); }
 
-		constexpr explicit VarRange(ObjectView obj) noexcept : VarRange{obj, FieldFlag::All} {}
+		constexpr explicit VarRange(ObjectView obj) noexcept : VarRange{ obj, FieldFlag::All } {}
+		constexpr explicit VarRange(Type type) noexcept : VarRange{ ObjectView{type}, FieldFlag::Unowned } {}
 
-		iterator begin() const { return { root,ptr,true,cvref_mode,flag }; }
-		iterator end() const noexcept { return { root,ptr,false,cvref_mode,flag }; }
+		iterator begin() const { return { objtree.begin(), cvref_mode, flag }; }
+		iterator end() const noexcept { return { objtree.end(), cvref_mode, flag }; }
 
-		Type GetType() const noexcept { return root; }
-		FieldFlag GetFieldFlag() const noexcept { return flag; }
 	private:
-		Type root;
-		CVRefMode cvref_mode;
-		void* ptr;
+		ObjectTree objtree;
 		FieldFlag flag;
+		CVRefMode cvref_mode;
 	};
 
-	template<typename T, FieldFlag flag = FieldFlag::All>
+	template<typename T, FieldFlag flag = FieldFlag::Unowned>
 	static constexpr VarRange VarRange_of = VarRange{ ObjectView_of<T>, flag };
 }

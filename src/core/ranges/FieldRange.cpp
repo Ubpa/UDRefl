@@ -5,7 +5,7 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-FieldRange::iterator::iterator(TypeTree::iterator typeiter, FieldFlag flag) :
+FieldRange::iterator::iterator(ObjectTree::iterator typeiter, FieldFlag flag) :
 	typeiter{ std::move(typeiter) }, flag{ flag }, mode {typeiter.Valid()?0:-1}
 {
 	if (typeiter.Valid())

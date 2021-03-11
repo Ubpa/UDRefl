@@ -31,6 +31,12 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_object() {
 
 	Mngr.AddMethod<&ObjectView::GetVars>("GetVars");
 	Mngr.AddMemberMethod("GetVars", [](const ObjectView& obj) { return obj.GetVars(); });
+	Mngr.AddMethod<&ObjectView::GetFields>("GetFields");
+	Mngr.AddMemberMethod("GetFields", [](const ObjectView& obj) { return obj.GetFields(); });
+	Mngr.AddMethod<&ObjectView::GetMethods>("GetMethods");
+	Mngr.AddMemberMethod("GetMethods", [](const ObjectView& obj) { return obj.GetMethods(); });
+	Mngr.AddMethod<&ObjectView::GetObjectTree>("GetObjectTree");
+	Mngr.AddMemberMethod("GetObjectTree", [](const ObjectView& obj) { return obj.GetObjectTree(); });
 
 	Mngr.AddMethod<&ObjectView::RemoveConst>("RemoveConst");
 	Mngr.AddMethod<&ObjectView::RemoveLValueReference>("RemoveLValueReference");

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TypeTree.h"
+#include "ObjectTree.h"
 
 namespace Ubpa::UDRefl {
 	// DFS
@@ -13,7 +13,7 @@ namespace Ubpa::UDRefl {
 			using pointer = value_type*;
 			using iterator_category = std::forward_iterator_tag;
 
-			iterator(TypeTree::iterator typeiter, FieldFlag flag = FieldFlag::All);
+			iterator(ObjectTree::iterator typeiter, FieldFlag flag = FieldFlag::All);
 
 			iterator& operator++();
 			iterator operator++(int);
@@ -26,27 +26,29 @@ namespace Ubpa::UDRefl {
 
 			bool Valid() const noexcept { return typeiter.Valid(); }
 			std::span<const Ranges::Derived> GetDeriveds() const noexcept { return typeiter.GetDeriveds(); }
+			ObjectView GetObjectView() const { return std::get<ObjectView>(*typeiter); }
+			TypeInfo* GetTypeInfo() const { return std::get<TypeInfo*>(*typeiter); }
 		private:
 			void update();
-			TypeTree::iterator typeiter;
+			ObjectTree::iterator typeiter;
 			FieldFlag flag;
 			int mode;
 			std::unordered_map<Name, FieldInfo>::iterator curfield;
 		};
 
-		constexpr FieldRange(Type root, FieldFlag flag) noexcept :
-			root_tree{ TypeTree{root} }, flag{ flag } {}
-		constexpr explicit FieldRange(Type root) noexcept : FieldRange{ root, FieldFlag::All } {}
-		iterator begin() const { return { root_tree.begin(), flag }; }
-		iterator end() const noexcept { return { root_tree.end(), flag }; }
-
-		Type GetType() const noexcept { return root_tree.GetType(); }
+		constexpr FieldRange(ObjectView obj, FieldFlag flag) noexcept :
+			objtree{ ObjectTree{obj} }, flag{ flag } {}
+		constexpr explicit FieldRange(ObjectView obj) noexcept : FieldRange{ obj, FieldFlag::All } {}
+		constexpr explicit FieldRange(Type type) noexcept : FieldRange{ ObjectView{type}, FieldFlag::All } {}
+		
+		iterator begin() const { return { objtree.begin(), flag }; }
+		iterator end() const noexcept { return { objtree.end(), flag }; }
 
 	private:
-		TypeTree root_tree;
+		ObjectTree objtree;
 		FieldFlag flag;
 	};
 
 	template<typename T, FieldFlag flag = FieldFlag::All>
-	static constexpr FieldRange FieldRange_of = FieldRange{ Type_of<T>, flag };
+	static constexpr FieldRange FieldRange_of = FieldRange{ ObjectView_of<T>, flag };
 }

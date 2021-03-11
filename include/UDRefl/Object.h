@@ -123,11 +123,11 @@ namespace Ubpa::UDRefl {
 		// Type
 		//////////
 
-		ObjectView RemoveConst() const;
-		ObjectView RemoveLValueReference() const;
-		ObjectView RemoveRValueReference() const;
-		ObjectView RemoveReference() const;
-		ObjectView RemoveConstReference() const;
+		constexpr ObjectView RemoveConst() const noexcept;
+		constexpr ObjectView RemoveLValueReference() const noexcept;
+		constexpr ObjectView RemoveRValueReference() const noexcept;
+		constexpr ObjectView RemoveReference() const noexcept;
+		constexpr ObjectView RemoveConstReference() const noexcept;
 
 		ObjectView AddConst() const;
 		ObjectView AddLValueReference() const;
@@ -140,7 +140,7 @@ namespace Ubpa::UDRefl {
 		// Ranges
 		///////////
 
-		TypeTree GetTypeTree() const;
+		ObjectTree GetObjectTree() const;
 		MethodRange GetMethods(MethodFlag flag = MethodFlag::All) const;
 		FieldRange GetFields(FieldFlag flag = FieldFlag::All) const;
 		VarRange GetVars(FieldFlag flag = FieldFlag::All) const;

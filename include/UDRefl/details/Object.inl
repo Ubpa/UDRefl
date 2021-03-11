@@ -85,6 +85,12 @@ namespace Ubpa::UDRefl {
 	// ReflMngr //
 	//////////////
 
+	constexpr ObjectView ObjectView::RemoveConst() const noexcept { return { type.RemoveConst(), ptr }; }
+	constexpr ObjectView ObjectView::RemoveLValueReference() const noexcept { return { type.RemoveLValueReference(), ptr }; }
+	constexpr ObjectView ObjectView::RemoveRValueReference() const noexcept { return { type.RemoveRValueReference(), ptr }; }
+	constexpr ObjectView ObjectView::RemoveReference() const noexcept { return { type.RemoveReference(), ptr }; }
+	constexpr ObjectView ObjectView::RemoveConstReference() const noexcept { return { type.RemoveCVRef(), ptr }; }
+
 	template<typename... Args>
 	Type ObjectView::IsInvocable(Name method_name, MethodFlag flag) const {
 		if constexpr (sizeof...(Args) > 0) {

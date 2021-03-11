@@ -1,19 +1,17 @@
-#include <UDRefl/ranges/TypeTree.h>
+#include <UDRefl/ranges/ObjectTree.h>
 
 #include <UDRefl/ReflMngr.h>
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-void TypeTree::iterator::update() {
+void ObjectTree::iterator::update() {
 	switch (mode)
 	{
 	case 0:
 		goto mode_0;
 	case 1:
 		goto mode_1;
-	case 2:
-		goto mode_2;
 	default:
 		assert(false);
 		return;
@@ -22,19 +20,12 @@ void TypeTree::iterator::update() {
 mode_0:
 	mode = 1;
 
-	std::get<Type>(value) = root;
-	std::get<TypeInfo*>(value) = Mngr.GetTypeInfo(root);
-	return; // yield
-	
-mode_1:
-	mode = 2;
-
 	if (!std::get<TypeInfo*>(value)) {
 		mode = -1;
 		return; // stop
 	}
 
-	deriveds.emplace_back(std::get<Type>(value), std::get<TypeInfo*>(value));
+	deriveds.emplace_back(std::get<ObjectView>(value), std::get<TypeInfo*>(value));
 	curbase_valid = false;
 
 	while (!deriveds.empty()) {
@@ -69,19 +60,23 @@ mode_1:
 		}
 
 		// get result
+		
+		std::get<ObjectView>(value) = {
+			deriveds.back().curbase->first,
+			deriveds.back().obj.GetPtr() ? deriveds.back().curbase->second.StaticCast_DerivedToBase(deriveds.back().obj.GetPtr()) : nullptr
+		};
 
-		std::get<Type>(value) = deriveds.back().curbase->first;
-		if (auto target = Mngr.typeinfos.find(std::get<Type>(value)); target != Mngr.typeinfos.end())
+		if (auto target = Mngr.typeinfos.find(std::get<ObjectView>(value).GetType()); target != Mngr.typeinfos.end())
 			std::get<TypeInfo*>(value) = &target->second;
 		else
 			std::get<TypeInfo*>(value) = nullptr;
 
 		return; // yield
 
-mode_2:
+mode_1:
 		// push derived
 		if (std::get<TypeInfo*>(value)) {
-			deriveds.emplace_back(std::get<Type>(value), std::get<TypeInfo*>(value));
+			deriveds.emplace_back(std::get<ObjectView>(value), std::get<TypeInfo*>(value));
 			curbase_valid = false;
 		}
 	}
@@ -90,33 +85,33 @@ mode_2:
 	return; // stop
 }
 
-TypeTree::iterator::iterator(Type root, bool begin_or_end) :
-	root{ root },
+ObjectTree::iterator::iterator(ObjectView obj, bool begin_or_end) :
 	mode{ begin_or_end? 0:-1 },
 	curbase_valid{ true }
 {
-	if(begin_or_end)
-		update();
+	if (begin_or_end) {
+		auto target = Mngr.typeinfos.find(obj.GetType());
+		value = { target == Mngr.typeinfos.end() ? nullptr : &target->second, obj };
+	}
 }
 
-TypeTree::iterator& TypeTree::iterator::operator++() {
+ObjectTree::iterator& ObjectTree::iterator::operator++() {
 	update();
 	return *this;
 }
 
-TypeTree::iterator TypeTree::iterator::operator++(int) {
-	TypeTree::iterator iter = *this;
+ObjectTree::iterator ObjectTree::iterator::operator++(int) {
+	ObjectTree::iterator iter = *this;
 	(void)operator++();
 	return iter;
 }
 
 namespace Ubpa::UDRefl {
-	bool operator==(const TypeTree::iterator& lhs, const TypeTree::iterator& rhs) {
-		assert(lhs.root == rhs.root);
+	bool operator==(const ObjectTree::iterator& lhs, const ObjectTree::iterator& rhs) {
 		return lhs.deriveds == rhs.deriveds && lhs.mode == rhs.mode;
 	}
 
-	bool operator!=(const TypeTree::iterator& lhs, const TypeTree::iterator& rhs) {
+	bool operator!=(const ObjectTree::iterator& lhs, const ObjectTree::iterator& rhs) {
 		return !(lhs == rhs);
 	}
 }

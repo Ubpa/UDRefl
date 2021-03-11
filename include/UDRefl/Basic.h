@@ -101,7 +101,7 @@ namespace Ubpa::UDRefl {
 	struct MethodInfo;
 	class BaseInfo;
 
-	class TypeTree;
+	class ObjectTree;
 	class VarRange;
 	class FieldRange;
 	class MethodRange;

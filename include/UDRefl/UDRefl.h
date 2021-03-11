@@ -15,5 +15,5 @@
 #include "ranges/common.h"
 #include "ranges/FieldRange.h"
 #include "ranges/MethodRange.h"
-#include "ranges/TypeTree.h"
+#include "ranges/ObjectTree.h"
 #include "ranges/VarRange.h"
