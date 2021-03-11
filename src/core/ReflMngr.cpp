@@ -74,6 +74,59 @@ TypeInfo* ReflMngr::GetTypeInfo(Type type) const {
 	return const_cast<TypeInfo*>(&target->second);
 }
 
+
+SharedObject ReflMngr::GetTypeAttr(Type type, Type attr_type) const {
+	TypeInfo* typeinfo = GetTypeInfo(type);
+	if (!typeinfo)
+		return {};
+	
+	auto target = typeinfo->attrs.find(attr_type);
+	if (target == typeinfo->attrs.end())
+		return {};
+
+	return *target;
+}
+
+SharedObject ReflMngr::GetFieldAttr(Type type, Name field_name, Type attr_type) const {
+	for (const auto& [typeinfo, baseobj] : ObjectTree{ type }) {
+		if (!typeinfo)
+			continue;
+
+		auto ftarget = typeinfo->fieldinfos.find(field_name);
+		if (ftarget == typeinfo->fieldinfos.end())
+			continue;
+		
+		const auto& finfo = ftarget->second;
+
+		auto target = finfo.attrs.find(attr_type);
+		if (target == finfo.attrs.end())
+			return {};
+
+		return *target;
+	}
+	return {};
+}
+
+SharedObject ReflMngr::GetMethodAttr(Type type, Name method_name, Type attr_type) const {
+	for (const auto& [typeinfo, baseobj] : ObjectTree{ type }) {
+		if (!typeinfo)
+			continue;
+
+		auto ftarget = typeinfo->methodinfos.find(method_name);
+		if (ftarget == typeinfo->methodinfos.end())
+			continue;
+
+		const auto& minfo = ftarget->second;
+
+		auto target = minfo.attrs.find(attr_type);
+		if (target == minfo.attrs.end())
+			return {};
+
+		return *target;
+	}
+	return {};
+}
+
 void ReflMngr::Clear() noexcept {
 	// field attrs
 	for (auto& [type, typeinfo] : typeinfos) {

@@ -26,6 +26,9 @@ namespace Ubpa::UDRefl {
 		std::unordered_map<Type, TypeInfo> typeinfos;
 
 		TypeInfo* GetTypeInfo(Type type) const;
+		SharedObject GetTypeAttr(Type type, Type attr_type) const;
+		SharedObject GetFieldAttr(Type type, Name field_name, Type attr_type) const;
+		SharedObject GetMethodAttr(Type type, Name method_name, Type attr_type) const;
 
 		std::pmr::synchronized_pool_resource* GetTemporaryResource() const { return &temporary_resource; }
 		std::pmr::synchronized_pool_resource* GetObjectResource() const { return &object_resource; }

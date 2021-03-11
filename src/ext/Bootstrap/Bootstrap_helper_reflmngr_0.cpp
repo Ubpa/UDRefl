@@ -9,6 +9,9 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_reflmngr_0() {
 	Mngr.AddField<&ReflMngr::tregistry>("tregistry");
 	Mngr.AddStaticMethod(Type_of<ReflMngr>, "Instance", &ReflMngr::Instance);
 	Mngr.AddMethod<&ReflMngr::GetTypeInfo>("GetTypeInfo");
+	Mngr.AddMethod<&ReflMngr::GetTypeAttr>("GetTypeAttr");
+	Mngr.AddMethod<&ReflMngr::GetFieldAttr>("GetFieldAttr");
+	Mngr.AddMethod<&ReflMngr::GetMethodAttr>("GetMethodAttr");
 	Mngr.AddMethod<&ReflMngr::Clear>("Clear");
 	Mngr.AddMethod<&ReflMngr::ContainsVirtualBase>("ContainsVirtualBase");
 	Mngr.AddMethod<MemFuncOf<ReflMngr, Type(Type, std::size_t, std::size_t, bool, bool)>::get(&ReflMngr::RegisterType)>("RegisterType");
