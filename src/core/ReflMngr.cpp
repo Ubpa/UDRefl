@@ -12,27 +12,6 @@ using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
 namespace Ubpa::UDRefl::details {
-	static ObjectView StaticCast_DerivedToBase(ObjectView obj, Type type) {
-		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
-
-		if (obj.GetType() == type)
-			return obj;
-
-		auto target = Mngr.typeinfos.find(obj.GetType());
-		if (target == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = target->second;
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto ptr = StaticCast_DerivedToBase(ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) }, type);
-			if (ptr.GetType())
-				return ptr;
-		}
-
-		return {};
-	}
-
 	static ObjectView StaticCast_BaseToDerived(ObjectView obj, Type type) {
 		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
 
@@ -73,296 +52,6 @@ namespace Ubpa::UDRefl::details {
 		}
 
 		return {};
-	}
-
-	static Type IsInvocable(
-		bool is_priority,
-		Type type,
-		Name method_name,
-		std::span<const Type> argTypes,
-		MethodFlag flag)
-	{
-		assert(type.GetCVRefMode() == CVRefMode::None);
-		auto typetarget = Mngr.typeinfos.find(type);
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-
-		// 1. object variable and static
-		if (enum_contain(flag, MethodFlag::Priority)) {
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (enum_contain(MethodFlag::Priority, iter->second.methodptr.GetMethodFlag())
-					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
-						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
-				{
-					return iter->second.methodptr.GetResultType();
-				}
-			}
-		}
-
-		// 2. object const
-		if(enum_contain(flag, MethodFlag::Const)) {
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const
-					&& (is_priority ? IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
-						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
-				{
-					return iter->second.methodptr.GetResultType();
-				}
-			}
-		}
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			if (auto rst = IsInvocable(is_priority, base, method_name, argTypes, flag))
-				return rst;
-		}
-
-		return {};
-	}
-
-	static Type BInvoke(
-		bool is_priority,
-		std::pmr::memory_resource* args_rsrc,
-		ObjectView obj,
-		Name method_name,
-		void* result_buffer,
-		ArgsView args,
-		MethodFlag flag)
-	{
-		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
-
-		auto typetarget = Mngr.typeinfos.find(obj.GetType());
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-
-		if (enum_contain_any(flag, MethodFlag::Priority)) {
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (enum_contain_any(flag, iter->second.methodptr.GetMethodFlag())) {
-					NewArgsGuard guard{
-						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), args
-					};
-					if (!guard.IsCompatible())
-						continue;
-					iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgsView());
-					return iter->second.methodptr.GetResultType();
-				}
-			}
-		}
-		if (enum_contain_any(flag, MethodFlag::Const)) {
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const) {
-					NewArgsGuard guard{
-						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), args
-					};
-					if (!guard.IsCompatible())
-						continue;
-					iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgsView());
-					return iter->second.methodptr.GetResultType();
-				}
-			}
-		}
-
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = BInvoke(
-				is_priority, args_rsrc,
-				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
-				method_name, result_buffer, args,
-				flag
-			);
-			if (rst)
-				return rst;
-		}
-
-		return {};
-	}
-
-	static SharedObject MInvoke(
-		bool is_priority,
-		std::pmr::memory_resource* args_rsrc,
-		ObjectView obj,
-		Name method_name,
-		std::pmr::memory_resource* rst_rsrc,
-		ArgsView args,
-		MethodFlag flag)
-	{
-		assert(args_rsrc);
-		assert(rst_rsrc);
-		assert(obj.GetType().GetCVRefMode() == CVRefMode::None);
-		auto typetarget = Mngr.typeinfos.find(obj.GetType());
-
-		if (typetarget == Mngr.typeinfos.end())
-			return {};
-
-		const auto& typeinfo = typetarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-
-		if (enum_contain_any(flag, MethodFlag::Priority)) {
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (enum_contain(flag, iter->second.methodptr.GetMethodFlag())) {
-					NewArgsGuard guard{
-						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), args
-					};
-
-					if (!guard.IsCompatible())
-						continue;
-
-					const auto& methodptr = iter->second.methodptr;
-					const auto& rst_type = methodptr.GetResultType();
-
-					if (rst_type.Is<void>()) {
-						iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, guard.GetArgsView());
-						return SharedObject{ Type_of<void> };
-					}
-					else if (rst_type.IsReference()) {
-						std::aligned_storage_t<sizeof(void*)> buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
-						return { rst_type, buffer_as<void*>(&buffer) };
-					}
-					else if (rst_type.Is<ObjectView>()) {
-						std::aligned_storage_t<sizeof(ObjectView)> buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
-						return SharedObject{ buffer_as<ObjectView>(&buffer) };
-					}
-					else if (rst_type.Is<SharedObject>()) {
-						SharedObject buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
-						return buffer;
-					}
-					else {
-						if (!Mngr.IsDestructible(rst_type))
-							return {};
-						auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
-						if (!result_typeinfo)
-							return {};
-						void* result_buffer = rst_rsrc->allocate(result_typeinfo->size, result_typeinfo->alignment);
-						iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgsView());
-						return {
-							{rst_type, result_buffer},
-							[rst_type, rst_rsrc](void* ptr) { Mngr.MDelete({ rst_type, ptr }, rst_rsrc); }
-						};
-					}
-				}
-			}
-		}
-
-		if (enum_contain_any(flag, MethodFlag::Const)) {
-			for (auto iter = begin_iter; iter != end_iter; ++iter) {
-				if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Const) {
-					NewArgsGuard guard{
-						is_priority, args_rsrc,
-						iter->second.methodptr.GetParamList(), args
-					};
-
-					if (!guard.IsCompatible())
-						continue;
-
-					const auto& methodptr = iter->second.methodptr;
-					const auto& rst_type = methodptr.GetResultType();
-
-					if (rst_type.Is<void>()) {
-						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), nullptr, guard.GetArgsView());
-						return SharedObject{ rst_type };
-					}
-					else if (rst_type.IsReference()) {
-						std::aligned_storage_t<sizeof(void*)> buffer;
-						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), &buffer, guard.GetArgsView());
-						return { rst_type, buffer_as<void*>(&buffer) };
-					}
-					else if (rst_type.Is<ObjectView>()) {
-						std::aligned_storage_t<sizeof(ObjectView)> buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
-						return SharedObject{ buffer_as<ObjectView>(&buffer) };
-					}
-					else if (rst_type.Is<SharedObject>()) {
-						SharedObject buffer;
-						iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
-						return buffer;
-					}
-					else {
-						if (!Mngr.IsDestructible(rst_type))
-							return {};
-						auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
-						if (!result_typeinfo)
-							return {};
-						void* result_buffer = rst_rsrc->allocate(result_typeinfo->size, result_typeinfo->alignment);
-						iter->second.methodptr.Invoke(static_cast<const void*>(obj.GetPtr()), result_buffer, guard.GetArgsView());
-						return {
-							{rst_type, result_buffer},
-							[rst_type, rst_rsrc](void* ptr) { Mngr.MDelete({ rst_type, ptr }, rst_rsrc); }
-						};
-					}
-				}
-			}
-		}
-
-		for (const auto& [base, baseinfo] : typeinfo.baseinfos) {
-			auto rst = MInvoke(
-				is_priority, args_rsrc,
-				ObjectView{ base, baseinfo.StaticCast_DerivedToBase(obj.GetPtr()) },
-				method_name, rst_rsrc, args,
-				flag
-			);
-			if (rst.GetType())
-				return rst;
-		}
-
-		return {};
-	}
-
-	static bool ContainsField(Type type, Name field_name, FieldFlag flag) {
-		assert(type.GetCVRefMode() == CVRefMode::None);
-
-		auto ttarget = Mngr.typeinfos.find(type);
-		if (ttarget == Mngr.typeinfos.end())
-			return false;
-
-		auto& typeinfo = ttarget->second;
-
-		auto ftarget = typeinfo.fieldinfos.find(field_name);
-		if (ftarget != typeinfo.fieldinfos.end() && enum_contain(flag, ftarget->second.fieldptr.GetFieldFlag()))
-			return true;
-
-		for (const auto& [basetype, baseinfo] : typeinfo.baseinfos) {
-			if (ContainsField(basetype, field_name, flag))
-				return true;
-		}
-		return false;
-	}
-
-	static bool ContainsMethod(Type type, Name method_name, MethodFlag flag) {
-		assert(type.GetCVRefMode() == CVRefMode::None);
-
-		auto ttarget = Mngr.typeinfos.find(type);
-		if (ttarget == Mngr.typeinfos.end())
-			return false;
-
-		auto& typeinfo = ttarget->second;
-
-		auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(method_name);
-		for (auto iter = begin_iter; iter != end_iter; ++iter) {
-			if (enum_contain(flag, iter->second.methodptr.GetMethodFlag()))
-				return true;
-		}
-
-		for (const auto& [basetype, baseinfo] : typeinfo.baseinfos) {
-			if (ContainsMethod(basetype, method_name, flag))
-				return true;
-		}
-
-		return false;
 	}
 }
 
@@ -781,25 +470,30 @@ SharedObject ReflMngr::MMakeShared(Type type, std::pmr::memory_resource* rsrc, A
 }
 
 ObjectView ReflMngr::StaticCast_DerivedToBase(ObjectView obj, Type type) const {
-	if (obj.GetPtr() == nullptr)
-		return { type, nullptr };
+	constexpr auto cast = [](ObjectView obj, Type type) -> ObjectView {
+		for (const auto& [typeinfo, base_obj] : ObjectTree{ obj }) {
+			if (base_obj.GetType() == type)
+				return base_obj;
+		}
+		return {};
+	};
 
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left:
-		return details::StaticCast_DerivedToBase(obj.RemoveLValueReference(), type).AddLValueReference();
+		return cast(obj.RemoveLValueReference(), type).AddLValueReference();
 	case CVRefMode::Right:
-		return details::StaticCast_DerivedToBase(obj.RemoveRValueReference(), type).AddRValueReference();
+		return cast(obj.RemoveRValueReference(), type).AddRValueReference();
 	case CVRefMode::Const:
-		return details::StaticCast_DerivedToBase(obj.RemoveConst(), type).AddConst();
+		return cast(obj.RemoveConst(), type).AddConst();
 	case CVRefMode::ConstLeft:
-		return details::StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstLValueReference();
+		return cast(obj.RemoveConstReference(), type).AddConstLValueReference();
 	case CVRefMode::ConstRight:
-		return details::StaticCast_DerivedToBase(obj.RemoveConstReference(), type).AddConstRValueReference();
+		return cast(obj.RemoveConstReference(), type).AddConstRValueReference();
 	default:
-		return details::StaticCast_DerivedToBase(obj, type);
+		return cast(obj, type);
 	}
 }
 
@@ -955,33 +649,58 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 }
 
 Type ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> argTypes, MethodFlag flag) const {
-	Type rawtype;
-	MethodFlag newflag;
 	const CVRefMode cvref_mode = type.GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
-		rawtype = type.RemoveReference();
-		newflag = flag;
+		type = type.RemoveReference();
 		break;
 	case CVRefMode::Const: [[fallthrough]];
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		rawtype = type.RemoveCVRef();
-		newflag = enum_remove(flag, MethodFlag::Variable);
+		type = type.RemoveCVRef();
+		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	default:
-		rawtype = type;
-		newflag = flag;
 		break;
 	}
+	
+	auto is_invocable = [&](bool is_priority, MethodFlag filter) -> Type {
+		if (!enum_contain_any(flag, filter))
+			return {};
 
-	if (auto priority_rst = details::IsInvocable(true, rawtype, method_name, argTypes, newflag))
-		return priority_rst;
+		MethodFlag newflag = enum_within(flag, filter);
 
-	return details::IsInvocable(false, rawtype, method_name, argTypes, newflag);
+		for (const auto& [typeinfo, obj] : ObjectTree{ type }) {
+			if (!typeinfo)
+				continue;
+
+			auto [begin_iter, end_iter] = typeinfo->methodinfos.equal_range(method_name);
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (enum_contain_any(newflag, iter->second.methodptr.GetMethodFlag())
+					&& (is_priority ? details::IsPriorityCompatible(iter->second.methodptr.GetParamList(), argTypes)
+						: Mngr.IsCompatible(iter->second.methodptr.GetParamList(), argTypes)))
+				{
+					return iter->second.methodptr.GetResultType();
+				}
+			}
+		}
+
+		return {};
+	};
+
+	if (auto rst = is_invocable(true, MethodFlag::Priority))
+		return rst;
+	if (auto rst = is_invocable(true, MethodFlag::Const))
+		return rst;
+	if (auto rst = is_invocable(false, MethodFlag::Priority))
+		return rst;
+	if (auto rst = is_invocable(false, MethodFlag::Const))
+		return rst;
+
+	return {};
 }
 
 Type ReflMngr::BInvoke(
@@ -994,36 +713,69 @@ Type ReflMngr::BInvoke(
 {
 	assert(temp_args_rsrc);
 
-	ObjectView rawObj;
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
-		rawObj = obj.RemoveReference();
+		obj = obj.RemoveReference();
 		break;
 	case CVRefMode::Const:
-		rawObj = obj.RemoveConst();
+		obj = obj.RemoveConst();
 		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		rawObj = obj.RemoveConstReference();
+		obj = obj.RemoveConstReference();
 		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	default:
-		rawObj = obj;
 		break;
 	}
 
 	if (!obj.GetPtr())
 		flag = enum_within(flag, MethodFlag::Static);
 
-	if (auto priority_rst = details::BInvoke(true, temp_args_rsrc, rawObj, method_name, result_buffer, args, flag))
-		return priority_rst;
+	auto binvoke = [&](bool is_priority, MethodFlag filter) -> Type {
+		if (!enum_contain_any(flag, filter))
+			return {};
 
-	return details::BInvoke(false, temp_args_rsrc, rawObj, method_name, result_buffer, args, flag);
+		MethodFlag newflag = enum_within(flag, filter);
+
+		for (const auto& [typeinfo, baseobj] : ObjectTree{ obj }) {
+			if (!typeinfo)
+				continue;
+
+			auto [begin_iter, end_iter] = typeinfo->methodinfos.equal_range(method_name);
+
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (!enum_contain_any(newflag, iter->second.methodptr.GetMethodFlag()))
+					continue;
+
+				details::NewArgsGuard guard{
+					is_priority, temp_args_rsrc,
+					iter->second.methodptr.GetParamList(), args
+				};
+				if (!guard.IsCompatible())
+					continue;
+				iter->second.methodptr.Invoke(baseobj.GetPtr(), result_buffer, guard.GetArgsView());
+				return iter->second.methodptr.GetResultType();
+			}
+		}
+		return {};
+	};
+
+	if (auto rst = binvoke(true, MethodFlag::Priority))
+		return rst;
+	if (auto rst = binvoke(true, MethodFlag::Const))
+		return rst;
+	if (auto rst = binvoke(false, MethodFlag::Priority))
+		return rst;
+	if (auto rst = binvoke(false, MethodFlag::Const))
+		return rst;
+
+	return {};
 }
 
 SharedObject ReflMngr::MInvoke(
@@ -1037,36 +789,104 @@ SharedObject ReflMngr::MInvoke(
 	assert(rst_rsrc);
 	assert(temp_args_rsrc);
 
-	ObjectView rawObj;
 	const CVRefMode cvref_mode = obj.GetType().GetCVRefMode();
 	assert(!CVRefMode_IsVolatile(cvref_mode));
 	switch (cvref_mode)
 	{
 	case CVRefMode::Left: [[fallthrough]];
 	case CVRefMode::Right:
-		rawObj = obj.RemoveReference();
+		obj = obj.RemoveReference();
 		break;
 	case CVRefMode::Const:
-		rawObj = obj.RemoveConst();
+		obj = obj.RemoveConst();
 		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	case CVRefMode::ConstLeft: [[fallthrough]];
 	case CVRefMode::ConstRight:
-		rawObj = obj.RemoveConstReference();
+		obj = obj.RemoveConstReference();
 		flag = enum_remove(flag, MethodFlag::Variable);
 		break;
 	default:
-		rawObj = obj;
 		break;
 	}
 
 	if (!obj.GetPtr())
 		flag = enum_within(flag, MethodFlag::Static);
 
-	if (auto priority_rst = details::MInvoke(true, temp_args_rsrc, rawObj, method_name, rst_rsrc, args, flag); priority_rst.GetType().Valid())
-		return priority_rst;
+	auto minvoke = [&](bool is_priority, MethodFlag filter) -> SharedObject {
+		if (!enum_contain_any(flag, filter))
+			return {};
 
-	return details::MInvoke(false, temp_args_rsrc, rawObj, method_name, rst_rsrc, args, flag);
+		MethodFlag newflag = enum_within(flag, filter);
+
+		for (const auto& [typeinfo, baseobj] : ObjectTree{ obj }) {
+			if (!typeinfo)
+				continue;
+
+			auto [begin_iter, end_iter] = typeinfo->methodinfos.equal_range(method_name);
+
+			for (auto iter = begin_iter; iter != end_iter; ++iter) {
+				if (!enum_contain_any(newflag, iter->second.methodptr.GetMethodFlag()))
+					continue;
+
+				details::NewArgsGuard guard{
+					is_priority, temp_args_rsrc,
+					iter->second.methodptr.GetParamList(), args
+				};
+
+				if (!guard.IsCompatible())
+					continue;
+
+				const auto& methodptr = iter->second.methodptr;
+				const auto& rst_type = methodptr.GetResultType();
+
+				if (rst_type.Is<void>()) {
+					iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, guard.GetArgsView());
+					return SharedObject{ Type_of<void> };
+				}
+				else if (rst_type.IsReference()) {
+					std::aligned_storage_t<sizeof(void*)> buffer;
+					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
+					return { rst_type, buffer_as<void*>(&buffer) };
+				}
+				else if (rst_type.Is<ObjectView>()) {
+					std::aligned_storage_t<sizeof(ObjectView)> buffer;
+					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
+					return SharedObject{ buffer_as<ObjectView>(&buffer) };
+				}
+				else if (rst_type.Is<SharedObject>()) {
+					SharedObject buffer;
+					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
+					return buffer;
+				}
+				else {
+					if (!Mngr.IsDestructible(rst_type))
+						return {};
+					auto* result_typeinfo = Mngr.GetTypeInfo(rst_type);
+					if (!result_typeinfo)
+						return {};
+					void* result_buffer = rst_rsrc->allocate(result_typeinfo->size, result_typeinfo->alignment);
+					iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgsView());
+					return {
+						{rst_type, result_buffer},
+						[rst_type, rst_rsrc](void* ptr) { Mngr.MDelete({ rst_type, ptr }, rst_rsrc); }
+					};
+				}
+			}
+		}
+		return {};
+	};
+
+	if (auto rst = minvoke(true, MethodFlag::Priority); rst.GetType())
+		return rst;
+	if (auto rst = minvoke(true, MethodFlag::Const); rst.GetType())
+		return rst;
+	if (auto rst = minvoke(false, MethodFlag::Priority); rst.GetType())
+		return rst;
+	if (auto rst = minvoke(false, MethodFlag::Const); rst.GetType())
+		return rst;
+
+	return {};
 }
 
 ObjectView ReflMngr::MNew(Type type, std::pmr::memory_resource* rsrc, ArgsView args) const {
