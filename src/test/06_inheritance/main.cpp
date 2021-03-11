@@ -35,12 +35,10 @@ int main() {
 	d.Var("c") = 4.f;
 	d.Var("d") = 5.f;
 
-	for (const auto& [type, field, var] : d.GetTypeFieldVars()) {
-		std::cout
-			<< field.name.GetView()
-			<< ": " << var
-			<< std::endl;
-	}
+	for (const auto& [name, fieldinfo] : FieldRange_of<D>)
+		std::cout << name.GetView() << std::endl;
+	for (const auto& [name, var] : d.GetVars())
+		std::cout << name.GetView() << ": " << var << std::endl;
 
 	return 0;
 }

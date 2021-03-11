@@ -42,6 +42,7 @@ Ubpa_AddTarget(
     ${c_options_private}
   LIB
     Ubpa::UTemplate_core
+    Ubpa::USmallVector_core
   DEFINE
     ${defines}
   PCH

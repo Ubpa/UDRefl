@@ -22,8 +22,8 @@ int main() {
 	A a;
 	ObjectView ptr{ a };
 
-	for (const auto& field : Mngr.GetFields(Type_of<A>))
-		std::cout << field.name.GetView() << std::endl;
+	for (const auto& [name, fieldinfo] : FieldRange_of<A>)
+		std::cout << name.GetView() << std::endl;
 
 	ptr.Var("data") = 10;
 	ptr.Var("s_data") = 20;
@@ -32,29 +32,29 @@ int main() {
 		<< "//" << std::endl
 		<< "// unowned var" << std::endl
 		<< "////////////////" << std::endl;
-	for (const auto& [type, field, var] : Mngr.GetTypeFieldVars(ObjectView_of<A>))
-		std::cout << field.name.GetView() << ": " << var << std::endl;
+	for (const auto& [name, var] : VarRange_of<A>)
+		std::cout << name.GetView() << ": " << var << std::endl;
 
 	std::cout
 		<< "//" << std::endl
 		<< "// var" << std::endl
-		<< "///////////////" << std::endl;
-	for (const auto& [type, field, var] : ptr.GetTypeFieldVars())
-		std::cout << field.name.GetView() << ": " << var << std::endl;
+		<< "////////" << std::endl;
+	for (const auto& [name, var] : ptr.GetVars())
+		std::cout << name.GetView() << ": " << var << std::endl;
 
 	std::cout
 		<< "//" << std::endl
 		<< "// owned var" << std::endl
-		<< "/////////////////////" << std::endl;
-	for (const auto& [type, field, var] : ptr.GetTypeFieldVars(FieldFlag::Owned))
-		std::cout << field.name.GetView() << ": " << var << std::endl;
+		<< "//////////////" << std::endl;
+	for (const auto& [name, var] : ptr.GetVars(FieldFlag::Owned))
+		std::cout << name.GetView() << ": " << var << std::endl;
 
 	std::cout
 		<< "//" << std::endl
 		<< "// unowned var" << std::endl
-		<< "/////////////////////" << std::endl;
-	for (const auto& [type, field, var] : ptr.GetTypeFieldVars(FieldFlag::Unowned))
-		std::cout << field.name.GetView() << ": " << var << std::endl;
+		<< "////////////////" << std::endl;
+	for (const auto& [name, var] : ptr.GetVars(FieldFlag::Unowned))
+		std::cout << name.GetView() << ": " << var << std::endl;
 
 	return 0;
 }

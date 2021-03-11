@@ -29,9 +29,7 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_object() {
 	Mngr.AddMemberMethod("Var", [](const ObjectView& obj, Name field_name) { return obj.Var(field_name); });
 	Mngr.AddMemberMethod("Var", [](const ObjectView& obj, Type base, Name field_name) { return obj.Var(base, field_name); });
 
-	Mngr.AddMethod<&ObjectView::GetTypeFieldVars>("GetTypeFieldVars");
 	Mngr.AddMethod<&ObjectView::GetVars>("GetVars");
-	Mngr.AddMemberMethod("GetTypeFieldVars", [](const ObjectView& obj) { return obj.GetTypeFieldVars(); });
 	Mngr.AddMemberMethod("GetVars", [](const ObjectView& obj) { return obj.GetVars(); });
 
 	Mngr.AddMethod<&ObjectView::RemoveConst>("RemoveConst");

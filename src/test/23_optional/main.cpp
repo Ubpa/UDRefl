@@ -8,11 +8,12 @@ using namespace Ubpa::UDRefl;
 
 int main() {
 	Mngr.RegisterType<std::optional<float>>();
-	for (auto&& method : Mngr.GetMethods(Type_of<std::optional<float>>)) {
-		std::cout << method.name.GetView() << ": ";
+
+	for (const auto& [name, method] : MethodRange_of<std::optional<float>>) {
+		std::cout << name.GetView() << ": ";
 
 		std::cout << "[";
-		switch (method.info->methodptr.GetMethodFlag())
+		switch (method.methodptr.GetMethodFlag())
 		{
 		case MethodFlag::Variable:
 			std::cout << "Variable";
@@ -25,12 +26,13 @@ int main() {
 			break;
 		default:
 			continue;
+			break;
 		}
 		std::cout << "]";
 
-		std::cout << " " << method.info->methodptr.GetResultType().GetName() << "(";
+		std::cout << " " << method.methodptr.GetResultType().GetName() << "(";
 
-		for (const auto& param : method.info->methodptr.GetParamList())
+		for (const auto& param : method.methodptr.GetParamList())
 			std::cout << param.GetName() << ", ";
 
 		std::cout << ")" << std::endl;

@@ -16,19 +16,11 @@ int main() {
 	Mngr.Var(p, "x") = 1.f;
 	Mngr.Var(p, "y") = 2.f;
 
-	for (const auto& [type, field, var] : p.GetTypeFieldVars()) {
-		std::cout
-			<< field.name.GetView()
-			<< ": " << var
-			<< std::endl;
-	}
+	for (const auto& [name, var] : p.GetVars())
+		std::cout << name.GetView() << ": " << var << std::endl;
 
 	const Point q{ 3.f,4.f };
 
-	for (const auto& [type, field, var] : ObjectView{ q }.GetTypeFieldVars()) {
-		std::cout
-			<< field.name.GetView()
-			<< ": " << var
-			<< std::endl;
-	}
+	for (const auto& [name, var] : ObjectView{ q }.GetVars())
+		std::cout << name.GetView() << ": " << var << std::endl;
 }

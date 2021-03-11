@@ -9,13 +9,6 @@ void Ubpa::UDRefl::ext::Bootstrap() {
 	details::Bootstrap_helper_utemplate();
 	details::Bootstrap_helper_basic();
 	details::Bootstrap_helper_registry();
-	details::Bootstrap_helper_container_0();
-	details::Bootstrap_helper_container_1();
-	details::Bootstrap_helper_container_2();
-	details::Bootstrap_helper_container_3();
-	details::Bootstrap_helper_container_4();
-	details::Bootstrap_helper_container_5();
-	details::Bootstrap_helper_container_6();
 	details::Bootstrap_helper_info_0();
 	details::Bootstrap_helper_info_1();
 	details::Bootstrap_helper_info_2();
@@ -23,6 +16,11 @@ void Ubpa::UDRefl::ext::Bootstrap() {
 	details::Bootstrap_helper_info_4();
 	details::Bootstrap_helper_object();
 	details::Bootstrap_helper_ptr();
+	details::Bootstrap_helper_ranges_derived();
+	details::Bootstrap_helper_ranges_typetree();
+	details::Bootstrap_helper_ranges_fieldrange();
+	details::Bootstrap_helper_ranges_methodrange();
+	details::Bootstrap_helper_ranges_varrange();
 	details::Bootstrap_helper_reflmngr_0();
 	details::Bootstrap_helper_reflmngr_1();
 	details::Bootstrap_helper_reflmngr_2();

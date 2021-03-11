@@ -36,26 +36,12 @@ int main() {
 	v.Var("x") = 3.f;
 	v.Var("y") = 4.f;
 
-	for (const auto& method : Mngr.GetMethods(Type_of<Vec>))
-		std::cout << method.name.GetView() << std::endl;
-
-	for (const auto& [type, field, var] : v.GetTypeFieldVars()) {
-		std::cout
-			<< field.name.GetView()
-			<< ": " << var
-			<< std::endl;
-	}
-
 	auto w0 = v.MInvoke(NameIDRegistry::Meta::operator_add, std::pmr::get_default_resource(), TempArgsView{ v });
 	auto w1 = v.Invoke(NameIDRegistry::Meta::operator_add, TempArgsView{ v });
 
 	std::array arr_w = { w0,w1 };
 	for (auto w : arr_w) {
-		for (const auto& [type, field, var] : w.GetTypeFieldVars()) {
-			std::cout
-				<< field.name.GetView()
-				<< ": " << var
-				<< std::endl;
-		}
+		for (const auto& [name, var] : w.GetVars())
+			std::cout << name.GetView() << ": " << var << std::endl;
 	}
 }

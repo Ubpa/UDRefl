@@ -64,36 +64,34 @@ struct A : Base0, Empty, Base1 {
 */
 
 int main() {
-	Mngr.RegisterType<Empty>();
-	Mngr.RegisterType<Base0>();
-	Mngr.AddField<&Base0::data0>("data0");
-	Mngr.RegisterType<Base1>();
-	Mngr.AddField<&Base1::data1>("data1");
-	Mngr.RegisterType<Field2>();
-	Mngr.AddField<&Field2::data2>("data2");
-	Mngr.RegisterType<Field3>();
-	Mngr.AddField<&Field3::data3>("data3");
+	{
+		Mngr.RegisterType<Empty>();
+		Mngr.RegisterType<Base0>();
+		Mngr.AddField<&Base0::data0>("data0");
+		Mngr.RegisterType<Base1>();
+		Mngr.AddField<&Base1::data1>("data1");
+		Mngr.RegisterType<Field2>();
+		Mngr.AddField<&Field2::data2>("data2");
+		Mngr.RegisterType<Field3>();
+		Mngr.AddField<&Field3::data3>("data3");
 
-	Type bases[] = { Type_of<Base0>, Type_of<Empty>, Type_of<Base1> };
-	Type field_types[] = { Type_of<Field2>, Type_of<Empty>, Type_of<Field3> };
-	Name field_names[] = { Name{"f2"}, Name{"empty"}, Name{"f3"} };
+		Type bases[] = { Type_of<Base0>, Type_of<Empty>, Type_of<Base1> };
+		Type field_types[] = { Type_of<Field2>, Type_of<Empty>, Type_of<Field3> };
+		Name field_names[] = { Name{"f2"}, Name{"empty"}, Name{"f3"} };
 
-	Mngr.RegisterType("A", bases, field_types, field_names);
-	Mngr.AddDefaultConstructor("A");
-	Mngr.AddDestructor("A");
+		Mngr.RegisterType("A", bases, field_types, field_names);
+		Mngr.AddDefaultConstructor("A");
+		Mngr.AddDestructor("A");
+	}
 
-	SharedObject a = Mngr.MakeShared("A");
-	a.Var("data1") = 1.23;
-	a.Var("data3") = 1024;
+	for (auto&& [name, info] : FieldRange{ "A" })
+		std::cout << name.GetView() << std::endl;
 
-	for (auto&& field : Mngr.GetFields("A"))
-		std::cout << field.name.GetView() << std::endl;
-
-	for (auto&& [t, method] : Mngr.GetTypeMethods("A")) {
-		std::cout << t.type.GetName() << "::" << method.name.GetView() << ": ";
+	for (const auto& [name, method] : MethodRange{ "A" }) {
+		std::cout << name.GetView() << ": ";
 
 		std::cout << "[";
-		switch (method.info->methodptr.GetMethodFlag())
+		switch (method.methodptr.GetMethodFlag())
 		{
 		case MethodFlag::Variable:
 			std::cout << "Variable";
@@ -106,17 +104,22 @@ int main() {
 			break;
 		default:
 			continue;
+			break;
 		}
 		std::cout << "]";
 
-		std::cout << " " << method.info->methodptr.GetResultType().GetName() << "(";
+		std::cout << " " << method.methodptr.GetResultType().GetName() << "(";
 
-		for (const auto& param : method.info->methodptr.GetParamList())
+		for (const auto& param : method.methodptr.GetParamList())
 			std::cout << param.GetName() << ", ";
 
 		std::cout << ")" << std::endl;
 	}
 
-	for (auto&& [type, field, var] : a.GetTypeFieldVars())
-		std::cout << field.name.GetView() << ": " << var << std::endl;
+	SharedObject a = Mngr.MakeShared("A");
+	a.Var("data1") = 1.23;
+	a.Var("data3") = 1024;
+
+	for (auto&& [name, var] : a.GetVars())
+		std::cout << name.GetView() << ": " << var << std::endl;
 }

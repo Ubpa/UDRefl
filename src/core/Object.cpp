@@ -2,6 +2,11 @@
 
 #include <UDRefl/ReflMngr.h>
 
+#include <UDRefl/ranges/TypeTree.h>
+#include <UDRefl/ranges/FieldRange.h>
+#include <UDRefl/ranges/MethodRange.h>
+#include <UDRefl/ranges/VarRange.h>
+
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
@@ -61,22 +66,6 @@ SharedObject ObjectView::Invoke(
 	std::pmr::memory_resource* temp_args_rsrc) const
 {
 	return Mngr.Invoke(*this, method_name, args, flag, temp_args_rsrc);
-}
-
-void ObjectView::ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag) const {
-	return Mngr.ForEachVar(*this, func, flag);
-}
-
-std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> ObjectView::GetTypeFieldVars(FieldFlag flag) const {
-	return Mngr.GetTypeFieldVars(*this, flag);
-}
-
-std::vector<ObjectView> ObjectView::GetVars(FieldFlag flag) const {
-	return Mngr.GetVars(*this, flag);
-}
-
-ObjectView ObjectView::FindVar(const std::function<bool(ObjectView)>& func, FieldFlag flag) const {
-	return Mngr.FindVar(*this, func, flag);
 }
 
 ObjectView ObjectView::RemoveConst() const {
@@ -145,6 +134,22 @@ ObjectView ObjectView::StaticCast(Type type) const {
 
 ObjectView ObjectView::DynamicCast(Type type) const {
 	return Mngr.DynamicCast(*this, type);
+}
+
+TypeTree ObjectView::GetTypeTree() const {
+	return TypeTree{ type };
+}
+
+MethodRange ObjectView::GetMethods(MethodFlag flag) const {
+	return { type, flag };
+}
+
+FieldRange ObjectView::GetFields(FieldFlag flag) const {
+	return { type, flag };
+}
+
+VarRange ObjectView::GetVars(FieldFlag flag) const {
+	return { *this, flag };
 }
 
 ContainerType ObjectView::get_container_type() const {

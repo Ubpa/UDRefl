@@ -28,12 +28,12 @@ int main() {
 	std::cout << "x: " << v.Var("x") << std::endl;
 	std::cout << "norm: " << v.Invoke("norm") << std::endl;
 
-	for (auto&& field : Mngr.GetFields(Type_of<Vec>))
-		std::cout << field.name.GetView() << std::endl;
+	for (auto&& [name, info] : FieldRange_of<Vec>)
+		std::cout << name.GetView() << std::endl;
 
-	for (auto&& method : Mngr.GetMethods(Type_of<Vec>))
-		std::cout << method.name.GetView() << std::endl;
+	for (auto&& [name, info] : MethodRange_of<Vec>)
+		std::cout << name.GetView() << std::endl;
 
-	for (auto&& [type, field, var] : v.GetTypeFieldVars())
-		std::cout << field.name.GetView() << ": " << var << std::endl;
+	for (auto&& [name, var] : v.GetVars())
+		std::cout << name.GetView() << ": " << var << std::endl;
 }

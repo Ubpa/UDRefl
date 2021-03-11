@@ -1016,11 +1016,10 @@ namespace Ubpa::UDRefl {
 			}
 		}
 		else if constexpr (std::is_enum_v<FieldData>) {
-			using Value = std::remove_pointer_t<FieldData>;
-			RegisterType<Value>();
+			RegisterType<FieldData>();
 			auto buffer = FieldPtr::ConvertToBuffer(field_data);
 			return {
-				Type_of<Value>,
+				Type_of<const FieldData>,
 				buffer
 			};
 		}
@@ -1231,7 +1230,7 @@ namespace Ubpa::UDRefl {
 		using FieldData = decltype(field_data);
 		if constexpr (std::is_enum_v<FieldData>) {
 			return AddField(
-				Type_of<std::remove_cv_t<FieldData>>,
+				Type_of<const FieldData>,
 				name,
 				{ GenerateFieldPtr<field_data>(), std::move(attrs) }
 			);
@@ -1253,7 +1252,7 @@ namespace Ubpa::UDRefl {
 		if constexpr (std::is_member_object_pointer_v<RawT>)
 			return AddField(Type_of<member_pointer_traits_object<RawT>>, name, std::forward<T>(data), std::move(attrs));
 		else if constexpr (std::is_enum_v<RawT>)
-			return AddField(Type_of<RawT>, name, std::forward<T>(data), std::move(attrs));
+			return AddField(Type_of<const RawT>, name, std::forward<T>(data), std::move(attrs));
 		else {
 			using Traits = FuncTraits<RawT>;
 

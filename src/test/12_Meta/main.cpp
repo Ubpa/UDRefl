@@ -73,12 +73,8 @@ int main() {
 	SharedObject w6 = v + Vec{ 1.f,2.f };
 
 	for (const auto& w : std::array{ w0,w1,w2,w3,w4,w5,w6 }) {
-		for (const auto& [type, field, var] : w.GetTypeFieldVars()) {
-			std::cout
-				<< field.name.GetView()
-				<< ": " << var
-				<< std::endl;
-		}
+		for (const auto& [name, var] : w.GetVars())
+			std::cout << name << ": " << var << std::endl;
 	}
 
 	SharedObject ele_1 = (v += Vec{ 10.f,10.f })[static_cast<std::size_t>(1)];

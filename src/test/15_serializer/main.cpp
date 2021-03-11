@@ -25,12 +25,14 @@ void Serializer(ObjectView obj) {
 			}
 		}
 		else { // normal object
-			size_t N = obj.GetVars().size();
-			size_t i = 0;
-			for (const auto& [type, field, var] : obj.GetTypeFieldVars()) {
-				std::cout << "\"" << field.name.GetView() << "\":";
+			auto vars = obj.GetVars();
+			auto iter = vars.begin();
+			while (iter != vars.end()) {
+				auto [name, var] = *iter;
+				std::cout << "\"" << name.GetView() << "\":";
 				Serializer(var);
-				if (++i != N)
+
+				if (++iter != vars.end())
 					std::cout << ",";
 			}
 		}

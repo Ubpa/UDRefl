@@ -15,14 +15,14 @@ int main() {
 		<< "//" << std::endl
 		<< "// int**" << std::endl
 		<< "//////////" << std::endl;
-	for (auto&& method : Mngr.GetMethods(Type_of<int**>))
-		std::cout << method.name.GetView() << std::endl;
+	for (auto&& [name, info] : MethodRange_of<int**>)
+		std::cout << name.GetView() << std::endl;
 	std::cout
 		<< "//" << std::endl
 		<< "// int*" << std::endl
 		<< "/////////" << std::endl;
-	for (auto&& method : Mngr.GetMethods(Type_of<int*>))
-		std::cout << method.name.GetView() << std::endl;
+	for (auto&& [name, info] : MethodRange_of<int*>)
+		std::cout << name.GetView() << std::endl;
 
 	SharedObject ref_i = **ObjectView{ ppi };
 	ref_i = 3;

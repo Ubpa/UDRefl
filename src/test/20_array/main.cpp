@@ -17,8 +17,8 @@ int main() {
 		<< "//" << std::endl
 		<< "// int[5]" << std::endl
 		<< "///////////" << std::endl;
-	for (auto&& method : Mngr.GetMethods(Type_of<int[5]>))
-		std::cout << method.name.GetView() << std::endl;
+	for (auto&& [name, info] : MethodRange_of<int[5]>)
+		std::cout << name.GetView() << std::endl;
 	auto arr = Mngr.MakeShared(Type_of<Arr>);
 	auto data = arr.Var("data");
 	for (std::size_t i{ 0 }; i < data.size(); ++i)

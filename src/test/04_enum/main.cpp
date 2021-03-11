@@ -18,27 +18,24 @@ int main() {
 	Mngr.AddField<Color::Blue>("Blue");
 
 
-	for (const auto& [type, field, var] : Mngr.GetTypeFieldVars(ObjectView_of<Color>)) {
-		std::cout
-			<< field.name.GetView()
-			<< ": " << static_cast<int>(var.As<Color>())
-			<< std::endl;
-	}
+	for (auto&& [name, color] : VarRange_of<Color>)
+		std::cout << name.GetView() << ": " << static_cast<int>(color.As<const Color>()) << std::endl;
 
 	// enumerator -> name
 	Color c = Color::Red;
-	auto c_field = Mngr.FindField(Type_of<Color>, [c](auto field) {
-		return field.info->fieldptr.Var() == c;
-	});
-
-	assert(c_field.name.GetView() == "Red");
-	std::cout << "name of " << static_cast<int>(c) << " : " << c_field.name.GetView() << std::endl;
+	for (auto&& [color_name, color] : VarRange_of<Color, FieldFlag::Unowned>) {
+		if (color == c) {
+			std::cout << "name of " << static_cast<int>(c) << " : " << color_name.GetView() << std::endl;
+			break;
+		}
+	}
 
 	// name -> enumerator
 	std::string_view name = "Green";
-	auto name_field = Mngr.FindField(Type_of<Color>, [name](auto field) {
-		return field.name.GetView() == name;
-	});
-	assert(name_field.info && name_field.info->fieldptr.Var() == Color::Green);
-	std::cout << "value of " << name << " : " << static_cast<int>(name_field.info->fieldptr.Var().As<Color>()) << std::endl;
+	for (auto&& [color_name, color] : VarRange_of<Color, FieldFlag::Unowned>) {
+		if (color_name.Is(name)) {
+			std::cout << "value of " << name << " : " << static_cast<int>(color.As<const Color>()) << std::endl;
+			break;
+		}
+	}
 }

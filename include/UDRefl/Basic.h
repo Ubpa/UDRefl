@@ -99,31 +99,12 @@ namespace Ubpa::UDRefl {
 	struct TypeInfo;
 	struct FieldInfo;
 	struct MethodInfo;
+	class BaseInfo;
 
-	struct InfoTypePair {
-		Type type;
-		TypeInfo* info{ nullptr };
-	};
-
-	struct InfoFieldPair {
-		Name name;
-		FieldInfo* info{ nullptr };
-	};
-
-	struct InfoMethodPair {
-		Name name;
-		MethodInfo* info{ nullptr };
-	};
-
-	struct InfoTypeFieldPair {
-		InfoTypePair type;
-		InfoFieldPair field;
-	};
-
-	struct InfoTypeMethodPair {
-		InfoTypePair type;
-		InfoMethodPair method;
-	};
+	class TypeTree;
+	class VarRange;
+	class FieldRange;
+	class MethodRange;
 
 	class ReflMngr;
 }

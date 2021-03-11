@@ -120,18 +120,6 @@ namespace Ubpa::UDRefl {
 		ObjectView Var(Type base, Name field_name, FieldFlag flag = FieldFlag::All) const;
 
 		//
-		// Algorithm
-		//////////////
-		//
-		// - only contains APIs with ObjectView in ReflMngr
-		//
-
-		void ForEachVar(const std::function<bool(InfoTypePair, InfoFieldPair, ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
-		std::vector<std::tuple<InfoTypePair, InfoFieldPair, ObjectView>> GetTypeFieldVars(FieldFlag flag = FieldFlag::All) const;
-		std::vector<ObjectView> GetVars(FieldFlag flag = FieldFlag::All) const;
-		ObjectView FindVar(const std::function<bool(ObjectView)>& func, FieldFlag flag = FieldFlag::All) const;
-
-		//
 		// Type
 		//////////
 
@@ -147,6 +135,15 @@ namespace Ubpa::UDRefl {
 		ObjectView AddRValueReference() const;
 		ObjectView AddConstLValueReference() const;
 		ObjectView AddConstRValueReference() const;
+
+		//
+		// Ranges
+		///////////
+
+		TypeTree GetTypeTree() const;
+		MethodRange GetMethods(MethodFlag flag = MethodFlag::All) const;
+		FieldRange GetFields(FieldFlag flag = FieldFlag::All) const;
+		VarRange GetVars(FieldFlag flag = FieldFlag::All) const;
 
 		//////////
 		// Meta //

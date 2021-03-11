@@ -35,30 +35,4 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_reflmngr_0() {
 	Mngr.AddMemberMethod("Var", [](ReflMngr& mngr, ObjectView obj, Name field_name) {return mngr.Var(obj, field_name); });
 	Mngr.AddMethod<MemFuncOf<ReflMngr, ObjectView(ObjectView, Type, Name, FieldFlag)const>::get(&ReflMngr::Var)>("Var");
 	Mngr.AddMemberMethod("Var", [](ReflMngr& mngr, ObjectView obj, Type base, Name field_name) {return mngr.Var(obj, base, field_name); });
-
-	Mngr.AddMethod<&ReflMngr::GetTypes>("GetTypes");
-	Mngr.AddMethod<&ReflMngr::GetTypeFields>("GetTypeFields");
-	Mngr.AddMethod<&ReflMngr::GetFields>("GetFields");
-	Mngr.AddMethod<&ReflMngr::GetTypeMethods>("GetTypeMethods");
-	Mngr.AddMethod<&ReflMngr::GetMethods>("GetMethods");
-	Mngr.AddMethod<&ReflMngr::GetTypeFieldVars>("GetTypeFieldVars");
-	Mngr.AddMethod<&ReflMngr::GetVars>("GetVars");
-	Mngr.AddMemberMethod("GetTypeFields", [](ReflMngr& mngr, Type type) {return mngr.GetTypeFields(type); });
-	Mngr.AddMethod<&ReflMngr::GetFields>("GetFields");
-	Mngr.AddMemberMethod("GetFields", [](ReflMngr& mngr, Type type) {return mngr.GetFields(type); });
-	Mngr.AddMethod<&ReflMngr::GetTypeMethods>("GetTypeMethods");
-	Mngr.AddMemberMethod("GetTypeMethods", [](ReflMngr& mngr, Type type) {return mngr.GetTypeMethods(type); });
-	Mngr.AddMethod<&ReflMngr::GetMethods>("GetMethods");
-	Mngr.AddMemberMethod("GetMethods", [](ReflMngr& mngr, Type type) {return mngr.GetMethods(type); });
-	Mngr.AddMethod<&ReflMngr::GetTypeFieldVars>("GetTypeFieldVars");
-	Mngr.AddMemberMethod("GetTypeFieldVars", [](ReflMngr& mngr, ObjectView obj) {return mngr.GetTypeFieldVars(obj); });
-	Mngr.AddMethod<&ReflMngr::GetVars>("GetVars");
-	Mngr.AddMemberMethod("GetVars", [](ReflMngr& mngr, ObjectView obj) {return mngr.GetVars(obj); });
-
-	Mngr.AddMethod<&ReflMngr::ContainsBase>("ContainsBase");
-	Mngr.AddMemberMethod("ContainsBase", [](ReflMngr& mngr, Type type, Type base) {return mngr.ContainsBase(type, base); });
-	Mngr.AddMethod<&ReflMngr::ContainsField>("ContainsField");
-	Mngr.AddMemberMethod("ContainsField", [](ReflMngr& mngr, Type type, Name name) {return mngr.ContainsField(type, name); });
-	Mngr.AddMethod<&ReflMngr::ContainsMethod>("ContainsMethod");
-	Mngr.AddMemberMethod("ContainsMethod", [](ReflMngr& mngr, Type type, Name name) {return mngr.ContainsMethod(type, name); });
 }

@@ -45,19 +45,17 @@ int main() {
 	p.Var("x") += 1.f;
 	p.Var("y") += 2.f;
 
-	for (const auto& [type, field, var] : p.GetTypeFieldVars()) {
-		for (const auto& attr : field.info->attrs) {
+	auto vars = p.GetVars();
+	for (auto iter = vars.begin(); iter != vars.end(); ++iter) {
+		const auto& [name, var] = *iter;
+		for (const auto& attr : iter.GetFieldInfo().attrs) {
 			std::cout << "[" << attr.GetType().GetName() << "]" << std::endl;
-			for (const auto& [type, field, var] :attr.GetTypeFieldVars()) {
-				std::cout
-					<< field.name.GetView()
-					<< ": " << var
-					<< std::endl;
-			}
+			for (const auto& [name, var] : attr.GetVars())
+				std::cout << name << ": " << var << std::endl;
 			std::cout << "------" << std::endl;
 		}
 		std::cout
-			<< field.name.GetView()
+			<< name.GetView()
 			<< ": " << var
 			<< std::endl;
 	}

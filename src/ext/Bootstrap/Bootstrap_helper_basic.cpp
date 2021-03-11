@@ -25,24 +25,4 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_basic() {
 	Mngr.AddField<FieldFlag::Owned>("Owned");
 	Mngr.AddField<FieldFlag::Unowned>("Unowned");
 	Mngr.AddField<FieldFlag::All>("All");
-
-	Mngr.RegisterType<InfoTypePair>();
-	Mngr.AddField<&InfoTypePair::type>("type");
-	Mngr.AddField<&InfoTypePair::info>("info");
-
-	Mngr.RegisterType<InfoFieldPair>();
-	Mngr.AddField<&InfoFieldPair::name>("name");
-	Mngr.AddField<&InfoFieldPair::info>("info");
-
-	Mngr.RegisterType<InfoMethodPair>();
-	Mngr.AddField<&InfoMethodPair::name>("name");
-	Mngr.AddField<&InfoMethodPair::info>("info");
-
-	Mngr.RegisterType<InfoTypeFieldPair>();
-	Mngr.AddField<&InfoTypeFieldPair::type>("type");
-	Mngr.AddField<&InfoTypeFieldPair::field>("field");
-
-	Mngr.RegisterType<InfoTypeMethodPair>();
-	Mngr.AddField<&InfoTypeMethodPair::type>("type");
-	Mngr.AddField<&InfoTypeMethodPair::method>("method");
 }

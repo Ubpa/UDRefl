@@ -2,11 +2,20 @@
 
 [TOC]
 
+## 0.10
+
+- 0.10
+
+  - :star:use ranges to simplify algorithms (ForEach, Find, Contains, etc)
+
+    > TypeTree, FieldRange, MethodRange, VarRange
+
 ## 0.9
 
 - 0.9.1
   - support trivial
   - dtor: `MethodFlag::Const` -> `MethodFlag::Variable` 
+  - GetAttr
 - 0.9.0
   - refactoring invoke
     - The function signature of `MethodPtr` changes to `void(void*, void*, ArgsView)`  
