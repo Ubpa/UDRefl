@@ -33,6 +33,8 @@ int main() {
 	}
 	
 	auto obj = Mngr.MakeShared(Type_of<Vec>);
+	obj.Var("x") = 3;
+	obj.Var("y") = 4;
 
 	{
 		auto v = obj += Vec{ 10.f,10.f };

@@ -726,7 +726,7 @@ Type ReflMngr::IsInvocable(Type type, Name method_name, std::span<const Type> ar
 
 		MethodFlag newflag = enum_within(flag, filter);
 
-		for (const auto& [typeinfo, obj] : ObjectTree{ type }) {
+		for (const auto& [typeinfo, baseobj] : ObjectTree{ type }) {
 			if (!typeinfo)
 				continue;
 
@@ -894,22 +894,22 @@ SharedObject ReflMngr::MInvoke(
 				const auto& rst_type = methodptr.GetResultType();
 
 				if (rst_type.Is<void>()) {
-					iter->second.methodptr.Invoke(obj.GetPtr(), nullptr, guard.GetArgsView());
+					iter->second.methodptr.Invoke(baseobj.GetPtr(), nullptr, guard.GetArgsView());
 					return SharedObject{ Type_of<void> };
 				}
 				else if (rst_type.IsReference()) {
 					std::aligned_storage_t<sizeof(void*)> buffer;
-					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
+					iter->second.methodptr.Invoke(baseobj.GetPtr(), &buffer, guard.GetArgsView());
 					return { rst_type, buffer_as<void*>(&buffer) };
 				}
 				else if (rst_type.Is<ObjectView>()) {
 					std::aligned_storage_t<sizeof(ObjectView)> buffer;
-					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
+					iter->second.methodptr.Invoke(baseobj.GetPtr(), &buffer, guard.GetArgsView());
 					return SharedObject{ buffer_as<ObjectView>(&buffer) };
 				}
 				else if (rst_type.Is<SharedObject>()) {
 					SharedObject buffer;
-					iter->second.methodptr.Invoke(obj.GetPtr(), &buffer, guard.GetArgsView());
+					iter->second.methodptr.Invoke(baseobj.GetPtr(), &buffer, guard.GetArgsView());
 					return buffer;
 				}
 				else {
@@ -919,7 +919,7 @@ SharedObject ReflMngr::MInvoke(
 					if (!result_typeinfo)
 						return {};
 					void* result_buffer = rst_rsrc->allocate(result_typeinfo->size, result_typeinfo->alignment);
-					iter->second.methodptr.Invoke(obj.GetPtr(), result_buffer, guard.GetArgsView());
+					iter->second.methodptr.Invoke(baseobj.GetPtr(), result_buffer, guard.GetArgsView());
 					return {
 						{rst_type, result_buffer},
 						[rst_type, rst_rsrc](void* ptr) { Mngr.MDelete({ rst_type, ptr }, rst_rsrc); }

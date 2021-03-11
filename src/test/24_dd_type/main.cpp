@@ -118,7 +118,7 @@ int main() {
 
 	SharedObject a = Mngr.MakeShared("A");
 	a.Var("data1") = 1.23;
-	a.Var("data3") = 1024;
+	a.Var("f3").Var("data3") = 1024;
 
 	for (auto&& [name, var] : a.GetVars())
 		std::cout << name.GetView() << ": " << var << std::endl;
