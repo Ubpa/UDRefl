@@ -295,8 +295,8 @@ namespace Ubpa::UDRefl {
 	concept IsMap = IsMultiMap<T>
 		&& container_at_key<T>
 		&& container_at_key<const T>
-		&& container_subscript_key_cl<T>
-		&& container_subscript_key_r<T>
+		//&& container_subscript_key_cl<T>
+		//&& container_subscript_key_r<T>
 		;
 	
 	template<typename T>
@@ -352,8 +352,8 @@ namespace Ubpa::UDRefl {
 	concept IsUnorderedMap = IsUnorderedMultiMap<T>
 		&& container_at_key<T>
 		&& container_at_key<const T>
-		&& container_subscript_key_cl<T>
-		&& container_subscript_key_r<T>
+		//&& container_subscript_key_cl<T>
+		//&& container_subscript_key_r<T>
 		;
 
 	template<typename T>

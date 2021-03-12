@@ -112,11 +112,11 @@ SharedObject ReflMngr::GetMethodAttr(Type type, Name method_name, Type attr_type
 		if (!typeinfo)
 			continue;
 
-		auto ftarget = typeinfo->methodinfos.find(method_name);
-		if (ftarget == typeinfo->methodinfos.end())
+		auto mtarget = typeinfo->methodinfos.find(method_name);
+		if (mtarget == typeinfo->methodinfos.end())
 			continue;
 
-		const auto& minfo = ftarget->second;
+		const auto& minfo = mtarget->second;
 
 		auto target = minfo.attrs.find(attr_type);
 		if (target == minfo.attrs.end())
