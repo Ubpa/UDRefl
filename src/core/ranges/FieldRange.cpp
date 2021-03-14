@@ -61,7 +61,7 @@ FieldRange::iterator FieldRange::iterator::operator++(int) {
 }
 
 namespace Ubpa::UDRefl {
-	bool operator==(const FieldRange::iterator& lhs, const FieldRange::iterator& rhs) {
+	UDRefl_core_API bool operator==(const FieldRange::iterator& lhs, const FieldRange::iterator& rhs) {
 		assert(lhs.flag == rhs.flag);
 		if (lhs.Valid()) {
 			if (rhs.Valid()) {
@@ -79,7 +79,7 @@ namespace Ubpa::UDRefl {
 			return lhs.typeiter == rhs.typeiter;
 	}
 
-	bool operator!=(const FieldRange::iterator& lhs, const FieldRange::iterator& rhs) {
+	UDRefl_core_API bool operator!=(const FieldRange::iterator& lhs, const FieldRange::iterator& rhs) {
 		return !(lhs == rhs);
 	}
 }

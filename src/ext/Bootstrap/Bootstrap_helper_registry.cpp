@@ -7,13 +7,10 @@ template<typename T, typename U>
 void RegisterIDRegistry() {
 	using W = IDRegistry<T, U>;
 	Mngr.RegisterType<W>();
-	Mngr.AddMethod<MemFuncOf<W, void(T, std::string_view)>::get(&W::RegisterUnmanaged)>("RegisterUnmanaged");
-	Mngr.AddMethod<MemFuncOf<W, T(std::string_view)>::get(&W::RegisterUnmanaged)>("RegisterUnmanaged");
 	Mngr.AddMethod<MemFuncOf<W, std::string_view(T, std::string_view)>::get(&W::Register)>("Register");
 	Mngr.AddMethod<MemFuncOf<W, U(std::string_view)>::get(&W::Register)>("Register");
 	Mngr.AddMethod<&W::IsRegistered>("IsRegistered");
 	Mngr.AddMethod<&W::Viewof>("Viewof");
-	Mngr.AddMethod<&W::UnregisterUnmanaged>("UnregisterUnmanaged");
 	Mngr.AddMethod<&W::Clear>("Clear");
 }
 

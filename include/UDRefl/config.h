@@ -1,5 +1,18 @@
 #pragma once
 
+#if (defined(WIN32) || defined(_WIN32)) && defined(UBPA_UDREFL_SHARED)
+#ifdef UCMAKE_EXPORT_UDRefl_core
+#define UDRefl_core_API __declspec(dllexport)
+#define UDRefl_core_CLASS_API __declspec(dllexport)
+#else
+#define UDRefl_core_API __declspec(dllimport)
+#define UDRefl_core_CLASS_API __declspec(dllexport)
+#endif
+#else
+#define UDRefl_core_API extern
+#define UDRefl_core_CLASS_API
+#endif // (defined(WIN32) || defined(_WIN32)) && !defined(UBPA_UDREFL_SHARED)
+
 #include <cstddef>
 
 // use it in "Basic.h"

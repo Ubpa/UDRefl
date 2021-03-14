@@ -67,6 +67,11 @@ ReflMngr::ReflMngr() {
 	details::ReflMngrInitUtil_6(*this);
 }
 
+ReflMngr& ReflMngr::Instance() noexcept {
+	static ReflMngr instance;
+	return instance;
+}
+
 TypeInfo* ReflMngr::GetTypeInfo(Type type) const {
 	auto target = typeinfos.find(type.RemoveCVRef());
 	if (target == typeinfos.end())

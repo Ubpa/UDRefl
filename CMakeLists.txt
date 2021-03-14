@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-project(UDRefl VERSION 0.10.0)
+project(UDRefl VERSION 0.10.1)
 message(STATUS "[Project] ${PROJECT_NAME}")
 
 include(cmake/InitUCMake.cmake)
@@ -13,6 +13,7 @@ Ubpa_AddDep(USmallVector 0.1.0)
 
 include(cmake/Platform.cmake)
 
+option(Ubpa_UDRefl_Build_Shared "build shared library" OFF)
 option(Ubpa_UDRefl_Build_ext_Bootstrap "build ext Bootstrap" OFF)
 option(Ubpa_UDRefl_include_all_StdName "switch UBPA_UDREFL_INCLUDE_ALL_STD_NAME" OFF)
 

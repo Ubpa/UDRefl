@@ -3,11 +3,11 @@
 #include "common.h"
 
 namespace Ubpa::UDRefl {
-	class VarRange {
+	class UDRefl_core_CLASS_API VarRange {
 	public:
 		// DFS
 		// TypeInfo* and BaseInfo* maybe nullptr
-		class iterator {
+		class UDRefl_core_CLASS_API iterator {
 		public:
 			using value_type = std::tuple<Name, ObjectView>;
 			using reference = const value_type&;
@@ -30,8 +30,8 @@ namespace Ubpa::UDRefl {
 			reference operator*() const noexcept { return value; }
 			pointer operator->() const noexcept { return &value; }
 
-			friend bool operator==(const iterator& lhs, const iterator& rhs);
-			friend bool operator!=(const iterator& lhs, const iterator& rhs);
+			UDRefl_core_API friend bool operator==(const iterator& lhs, const iterator& rhs);
+			UDRefl_core_API friend bool operator!=(const iterator& lhs, const iterator& rhs);
 
 			bool Valid() const noexcept { return mode != -1; }
 

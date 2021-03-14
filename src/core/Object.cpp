@@ -10,7 +10,7 @@
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
 
-std::pmr::synchronized_pool_resource* Ubpa::UDRefl::ReflMngr_GetTemporaryResource() {
+UDRefl_core_API std::pmr::synchronized_pool_resource* Ubpa::UDRefl::ReflMngr_GetTemporaryResource() {
 	return Mngr.GetTemporaryResource();
 }
 

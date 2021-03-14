@@ -12,7 +12,7 @@ struct A {
 int main() {
 	Mngr.RegisterType<A>();
 	Mngr.AddField<&A::data>("data");
-	ext::Bootstrap();
+	Ubpa_UDRefl_ext_Bootstrap();
 	A a;
 	ObjectView{ a }.Var("data") = 3;
 	std::cout << a.data << std::endl;

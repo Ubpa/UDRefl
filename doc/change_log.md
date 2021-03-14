@@ -4,7 +4,11 @@
 
 ## 0.10
 
-- 0.10
+- 0.10.1
+
+  - shared
+
+- 0.10.0
 
   - :star:use ranges to simplify algorithms (ForEach, Find, Contains, etc)
 

@@ -90,7 +90,7 @@ VarRange::iterator VarRange::iterator::operator++(int) {
 }
 
 namespace Ubpa::UDRefl {
-	bool operator==(const VarRange::iterator& lhs, const VarRange::iterator& rhs) {
+	UDRefl_core_API bool operator==(const VarRange::iterator& lhs, const VarRange::iterator& rhs) {
 		assert(lhs.flag == rhs.flag);
 		assert(lhs.cvref_mode == rhs.cvref_mode);
 		if (lhs.Valid()) {
@@ -109,7 +109,7 @@ namespace Ubpa::UDRefl {
 			return lhs.typeiter == rhs.typeiter;
 	}
 
-	bool operator!=(const VarRange::iterator& lhs, const VarRange::iterator& rhs) {
+	UDRefl_core_API bool operator!=(const VarRange::iterator& lhs, const VarRange::iterator& rhs) {
 		return !(lhs == rhs);
 	}
 }

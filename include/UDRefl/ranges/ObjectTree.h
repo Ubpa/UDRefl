@@ -5,11 +5,11 @@
 #include <UDRefl/Object.h>
 
 namespace Ubpa::UDRefl {
-	class ObjectTree {
+	class UDRefl_core_CLASS_API ObjectTree {
 	public:
 		// DFS
 		// TypeInfo* and BaseInfo* maybe nullptr
-		class iterator {
+		class UDRefl_core_CLASS_API iterator {
 		public:
 			using value_type = std::tuple<TypeInfo*, ObjectView>;
 			using reference = const value_type&;
@@ -26,8 +26,8 @@ namespace Ubpa::UDRefl {
 			reference operator*() const noexcept { return value; }
 			pointer operator->() const noexcept { return &value; }
 
-			friend bool operator==(const iterator& lhs, const iterator& rhs);
-			friend bool operator!=(const iterator& lhs, const iterator& rhs);
+			UDRefl_core_API friend bool operator==(const iterator& lhs, const iterator& rhs);
+			UDRefl_core_API friend bool operator!=(const iterator& lhs, const iterator& rhs);
 
 			bool Valid() const noexcept { return mode != -1; }
 			std::span<const Ranges::Derived> GetDeriveds() const noexcept { return { deriveds.begin(), deriveds.end() }; }

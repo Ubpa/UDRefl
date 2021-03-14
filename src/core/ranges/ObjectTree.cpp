@@ -114,11 +114,11 @@ ObjectTree::iterator ObjectTree::iterator::operator++(int) {
 }
 
 namespace Ubpa::UDRefl {
-	bool operator==(const ObjectTree::iterator& lhs, const ObjectTree::iterator& rhs) {
+	UDRefl_core_API bool operator==(const ObjectTree::iterator& lhs, const ObjectTree::iterator& rhs) {
 		return lhs.deriveds == rhs.deriveds && lhs.mode == rhs.mode;
 	}
 
-	bool operator!=(const ObjectTree::iterator& lhs, const ObjectTree::iterator& rhs) {
+	UDRefl_core_API bool operator!=(const ObjectTree::iterator& lhs, const ObjectTree::iterator& rhs) {
 		return !(lhs == rhs);
 	}
 }

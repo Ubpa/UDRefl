@@ -48,7 +48,7 @@ namespace Ubpa::UDRefl {
 #endif // NDEBUG
 	};
 
-	class NameIDRegistry : public IDRegistry<NameID, Name> {
+	class UDRefl_core_CLASS_API NameIDRegistry : public IDRegistry<NameID, Name> {
 	public:
 		struct Meta {
 			// operators
@@ -195,7 +195,7 @@ namespace Ubpa::UDRefl {
 		Name Nameof(NameID ID) const;
 	};
 
-	class TypeIDRegistry : public IDRegistry<TypeID, Type> {
+	class UDRefl_core_CLASS_API TypeIDRegistry : public IDRegistry<TypeID, Type> {
 	public:
 		struct Meta {
 			static constexpr Type global{ "__global" };

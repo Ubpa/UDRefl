@@ -6,12 +6,9 @@ namespace Ubpa::UDRefl {
 	constexpr Type GlobalType = TypeIDRegistry::Meta::global;
 	constexpr ObjectView Global = { GlobalType, nullptr };
 
-	class ReflMngr {
+	class UDRefl_core_CLASS_API ReflMngr {
 	public:
-		static ReflMngr& Instance() noexcept {
-			static ReflMngr instance;
-			return instance;
-		}
+		static ReflMngr& Instance() noexcept;
 
 		//
 		// Data

@@ -61,7 +61,7 @@ MethodRange::iterator MethodRange::iterator::operator++(int) {
 }
 
 namespace Ubpa::UDRefl {
-	bool operator==(const MethodRange::iterator& lhs, const MethodRange::iterator& rhs) {
+	UDRefl_core_API bool operator==(const MethodRange::iterator& lhs, const MethodRange::iterator& rhs) {
 		assert(lhs.flag == rhs.flag);
 		if (lhs.Valid()) {
 			if (rhs.Valid()) {
@@ -79,7 +79,7 @@ namespace Ubpa::UDRefl {
 			return lhs.typeiter == rhs.typeiter;
 	}
 
-	bool operator!=(const MethodRange::iterator& lhs, const MethodRange::iterator& rhs) {
+	UDRefl_core_API bool operator!=(const MethodRange::iterator& lhs, const MethodRange::iterator& rhs) {
 		return !(lhs == rhs);
 	}
 }

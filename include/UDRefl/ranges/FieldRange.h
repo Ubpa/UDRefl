@@ -4,9 +4,9 @@
 
 namespace Ubpa::UDRefl {
 	// DFS
-	class FieldRange {
+	class UDRefl_core_CLASS_API FieldRange {
 	public:
-		class iterator {
+		class UDRefl_core_CLASS_API iterator {
 		public:
 			using value_type = std::pair<const Name, FieldInfo>;
 			using reference = value_type&;
@@ -21,8 +21,8 @@ namespace Ubpa::UDRefl {
 			reference operator*() const noexcept { return *curfield; }
 			pointer operator->() const noexcept { return curfield.operator->(); }
 
-			friend bool operator==(const iterator& lhs, const iterator& rhs);
-			friend bool operator!=(const iterator& lhs, const iterator& rhs);
+			UDRefl_core_API friend bool operator==(const iterator& lhs, const iterator& rhs);
+			UDRefl_core_API friend bool operator!=(const iterator& lhs, const iterator& rhs);
 
 			bool Valid() const noexcept { return typeiter.Valid(); }
 			std::span<const Ranges::Derived> GetDeriveds() const noexcept { return typeiter.GetDeriveds(); }

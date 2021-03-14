@@ -26,12 +26,28 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   list(APPEND defines "")
 endif()
 
+set(mode "")
+if(Ubpa_UDRefl_Build_Shared)
+  set(mode SHARED)
+  list(APPEND defines "UBPA_UDREFL_SHARED")
+  if(MSVC)
+    list(APPEND c_options "/wd4251;/wd4275")
+    list(APPEND c_options_private "/wd4651")
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    #
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    #
+  endif()
+else()
+  set(mode STATIC)
+endif()
+
 if(Ubpa_UDRefl_include_all_StdName)
   list(APPEND defines "UBPA_UDREFL_INCLUDE_ALL_STD_NAME")
 endif()
 
 Ubpa_AddTarget(
-  MODE STATIC
+  MODE ${mode}
   SOURCE
     "${PROJECT_SOURCE_DIR}/include/UDRefl"
   INC

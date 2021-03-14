@@ -7,7 +7,7 @@
 
 namespace Ubpa::UDRefl {
 	using Attr = SharedObject;
-	struct AttrLess {
+	struct UDRefl_core_CLASS_API AttrLess {
 		using is_transparent = int;
 		bool operator()(const Attr& lhs, const Attr& rhs) const noexcept { return lhs.GetType() < rhs.GetType(); }
 		bool operator()(const Attr& lhs, const Type& rhs) const noexcept { return lhs.GetType() < rhs;           }
@@ -15,7 +15,7 @@ namespace Ubpa::UDRefl {
 	};
 	using AttrSet = std::set<Attr, AttrLess>;
 
-	class BaseInfo {
+	class UDRefl_core_CLASS_API BaseInfo {
 	public:
 		BaseInfo() noexcept = default;
 		BaseInfo(InheritCastFunctions funcs) : funcs{ std::move(funcs) }
@@ -33,19 +33,19 @@ namespace Ubpa::UDRefl {
 		InheritCastFunctions funcs;
 	};
 
-	struct FieldInfo {
+	struct UDRefl_core_CLASS_API FieldInfo {
 		FieldPtr fieldptr;
 		AttrSet attrs;
 	};
 
-	struct MethodInfo {
+	struct UDRefl_core_CLASS_API MethodInfo {
 		MethodPtr methodptr;
 		AttrSet attrs;
 	};
 
 	// trivial : https://docs.microsoft.com/en-us/cpp/cpp/trivial-standard-layout-and-pod-types?view=msvc-160
 	// if the type is trivial, it must contains a copy-ctor for type-convertion, and can't register default ctor, dtor
-	struct TypeInfo {
+	struct UDRefl_core_CLASS_API TypeInfo {
 		size_t size;
 		size_t alignment;
 		bool is_polymorphic;
