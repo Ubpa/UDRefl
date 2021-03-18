@@ -9,7 +9,7 @@ namespace Ubpa::UDRefl {
 	// pointer const array type (pointer is const, and pointer to non - const / referenced object)
 	using ArgPtrBuffer = void* const*;
 
-	class UDRefl_core_CLASS_API ArgsView {
+	class UDRefl_core_API ArgsView {
 	public:
 		constexpr ArgsView() noexcept : buffer{ nullptr } {}
 		constexpr ArgsView(ArgPtrBuffer buffer, std::span<const Type> argTypes) noexcept : buffer{ buffer }, argTypes{ argTypes }{}
@@ -36,7 +36,7 @@ namespace Ubpa::UDRefl {
 
 	UDRefl_core_API std::pmr::synchronized_pool_resource* ReflMngr_GetTemporaryResource();
 
-	class UDRefl_core_CLASS_API ObjectView {
+	class UDRefl_core_API ObjectView {
 	public:
 		constexpr ObjectView() noexcept : ptr{ nullptr } {}
 		constexpr ObjectView(Type type, void* ptr) noexcept : type{ type }, ptr{ ptr }{}
@@ -319,7 +319,7 @@ namespace Ubpa::UDRefl {
 		void* ptr; // if type is reference, ptr is a pointer of referenced object
 	};
 	
-	class UDRefl_core_CLASS_API SharedObject : public ObjectView {
+	class UDRefl_core_API SharedObject : public ObjectView {
 	public:
 		using ObjectView::ObjectView;
 		using ObjectView::operator=;

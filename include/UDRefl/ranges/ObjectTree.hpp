@@ -5,11 +5,11 @@
 #include <UDRefl/Object.hpp>
 
 namespace Ubpa::UDRefl {
-	class UDRefl_core_CLASS_API ObjectTree {
+	class UDRefl_core_API ObjectTree {
 	public:
 		// DFS
 		// TypeInfo* and BaseInfo* maybe nullptr
-		class UDRefl_core_CLASS_API iterator {
+		class UDRefl_core_API iterator {
 		public:
 			using value_type = std::tuple<TypeInfo*, ObjectView>;
 			using reference = const value_type&;

@@ -5,7 +5,7 @@
 #include <USmallFlat/small_vector.hpp>
 
 namespace Ubpa::UDRefl::Ranges {
-	struct UDRefl_core_CLASS_API Derived {
+	struct UDRefl_core_API Derived {
 		ObjectView obj;
 		TypeInfo* typeinfo; // not nullptr
 		std::unordered_map<Type, BaseInfo>::iterator curbase;

@@ -4,9 +4,9 @@
 
 namespace Ubpa::UDRefl {
 	// DFS
-	class UDRefl_core_CLASS_API FieldRange {
+	class UDRefl_core_API FieldRange {
 	public:
-		class UDRefl_core_CLASS_API iterator {
+		class UDRefl_core_API iterator {
 		public:
 			using value_type = std::pair<const Name, FieldInfo>;
 			using reference = value_type&;

@@ -5,7 +5,7 @@
 #include <variant>
 
 namespace Ubpa::UDRefl {
-	class UDRefl_core_CLASS_API FieldPtr {
+	class UDRefl_core_API FieldPtr {
 	public:
 		//
 		// Buffer

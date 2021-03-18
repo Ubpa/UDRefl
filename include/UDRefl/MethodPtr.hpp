@@ -7,7 +7,7 @@
 namespace Ubpa::UDRefl {
 	using ParamList = std::vector<Type>;
 
-	class UDRefl_core_CLASS_API MethodPtr {
+	class UDRefl_core_API MethodPtr {
 	public:
 		using Func = std::function<void(void*, void*, ArgsView)>;
 
