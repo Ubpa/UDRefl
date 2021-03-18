@@ -1,7 +1,7 @@
 #pragma once
 
-#include <UTemplate/Func.h>
-#include <UTemplate/Type.h>
+#include <UTemplate/Func.hpp>
+#include <UTemplate/Type.hpp>
 
 #include <cstdint>
 #include <functional>

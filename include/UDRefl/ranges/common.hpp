@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Object.h"
+#include "../Object.hpp"
 
-#include <small_vector.h>
+#include <USmallFlat/small_vector.hpp>
 
 namespace Ubpa::UDRefl::Ranges {
 	struct UDRefl_core_CLASS_API Derived {

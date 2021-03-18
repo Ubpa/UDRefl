@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "common.hpp"
 
 namespace Ubpa::UDRefl {
 	class UDRefl_core_CLASS_API VarRange {

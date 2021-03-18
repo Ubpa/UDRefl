@@ -1,6 +1,6 @@
 #pragma once
 
-#include <UDRefl/ReflMngr.h>
+#include <UDRefl/ReflMngr.hpp>
 
 namespace Ubpa::UDRefl::details {
 	void ReflMngrInitUtil_0(ReflMngr& mngr);

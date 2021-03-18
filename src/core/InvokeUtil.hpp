@@ -1,9 +1,9 @@
 #pragma once
 
-#include <UDRefl/Util.h>
-#include <UDRefl/config.h>
+#include <UDRefl/Util.hpp>
+#include <UDRefl/config.hpp>
 
-#include <UTemplate/Type.h>
+#include <UTemplate/Type.hpp>
 
 #include <span>
 

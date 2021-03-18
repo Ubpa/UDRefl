@@ -1,5 +1,5 @@
 #include <sstream>
-#include <UDRefl/UDRefl.h>
+#include <UDRefl/UDRefl.hpp>
 
 int main()
 {

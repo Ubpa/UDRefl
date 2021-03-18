@@ -1,7 +1,7 @@
 #pragma once
 
-#include "FieldPtr.h"
-#include "MethodPtr.h"
+#include "FieldPtr.hpp"
+#include "MethodPtr.hpp"
 
 #include <set>
 

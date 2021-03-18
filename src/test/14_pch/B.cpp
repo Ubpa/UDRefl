@@ -1,6 +1,6 @@
-#include "B.h"
+#include "B.hpp"
 
-#include <UDRefl/UDRefl.h>
+#include <UDRefl/UDRefl.hpp>
 
 void RegisterB() {
 	Ubpa::UDRefl::Mngr.RegisterType<B>();

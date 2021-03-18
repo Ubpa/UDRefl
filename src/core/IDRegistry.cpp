@@ -1,4 +1,4 @@
-#include <UDRefl/IDRegistry.h>
+#include <UDRefl/IDRegistry.hpp>
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;

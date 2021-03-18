@@ -1,8 +1,8 @@
-#include <UDRefl/UDRefl.h>
+#include <UDRefl/UDRefl.hpp>
 #include <iostream>
 
-#include "A.h"
-#include "B.h"
+#include "A.hpp"
+#include "B.hpp"
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;

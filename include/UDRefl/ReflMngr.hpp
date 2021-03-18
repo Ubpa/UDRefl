@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Info.h"
+#include "Info.hpp"
 
 namespace Ubpa::UDRefl {
 	constexpr Type GlobalType = TypeIDRegistry::Meta::global;

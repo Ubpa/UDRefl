@@ -1,6 +1,6 @@
 #include <UDRefl_ext/Bootstrap.h>
 
-#include "Bootstrap_helper.h"
+#include "Bootstrap_helper.hpp"
 
 UDRefl_ext_Bootstrap_API void Ubpa_UDRefl_ext_Bootstrap() {
 	Ubpa::UDRefl::ext::details::Bootstrap_helper_utemplate();

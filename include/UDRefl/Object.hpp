@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Basic.h"
-#include "IDRegistry.h"
+#include "Basic.hpp"
+#include "IDRegistry.hpp"
 
 //#include <span>
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common.h"
+#include "common.hpp"
 
-#include <UDRefl/Object.h>
+#include <UDRefl/Object.hpp>
 
 namespace Ubpa::UDRefl {
 	class UDRefl_core_CLASS_API ObjectTree {

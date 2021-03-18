@@ -1,6 +1,6 @@
 #pragma once
 
-#include <UDRefl/UDRefl.h>
+#include <UDRefl/UDRefl.hpp>
 
 #include <UDRefl_ext/Bootstrap.h>
 

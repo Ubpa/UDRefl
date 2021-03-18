@@ -1,29 +1,29 @@
 #pragma once
 
-#include "Util.h"
+#include "Util.hpp"
 
-#include "attrs/ContainerType.h"
+#include "attrs/ContainerType.hpp"
 
 // here we just include necessary StdName/Name_*.h
 // if you want to include all, you can define macro UBPA_UDREFL_INCLUDE_ALL_STD_NAME
 
-#include <UTemplate/StdName/Name_memory.h>
-#include <UTemplate/StdName/Name_set.h>
-#include <UTemplate/StdName/Name_span.h>
-#include <UTemplate/StdName/Name_string.h>
-#include <UTemplate/StdName/Name_unordered_map.h>
-#include <UTemplate/StdName/Name_vector.h>
+#include <UTemplate/StdName/Name_memory.hpp>
+#include <UTemplate/StdName/Name_set.hpp>
+#include <UTemplate/StdName/Name_span.hpp>
+#include <UTemplate/StdName/Name_string.hpp>
+#include <UTemplate/StdName/Name_unordered_map.hpp>
+#include <UTemplate/StdName/Name_vector.hpp>
 
 #ifdef UBPA_UDREFL_INCLUDE_ALL_STD_NAME
-#include <UTemplate/StdName/Name_deque.h>
-#include <UTemplate/StdName/Name_forward_list.h>
-#include <UTemplate/StdName/Name_list.h>
-#include <UTemplate/StdName/Name_map.h>
-#include <UTemplate/StdName/Name_queue.h>
-#include <UTemplate/StdName/Name_stack.h>
-#include <UTemplate/StdName/Name_string.h>
-#include <UTemplate/StdName/Name_string_view.h>
-#include <UTemplate/StdName/Name_unordered_set.h>
+#include <UTemplate/StdName/Name_deque.hpp>
+#include <UTemplate/StdName/Name_forward_list.hpp>
+#include <UTemplate/StdName/Name_list.hpp>
+#include <UTemplate/StdName/Name_map.hpp>
+#include <UTemplate/StdName/Name_queue.hpp>
+#include <UTemplate/StdName/Name_stack.hpp>
+#include <UTemplate/StdName/Name_string.hpp>
+#include <UTemplate/StdName/Name_string_view.hpp>
+#include <UTemplate/StdName/Name_unordered_set.hpp>
 #endif // UBPA_UDREFL_INCLUDE_ALL_STD_NAME
 
 //#include <memory>
