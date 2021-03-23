@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-project(UDRefl VERSION 0.10.2)
+project(UDRefl VERSION 0.10.3)
 message(STATUS "[Project] ${PROJECT_NAME}")
 
 include(cmake/InitUCMake.cmake)
@@ -9,7 +9,7 @@ Ubpa_InitUCMake(VERSION 0.6.4)
 Ubpa_InitProject()
 
 Ubpa_AddDep(UTemplate 0.7.2)
-Ubpa_AddDep(USmallFlat 0.2.0)
+Ubpa_AddDep(USmallFlat 0.2.2)
 
 include(cmake/Platform.cmake)
 
