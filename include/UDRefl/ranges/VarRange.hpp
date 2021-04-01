@@ -61,6 +61,7 @@ namespace Ubpa::UDRefl {
 
 		constexpr explicit VarRange(ObjectView obj) noexcept : VarRange{ obj, FieldFlag::All } {}
 		constexpr explicit VarRange(Type type) noexcept : VarRange{ ObjectView{type}, FieldFlag::Unowned } {}
+		constexpr VarRange(Type type, FieldFlag flag) noexcept : VarRange{ ObjectView{type}, flag } {}
 
 		iterator begin() const { return { objtree.begin(), cvref_mode, flag }; }
 		iterator end() const noexcept { return { objtree.end(), cvref_mode, flag }; }

@@ -2,6 +2,24 @@
 
 using namespace Ubpa::UDRefl;
 
+FieldFlag FieldPtr::GetFieldFlag() const noexcept {
+	switch (data.index())
+	{
+	case 0:
+		return FieldFlag::Basic;
+	case 1:
+		return FieldFlag::Virtual;
+	case 2:
+		return FieldFlag::Static;
+	case 3:
+		return FieldFlag::DynamicShared;
+	case 4:
+		return FieldFlag::DynamicBuffer;
+	default:
+		return FieldFlag::None;
+	}
+}
+
 ObjectView FieldPtr::Var() {
 	return std::visit([this]<typename T>(T& value) -> ObjectView {
 		if constexpr (std::is_same_v<T, size_t>) {

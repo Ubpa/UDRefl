@@ -40,6 +40,7 @@ namespace Ubpa::UDRefl {
 			objtree{ ObjectTree{obj} }, flag{ flag } {}
 		constexpr explicit MethodRange(ObjectView obj) noexcept : MethodRange{ obj, MethodFlag::All } {}
 		constexpr explicit MethodRange(Type type) noexcept : MethodRange{ ObjectView{type}, MethodFlag::All } {}
+		constexpr MethodRange(Type type, MethodFlag flag) noexcept : MethodRange{ ObjectView{type}, flag } {}
 		
 		iterator begin() const { return { objtree.begin(), flag }; }
 		iterator end() const noexcept { return { objtree.end(), flag }; }

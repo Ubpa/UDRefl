@@ -59,4 +59,10 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_object() {
 	Mngr.AddMethod<&SharedObject::UseCount>("UseCount");
 	Mngr.AddMethod<&SharedObject::IsObjectView>("IsObjectView");
 	Mngr.AddMethod<&SharedObject::Swap>("Swap");
+
+	Mngr.AddMethod<&SharedObject::StaticCast_DerivedToBase>("StaticCast_DerivedToBase");
+	Mngr.AddMethod<&SharedObject::StaticCast_BaseToDerived>("StaticCast_BaseToDerived");
+	Mngr.AddMethod<&SharedObject::DynamicCast_BaseToDerived>("DynamicCast_BaseToDerived");
+	Mngr.AddMethod<&SharedObject::StaticCast>("StaticCast");
+	Mngr.AddMethod<&SharedObject::DynamicCast>("DynamicCast");
 }

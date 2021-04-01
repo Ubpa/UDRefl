@@ -42,9 +42,9 @@ namespace Ubpa::UDRefl {
 		// Constructor
 		////////////////
 
-		constexpr FieldPtr() noexcept = default;
+		FieldPtr() noexcept = default;
 
-		constexpr FieldPtr(Type type, std::size_t forward_offset_value) noexcept :
+		FieldPtr(Type type, std::size_t forward_offset_value) noexcept :
 			type{ type },
 			data{ forward_offset_value }
 		{ assert(type); }
@@ -54,12 +54,12 @@ namespace Ubpa::UDRefl {
 			data{ std::move(offsetor) }
 		{ assert(type && std::get<1>(data)); }
 
-		constexpr FieldPtr(Type type, void* ptr) noexcept :
+		FieldPtr(Type type, void* ptr) noexcept :
 			type{ type },
 			data{ ptr }
 		{ assert(type && ptr); }
 
-		explicit constexpr FieldPtr(ObjectView static_obj) noexcept :
+		explicit FieldPtr(ObjectView static_obj) noexcept :
 			type{ static_obj.GetType() },
 			data{ static_obj.GetPtr() }
 		{ assert(type && static_obj.GetPtr()); }
@@ -69,14 +69,14 @@ namespace Ubpa::UDRefl {
 			data{ std::move(obj.GetBuffer()) }
 		{ assert(type && std::get<3>(data)); }
 
-		constexpr FieldPtr(Type type, const Buffer& buffer) noexcept :
+		FieldPtr(Type type, const Buffer& buffer) noexcept :
 			type{ type },
 			data{ buffer }
 		{ assert(type); }
 
-		constexpr Type GetType() const noexcept { return type; }
+		Type GetType() const noexcept { return type; }
 
-		constexpr FieldFlag GetFieldFlag() const noexcept;
+		FieldFlag GetFieldFlag() const noexcept;
 
 		// unowned
 		ObjectView Var();
@@ -94,5 +94,3 @@ namespace Ubpa::UDRefl {
 		Data data;
 	};
 }
-
-#include "details/FieldPtr.inl"

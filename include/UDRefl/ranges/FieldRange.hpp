@@ -40,6 +40,7 @@ namespace Ubpa::UDRefl {
 			objtree{ ObjectTree{obj} }, flag{ flag } {}
 		constexpr explicit FieldRange(ObjectView obj) noexcept : FieldRange{ obj, FieldFlag::All } {}
 		constexpr explicit FieldRange(Type type) noexcept : FieldRange{ ObjectView{type}, FieldFlag::All } {}
+		constexpr FieldRange(Type type, FieldFlag flag) noexcept : FieldRange{ ObjectView{type}, flag } {}
 		
 		iterator begin() const { return { objtree.begin(), flag }; }
 		iterator end() const noexcept { return { objtree.end(), flag }; }

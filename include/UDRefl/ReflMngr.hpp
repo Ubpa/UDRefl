@@ -56,21 +56,30 @@ namespace Ubpa::UDRefl {
 		// - static field: pointer to **non-void** type
 		// - member object pointer
 		// - enumerator
-		template<auto field_data>
+		template<auto field_data, bool NeedRegisterFieldType = true>
 		FieldPtr GenerateFieldPtr();
+
+		template<auto field_data>
+		FieldPtr SimpleGenerateFieldPtr() { return GenerateFieldPtr<field_data, false>(); }
 
 		// data can be:
 		// 1. member object pointer
 		// 2. pointer to **non-void** and **non-function** type
 		// 3. functor : Value*(Object*)  / Value&(Object*)
 		// 4. enumerator
-		template<typename T>
+		template<typename T, bool NeedRegisterFieldType = true>
 		FieldPtr GenerateFieldPtr(T&& data);
+
+		template<typename T>
+		FieldPtr SimpleGenerateFieldPtr(T&& data) { return GenerateFieldPtr<T, false>(std::forward<T>(data)); }
 
 		// if T is bufferable, T will be stored as buffer,
 		// else we will use MakeShared to store it
 		template<typename T, typename... Args>
 		FieldPtr GenerateDynamicFieldPtr(Args&&... args);
+
+		template<typename T, typename... Args>
+		FieldPtr SimpleGenerateDynamicFieldPtr(Args&&... args);
 
 		template<typename... Params>
 		static ParamList GenerateParamList() noexcept(sizeof...(Params) == 0);
@@ -149,33 +158,53 @@ namespace Ubpa::UDRefl {
 		// field_data can be
 		// 1. member object pointer
 		// 2. enumerator
-		template<auto field_data>
+		template<auto field_data, bool NeedRegisterFieldType = true>
 		bool AddField(Name name, AttrSet attrs = {});
+
+		template<auto field_data>
+		bool SimpleAddField(Name name, AttrSet attrs = {})
+		{ return AddField<field_data, false>(name, std::move(attrs)); }
 
 		// data can be:
 		// 1. member object pointer
 		// 2. enumerator
 		// 3. pointer to **non-void** and **non-function** type
 		// 4. functor : Value*(Object*) / Value&(Object*)
-		template<typename T> requires std::negation_v<std::is_same<std::decay_t<T>, FieldInfo>>
+		template<typename T, bool NeedRegisterFieldType = true> requires std::negation_v<std::is_same<std::decay_t<T>, FieldInfo>>
 		bool AddField(Type type, Name name, T&& data, AttrSet attrs = {})
-		{ return AddField(type, name, { GenerateFieldPtr(std::forward<T>(data)), std::move(attrs) }); }
+		{ return AddField(type, name, { GenerateFieldPtr<T, NeedRegisterFieldType>(std::forward<T>(data)), std::move(attrs) }); }
+
+		template<typename T> requires std::negation_v<std::is_same<std::decay_t<T>, FieldInfo>>
+		bool SimpleAddField(Type type, Name name, T&& data, AttrSet attrs = {})
+		{ return AddField<T, false>(type, name, std::forward<T>(data), std::move(attrs)); }
 
 		// data can be:
 		// 1. member object pointer
 		// 2. functor : Value*(Object*)
 		// > - result must be an pointer of **non-void** type
 		// 3. enumerator
-		template<typename T> requires std::negation_v<std::is_same<std::decay_t<T>, FieldInfo>>
+		template<typename T, bool NeedRegisterFieldType = true> requires std::negation_v<std::is_same<std::decay_t<T>, FieldInfo>>
 		bool AddField(Name name, T&& data, AttrSet attrs = {});
+
+		template<typename T> requires std::negation_v<std::is_same<std::decay_t<T>, FieldInfo>>
+		bool SimpleAddField(Name name, T&& data, AttrSet attrs = {})
+		{ return AddField<T, false>(name, std::forward<T>(data), std::move(attrs)); }
 
 		template<typename T, typename... Args>
 		bool AddDynamicFieldWithAttr(Type type, Name name, AttrSet attrs, Args&&... args)
 		{ return AddField(type, name, { GenerateDynamicFieldPtr<T>(std::forward<Args>(args)...), std::move(attrs) }); }
 
 		template<typename T, typename... Args>
+		bool SimpleAddDynamicFieldWithAttr(Type type, Name name, AttrSet attrs, Args&&... args)
+		{ return AddField(type, name, { GenerateDynamicFieldPtr<T, false>(std::forward<Args>(args)...), std::move(attrs) }); }
+
+		template<typename T, typename... Args>
 		bool AddDynamicField(Type type, Name name, Args&&... args)
 		{ return AddDynamicFieldWithAttr<T>(type, name, {}, std::forward<Args>(args)...); }
+
+		template<typename T, typename... Args>
+		bool SimpleAddDynamicField(Type type, Name name, Args&&... args)
+		{ return SimpleAddDynamicFieldWithAttr<T>(type, name, {}, std::forward<Args>(args)...); }
 
 		// funcptr is member function pointer
 		// get TypeID from funcptr

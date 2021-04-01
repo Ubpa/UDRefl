@@ -324,11 +324,14 @@ namespace Ubpa::UDRefl {
 		using ObjectView::ObjectView;
 		using ObjectView::operator=;
 	
-		SharedObject(Type type, SharedBuffer buffer) noexcept : ObjectView{ type }, buffer{ std::move(buffer) } { ptr = buffer.get(); }
+		SharedObject(Type type, SharedBuffer buffer) noexcept : ObjectView{ type }, buffer{ std::move(buffer) } { ptr = this->buffer.get(); }
 		constexpr explicit SharedObject(ObjectView obj) noexcept : ObjectView{ obj } { }
 		
 		template<typename T>
 		SharedObject(Type type, std::shared_ptr<T> buffer) noexcept : ObjectView{ type, buffer.get() }, buffer{ std::move(buffer) } { }
+
+		template<typename T>
+		explicit SharedObject(std::unique_ptr<T>&& buffer) noexcept : ObjectView{ Type_of<T>, buffer.get() }, buffer{ std::move(buffer) } { }
 
 		template<typename Deleter>
 		SharedObject(ObjectView obj, Deleter d) noexcept : ObjectView{ obj }, buffer{ obj.GetPtr(), std::move(d) } {}
@@ -350,6 +353,23 @@ namespace Ubpa::UDRefl {
 			std::swap(ptr, rhs.ptr);
 			buffer.swap(rhs.buffer);
 		}
+
+		template<typename T>
+		auto AsShared() const;
+
+		//////////////
+		// ReflMngr //
+		//////////////
+
+		//
+		// Cast
+		/////////
+
+		SharedObject StaticCast_DerivedToBase(Type base) const;
+		SharedObject StaticCast_BaseToDerived(Type derived) const;
+		SharedObject DynamicCast_BaseToDerived(Type derived) const;
+		SharedObject StaticCast(Type type) const;
+		SharedObject DynamicCast(Type type) const;
 
 	private:
 		SharedBuffer buffer; // if type is reference/void, buffer is empty

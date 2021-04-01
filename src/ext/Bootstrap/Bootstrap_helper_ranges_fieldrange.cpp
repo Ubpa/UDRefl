@@ -8,6 +8,7 @@ void Ubpa::UDRefl::ext::details::Bootstrap_helper_ranges_fieldrange() {
 	Mngr.AddConstructor<FieldRange, ObjectView, FieldFlag>();
 	Mngr.AddConstructor<FieldRange, ObjectView>();
 	Mngr.AddConstructor<FieldRange, Type>();
+	Mngr.AddConstructor<FieldRange, Type, FieldFlag>();
 	Mngr.AddConstructor<FieldRange::iterator, ObjectTree::iterator>();
 	Mngr.AddConstructor<FieldRange::iterator, ObjectTree::iterator, FieldFlag>();
 	Mngr.AddMethod<&FieldRange::iterator::Valid>("Valid");
