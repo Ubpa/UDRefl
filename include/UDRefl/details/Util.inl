@@ -121,8 +121,9 @@ constexpr bool Ubpa::UDRefl::is_ref_compatible(Type lhs, Type rhs) noexcept {
 constexpr bool Ubpa::UDRefl::is_pointer_array_compatible(std::string_view lhs, std::string_view rhs) noexcept {
 	if (type_name_is_reference(lhs)) {
 		lhs = type_name_remove_reference(lhs);
-		if (type_name_is_const(lhs))
+		if (!type_name_is_const(lhs))
 			return false;
+		lhs = type_name_remove_const(lhs);
 	}
 	rhs = type_name_remove_cvref(rhs);
 
