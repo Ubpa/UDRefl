@@ -45,10 +45,10 @@ namespace Ubpa::UDRefl {
 			value_type value;
 		};
 
-		constexpr ObjectTree(ObjectView obj) noexcept :
+		constexpr explicit ObjectTree(ObjectView obj) noexcept :
 			obj{ obj.RemoveConstReference() } {}
 
-		constexpr ObjectTree(Type type) noexcept :
+		constexpr explicit ObjectTree(Type type) noexcept :
 			obj{ ObjectView{type} } {}
 
 		iterator begin() const { return { obj, true }; }

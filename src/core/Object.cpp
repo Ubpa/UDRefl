@@ -143,3 +143,47 @@ ContainerType ObjectView::get_container_type() const {
 
 	return target->As<ContainerType>();
 }
+
+
+SharedObject SharedObject::StaticCast_DerivedToBase(Type base) const {
+	auto b = ObjectView::StaticCast_DerivedToBase(base);
+	if (!b.GetType().Valid())
+		return {};
+
+	
+	return { b.GetType(), SharedBuffer{buffer,b.GetPtr()} };
+}
+
+SharedObject SharedObject::StaticCast_BaseToDerived(Type derived) const {
+	auto d = ObjectView::StaticCast_BaseToDerived(derived);
+	if (!d.GetType().Valid())
+		return {};
+
+
+	return { d.GetType(), SharedBuffer{buffer,d.GetPtr()} };
+}
+
+SharedObject SharedObject::DynamicCast_BaseToDerived(Type derived) const {
+	auto d = ObjectView::StaticCast_BaseToDerived(derived);
+	if (!d.GetType().Valid())
+		return {};
+
+
+	return { d.GetType(), SharedBuffer{buffer,d.GetPtr()} };
+}
+
+SharedObject SharedObject::StaticCast(Type type) const {
+	auto t = ObjectView::StaticCast(type);
+	if (!t.GetType().Valid())
+		return {};
+
+	return { t.GetType(), SharedBuffer{buffer,t.GetPtr()} };
+}
+
+SharedObject SharedObject::DynamicCast(Type type) const {
+	auto t = ObjectView::DynamicCast(type);
+	if (!t.GetType().Valid())
+		return {};
+
+	return { t.GetType(), SharedBuffer{buffer,t.GetPtr()} };
+}
