@@ -11,8 +11,15 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   #
 endif()
 
+set(mode "")
+if(Ubpa_UDRefl_Build_Shared)
+  set(mode SHARED)
+else()
+  set(mode STATIC)
+endif()
+
 Ubpa_AddTarget(
-  MODE SHARED
+  MODE ${mode}
   SOURCE
     "${PROJECT_SOURCE_DIR}/include/UDRefl_ext/Bootstrap.h"
   INC
