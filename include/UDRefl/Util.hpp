@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.hpp"
+
 #include <UTemplate/Func.hpp>
 #include <UTemplate/Type.hpp>
 
@@ -458,7 +460,7 @@ namespace Ubpa::UDRefl {
 	// ctor
 
 	template<typename T, typename... Args>
-	concept type_ctor = std::is_constructible_v<T, Args...> && requires(Args... args) { T{ std::forward<Args>(args)... }; };
+	concept type_ctor = std::is_constructible_v<T, Args...> && requires(Args... args) { T(std::forward<Args>(args)...); };
 	template<typename T>
 	concept type_ctor_copy = std::is_copy_constructible_v<T> && type_ctor<T, const T&>;
 	template<typename T>
