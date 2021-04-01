@@ -27,8 +27,11 @@ namespace Ubpa::UDRefl {
 		SharedObject GetFieldAttr(Type type, Name field_name, Type attr_type) const;
 		SharedObject GetMethodAttr(Type type, Name method_name, Type attr_type) const;
 
-		std::pmr::synchronized_pool_resource* GetTemporaryResource() const { return &temporary_resource; }
-		std::pmr::synchronized_pool_resource* GetObjectResource() const { return &object_resource; }
+		void SetTemporaryResource(std::shared_ptr<std::pmr::memory_resource> rsrc);
+		void SetObjectResource(std::shared_ptr<std::pmr::memory_resource> rsrc);
+
+		std::pmr::memory_resource* GetTemporaryResource() const { return temporary_resource.get(); }
+		std::pmr::memory_resource* GetObjectResource() const { return object_resource.get(); }
 
 		// clear order
 		// - field attrs
@@ -314,7 +317,7 @@ namespace Ubpa::UDRefl {
 			ArgsView args = {},
 			MethodFlag flag = MethodFlag::All,
 			std::pmr::memory_resource* temp_args_rsrc = ReflMngr_GetTemporaryResource()) const
-		{ return MInvoke(obj, method_name, &object_resource, args, flag, temp_args_rsrc); }
+		{ return MInvoke(obj, method_name, object_resource.get(), args, flag, temp_args_rsrc); }
 
 		// -- template --
 
@@ -364,11 +367,11 @@ namespace Ubpa::UDRefl {
 		// for
 		// - argument copy
 		// - user argument buffer
-		mutable std::pmr::synchronized_pool_resource temporary_resource;
+		std::shared_ptr<std::pmr::memory_resource> temporary_resource;
 
 		// for
-		// - New
-		mutable std::pmr::synchronized_pool_resource object_resource;
+		// - New/MakeShared
+		std::shared_ptr<std::pmr::memory_resource> object_resource;
 	};
 
 	inline static ReflMngr& Mngr = ReflMngr::Instance();

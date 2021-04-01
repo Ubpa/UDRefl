@@ -4,6 +4,11 @@
 
 ## 0.10
 
+- 0.10.4
+
+  - `ReflMngr::Simple*` (not register field type)
+  - `ReflMngr::Set{Temporary|Object}Resource` 
+
 - 0.10.1
 
   - shared

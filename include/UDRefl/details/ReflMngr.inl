@@ -381,7 +381,7 @@ namespace Ubpa::UDRefl::details {
 		static void run(ReflMngr& mngr) {
 			if constexpr (std::is_default_constructible_v<T> && !std::is_trivial_v<T>)
 				mngr.AddConstructor<T>();
-			if constexpr (type_ctor_copy<T>)
+			if constexpr (type_ctor_copy<T> && !std::is_trivial_v<T>)
 				mngr.AddConstructor<T, const T&>();
 			if constexpr (type_ctor_move<T> && !std::is_trivial_v<T>)
 				mngr.AddConstructor<T, T&&>();

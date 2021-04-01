@@ -55,8 +55,13 @@ bool details::IsRefConstructible(Type paramType, std::span<const Type> argTypes)
 	if (target == Mngr.typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	if (argTypes.empty() && typeinfo.is_trivial)
-		return true;
+
+	if (typeinfo.is_trivial && (
+		argTypes.empty() // default ctor
+		|| argTypes.size() == 1 && argTypes.front().RemoveCVRef() == paramType // const/ref ctor
+	))
+	{ return true; }
+
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (IsRefCompatible(iter->second.methodptr.GetParamList(), argTypes))
@@ -72,9 +77,16 @@ bool details::RefConstruct(ObjectView obj, ArgsView args) {
 
 	const auto& typeinfo = target->second;
 
+	if (typeinfo.is_trivial) {
+		if (args.Types().empty())
+			return true;
+		if (args.Types().size() == 1 && args.Types().front().RemoveCVRef() == obj.GetType()) {
+			std::memcpy(obj.GetPtr(), args.Buffer()[0], typeinfo.size);
+			return true;
+		}
+	}
+
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
-	if (begin_iter == end_iter && args.Types().empty())
-		return true;// trivial ctor
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable
 			&& IsRefCompatible(iter->second.methodptr.GetParamList(), args.Types()))
@@ -250,7 +262,7 @@ details::NewArgsGuard::NewArgsGuard(
 
 	// 2. compute offset and alignment
 
-	std::size_t	max_alignment = 1;
+	std::uint32_t max_alignment = 1;
 	for (std::uint8_t k = 0; k < num_copiedargs; ++k) {
 		std::uint32_t size, alignment;
 		if (info_copiedargs[k].is_pointer_or_array) {

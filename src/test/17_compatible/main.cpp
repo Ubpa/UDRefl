@@ -27,8 +27,8 @@ struct Funcs {
 	void g(const char*) {
 		std::cout << "g(const char*)" << std::endl;
 	}
-	void g(int(&&)[]) {
-		std::cout << "g(int(&&)[])" << std::endl;
+	void g(const int(&&)[]) {
+		std::cout << "g(const int(&&)[])" << std::endl;
 	}
 };
 
@@ -41,7 +41,7 @@ int main() {
 	Mngr.AddMethod<MemFuncOf<Funcs, void(const std::uint8_t&&)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(ObjectView)>::get(&Funcs::f)>("f");
 	Mngr.AddMethod<MemFuncOf<Funcs, void(const char*)>::get(&Funcs::g)>("g");
-	Mngr.AddMethod<MemFuncOf<Funcs, void(int(&&)[])>::get(&Funcs::g)>("g");
+	Mngr.AddMethod<MemFuncOf<Funcs, void(const int(&&)[])>::get(&Funcs::g)>("g");
 
 	SharedObject funcs = Mngr.MakeShared(Type_of<Funcs>);
 
@@ -59,5 +59,5 @@ int main() {
 
 	int arr_i[5];
 	funcs.Invoke<void>("g", TempArgsView{ "hello" }); // const char(&)[6]
-	funcs.Invoke<void>("g", TempArgsView{ arr_i });   // int(&)[5]
+	funcs.Invoke<void>("g", TempArgsView{ arr_i }); // int(&)[5]
 }

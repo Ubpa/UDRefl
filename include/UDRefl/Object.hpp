@@ -34,7 +34,7 @@ namespace Ubpa::UDRefl {
 	template<typename... Args>
 	TempArgsView(Args&&... args)->TempArgsView<sizeof...(Args)>;
 
-	UDRefl_core_API std::pmr::synchronized_pool_resource* ReflMngr_GetTemporaryResource();
+	UDRefl_core_API std::pmr::memory_resource* ReflMngr_GetTemporaryResource();
 
 	class UDRefl_core_API ObjectView {
 	public:

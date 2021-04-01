@@ -55,7 +55,10 @@ namespace Ubpa::UDRefl::details {
 	}
 }
 
-ReflMngr::ReflMngr() {
+ReflMngr::ReflMngr() :
+	temporary_resource{ std::make_shared<std::pmr::synchronized_pool_resource>() },
+	object_resource{ std::make_shared<std::pmr::synchronized_pool_resource>() }
+{
 	RegisterType(GlobalType, 0, 1, false, true);
 
 	details::ReflMngrInitUtil_0(*this);
@@ -133,6 +136,16 @@ SharedObject ReflMngr::GetMethodAttr(Type type, Name method_name, Type attr_type
 	return {};
 }
 
+void ReflMngr::SetTemporaryResource(std::shared_ptr<std::pmr::memory_resource> rsrc) {
+	assert(rsrc.get());
+	temporary_resource = std::move(rsrc);
+}
+
+void ReflMngr::SetObjectResource(std::shared_ptr<std::pmr::memory_resource> rsrc) {
+	assert(rsrc.get());
+	object_resource = std::move(rsrc);
+}
+
 void ReflMngr::Clear() noexcept {
 	// field attrs
 	for (auto& [type, typeinfo] : typeinfos) {
@@ -157,9 +170,6 @@ void ReflMngr::Clear() noexcept {
 	}
 
 	typeinfos.clear();
-
-	temporary_resource.release();
-	object_resource.release();
 }
 
 ReflMngr::~ReflMngr() {
@@ -208,7 +218,7 @@ Type ReflMngr::RegisterType(
 
 	const size_t num_field = field_types.size();
 
-	std::pmr::vector<std::size_t> base_offsets{ &temporary_resource };
+	std::pmr::vector<std::size_t> base_offsets(temporary_resource.get());
 	base_offsets.resize(bases.size());
 
 	for (size_t i = 0; i < bases.size(); i++) {
@@ -229,7 +239,7 @@ Type ReflMngr::RegisterType(
 			alignment = baseinfo.alignment;
 	}
 
-	std::pmr::vector<std::size_t> field_offsets{ &temporary_resource };
+	std::pmr::vector<std::size_t> field_offsets(temporary_resource.get());
 	field_offsets.resize(num_field);
 
 	for (size_t i = 0; i < num_field; ++i) {
@@ -989,15 +999,15 @@ bool ReflMngr::MDelete(ObjectView obj, std::pmr::memory_resource* rsrc) const {
 }
 
 ObjectView ReflMngr::New(Type type, ArgsView args) const {
-	return MNew(type, &object_resource, args);
+	return MNew(type, object_resource.get(), args);
 }
 
 bool ReflMngr::Delete(ObjectView obj) const {
-	return MDelete(obj, &object_resource);
+	return MDelete(obj, object_resource.get());
 }
 
 SharedObject ReflMngr::MakeShared(Type type, ArgsView args) const {
-	return MMakeShared(type, &object_resource, args);
+	return MMakeShared(type, object_resource.get(), args);
 }
 
 bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const {
@@ -1005,8 +1015,13 @@ bool ReflMngr::IsConstructible(Type type, std::span<const Type> argTypes) const 
 	if (target == typeinfos.end())
 		return false;
 	const auto& typeinfo = target->second;
-	if (argTypes.empty() && typeinfo.is_trivial)
-		return true;
+
+	if (typeinfo.is_trivial && (
+		argTypes.empty() // default ctor
+		|| argTypes.size() == 1 && argTypes.front().RemoveCVRef() == type // const/ref ctor
+	))
+	{ return true; }
+
 	auto [begin_iter, end_iter] = typeinfo.methodinfos.equal_range(NameIDRegistry::Meta::ctor);
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (IsCompatible(iter->second.methodptr.GetParamList(), argTypes))
@@ -1056,7 +1071,7 @@ bool ReflMngr::Construct(ObjectView obj, ArgsView args) const {
 	for (auto iter = begin_iter; iter != end_iter; ++iter) {
 		if (iter->second.methodptr.GetMethodFlag() == MethodFlag::Variable) {
 			details::NewArgsGuard guard{
-				false, &temporary_resource,
+				false, temporary_resource.get(),
 				iter->second.methodptr.GetParamList(), args
 			};
 			if (!guard.IsCompatible())

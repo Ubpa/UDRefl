@@ -84,7 +84,7 @@ namespace Ubpa::UDRefl::details {
 			std::uint16_t name_size;
 			std::uint8_t idx;
 			bool is_pointer_or_array;
-			Type GetType() const {
+			Type GetType() const noexcept {
 				return { std::string_view{name,name_size}, TypeID{name_hash} };
 			}
 		}; // 24 bytes
