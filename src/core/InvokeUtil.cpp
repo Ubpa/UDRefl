@@ -116,6 +116,14 @@ details::NewArgsGuard::NewArgsGuard(
 		return;
 	}
 
+	constexpr auto type_is_base_of = [](Type base, Type derived) {
+		for (auto [info, t] : ObjectTree{ derived }) {
+			if (base == t.GetType())
+				return true;
+		}
+		return false;
+	};
+
 	// 1. is compatible ? (collect infos)
 
 	const std::uint8_t num_args = static_cast<std::uint8_t>(argTypes.size());
@@ -153,12 +161,39 @@ details::NewArgsGuard::NewArgsGuard(
 					assert(num_copiedargs <= MaxArgNum);
 
 					info.idx = i;
-					info.is_pointer_or_array = false;
+					info.mode = ArgInfo::ArgMode::Copy;
 					info.name = raw_lhs_type.GetName().data();
 					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
 					info.name_hash = raw_lhs_type.GetID().GetValue();
 
 					continue; // &{const{T}} <- T{arg}
+				}
+
+				if (type_is_base_of(type_name_remove_const(unref_lhs), rhs)) {
+					auto& info = info_copiedargs[num_copiedargs++];
+					assert(num_copiedargs <= MaxArgNum);
+
+					info.idx = i;
+					info.mode = ArgInfo::ArgMode::Derived;
+					info.name = raw_lhs_type.GetName().data();
+					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
+					info.name_hash = raw_lhs_type.GetID().GetValue();
+
+					continue; // &{const{T}} <- any D
+				}
+			}
+			else { // &{T}
+				if (rhs.GetCVRefMode() == CVRefMode::Left && type_is_base_of(type_name_remove_const(unref_lhs), rhs)) {
+					auto& info = info_copiedargs[num_copiedargs++];
+					assert(num_copiedargs <= MaxArgNum);
+
+					info.idx = i;
+					info.mode = ArgInfo::ArgMode::Derived;
+					info.name = unref_lhs.data();
+					info.name_size = static_cast<std::uint16_t>(unref_lhs.size());
+					info.name_hash = TypeID(unref_lhs).GetValue();
+
+					continue; // &{T} <- &{D}
 				}
 			}
 		}
@@ -182,12 +217,25 @@ details::NewArgsGuard::NewArgsGuard(
 					assert(num_copiedargs <= MaxArgNum);
 
 					info.idx = i;
-					info.is_pointer_or_array = false;
+					info.mode = ArgInfo::ArgMode::Copy;
 					info.name = raw_lhs_type.GetName().data();
 					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
 					info.name_hash = raw_lhs_type.GetID().GetValue();
 
 					continue; // &&{const{T}} <- T{arg}
+				}
+
+				if (!rhs.IsLValueReference() && type_is_base_of(raw_lhs, rhs)) {
+					auto& info = info_copiedargs[num_copiedargs++];
+					assert(num_copiedargs <= MaxArgNum);
+
+					info.idx = i;
+					info.mode = ArgInfo::ArgMode::Derived;
+					info.name = raw_lhs_type.GetName().data();
+					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
+					info.name_hash = raw_lhs_type.GetID().GetValue();
+
+					continue; // &&{const{T}} <- D | &&{D} | &&{const{D}}
 				}
 			}
 			else { // &&{T}
@@ -200,12 +248,25 @@ details::NewArgsGuard::NewArgsGuard(
 					assert(num_copiedargs <= MaxArgNum);
 
 					info.idx = i;
-					info.is_pointer_or_array = false;
+					info.mode = ArgInfo::ArgMode::Copy;
 					info.name = raw_lhs_type.GetName().data();
 					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
 					info.name_hash = raw_lhs_type.GetID().GetValue();
 
 					continue; // &&{T} <- T{arg}
+				}
+
+				if (auto mode = rhs.GetCVRefMode(); (mode == CVRefMode::None || mode == CVRefMode::Right) && type_is_base_of(unref_lhs, rhs)) {
+					auto& info = info_copiedargs[num_copiedargs++];
+					assert(num_copiedargs <= MaxArgNum);
+
+					info.idx = i;
+					info.mode = ArgInfo::ArgMode::Derived;
+					info.name = raw_lhs_type.GetName().data();
+					info.name_size = static_cast<std::uint16_t>(raw_lhs_type.GetName().size());
+					info.name_hash = raw_lhs_type.GetID().GetValue();
+
+					continue; // &&{T} <- D | &&{D}
 				}
 			}
 		}
@@ -218,12 +279,25 @@ details::NewArgsGuard::NewArgsGuard(
 				assert(num_copiedargs <= MaxArgNum);
 
 				info.idx = i;
-				info.is_pointer_or_array = false;
+				info.mode = ArgInfo::ArgMode::Copy;
 				info.name = lhs.GetName().data();
 				info.name_size = static_cast<std::uint16_t>(lhs.GetName().size());
 				info.name_hash = lhs.GetID().GetValue();
 
 				continue; // T <- T{arg}
+			}
+
+			if (auto mode = rhs.GetCVRefMode(); (mode == CVRefMode::None || mode == CVRefMode::Right) && type_is_base_of(lhs, rhs)) {
+				auto& info = info_copiedargs[num_copiedargs++];
+				assert(num_copiedargs <= MaxArgNum);
+
+				info.idx = i;
+				info.mode = ArgInfo::ArgMode::Derived;
+				info.name = lhs.GetName().data();
+				info.name_size = static_cast<std::uint16_t>(lhs.GetName().size());
+				info.name_hash = lhs.GetID().GetValue();
+
+				continue; // T <- D | &&{D}
 			}
 		}
 
@@ -232,7 +306,7 @@ details::NewArgsGuard::NewArgsGuard(
 			auto& info = info_copiedargs[num_copiedargs++];
 			assert(num_copiedargs <= MaxArgNum);
 			info.idx = i;
-			info.is_pointer_or_array = true;
+			info.mode = ArgInfo::ArgMode::PointerOrArray;
 			info.name = raw_lhs.data();
 			info.name_size = static_cast<std::uint16_t>(raw_lhs.size());
 			info.name_hash = TypeID{ raw_lhs }.GetValue();
@@ -265,15 +339,15 @@ details::NewArgsGuard::NewArgsGuard(
 	std::uint32_t max_alignment = 1;
 	for (std::uint8_t k = 0; k < num_copiedargs; ++k) {
 		std::uint32_t size, alignment;
-		if (info_copiedargs[k].is_pointer_or_array) {
-			size = static_cast<std::uint32_t>(sizeof(void*));
-			alignment = static_cast<std::uint32_t>(alignof(void*));
-		}
-		else {
+		if (info_copiedargs[k].mode ==  ArgInfo::ArgMode::Copy) {
 			++num_copied_nonptr_args;
 			const auto& typeinfo = Mngr.typeinfos.at(info_copiedargs[k].GetType());
 			size = static_cast<std::uint32_t>(typeinfo.size);
 			alignment = static_cast<std::uint32_t>(typeinfo.alignment);
+		}
+		else { // PointerOrArray, Derived
+			size = static_cast<std::uint32_t>(sizeof(void*));
+			alignment = static_cast<std::uint32_t>(alignof(void*));
 		}
 
 		std::uint32_t offset = (size_copiedargs + (alignment - 1)) & ~(alignment - 1);
@@ -316,8 +390,10 @@ details::NewArgsGuard::NewArgsGuard(
 		new_argptr_buffer[i] = arg_buffer;
 		
 		// copy
-		if (info.is_pointer_or_array)
+		if (info.mode == ArgInfo::ArgMode::PointerOrArray)
 			buffer_as<void*>(arg_buffer) = orig_argptr_buffer[i];
+		else if (info.mode == ArgInfo::ArgMode::Derived)
+			buffer_as<void*>(arg_buffer) = args[i].StaticCast_DerivedToBase(info.GetType()).GetPtr();
 		else {
 			bool success = RefConstruct(
 				ObjectView{ info.GetType(), arg_buffer },

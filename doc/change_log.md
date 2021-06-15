@@ -4,6 +4,10 @@
 
 ## 0.10
 
+- 0.10.5
+
+  - compatible += static cast derived to base
+  
 - 0.10.4
 
   - `ReflMngr::Simple*` (not register field type)

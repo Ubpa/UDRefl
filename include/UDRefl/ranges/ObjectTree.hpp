@@ -49,7 +49,7 @@ namespace Ubpa::UDRefl {
 			obj{ obj.RemoveConstReference() } {}
 
 		constexpr explicit ObjectTree(Type type) noexcept :
-			obj{ ObjectView{type} } {}
+			ObjectTree{ ObjectView{type} } {}
 
 		iterator begin() const { return { obj, true }; }
 		iterator end() const noexcept { return { obj, false }; }

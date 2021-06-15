@@ -164,7 +164,7 @@ SharedObject SharedObject::StaticCast_BaseToDerived(Type derived) const {
 }
 
 SharedObject SharedObject::DynamicCast_BaseToDerived(Type derived) const {
-	auto d = ObjectView::StaticCast_BaseToDerived(derived);
+	auto d = ObjectView::DynamicCast_BaseToDerived(derived);
 	if (!d.GetType().Valid())
 		return {};
 

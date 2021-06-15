@@ -663,6 +663,14 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 	if (paramTypes.size() != argTypes.size())
 		return false;
 
+	constexpr auto type_is_base_of = [](Type base, Type derived) {
+		for (auto [info, t] : ObjectTree{ derived }) {
+			if (base == t.GetType())
+				return true;
+		}
+		return false;
+	};
+
 	for (size_t i = 0; i < paramTypes.size(); i++) {
 		if (paramTypes[i] == argTypes[i] || paramTypes[i].Is<ObjectView>())
 			continue;
@@ -683,6 +691,13 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 
 				if (details::IsRefConstructible(raw_lhs, std::span<const Type>{&rhs, 1}) && IsDestructible(raw_lhs))
 					continue; // &{const{T}} <- T{arg}
+
+				if (type_is_base_of(type_name_remove_const(unref_lhs), rhs))
+					continue; // &{const{T}} <- any D
+			}
+			else { // &{T}
+				if (rhs.GetCVRefMode() == CVRefMode::Left && type_is_base_of(type_name_remove_const(unref_lhs), rhs))
+					continue; // &{T} <- &{D}
 			}
 		}
 		else if (lhs.IsRValueReference()) { // &&{T} | &&{const{T}}
@@ -699,13 +714,20 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 
 				if (details::IsRefConstructible(raw_lhs, std::span<const Type>{&rhs, 1}))
 					continue; // &&{const{T}} <- T{arg}
+
+				if (!rhs.IsLValueReference() && type_is_base_of(raw_lhs, rhs))
+					continue; // &&{const{T}} <- D | &&{D} | &&{const{D}}
 			}
-			else {
+			else { // &&{T}
 				if (rhs.Is(unref_lhs))
 					continue; // &&{T} <- T
 
 				if (details::IsRefConstructible(unref_lhs, std::span<const Type>{&rhs, 1}) && IsDestructible(unref_lhs))
 					continue; // &&{T} <- T{arg}
+
+
+				if (auto mode = rhs.GetCVRefMode(); (mode == CVRefMode::None || mode == CVRefMode::Right) && type_is_base_of(unref_lhs, rhs))
+					continue; // &&{T} <- D | &&{D}
 			}
 		}
 		else { // T
@@ -714,6 +736,9 @@ bool ReflMngr::IsCompatible(std::span<const Type> paramTypes, std::span<const Ty
 
 			if (details::IsRefConstructible(lhs, std::span<const Type>{&rhs, 1}) && IsDestructible(lhs))
 				continue; // T <- T{arg}
+
+			if (auto mode = rhs.GetCVRefMode(); (mode == CVRefMode::None || mode == CVRefMode::Right) && type_is_base_of(lhs, rhs))
+				continue; // T <- D | &&{D}
 		}
 
 		if (is_pointer_array_compatible(lhs, rhs))

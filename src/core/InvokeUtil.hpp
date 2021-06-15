@@ -78,12 +78,18 @@ namespace Ubpa::UDRefl::details {
 
 	class NewArgsGuard {
 		struct ArgInfo {
+			enum class ArgMode : std::uint8_t {
+				Copy,
+				PointerOrArray,
+				Derived
+			};
+
 			const char* name;
 			std::size_t name_hash;
 			std::uint32_t offset;
 			std::uint16_t name_size;
 			std::uint8_t idx;
-			bool is_pointer_or_array;
+			ArgMode mode;
 			Type GetType() const noexcept {
 				return { std::string_view{name,name_size}, TypeID{name_hash} };
 			}

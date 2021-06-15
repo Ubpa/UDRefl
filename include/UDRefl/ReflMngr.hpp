@@ -274,7 +274,7 @@ namespace Ubpa::UDRefl {
 		// parameter <- argument
 		// - ObjectView
 		// - same
-		// - reference
+		// - reference + static_cast derived -> base
 		// > - 0 (invalid), 1 (convertible), 2 (constructible)
 		// > - table
 		//     |    -     | T | T & | const T & | T&& | const T&& |
