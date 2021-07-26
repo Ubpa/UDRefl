@@ -493,18 +493,20 @@ namespace Ubpa::UDRefl::details {
 			if constexpr (operator_assignment_shl<T>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_assignment_shr, [](T& lhs, const T& rhs) -> T& { return lhs >>= rhs; });
 
-			if constexpr (!IsContainerType<T> && operator_eq<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs == rhs); });
-			if constexpr (!IsContainerType<T> && operator_ne<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ne, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs != rhs); });
-			if constexpr (!IsContainerType<T> && operator_lt<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_lt, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs < rhs); });
-			if constexpr (!IsContainerType<T> && operator_gt<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_gt, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs > rhs); });
-			if constexpr (!IsContainerType<T> && operator_le<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_le, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs <= rhs); });
-			if constexpr (!IsContainerType<T> && operator_ge<T>)
-				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs >= rhs); });
+			if constexpr (!IsContainerType<T>) {
+				if constexpr (operator_eq<T>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_eq, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs == rhs); });
+				if constexpr (operator_ne<T>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ne, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs != rhs); });
+				if constexpr (operator_lt<T>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_lt, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs < rhs); });
+				if constexpr (operator_gt<T>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_gt, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs > rhs); });
+				if constexpr (operator_le<T>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_le, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs <= rhs); });
+				if constexpr (operator_ge<T>)
+					mngr.AddMemberMethod(NameIDRegistry::Meta::operator_ge, [](const T& lhs, const T& rhs) { return static_cast<bool>(lhs >= rhs); });
+			}
 
 			if constexpr (operator_subscript<T, const std::size_t>)
 				mngr.AddMemberMethod(NameIDRegistry::Meta::operator_subscript, [](T& lhs, const std::size_t& rhs) -> decltype(auto) { return lhs[rhs]; });
