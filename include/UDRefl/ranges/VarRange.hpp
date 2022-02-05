@@ -2,6 +2,8 @@
 
 #include "common.hpp"
 
+#include "ObjectTree.hpp"
+
 namespace Ubpa::UDRefl {
 	class UDRefl_core_API VarRange {
 	public:

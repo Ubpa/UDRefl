@@ -2,6 +2,7 @@
 
 #include <UDRefl/Util.hpp>
 #include <UDRefl/config.hpp>
+#include <UDRefl/Object.hpp>
 
 #include <UTemplate/Type.hpp>
 

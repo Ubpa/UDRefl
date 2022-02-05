@@ -61,6 +61,4 @@ Ubpa_AddTarget(
     Ubpa::USmallFlat_core
   DEFINE
     ${defines}
-  PCH
-    "${PROJECT_SOURCE_DIR}/include/UDRefl/UDRefl.hpp"
 )

@@ -4,9 +4,12 @@
 
 #include "ReflMngrInitUtil/ReflMngrInitUtil.hpp"
 
-#include <string>
+#include <UDRefl/ranges/ObjectTree.hpp>
+#include <UDRefl/ranges/VarRange.hpp>
 
 #include <USmallFlat/small_vector.hpp>
+
+#include <string>
 
 using namespace Ubpa;
 using namespace Ubpa::UDRefl;
